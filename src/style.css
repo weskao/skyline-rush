@@ -1802,6 +1802,24 @@ body[data-race-mode="endless"] #race-route-map:not([data-streaming]) > .progress
 .touch-controls .touch-nitro[data-nitro-state="active"] { color: #fff4d6; border-color: #fff1bd; background: #735b40; }
 .touch-controls .touch-nitro[data-nitro-state="disabled"] { color: #a1aab3; border-color: #697783; opacity: .7; }
 
+/* The sprint ladder (src/sprint-tier.ts): one rule per tier id, written on body by src/sprint-tier-hud.ts. Each step
+   burns taller (--tier-lift), loops faster (--tier-loop) and glows wider (--tier-glow); --tier-core and --tier-rim
+   colour the flame, the button glow and every line that names the tier. A new tier is one rule here plus its
+   hud.tier.<id> caption. Guard: tests/sprint-tier-hud.test.js. */
+body[data-sprint-tier="boost"] { --tier-lift: .62; --tier-loop: .9s; --tier-glow: 7px; --tier-core: var(--boost-text); --tier-rim: var(--boost); }
+body[data-sprint-tier="nitro"] { --tier-lift: .8; --tier-loop: .66s; --tier-glow: 11px; --tier-core: var(--nitro-text); --tier-rim: var(--nitro); }
+/* Both together is one look, not two stacked: NITRO's gold at the core, BOOST's red-orange at the rim. */
+body[data-sprint-tier="nitro-boost"] { --tier-lift: .92; --tier-loop: .5s; --tier-glow: 15px; --tier-core: var(--nitro); --tier-rim: var(--boost); }
+/* A NITRO chain steps up again on whichever tier is running. */
+body[data-sprint-chain="2"] { --chain-lift: 1.06; --chain-pace: .86; --chain-glow: 4px; }
+body[data-sprint-chain="3"] { --chain-lift: 1.12; --chain-pace: .72; --chain-glow: 8px; }
+/* The lines that name the tier, the speed read-out and its ticks wear it. Static: it is also the ladder with motion off. */
+body[data-sprint-tier] :is(.speed-caption, .speed-number > strong),
+body[data-sprint-tier].nitro-active :is(#flight-state, #nitro-status) { color: var(--tier-core); }
+/* Only the big number glows: a wide glow smears 8px captions. The dark layer is .speedometer's own legibility shadow. */
+body[data-sprint-tier] .speed-number > strong { text-shadow: 0 0 calc(var(--tier-glow) + var(--chain-glow, 0px)) var(--tier-rim), 0 3px 15px #081629; }
+body[data-sprint-tier] .speed-ticks > i.active { background: linear-gradient(var(--tier-core), var(--tier-rim)); }
+
 /* Foldable viewport segments: available only when the browser exposes two real panels.
    No API = the existing responsive phone/tablet rules above remain the entire fallback. */
 #touch-controls[data-fold-axis="vertical"] .touch-pad {
