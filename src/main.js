@@ -258,7 +258,7 @@ const { showGarage, adoptCar, syncSkins, previewPaint, startRace } = setupGarage
   getEquippedPaint: () => equippedPaint,
   setEquippedPaint: id => { equippedPaint = id; saveCarPaint(equippedCar(), id); },
   getStars: () => starTotal(progress.stars), availablePaints, subscribeAccount: cloud.subscribeAccount, cue: sound.cue,
-  startSimulation, syncProgress: cloud.syncProgress, previewShowcaseView: vfx.previewView,
+  startSimulation, syncProgress: cloud.syncProgress,
 });
 function chooseTrack() {
   if (tutorial) { endTutorial(false); return; }

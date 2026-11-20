@@ -6,9 +6,8 @@ import { currentGarageSkins, selectedGarageSkins, cancelGarageSkinPreview, subsc
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import type { GaragePose } from './track-preview.ts';
 import { garageStudioView, updateGarageStudioView, updateGarageView } from './garage-view-state.ts';
-import { defaultGarageCamera, dragGarageCamera, garagePreset, stepGarageAngle, toggleGarageOrbit, zoomGarageCamera, setGarageMode, toggleGarageWing, garageSectionCamera, GARAGE_SECTION_SHOWCASE } from './garage-camera.ts';
+import { defaultGarageCamera, dragGarageCamera, garagePreset, stepGarageAngle, toggleGarageOrbit, zoomGarageCamera, setGarageMode, toggleGarageWing, garageSectionCamera } from './garage-camera.ts';
 import { setupGarageStudioGestures } from './garage-studio-gestures.ts';
-import type { ShowcaseView } from './vfx-settings.ts';
 import type { GarageCamera } from './garage-camera.ts';
 import type { GarageLighting } from './garage-stage.ts';
 import { t } from './i18n.ts';
@@ -50,8 +49,6 @@ interface GarageDependencies {
   startSimulation: typeof import('./frame-pacing.ts').startRace;
   syncProgress(): Promise<unknown>;
   subscribeAccount(listener: (uid: string | null) => void): void;
-  /** Temporary home-showcase view while the Garage is open; null restores the saved one (vfx-ui.ts). */
-  previewShowcaseView?(view: ShowcaseView | null): void;
 }
 
 export function garagePresentation(
@@ -64,7 +61,7 @@ export function garagePresentation(
 
 // Preserve the existing WebGL canvas, paint entitlement source and race state.
 export function setupGarageUI({
-  getWorld, canOpen, clearControls, cue, getEquippedPaint, setEquippedPaint, getStars, availablePaints, subscribeAccount, startSimulation, syncProgress, previewShowcaseView,
+  getWorld, canOpen, clearControls, cue, getEquippedPaint, setEquippedPaint, getStars, availablePaints, subscribeAccount, startSimulation, syncProgress,
 }: GarageDependencies) {
   const $ = <T extends HTMLElement = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   const garageScreen = $<HTMLDialogElement>('#garage-screen');
@@ -226,12 +223,8 @@ export function setupGarageUI({
     if (page === 'home' || page === 'studio') history.back();
     else { leavingGarage = false; garageScreen.close(); }
   }
-  /** Turn the camera to the part the open section changes: the Studio camera inspecting, the showcase on Home. */
   function followSection(): void {
-    if (garageStudioView.page === 'home') {
-      if (Object.hasOwn(GARAGE_SECTION_SHOWCASE, section)) previewShowcaseView?.(GARAGE_SECTION_SHOWCASE[section]!);
-      return;
-    }
+    if (garageStudioView.page !== 'studio') return;
     const next = garageSectionCamera(section, camera);
     if (next) setCamera(next.camera, next.angle);
   }
@@ -319,7 +312,6 @@ export function setupGarageUI({
   garageScreen.addEventListener('close', () => {
     gestures.clear();
     section = 'cars';
-    previewShowcaseView?.(null);
     $('#app').prepend($('#world'));
     dockParent.insertBefore(dock, dockNext);
     getWorld()?.setGarageCamera(null);

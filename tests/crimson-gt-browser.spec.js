@@ -8,7 +8,7 @@ import { openGarage } from './helpers/test.js';
 import { copyFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PAINTS } from '../src/appearance.ts';
-import { GARAGE_SKINS } from '../src/garage-skin-catalog.ts';
+import { GARAGE_SKINS, SKIN_CATEGORIES } from '../src/garage-skin-catalog.ts';
 import { parseGlb } from '../scripts/assets/check-glb.mjs';
 import { fitToRoadsterSize } from '../src/car-display-size.ts';
 import { chooseGarageAngle } from './helpers/garage-angle.js';
@@ -364,19 +364,22 @@ test('the GT wing rests stowed, tilts and raises with the procedural wing, and t
   expect(errors).toEqual([]);
 });
 
-test('every Garage skin previews on the Crimson GT', async ({ gameplayPage: page, gameplayURL }) => {
+// One test per category: the whole catalog in one CPU-rendered page outgrew its budget on CI (run 44736477255).
+for (const category of SKIN_CATEGORIES) test(`every Garage ${category} skin previews on the Crimson GT`, async ({ gameplayPage: page, gameplayURL }) => {
   test.setTimeout(ciTimeout(120000));
+  // A drift-trail click opens the live drift preview, a second WebGL renderer; still frames keep both off CI's CPU.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   const { errors } = await prepare(page, gameplayURL, { storage: GT });
   await page.locator('#garage-button').click();
   await modelReady(page);
-  for (const { id, category } of GARAGE_SKINS) {
+  for (const { id } of GARAGE_SKINS.filter(skin => skin.category === category)) {
     await openGarageSection(page, 'effects');
     await page.locator(`[data-skin="${id}"] .garage-skin-preview-hitarea`).click();
     await expect(page.locator('#garage-preview'), id).toHaveAttribute(`data-skin-preview-${category}`, id);
     if (process.env.CRIMSON_GT_SHOTS) await attach(page, `gt-skin-${id}`); // local review sheet: every skin on the GT
   }
   expect(await glbRoots(page)).toBe(1); // still the GT under the last skin
-  await attach(page, 'gt-garage-skins');
+  await attach(page, `gt-garage-skins-${category}`);
   expect(errors).toEqual([]);
 });
 

@@ -356,6 +356,17 @@ test('a test on the gameplay page never opens a second browser page beside it', 
   assert.deepEqual(offenders, [], 'Split the second page into its own test, or open each page in turn and close it (see .claude/rules/browser-test-stability.md)');
 });
 
+// Previewing a drift trail opens GarageDriftPreview, a second live WebGL renderer: one test clicking the whole catalog
+// with motion on outgrew its 360 s CI budget (crimson-gt, CI 44736477255).
+test('a sweep of the whole Garage skin catalog runs one category per test, with reduced motion or a stated reason', () => {
+  const offenders = FILES.flatMap(file => {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    if (/reducedMotion: 'reduce'/.test(source)) return [];
+    return source.split('\n').flatMap((line, i) => /of GARAGE_SKINS\)/.test(line) && !/\/\/ motion: \S/.test(line) ? [`tests/${file}:${i + 1}`] : []);
+  });
+  assert.deepEqual(offenders, [], "Split the sweep per SKIN_CATEGORIES and emulate reducedMotion: 'reduce', or end the loop line with // motion: <why it must animate> (see .claude/rules/browser-test-stability.md)");
+});
+
 // Specs start at Low (tests/helpers/test.js), which turns off the Garage GIF artwork (GarageArtworkImage.vue vfxAllowed),
 // the mini-boost streaks and the full pickup collect effect. Six specs asserted them and failed on CI run 44012297806.
 const LOW_GATED = /garage-animated\/|data-animation-active', ?(?:'true'|String\()|'Mini boost streaks'|'Pickup collect VFX'/;
