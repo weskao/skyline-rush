@@ -780,8 +780,10 @@ test.describe('phone game gestures', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   test('long press and simultaneous touches stay in the game and release cleanly', async ({ page, context }) => {
     await useControls(page, { mode: 'buttons' });
-    await page.goto('/');
-    const title = page.locator('h1');
+    // The gesture listeners attach when main.js runs, after page.goto resolves.
+    await gotoHome(page);
+    // Home's title; the startup screen keeps its own h1 (#startup-title) in the DOM.
+    const title = page.locator('#intro-title');
     await expect(title).toHaveCSS('user-select', 'none');
     // The page root too: a long press outside #app must not start a selection or the Copy/Select All menu.
     await expect(page.locator('html')).toHaveCSS('user-select', 'none');

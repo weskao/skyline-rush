@@ -159,7 +159,16 @@ test('two real browser tabs serialize competing confirmations and refresh togeth
     await choose(page, 'thruster-ion');
     await request(page);
   }
+  // A confirmation commits under the demo Web Lock (transact() in src/wave3-browser-experience.ts), and a tab withdraws
+  // a confirmation another tab's commit made stale (2a98ebde). Unheld, the first commit reached the second tab before
+  // its click landed, so that click waited for a removed button. Hold the lock until both are submitted.
+  await first.evaluate(name => new Promise(held => navigator.locks.request(name, () => {
+    held();
+    return new Promise(release => { window.releaseDemoLock = release; });
+  })), demoKey);
   await Promise.all([confirm(first), confirm(second)]);
+  for (const page of [first, second]) await expect(store(page).locator('.demo-confirm')).toHaveAttribute('aria-busy', 'true');
+  await first.evaluate(() => window.releaseDemoLock());
   for (const page of [first, second]) {
     await checkStore(page, [15, 70, 0]);
     await expect(store(page).locator('[data-demo-id="thruster-ion"]')).toHaveAttribute('data-demo-status', 'demo-unlocked');

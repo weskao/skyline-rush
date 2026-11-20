@@ -1,5 +1,6 @@
 import { test, watchRequests } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
+import { waitForHome } from './helpers/test.js';
 import { expect } from '@playwright/test';
 import { createServer } from 'vite';
 import { fileURLToPath } from 'node:url';
@@ -19,6 +20,8 @@ async function open(page, url) {
     if (message.type() === 'warning' && message.text().startsWith('[model-probe]')) seen.warnings.push(message.text());
   });
   await page.goto(url);
+  // Callers read window.gameScene next; on CI it was still undefined straight after the load (run 44674764907).
+  await waitForHome(page);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
   return seen;
 }

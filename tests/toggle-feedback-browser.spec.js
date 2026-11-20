@@ -1,4 +1,4 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, gotoHome } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
 import { openSettingsSection } from './helpers/settings-browser.js';
 import { bootAirflowRace, readHudBoxes } from './helpers/responsive-hud.js';
@@ -6,16 +6,23 @@ import { bootAirflowRace, readHudBoxes } from './helpers/responsive-hud.js';
 // Shared setting toast (src/GameToast.vue) and the Visual effects switch-off confirm, asked every time (src/vfx-ui.ts).
 const toast = page => page.locator('#game-toast .game-toast-pill');
 const STATE_WORDS = { en: { on: 'ON', off: 'OFF' }, 'zh-TW': { on: '開啟', off: '關閉' } };
-// The setting name, then its new state as a separate badge that the colour and the fill both mark.
-const expectToast = async (page, label, state, lang = 'en') => {
-  await expect(toast(page)).toHaveAttribute('data-state', state);
-  await expect(toast(page).locator('.game-toast-label')).toHaveText(label);
-  await expect(toast(page).locator('.game-toast-state')).toHaveText(STATE_WORDS[lang][state]);
-};
+// The setting name, then its new state as a separate badge that the colour and the fill both mark. The pill unmounts
+// TOAST_MS (1.8 s) after it shows; on CI three locator reads outlived it and the next read found no toast. Find, check
+// and measure it in one page tick, then assert on the returned snapshot.
+const expectToast = async (page, label, state, lang = 'en') => (await page.waitForFunction(want => {
+  const pills = document.querySelectorAll('#game-toast .game-toast-pill');
+  const pill = pills[pills.length - 1], badge = pill?.querySelector('.game-toast-state');
+  if (pill?.dataset.state !== want.state || pill.querySelector('.game-toast-label')?.textContent.trim() !== want.label
+    || badge?.textContent.trim() !== want.text) return null;
+  pill.getAnimations({ subtree: true }).forEach(a => a.finish());
+  const { x, y, width, height } = pill.getBoundingClientRect(), s = getComputedStyle(badge);
+  return { count: pills.length, box: { x, y, width, height }, color: s.color, bg: s.backgroundColor,
+    pillBg: getComputedStyle(pill).backgroundColor, font: Number.parseFloat(s.fontSize) };
+}, { label, state, text: STATE_WORDS[lang][state] }, { timeout: ciTimeout(10000) })).jsonValue();
 const vfx = page => page.locator('[data-vfx="enabled"]');
 const dialog = page => page.locator('#confirm-dialog');
 const home = async page => {
-  await page.goto('/');
+  await gotoHome(page);
   await page.waitForTimeout(ciTimeout(700));
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
 };
@@ -114,8 +121,7 @@ test('M, V and F2 each show one toast that replaces the last and hides itself', 
   await page.keyboard.press('m');
   await expectToast(page, 'Sound', 'on');
   await page.keyboard.press('v');
-  await expectToast(page, 'Airflow', 'on');
-  await expect(toast(page)).toHaveCount(1);
+  expect((await expectToast(page, 'Airflow', 'on')).count).toBe(1);
   await page.keyboard.press('F2');
   await expectToast(page, 'Auto accelerate', 'off');
   expect(await page.locator('#game-toast').evaluate(el => getComputedStyle(el).pointerEvents)).toBe('none');
@@ -141,18 +147,10 @@ const contrast = (a, b) => {
 
 test('the ON and OFF badges differ in colour and fill, and both stay readable', async ({ page }) => {
   await home(page);
-  const badge = () => toast(page).locator('.game-toast-state').evaluate(el => {
-    const pill = el.closest('.game-toast-pill');
-    pill.getAnimations({ subtree: true }).forEach(a => a.finish());
-    const s = getComputedStyle(el);
-    return { color: s.color, bg: s.backgroundColor, pillBg: getComputedStyle(pill).backgroundColor, font: Number.parseFloat(s.fontSize) };
-  });
   await page.keyboard.press('m');
-  await expectToast(page, 'Sound', 'off');
-  const off = await badge();
+  const off = await expectToast(page, 'Sound', 'off');
   await page.keyboard.press('m');
-  await expectToast(page, 'Sound', 'on');
-  const on = await badge();
+  const on = await expectToast(page, 'Sound', 'on');
   expect(on.color).not.toBe(off.color);
   expect(off.bg, 'OFF is an outlined badge, ON a filled one: the state never rests on hue alone').toBe('rgba(0, 0, 0, 0)');
   expect(on.bg).not.toBe(off.bg);
@@ -169,16 +167,13 @@ for (const [name, width, height, touch] of [['desktop', 1440, 900, false], ['pho
       await bootAirflowRace(page, context, lang);
       // Auto accelerate is the longest setting name, so this measures the widest toast.
       await page.keyboard.press('F2');
-      await expectToast(page, lang === 'en' ? 'Auto accelerate' : '自動加速', 'off', lang);
-      const pill = await toast(page).evaluate(el => {
-        el.getAnimations().forEach(animation => animation.finish());
-        const { x, y, width, height } = el.getBoundingClientRect();
+      const { box: pill } = await expectToast(page, lang === 'en' ? 'Auto accelerate' : '自動加速', 'off', lang);
+      await page.evaluate(() => {
         // Show both race messages with their longest everyday copy so their real boxes are measured.
         const callout = document.querySelector('#event-callout');
         callout.hidden = false;
         callout.firstElementChild ? callout.firstElementChild.textContent = 'PERFECT BOOST' : callout.textContent = 'PERFECT BOOST';
         document.querySelector('#driving-message').textContent = 'HOLD THROTTLE TO KEEP SPEED';
-        return { x, y, width, height };
       });
       const boxes = [...await readHudBoxes(page), ...await page.evaluate(() => ['#event-callout', '#driving-message'].map(id => {
         const { x, y, width, height } = document.querySelector(id).getBoundingClientRect();

@@ -46,6 +46,9 @@ export const test = base.extend({
       Object.defineProperty(navigator, 'deviceMemory', { configurable: true, get: () => memoryGiB });
     }, CI_DEVICE);
     await use(context);
+    // A test that ends mid-navigation leaves a route.fetch() in flight; closing the context disposes its response.
+    for (const page of context.pages()) await page.unrouteAll({ behavior: 'ignoreErrors' });
+    await context.unrouteAll({ behavior: 'ignoreErrors' });
   },
 });
 
@@ -66,6 +69,19 @@ export const gotoHome = async (page, url = '/') => {
 // translateY 12px / translateX 48px). A rect read mid-entry is shifted and goes through float32 transform math: a 144 px
 // thumbnail measured 144.00001526 and a 44 px button 43.99998474. Resolves once the element is visible and every finite
 // animation on it and its ancestors has finished; measure anything inside an overlay only after this.
+// Reloads as a locked-down browser that throws on every storage call from the first script on. sessionStorage is
+// blocked too, so the tab's startup-skip flag is unreadable and the player passes the startup screen by hand.
+export const reloadWithBlockedStorage = async page => {
+  await page.addInitScript(() => {
+    for (const method of ['getItem', 'setItem', 'removeItem'])
+      Storage.prototype[method] = () => { throw new DOMException('blocked', 'SecurityError'); };
+  });
+  await page.reload();
+  await page.locator('#startup-enter').click();
+  await waitForHome(page);
+  if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+};
+
 export const settled = async locator => {
   await expect(locator).toBeVisible();
   await locator.evaluate(el => Promise.all(document.getAnimations().filter(animation => {

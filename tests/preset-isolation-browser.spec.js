@@ -2,6 +2,7 @@ import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { clickLobbyOption } from './helpers/home-lobby.js';
+import { waitForHome } from './helpers/test.js';
 
 // 10A: rule presets and saved Custom setups are shortcuts, never progress: unlocks, reward eligibility and the
 // skyline-rush-controls / skyline-rush-history formats stay byte-identical through choosing, saving, loading and racing them.
@@ -41,8 +42,10 @@ test('choosing, saving, loading and racing presets leaves unlocks, eligibility, 
     localStorage.setItem('skyline-rush-controls', JSON.stringify({ mode: 'buttons', hand: 'right', fullLock: 80, size: 'L', opacity: 0.8, flyMode: 'tap', sensitivity: 1.2, ghost: true, layout: {}, version: 1 }));
   });
   await page.reload();
+  // The reload resolves before main.js runs; its load-time controls write must land before the baseline.
+  await waitForHome(page);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-  const stored = () => page.evaluate(keys => keys.map(key => localStorage.getItem(key)), GUARDED);
+  const stored =() => page.evaluate(keys => keys.map(key => localStorage.getItem(key)), GUARDED);
   const before = await stored();
   const counts = () => page.evaluate(keys => keys.map(key => window.storageWrites[key] ?? 0), GUARDED);
   const loadWrites = await counts();

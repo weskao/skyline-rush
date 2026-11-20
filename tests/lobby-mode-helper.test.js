@@ -27,3 +27,14 @@ test('a browser spec that names a Home track card opens the track chooser first'
   });
   assert.deepEqual(bare, []);
 });
+
+// isVisible() answers at once: right after page.goto, before Home mounts, it saw no mode button and the helper
+// expanded the Mode list, which pushed the desktop Cup recovery panel 82px past #intro (develop CI 44674764907).
+test('the mode helpers wait for Home before asking whether the mode list is shown', () => {
+  const text = readFileSync(new URL('helpers/home-lobby.js', import.meta.url), 'utf8');
+  for (const name of ['openLobbyModes', 'clickLobbyOption']) {
+    const body = text.slice(text.indexOf(`function ${name}(`)).split(/\n}\n/)[0];
+    const visible = body.lastIndexOf('.isVisible()');
+    assert.ok(visible > 0 && body.slice(0, visible).includes('await lobbyShown('), `${name} checks visibility before Home is shown`);
+  }
+});

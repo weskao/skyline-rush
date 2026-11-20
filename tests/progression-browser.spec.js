@@ -118,10 +118,13 @@ test('a valid saved ghost is offered and its preference persists; a tampered gho
   expect(errors).toEqual([]);
 });
 
+// Coast is always unlocked (loadUnlocks): the no-flight case starts a normal race after leaving the daily, and a
+// catalog change once moved its date onto locked Alpine Rail Pass, leaving START RACE on LOCKED.
 const dailyDateFor = modifier => {
-  for (let i = 0; i < 120; i++) {
+  for (let i = 0; i < 365; i++) {
     const date = new Date(2026, 9, 1 + i, 12);
-    if (dailyChallenge(date).modifier === modifier) return date;
+    const daily = dailyChallenge(date);
+    if (daily.modifier === modifier && daily.track === 'coast') return date;
   }
   throw Error('Daily challenge fixture missing ' + modifier);
 };

@@ -1,5 +1,6 @@
 import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test } from './helpers/gameplay-browser.js';
+import { reloadWithBlockedStorage } from './helpers/test.js';
 import { expect } from '@playwright/test';
 
 // ITEM-12 feedback and 12B acceptance (misses, blocked storage, touch layout) in the real game.
@@ -80,12 +81,7 @@ for (const [name, viewport, hasTouch] of [
 test('item rules still start a race when storage is blocked', async ({ gameplayPage: page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.addInitScript(() => {
-    for (const method of ['getItem', 'setItem', 'removeItem'])
-      Storage.prototype[method] = () => { throw new DOMException('blocked', 'SecurityError'); };
-  });
-  await page.reload();
-  if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+  await reloadWithBlockedStorage(page);
   await startWithItems(page, { blockedStorage: true });
   await expect(page.locator('#item-slot')).toBeVisible();
   expect(errors).toEqual([]);

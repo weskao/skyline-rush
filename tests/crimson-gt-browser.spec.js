@@ -401,17 +401,18 @@ test('keyboard: Tab walks the cars in catalog order, Enter equips the focused ca
   expect(errors).toEqual([]);
 });
 
-test('low quality loads only the GT low LOD; a missing GLB falls back to the procedural car', async ({ gameplayPage: page, gameplayURL, browser }) => {
+test('low quality loads only the GT low LOD; a missing GLB falls back to the procedural car', async ({ gameplayPage: page, gameplayURL, browser, viewport, deviceScaleFactor }) => {
   const { requests, errors } = await prepare(page, gameplayURL, { quality: 'low', storage: GT });
   await modelReady(page);
   expect(requests).toEqual(['/models/crimson-gt/crimson-gt-low.glb']);
   await expect.poll(() => page.evaluate(() => ['body', 'wheel_fl_spin', 'wing_blade', 'thruster_04'].every(n => window.gameScene.player.getObjectByName(n)))).toBe(true);
   expect(errors).toEqual([]);
 
-  const other = await browser.newPage();
+  // A raw browser page skips the suite's Low start and CI canvas size; at High and full DPR it never rendered on CI.
+  const other = await browser.newPage({ viewport, deviceScaleFactor });
   await captureHooks(other);
   await other.route(GLB, route => route.fulfill({ status: 404, body: '' }));
-  const second = await prepare(other, gameplayURL, { storage: GT });
+  const second = await prepare(other, gameplayURL, { quality: 'low', storage: GT });
   await expect(world(other)).toHaveAttribute('data-garage-model', 'fallback:missing', { timeout: ciTimeout(15000) });
   expect(await glbRoots(other)).toBe(0);
   expect(second.errors).toEqual([]);

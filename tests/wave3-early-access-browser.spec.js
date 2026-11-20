@@ -1,5 +1,6 @@
 import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
+import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { clickLobbyOption } from './helpers/home-lobby.js';
@@ -7,8 +8,8 @@ import { clickLobbyOption } from './helpers/home-lobby.js';
 // Exercise the real built game using the trial artifact from pretest:browser.
 const demoKey = 'skyline-rush-wave3-demo:v1:guest';
 const modeHistoryKey = 'skyline-rush-mode-history-v1';
-const openGarage = async page => {
-  await page.goto('/');
+const openGarage = async (page, url = '/') => {
+  await page.goto(url);
   await page.locator('#garage-button').click();
   await expect(page.locator('#garage-screen')).toBeVisible();
 };
@@ -55,7 +56,8 @@ test('real Garage gives the trial store room for desktop preview and portrait br
   }
 });
 
-test('store and collection stay inside one pane on a foldable display', async ({ page }) => {
+// Its page imports /src/wave3-race-events.ts, which only the Vite dev server serves (the preview serves dist/).
+gameplayTest('store and collection stay inside one pane on a foldable display', async ({ page, gameplayURL }) => {
   await page.removeLocatorHandler(page.locator('#acquisition-reveal[open]'));
   await page.setViewportSize({ width: 844, height: 540 });
   await page.addInitScript(() => {
@@ -65,7 +67,7 @@ test('store and collection stay inside one pane on a foldable display', async ({
       { left: 434, top: 0, width: 410, height: 540 },
     ] });
   });
-  await openGarage(page);
+  await openGarage(page, gameplayURL);
   const store = await openStore(page);
   await expect(page.locator('body')).toHaveAttribute('data-fold-axis', 'vertical');
   const garage = page.locator('#garage-screen');

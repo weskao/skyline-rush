@@ -1,6 +1,6 @@
 import { openGarageSection } from './helpers/garage-browser.js';
 import { ciTimeout } from './helpers/ci.js';
-import { test, expect } from './helpers/test.js';
+import { test, expect, gotoHome } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 
 test('home displays three compact resource icons with genuine demo points', async ({ page }) => {
@@ -133,7 +133,8 @@ test.describe('wallet on touch screens', () => {
   for (const viewport of [{ width: 320, height: 568 }, { width: 756, height: 265 }]) {
     test(`touch opens one card at a time and dismisses it at ${viewport.width}x${viewport.height}`, async ({ page }) => {
       await page.setViewportSize(viewport);
-      await page.goto('/');
+      // isVisible() below does not wait: before Home mounts it sees no coins and taps a summary portrait hides.
+      await gotoHome(page);
       const wallet = page.locator('#intro [data-wave3-wallet]');
       const coins = wallet.getByRole('button', { name: /Demo coins/i });
       const diamonds = wallet.getByRole('button', { name: /Demo diamonds/i });

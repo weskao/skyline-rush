@@ -1,5 +1,11 @@
+// isVisible() does not wait: called before Home mounts it saw no option and expanded the Mode list for nothing
+// (cup-recovery desktop overflowed #intro by 82px on CI). Wait until the option or the toggle is shown first.
+const lobbyShown = (page, option) => option.or(page.locator('#lobby-modes-toggle')).first().waitFor();
+
 export async function openLobbyModes(page) {
-  if (!await page.locator('#lobby-mode-options').isVisible()) {
+  const options = page.locator('#lobby-mode-options');
+  await lobbyShown(page, options);
+  if (!await options.isVisible()) {
     await page.locator('#lobby-modes-toggle').click();
   }
 }
@@ -18,6 +24,7 @@ export async function clickLobbyOption(page, selector, action = 'click') {
     return;
   }
   const option = page.locator(selector);
+  await lobbyShown(page, option);
   if (!await option.isVisible()) await openLobbyModes(page);
   await option[action]();
 }

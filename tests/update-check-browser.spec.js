@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
 
+// Plain @playwright/test: drop the route before teardown closes the context under an in-flight route.fetch().
+test.afterEach(({ page }) => page.unrouteAll({ behavior: 'ignoreErrors' }));
+
 // The served index.html names a newer entry script than the running page: the app reloads once and then stops,
 // even though the server keeps answering with the same "newer" page (a stuck edge cache).
 test('a newer served build reloads the intro once, never in a loop', async ({ page }) => {

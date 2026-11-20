@@ -71,7 +71,9 @@ and the duplicate import failed all 16 browser shards. Enforced by `tests/browse
   `close-button`, `event-lab` and `mode-first-setup` failed this way at 390x844.
   **Enforced by** `tests/lobby-mode-helper.test.js`: a spec that names a mode button must call the
   helper. It cannot see a single missed click in a spec that already uses the helper; run the
-  spec at a phone size.
+  spec at a phone size. The helpers wait for Home (`lobbyShown`) before `isVisible()`, which answers at
+  once: called right after `page.goto` it found no button and expanded the Mode list on desktop, pushing
+  the Cup recovery panel 82px past `#intro` (develop CI 44674764907). Guarded in the same test file.
 
 ## Catalog drift and deterministic physics
 
@@ -134,7 +136,34 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   `74da0992`): the airflow showcase spec pressed `v` straight after `page.goto` and failed 7 of 7 viewports;
   the "music-off stays silent" spec passed without the game hearing its gesture. Load with `gotoHome(page)`
   (`tests/helpers/test.js`) before the first key press. Enforced by the same test file (*key press after a
-  page load*).
+  page load*). The same holds for `window.gameScene`/`window.gameplay`: `garage-model-lifecycle` read
+  `gameScene.renderer` straight after its load helper and got undefined on CI (44674764907); a load helper
+  whose callers read the scene ends with `waitForHome(page)`. Not machine-enforced: 74 specs follow a load
+  with the music-prompt `isVisible()` check, which answers at once, so the pattern alone proves nothing.
+  A dispatched gesture and an absence branch fail the same way: `dispatchEvent` before `main.js` subscribes
+  reaches no listener, and `if (!await x.isVisible())` takes the wrong branch (44674764907: the wallet summary
+  tapped while hidden in portrait; `contextmenu` not cancelled). Load with `gotoHome(page)` and scope title
+  locators to Home (`#intro-title`): the startup h1 stays in the DOM. Enforced by the same test file
+  (*gesture or absence branch after a page load*). `page.reload()` resolves before `main.js` runs too: take a
+  storage or state baseline only after `waitForHome(page)`.
+- **A route handler can outlive its test.** A spec that ends on a navigation leaves `route.fetch()` in flight;
+  closing the context disposes the response and fails a passed test with "Response has been disposed"
+  (hazard-captures, track-themes, 44674764907). The shared context fixture runs `unrouteAll` with
+  `ignoreErrors`; a spec on plain `@playwright/test` does it in `afterEach`. Enforced by
+  `tests/browser-timeouts.test.js` (*cannot outlive its test*).
+- **The setting toast lives 1.8 s (`TOAST_MS`).** Find, check and measure `#game-toast .game-toast-pill` in one
+  `page.waitForFunction`, as for the halfway card; chained locator reads found it gone on CI (toggle-feedback,
+  44674764907). Enforced by `tests/browser-timeouts.test.js` (*self-expiring element in one page tick*). A fixed
+  sleep or an `isVisible()` check after a load is not readiness either; that guard rejects both.
+- **Two tabs racing a store confirm depend on order.** Since `2a98ebde` a tab withdraws a confirmation another
+  tab's commit made stale; hold the demo Web Lock until both tabs show `aria-busy`, then release it
+  (`wave3-economy-transactions-browser.spec.js`).
+- **The preview serves `dist/` only.** A page-side `import('/src/…')` needs `test` from `gameplay-browser.js` (Vite
+  dev server); on the preview it fails with "Failed to fetch dynamically imported module". Enforced by
+  `tests/browser-timeouts.test.js` (*imports /src in the page*).
+- **A raw `browser.newPage()` skips the suite's Low start and CI canvas size.** Pass the fixture's `viewport` and
+  `deviceScaleFactor` and seed a tier; crimson-gt's second page rendered High while the first kept running and
+  timed out on CI (44674764907).
 - **A test must fit its budget with room to spare on CI.** CI steps the game at about 1/4 speed (each slow
   frame is clamped to 0.05 s), so a flow that plays N s of game time needs about 4N s of wall clock. A test
   whose passing CI run (the `(1.7m)` in the job log) uses more than about half of its budget gets an explicit

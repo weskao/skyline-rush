@@ -162,13 +162,31 @@ test('a key press after a page load waits for the game to listen', () => {
     const lines = readFileSync(new URL(file, import.meta.url), 'utf8').split('\n');
     return lines.flatMap((line, i) => {
       if (!/\bpage\.goto\(/.test(line)) return [];
-      // Only blank lines, comments and the font wait may sit between the load and its first key press.
+      // Blank lines, comments, the font wait, a fixed sleep and an isVisible() check (which answers at once) do not wait
+      // for main.js: bootAirflowRace slept 700 ms, dismissed no music prompt and lost its `v` (toggle-feedback, 2026-11-20).
       let j = i + 1;
-      while (j < lines.length && /^\s*(\/\/.*)?$|document\.fonts\.ready/.test(lines[j])) j++;
+      while (j < lines.length && /^\s*(\/\/.*)?$|document\.fonts\.ready|waitForTimeout\(|\.isVisible\(\)/.test(lines[j])) j++;
       return /^\s*await page\.keyboard\./.test(lines[j] ?? '') ? [`tests/${file}:${j + 1}: ${lines[j].trim()}`] : [];
     });
   });
   assert.deepEqual(offenders, [], 'Load with gotoHome(page): main.js attaches the key listener after page.goto resolves (.claude/rules/browser-test-stability.md)');
+});
+
+// Same race, other shapes (develop CI 44674764907): a dispatched contextmenu found no listener yet, and
+// `if (!await coins.isVisible())` saw no Home and tapped the wallet summary portrait hides, until the timeout.
+test('a gesture or an absence branch after a page load waits for Home', () => {
+  // Lines that neither wait for main.js nor act: blanks, comments, declarations, absence/CSS checks, loop heads.
+  const INERT = /^\s*(\/\/.*)?$|^(?!.*\bawait\b)|toBeHidden\(|toHaveCSS\(|^\s*for \(/;
+  const offenders = FILES.flatMap(file => {
+    const lines = readFileSync(new URL(file, import.meta.url), 'utf8').split('\n');
+    return lines.flatMap((line, i) => {
+      if (!/\bpage\.goto\(/.test(line)) return [];
+      let j = i + 1;
+      while (j < lines.length && INERT.test(lines[j]) && !/^\s*\}\);/.test(lines[j])) j++;
+      return /!\s*await [^;]*\.isVisible\(\)|dispatchEvent\(/.test(lines[j] ?? '') ? [`tests/${file}:${j + 1}: ${lines[j].trim()}`] : [];
+    });
+  });
+  assert.deepEqual(offenders, [], 'Load with gotoHome(page): isVisible() does not wait and main.js listens after page.goto resolves (.claude/rules/browser-test-stability.md)');
 });
 
 test('CI retries a failed browser test once and still reports it; local runs never retry', () => {
@@ -300,6 +318,27 @@ test('a spec counting Web Audio notes by pitch leaves out notes scheduled during
 // Trap (2026-11-17): the gameplayPage fixture has already loaded the game once (no saved car, so the Roadster) and
 // that page keeps fetching lazily. A spec that started counting requests and then navigated again also counted the
 // old page's late roadster2.glb (crimson-gt-browser: five tests red). watchRequests leaves that page first.
+// The preview serves dist/, so a page-side import('/src/…') there fails with "Failed to fetch dynamically imported module"
+// (wave3-early-access foldable test, CI 44674764907). Only gameplay-browser.js's Vite dev server serves /src.
+test('a test that imports /src in the page runs on the gameplay dev server', () => {
+  const ignored = new Set(config.testIgnore.map(glob => glob.replace('**/', '')));
+  const offenders = FILES.filter(file => file.endsWith('browser.spec.js') && !ignored.has(file)).flatMap(file => {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    const names = from => [...source.matchAll(new RegExp(`import \\{([^}]*)\\} from '\\./helpers/${from}'`, 'g'))]
+      .flatMap(([, list]) => list.split(',').map(name => name.trim().match(/^test(?: as (\w+))?$/)).filter(Boolean)
+        .map(([, alias]) => alias ?? 'test'));
+    const dev = new Set(names('gameplay-browser\\.js')), all = [...dev, ...names('test\\.js')];
+    let current = null;
+    return source.split('\n').flatMap((line, i) => {
+      const block = line.match(/^\s*(\w+)(?:\.\w+)?\(/)?.[1];
+      if (all.includes(block)) current = block;
+      const devServer = current ? dev.has(current) : dev.size > 0;
+      return line.includes("import('/src/") && !devServer ? [`tests/${file}:${i + 1}`] : [];
+    });
+  });
+  assert.deepEqual(offenders, [], "Run it with `test` from tests/helpers/gameplay-browser.js and load gameplayURL or gameplayPage");
+});
+
 test('a spec counting requests on the gameplay page leaves the fixture page first (watchRequests)', () => {
   const offenders = FILES.filter(file => file !== 'helpers/gameplay-browser.js').filter(file => {
     const source = readFileSync(new URL(file, import.meta.url), 'utf8');
@@ -364,14 +403,33 @@ test('a spec pairs a rival with its scene car through gameScene.rivals, not scen
 
 // The halfway card lives 2.15 s of race time. toBeVisible, then a text check, then a measure outlived it on CI (a detached
 // node in 44269822759; a zero rect, dx 480, in 44395376200). Read it in one page tick (page.waitForFunction); a locator
-// may only wait for it to go.
-test('a spec reads the self-expiring halfway card in one page tick', () => {
+// may only wait for it to go. The setting toast pill unmounts TOAST_MS (1.8 s) after it shows: three locator reads
+// outlived it and the next one found no pill (toggle-feedback, 3 tests red on both attempts, CI 44674764907).
+test('a spec reads a self-expiring element (halfway card, setting toast) in one page tick', () => {
   const offenders = FILES.flatMap(file => {
     const source = readFileSync(new URL(file, import.meta.url), 'utf8');
-    const names = [...source.matchAll(/(\w+)\s*=\s*page\.locator\(['"]#race-halfway-card['"]\)/g)].map(([, name]) => name);
-    const reads = [/page\.locator\(['"]#race-halfway-card['"]\)\s*\.(?!.*toBeHidden)/,
-      ...names.map(name => new RegExp(`expect\\(${name}\\)\\.(?!toBeHidden)|\\b${name}\\.(?:evaluate|boundingBox|textContent|innerText)\\(`))];
-    return source.split('\n').flatMap((line, i) => reads.some(read => read.test(line)) ? [`tests/${file}:${i + 1}`] : []);
+    return ['#race-halfway-card', '#game-toast .game-toast-pill'].flatMap(selector => {
+      const locator = String.raw`page\.locator\(['"]${selector.replaceAll('.', '\\.')}['"]\)`;
+      const names = [...source.matchAll(new RegExp(String.raw`(\w+)\s*=\s*(?:page\s*=>\s*)?${locator}`, 'g'))].map(([, name]) => name);
+      const reads = [new RegExp(String.raw`${locator}\s*\.(?!.*toBeHidden)`), ...names.map(name => new RegExp(
+        String.raw`expect\(${name}(?:\(page\))?\)\.(?!toBeHidden|toHaveCount\(0\b)|\b${name}(?:\(page\))?\.(?:evaluate|boundingBox|textContent|innerText|locator)\(`))];
+      return source.split('\n').flatMap((line, i) => reads.some(read => read.test(line)) ? [`tests/${file}:${i + 1}`] : []);
+    });
   });
-  assert.deepEqual(offenders, [], 'find, read and measure #race-halfway-card inside one page.waitForFunction');
+  assert.deepEqual(offenders, [], 'find, read and measure it inside one page.waitForFunction (.claude/rules/browser-test-stability.md)');
+});
+
+// Trap (2026-11-20, CI 44674764907): hazard-captures and track-themes end on page.reload(), so the test ended while
+// captureHooks' route.fetch() for the reload was still in flight; closing the context disposed the response and
+// `apiResponse.text: Response has been disposed` failed a passing test. Teardown unroutes with ignoreErrors first.
+test('a route handler that fetches cannot outlive its test (unrouteAll ignoreErrors)', () => {
+  const shared = readFileSync(new URL('helpers/test.js', import.meta.url), 'utf8');
+  const unroute = /await use\(context\);[^}]*\bunrouteAll\(\{ behavior: 'ignoreErrors' \}\)/;
+  assert.match(shared, unroute, 'the shared context fixture unroutes every page and the context after use');
+  const offenders = FILES.filter(file => file.endsWith('browser.spec.js')).filter(file => {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    return source.includes('route.fetch()') && !/import \{[^}]*\btest\b[^}]*\} from '\.\/helpers\//.test(source)
+      && !source.includes("unrouteAll({ behavior: 'ignoreErrors' })");
+  }).map(file => `tests/${file}`);
+  assert.deepEqual(offenders, [], "Take `test` from tests/helpers/test.js, or unrouteAll({ behavior: 'ignoreErrors' }) after each test");
 });
