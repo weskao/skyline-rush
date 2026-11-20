@@ -15,6 +15,10 @@ Write every assertion so that runner speed cannot change its outcome.
 
 Keep Playwright helper imports outside the source string served by a module mock. A test-only import in the served module can break application startup before the first assertion.
 
+A spec that fails to load reddens every shard, because CI plans shards from `playwright test --list`. Trap
+(2026-11-20, develop `a7a6afd1`): two merges both added `clickLobbyOption` to `result-cloud-browser.spec.js`
+and the duplicate import failed all 16 browser shards. Enforced by `tests/browser-specs-load.test.js` (`npm test`, pre-push).
+
 ## Freeze, then assert
 
 - **The race keeps driving while the test reads it.** A slow runner may already have passed
