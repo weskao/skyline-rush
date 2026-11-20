@@ -20,7 +20,7 @@
 | 母檔 | 圖案 | 遊戲用圖檔 |
 | --- | --- | --- |
 | `currency-master.webp` | 黃金疊幣，前方大幣及後方頂幣各有一個浮雕 ＄ | `collectible-ui/currency@3x.webp`（72 px）；`wave3-demo/raster/wallet-coin@3x.webp`（144 px） |
-| `clothing-master.webp` | 鈦銀衣架，帶深藍嵌邊與暖金倒角 | `collectible-ui/clothing@3x.webp` |
+| `clothing-master.webp` | 扣合中的金屬扣具，青綠與紫紅織帶配橘色扣心 | `collectible-ui/clothing@3x.webp` |
 | `inspect-master.webp` | 四角金屬取景框與正面車頭 | `collectible-ui/inspect@3x.webp` |
 | `paint-master.webp` | 鈷藍珠光、洋紅和金色三張烤漆色樣 | `collectible-ui/paint@3x.webp` |
 
