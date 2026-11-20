@@ -142,13 +142,13 @@ test('the tier arrives in the PlumeFrame and each tier is one row; no tier is th
 });
 
 /** A held sprint at top speed through the real createAeroVFX. */
-function held(player) {
+function held(player, studio = false) {
   const scene = new Scene(), vehicle = new Group();
   vehicle.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
   scene.add(vehicle);
   const vfx = createAeroVFX(scene, vehicle), race = createRace(), origin = new Vector3(), options = vfxSettings({ quality: 'high' });
   race.phase = 'racing'; Object.assign(race.player, { speed: 100 }, player);
-  for (let i = 0; i < 40; i++) vfx.update(race, 0.05, origin, options, false);
+  for (let i = 0; i < 40; i++) vfx.update(race, 0.05, origin, options, false, null, studio);
   return scene.getObjectByName('Cold gas nozzle 1').material.uniforms.tier.value.toArray();
 }
 
@@ -157,6 +157,12 @@ test('createAeroVFX tells the plume which tier the car is in: BOOST, NITRO, and 
   near(held({ miniBoost: 3 }), tierRow('boost'), 'a mini-boost is BOOST');
   near(held({ nitroTime: 30 }), tierRow('nitro'), 'NITRO');
   near(held({ nitroTime: 30, boosting: true }), tierRow('nitro-boost'), 'NITRO with BOOST held');
+});
+
+test('a showroom that drives a racing car (Garage Inspect) burns the driver\'s tier, the combined one included', () => {
+  near(held({ boosting: true }, true), tierRow('boost'), 'Inspect BOOST');
+  near(held({ nitroTime: 30 }, true), tierRow('nitro'), 'Inspect NITRO');
+  near(held({ nitroTime: 30, boosting: true }, true), tierRow('nitro-boost'), 'Inspect NITRO with BOOST held');
 });
 
 test('each tier is a visible step up: longer core, more tongues, longer flame, faster flow; the sheath is the combined look', () => {
