@@ -1,4 +1,5 @@
 import type { SkinCategory } from './garage-skin-catalog.ts';
+import type { AcquisitionItem } from './acquisition-reveal.ts';
 import type { DemoCurrency } from './wave3-experience-contract.ts';
 
 export const collectibleIconUrl = (name: string): string =>
@@ -12,3 +13,11 @@ export const skinCategoryIcon: Record<SkinCategory | 'all', string> = {
 export const currencyIcon: Record<DemoCurrency, string> = {
   points: 'price', coins: 'currency', diamonds: 'diamond',
 };
+
+export function acquisitionItemIcon(item: AcquisitionItem): string {
+  const { id, kind, scope } = item;
+  if (kind === 'currency' && scope === 'demo' && Object.hasOwn(currencyIcon, id)) {
+    return currencyIcon[id as DemoCurrency];
+  }
+  return kind;
+}

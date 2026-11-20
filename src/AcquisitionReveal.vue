@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import CollectibleIcon from './CollectibleIcon.vue';
+import { acquisitionItemIcon } from './collectible-icons.ts';
 import { computed, inject, onMounted, onUnmounted, shallowRef, ref, watchPostEffect } from 'vue';
 import { acquisitionReveal, type AcquisitionActionFor, type AcquisitionBatch, type AcquisitionItem } from './acquisition-reveal.ts';
 import { getLocale, onLocaleChange } from './i18n.ts';
@@ -186,7 +187,7 @@ function continueGame(): void {
             <div v-if="!car" class="acquisition-accents"></div>
             <img v-if="art && failedArt !== art" :src="art" class="acquisition-art" alt="" @error="failedArt = art ?? ''" />
             <div v-else class="acquisition-emblem">
-              <CollectibleIcon :name="item.kind" />
+              <CollectibleIcon :name="acquisitionItemIcon(item)" />
             </div>
             <div class="acquisition-scan"></div>
           </div>
@@ -202,7 +203,7 @@ function continueGame(): void {
             <button v-for="(reward, index) in active.items" :key="reward.kind + ':' + reward.id" type="button"
               :aria-pressed="index === selected" :aria-label="reward.name[locale]"
               :disabled="actionState === 'pending'" @click="selectReward(index)">
-              <CollectibleIcon :name="reward.kind" /><span>{{ reward.name[locale] }}</span>
+              <CollectibleIcon :name="acquisitionItemIcon(reward)" /><span>{{ reward.name[locale] }}</span>
             </button>
           </div>
           <div class="acquisition-controls">

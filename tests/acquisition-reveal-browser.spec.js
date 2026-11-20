@@ -30,6 +30,7 @@ test('a real finish reveals the new track and paint together before returning fo
   await expect(reveal.locator('.acquisition-art')).toHaveJSProperty('complete', true);
   const paint = reveal.getByRole('button', { name: 'Apply paint' });
   await expect(paint).toBeInViewport();
+  await expect(paint.locator('img[data-collectible-icon="paint"]')).toHaveJSProperty('naturalWidth', 72);
   await paint.tap();
   await expect(reveal.getByRole('button', { name: 'Paint applied' })).toBeDisabled();
   await expect.poll(() => page.evaluate(() => window.gameplay.race.phase)).toBe('finished');

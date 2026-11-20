@@ -171,7 +171,8 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
           :aria-label="title(item.art) + ' ' + (item.cadence === 'daily' ? label('Daily', '每日') : label('Weekly', '每週')) + ': ' + progressValue(item.id) + ' / ' + goalValue(item.id)" />
         <small class="period-status"><CollectibleIcon v-if="stateOf(item.id) === 'claimed'" name="check" />{{ statusName(item.id) }}</small>
         <small v-if="available" class="period-reward">
-          <span v-for="chip in missionReward(item.id)" :key="chip.currency" class="period-chip" :data-currency="chip.currency" :aria-label="'+' + chip.amount + ' ' + chip.name">
+          <span v-for="chip in missionReward(item.id)" :key="chip.currency" class="period-chip" :data-currency="chip.currency"
+            role="img" :aria-label="'+' + chip.amount + ' ' + chip.name">
             +{{ chip.amount }}<CollectibleIcon :name="chip.icon" />
           </span>
         </small>
