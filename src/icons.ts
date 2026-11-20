@@ -38,3 +38,8 @@ export const icons = {
 export const ICON_ATTRS: SVGAttributes = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.5', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' };
 const attrs = Object.entries(ICON_ATTRS).map(([name, value]) => `${name}="${value}"`).join(' ');
 export const icon = (name: keyof typeof icons): string => `<svg ${attrs}>${icons[name]}</svg>`;
+
+export const itemAttackPaths = {
+  emp: 'M26 7L14 26h9l-1 15 13-22h-9l1-12zM8 16l-4-3m36 22l4 3M8 33l-4 3m36-21l4-3',
+  freeze: 'M24 8v32M10 16l28 16M10 32l28-16M19 12l5 5 5-5M19 36l5-5 5 5M11 22l7-2-2-7M37 26l-7 2 2 7',
+} as const;

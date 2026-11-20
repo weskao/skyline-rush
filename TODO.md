@@ -1,3 +1,9 @@
+# 玩家減益中央提示
+
+- [x] 冰凍與電擊在比賽畫面中央各自顯示圖示、減益名稱和剩餘秒數。兩者並列時，50% 里程提示顯示在上方。
+- [x] `tests/item-ui.test.js` 先驗證中央狀態缺失的 RED，再驗證倒數、暫停、解除和對外施放。Playwright 的桌面、手機直向、手機橫向及摺疊視窗測試通過。TypeScript、Vue、JS 型別檢查與 production build 通過。已從實際遊戲擷取桌面及手機橫直向畫面。
+- [ ] 驗證功能分支 HEAD 的 GitHub quality-gate。
+
 # Alpine triangle budget after the motorsport rivals (2026-11-20)
 
 - [x] Root cause of the quality-gate failure in [run 44610480338](https://github.com/weskao/skyline-rush/actions/runs/44610480338): a per-object probe on Alpine at 1440×900 Medium measured the seven rivals at 6,474 triangles before 2f904b5f and 15,208 after it. World Tour scenery was unchanged at 34,284. Gated scenery went from 63,963 to 72,205, over the 66,490 limit.
