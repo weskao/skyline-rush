@@ -22,6 +22,21 @@ test('drawn triangles count what the camera draws: visible, on its layers, withi
   assert.equal(drawnTriangles(car, camera), 12 + 3 + 6 + 36);
 });
 
+test('drawn triangles skip meshes the renderer frustum-culls, so an off-screen rival is not subtracted', () => {
+  const camera = new THREE.PerspectiveCamera(), car = new THREE.Group();
+  const box = new THREE.BoxGeometry(); // 12 triangles
+  const ahead = new THREE.Mesh(box, new THREE.MeshBasicMaterial());
+  ahead.position.z = -10; // the default camera looks down -z
+  const behind = new THREE.Mesh(box, new THREE.MeshBasicMaterial());
+  behind.position.z = 10;
+  const unculled = new THREE.Mesh(box, new THREE.MeshBasicMaterial());
+  unculled.position.z = 10;
+  unculled.frustumCulled = false; // three.js draws it wherever it is
+  car.add(ahead, behind, unculled);
+  car.updateMatrixWorld(true);
+  assert.equal(drawnTriangles(car, camera), 12 + 12);
+});
+
 test('frame stats report nearest-rank p50 / p95 and the average frame rate', () => {
   const samples = [...Array(95).fill(16), ...Array(5).fill(40)];
   assert.deepEqual(frameStats(samples), { count: 100, p50: 16, p95: 16, fps: 58.1 });

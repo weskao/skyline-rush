@@ -1,3 +1,9 @@
+# Alpine triangle budget after the motorsport rivals (2026-11-20)
+
+- [x] Root cause of the quality-gate failure in [run 44610480338](https://github.com/weskao/skyline-rush/actions/runs/44610480338): a per-object probe on Alpine at 1440×900 Medium measured the seven rivals at 6,474 triangles before 2f904b5f and 15,208 after it. World Tour scenery was unchanged at 34,284. Gated scenery went from 63,963 to 72,205, over the 66,490 limit.
+- [x] The perf overlay's `carTriangles` now counts the player and every rival. `drawnTriangles` skips meshes the renderer frustum-culls (RED → GREEN in `tests/perf.test.js`). Locally Alpine reads 81,009 total, 21,896 cars and 59,113 scenery. The per-tier rival budgets in `tests/rival-motorsport-bodies.test.js` still judge the rival bodies.
+- [ ] Check the quality-gate on the pushed HEAD.
+
 # CI browser regression repair (2026-11-20)
 
 - [x] Trace the failures in [the previous full CI run](https://github.com/weskao/skyline-rush/actions/runs/44527278699). Align browser assertions with the current catalog, controls, graphics tiers and result UI. The preview now disposes only its own copies of car materials. Locally the focused module-size and browser-guard checks passed.

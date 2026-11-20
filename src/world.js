@@ -855,7 +855,7 @@ export function createWorld(canvas) {
         void capturePhoto(renderer).then(request.resolve, request.reject);
       }
     },
-    inspectRenderLoad() { return {drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,carTriangles:drawnTriangles(player,camera),textures:renderer.info.memory.textures,geometries:renderer.info.memory.geometries}; },
+    inspectRenderLoad() { return {drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,carTriangles:flightVehicles.reduce((sum,car)=>sum+drawnTriangles(car,camera),0),textures:renderer.info.memory.textures,geometries:renderer.info.memory.geometries}; },
     inspectPrograms() { return renderer.info.programs.length; }, // QA only: shader programs compiled so far
     inspectShowcase() {
       camera.updateMatrixWorld(true);

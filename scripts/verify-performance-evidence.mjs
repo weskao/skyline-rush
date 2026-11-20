@@ -35,7 +35,7 @@ const lines = [
   '',
   'Baseline: Phase 5 pre-pooling CI [40803061305](https://github.com/weskao/skyline-rush/actions/runs/40803061305). Only 1440×900 Medium World Tour has a reference.',
   '',
-  '| Track | Viewport | DPR | Draw Calls | Pre-pool draws | Change | Triangles | Player car | FPS | Frame p50 / p95 |',
+  '| Track | Viewport | DPR | Draw Calls | Pre-pool draws | Change | Triangles | Cars | FPS | Frame p50 / p95 |',
   '|---|---|---:|---:|---:|---:|---:|---:|---:|---:|',
 ];
 for (const record of records.sort((a,b) => a.track.localeCompare(b.track)
@@ -60,7 +60,8 @@ for (const record of records.sort((a,b) => a.track.localeCompare(b.track)
     if (record.drawCalls > baseline.drawCalls * 1.1) {
       problems.push(`${record.track}: ${record.drawCalls} draws exceeds pre-pool budget ${baseline.drawCalls} (+10% tolerance)`);
     }
-    // The baseline predates the GLB race car (ba867d53): it budgets scenery, so the player car is not counted.
+    // The baseline predates the GLB race car (ba867d53) and the motorsport rivals (2f904b5f): it budgets scenery,
+    // so every drawn car (player and rivals) is not counted; rival bodies have their own per-car budget.
     const scenery = record.triangles - record.carTriangles;
     if (scenery > baseline.triangles * 1.65) {
       problems.push(`${record.track}: ${scenery} scenery triangles exceeds pre-pool budget ${baseline.triangles} (+65% tolerance)`);
