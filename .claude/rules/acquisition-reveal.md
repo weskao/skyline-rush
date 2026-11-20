@@ -59,3 +59,12 @@ Guards: `tests/acquisition-reveal.test.js` (queue, dedupe, item builders),
 `tests/race-results.test.js`, `tests/acquisition-reveal-browser.spec.js` (real dialog, both
 orientations). A new source adds a builder + dedupe-id unit test; a new kind extends the browser
 spec.
+
+## Applying a reward
+
+- The reveal is optional. Equipping or using something always requires the player's explicit action.
+  Use the existing equipment, appearance or navigation service. The shared dialog owns the action
+  label, pending and success states, accessibility and confirmation sound.
+- Cars and paints use the Garage action resolver. Other actionable rewards pass `action` with their
+  existing handler. Demo Store actions must keep the receipt's operation scope through equip, even
+  when the dialog was queued. Credited currencies and commemorative rewards only need Continue.

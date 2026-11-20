@@ -1,3 +1,9 @@
+# 獲得彈窗立即套用（2026-11-21）
+
+- [x] RED：商城成功兌換和賽後賽道解鎖的既有批次缺少可執行操作。
+- [x] GREEN：共用彈窗串接車庫換車／車漆、商城試裝與賽道準備頁。單元測試驗證裝備、餘額及重設後的舊收據失效。
+- [ ] 驗證桌面及手機橫直向實際畫面，並檢查此分支的 GitHub CI。
+
 # Alpine triangle budget after the motorsport rivals (2026-11-20)
 
 - [x] Root cause of the quality-gate failure in [run 44610480338](https://github.com/weskao/skyline-rush/actions/runs/44610480338): a per-object probe on Alpine at 1440×900 Medium measured the seven rivals at 6,474 triangles before 2f904b5f and 15,208 after it. World Tour scenery was unchanged at 34,284. Gated scenery went from 63,963 to 72,205, over the 66,490 limit.

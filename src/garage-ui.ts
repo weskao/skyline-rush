@@ -1,5 +1,5 @@
 import { PAINTS, type PaintPreset } from './appearance.ts';
-import { defaultPaint, equippedCar, loadCarPaint, reloadCar, validateEquippedCar } from './car-catalog.ts';
+import { defaultPaint, equippedCar, isCar, loadCarPaint, reloadCar, validateEquippedCar } from './car-catalog.ts';
 import { setWave3DemoAccount } from '#wave3-demo-race';
 import { SKIN_CATEGORIES } from './garage-skin-catalog.ts';
 import { currentGarageSkins, selectedGarageSkins, cancelGarageSkinPreview, subscribeGarageSkins, setGarageSkinAccount } from '#garage-skin-runtime';
@@ -13,6 +13,7 @@ import type { GarageCamera } from './garage-camera.ts';
 import type { GarageLighting } from './garage-stage.ts';
 import { t } from './i18n.ts';
 import { setupGarageCarActions } from './garage-car-actions.ts';
+import type { AcquisitionActionFor } from './acquisition-reveal.ts';
 
 type Paint = PaintPreset;
 type PaintCatalog = Record<string, { stars: number }>;
@@ -240,10 +241,12 @@ export function setupGarageUI({
     if (next) { section = next; followSection(); }
   });
 
-  function equipPaint(id: string): void {
+  function equipPaint(id: string): boolean {
+    if (!owned().includes(id)) return false;
     previousPaint = getEquippedPaint() === id ? previousPaint : getEquippedPaint();
     setEquippedPaint(id);
     previewPaint(id);
+    return true;
   }
   $('#garage-paint-undo').addEventListener('click', () => {
     const restore = previousPaint;
@@ -257,16 +260,12 @@ export function setupGarageUI({
   $('#garage-restore-default').addEventListener('click', () => {
     // Restore is a saved equip action, not a temporary preview; each car's default finish is always owned.
     const standard = defaultPaint(equippedCar());
-    if (!owned().includes(standard)) return;
     const changed = getEquippedPaint() !== standard;
-    equipPaint(standard);
-    if (changed) cue?.('equip-confirmed');
+    if (equipPaint(standard) && changed) cue?.('equip-confirmed');
   });
   $('#garage-equip').addEventListener('click', () => {
     // Guard the data boundary, not only the disabled UI: a locked paint is never persisted.
-    if (!garagePresentation(previewing, getEquippedPaint(), getStars(), PAINTS, owned()).canEquip) return;
-    equipPaint(previewing);
-    cue?.('equip-confirmed');
+    if (previewing !== getEquippedPaint() && equipPaint(previewing)) cue?.('equip-confirmed');
   });
   $('#garage-screen .paint-options').addEventListener('click', event => {
     const id = (event.target as Element).closest<HTMLElement>('[data-paint]')?.dataset.paint;
@@ -275,12 +274,12 @@ export function setupGarageUI({
   const carActions = setupGarageCarActions(garageScreen, {
     getStars, syncProgress,
     preview: id => { getWorld()?.previewAppearance(PAINTS[loadCarPaint(id, owned())]!); inspectStudioAfterFrame(); },
-    selected: (changed, wasPreview) => {
+    selected: (changed, wasPreview, playSound) => {
       if (changed) setEquippedPaint(getEquippedPaint()); // carry the equipped finish into the new car
       if (wasPreview) previewPaint(previewing);
       showGarage();
       inspectStudioAfterFrame();
-      cue?.(changed ? 'equip-confirmed' : 'ui');
+      if (playSound) cue?.(changed ? 'equip-confirmed' : 'ui');
     },
     onTrialExpired: () => { if (garageScreen.open) { applyCar(() => validateEquippedCar(getStars())); showGarage(); } },
   });
@@ -365,5 +364,14 @@ export function setupGarageUI({
     camera: () => camera, setCamera, rotate: rotateCamera, zoom: zoomCamera, clearControls,
   });
   showGarage();
-  return { showGarage, adoptCar, syncSkins, previewPaint, startRace };
+  const acquisitionGarage: AcquisitionActionFor = item => {
+    const { id } = item;
+    if (item.kind === 'car' && isCar(id)) {
+      return { kind: 'drive', apply: () => carActions.equip(id, false), isApplied: () => equippedCar() === id };
+    }
+    if (item.kind === 'paint' && Object.hasOwn(PAINTS, id)) {
+      return { kind: 'paint', apply: () => equipPaint(id), isApplied: () => getEquippedPaint() === id };
+    }
+  };
+  return { showGarage, adoptCar, syncSkins, previewPaint, startRace, acquisitionGarage };
 }

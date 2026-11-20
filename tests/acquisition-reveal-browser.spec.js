@@ -28,11 +28,34 @@ test('a real finish reveals the new track and paint together before returning fo
   await reveal.getByRole('button', { name: 'Aurora', exact: true }).click();
   await expect(reveal.getByRole('heading', { name: 'Aurora' })).toBeVisible();
   await expect(reveal.locator('.acquisition-art')).toHaveJSProperty('complete', true);
+  const paint = reveal.getByRole('button', { name: 'Apply paint' });
+  await expect(paint).toBeInViewport();
+  await paint.tap();
+  await expect(reveal.getByRole('button', { name: 'Paint applied' })).toBeDisabled();
+  await expect.poll(() => page.evaluate(() => window.gameplay.race.phase)).toBe('finished');
   await page.keyboard.press('Escape');
   await expect(reveal).toBeHidden();
   await expect(page.locator('#next-button')).toBeFocused();
   await page.locator('#next-button').click();
   await expect(page.locator('#race-overlay')).toBeHidden();
+  await expect.poll(() => page.evaluate(async () => {
+    const { loadCarPaint, equippedCar } = await import('/src/car-catalog.ts');
+    return loadCarPaint(equippedCar(), ['aurora']);
+  })).toBe('aurora');
+});
+
+test('selecting a newly earned track from the reveal returns to the lobby with that track selected', async ({ gameplayPage: page }) => {
+  await page.setViewportSize({ width: 743, height: 340 });
+  await finishCoast(page);
+  const reveal = page.locator('#acquisition-reveal');
+  const go = reveal.getByRole('button', { name: 'Go to track' });
+  await expect(go).toBeInViewport();
+  await go.tap();
+  await expect(reveal).toBeHidden();
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
+  await expect(page.locator('#intro')).toHaveAttribute('data-lobby-track', 'neon');
+  await expect(page.locator('#lobby-tracks-toggle')).toBeFocused();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('skyline-rush-last-track'))).toBe('neon');
 });
 
 test('a mission claim and an equipment redemption reveal their receipts over Garage', async ({ gameplayPage: page }) => {
@@ -55,6 +78,7 @@ test('a mission claim and an equipment redemption reveal their receipts over Gar
   await expect(reveal.getByRole('heading')).toHaveText(/\+40 Demo coins/i);
   const proceed = reveal.getByRole('button', { name: 'Continue' });
   await expect(proceed).toBeInViewport();
+  await expect(reveal.getByRole('button', { name: /Equip|Apply|Use now/ })).toHaveCount(0);
   await expect(reveal.locator('.acquisition-stage')).toBeVisible();
   expect(await reveal.evaluate(dialog => dialog.getAnimations({ subtree: true }).length)).toBe(0);
   await proceed.tap();
@@ -68,6 +92,11 @@ test('a mission claim and an equipment redemption reveal their receipts over Gar
   await store.getByRole('button', { name: 'Confirm demo redeem' }).tap();
   await expect(reveal.getByRole('heading', { name: 'Ion thruster' })).toBeVisible();
   await expect(reveal.locator('.acquisition-art')).toHaveJSProperty('naturalWidth', 288);
+  const equip = reveal.getByRole('button', { name: 'Equip demo item' });
+  await expect(equip).toBeInViewport();
+  await equip.tap();
+  await expect(reveal.getByRole('button', { name: 'Demo item equipped' })).toBeDisabled();
+  await expect(garage.locator('#garage-preview')).toHaveAttribute('data-skin-equipped-thruster', 'thruster-ion');
   await page.evaluate(() => history.back());
   await expect(reveal).toBeHidden();
   await expect(store).toBeVisible();
@@ -134,13 +163,39 @@ test('earning the 18th career star reveals Vantaire GT once and makes it selecta
   const reveal = page.locator('#acquisition-reveal');
   await expect(reveal.getByRole('heading', { name: 'Vantaire GT' })).toBeVisible();
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-stars')).coast)).toBe(3);
+  await reveal.getByRole('button', { name: 'Drive this car' }).click();
+  await expect(reveal.getByRole('button', { name: 'Car selected' })).toBeDisabled();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-car')))).toBe('crimson-gt');
   await reveal.getByRole('button', { name: 'Continue' }).click();
   await page.locator('#choose-track').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
   await expect(reveal).toBeHidden();
   await page.locator('#garage-button').click();
   await expect(gt).toHaveAttribute('data-car-access', 'owned');
-  await gt.click();
   await expect(gt).toHaveAttribute('aria-pressed', 'true');
   await expect(reveal).toBeHidden();
+});
+
+test('an apparel action can retry a failed apply and plays a single confirmation when it succeeds', async ({ page, gameplayURL }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(gameplayURL + 'tests/fixtures/acquisition-reveal.html?zh');
+  await page.evaluate(async () => {
+    const { presentAcquisition } = await import('/src/acquisition-reveal.ts');
+    let attempts = 0;
+    presentAcquisition({ id: 'apparel', items: [{
+      id: 'helmet', kind: 'clothing', status: 'earned', name: { en: 'Helmet', 'zh-TW': '安全帽' },
+      action: { kind: 'wear', apply: async () => ++attempts > 1 },
+    }] });
+  });
+  const reveal = page.locator('#acquisition-reveal');
+  const wear = reveal.getByRole('button', { name: '立即穿戴' });
+  await wear.tap();
+  await expect(reveal.getByRole('status')).toHaveText('目前無法套用此獎勵。');
+  await wear.tap();
+  const equipped = reveal.getByRole('button', { name: '已穿戴' });
+  await expect(equipped).toBeDisabled();
+  await equipped.press('Enter');
+  await expect.poll(() => page.evaluate(() => window.revealCues.map(([name]) => name))).toEqual([
+    'acquisition-clothing', 'action-unavailable', 'equip-confirmed',
+  ]);
 });

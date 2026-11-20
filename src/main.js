@@ -65,7 +65,7 @@ startup.step(1);
 // mount() renders synchronously, so the DOM queries below find the App.vue markup.
 const sound = startup.sound;
 sound.setGapWarning(race => gapChargeWarning(race)?.from ?? null);
-createApp(App).provide('game-audio-cue', sound.cue).mount('#app');
+createApp(App).provide('game-audio-cue', sound.cue).provide('acquisition-garage', () => acquisitionGarage).mount('#app');
 // Saved choice > system language > English; only a click on the switch persists (saveLocale below).
 setLocale(resolveInitialLocale());
 applyI18n(); applyDocumentLocale(); // before customSelect, so the drawn selects copy translated text
@@ -252,7 +252,7 @@ const historyDialog = setupHistoryDialog({
   calm: calmMotion,
   motionOptions,
 });
-const { showGarage, adoptCar, syncSkins, previewPaint, startRace } = setupGarageUI({
+const { showGarage, adoptCar, syncSkins, previewPaint, startRace, acquisitionGarage } = setupGarageUI({
   getWorld: () => world, canOpen: () => race.phase === 'ready',
   clearControls: () => controls.clear(),
   getEquippedPaint: () => equippedPaint,
@@ -260,14 +260,14 @@ const { showGarage, adoptCar, syncSkins, previewPaint, startRace } = setupGarage
   getStars: () => starTotal(progress.stars), availablePaints, subscribeAccount: cloud.subscribeAccount, cue: sound.cue,
   startSimulation, syncProgress: cloud.syncProgress, previewShowcaseView: vfx.previewView,
 });
-function chooseTrack() {
+function chooseTrack(/** @type {string | undefined} */ trackId = undefined) {
   if (tutorial) { endTutorial(false); return; }
-  controls.clear(); sprintSeries = null; cup = null; stunt = null; daily = null; goUntil = 0; raceSelect.restoreLastTrack();
+  controls.clear(); sprintSeries = null; cup = null; stunt = null; daily = null; goUntil = 0; raceSelect.restoreLastTrack(trackId);
   hud.resetMemory();
   showTracks(); phaseUI(); previousPhase = race.phase;
   focusLobbyTrack();
 }
-$('#choose-track').addEventListener('click', chooseTrack);
+$('#choose-track').addEventListener('click', () => chooseTrack());
 
 const { showSwipeHint, cancelSwipe } = setupTrackSwipeUI({
   getRace: () => race,
@@ -499,7 +499,7 @@ function updateUI(now, input) {
       ui['race-overlay'].hidden = false;
       enter($('.overlay-content'), 'translateX(48px)', 'slow');
       overlayActions.focus();
-      void presentRaceAcquisitions(race, lastResult.settled, sound.cue, calmMotion());
+      void presentRaceAcquisitions(race, lastResult.settled, sound.cue, calmMotion(), chooseTrack);
     }
     animateResultCounts(resultCounts, presentationState.count);
   }
