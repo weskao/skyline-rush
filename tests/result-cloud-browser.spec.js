@@ -3,7 +3,6 @@ import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { selectLocale } from './helpers/locale-browser.js';
-import { clickLobbyOption } from './helpers/home-lobby.js';
 
 // The results panel's cloud line: syncing → saved / not synced while signed in; explanation + sign-in while signed
 // out, then the sign-in outcome inline. Firebase is replaced by a scripted module, so nothing reaches production.
