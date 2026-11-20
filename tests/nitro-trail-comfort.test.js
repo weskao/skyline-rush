@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import { Group, FrontSide, Vector3 } from 'three';
 import { createNitroTrail } from '../src/garage-nitro-trail.js';
 import { REAR_PORTS } from '../src/aero-vfx.js';
-import { FLAME_CYCLES } from '../src/nitro-flame-texture.ts';
+import { FLAME_CYCLES, NITRO_FLAME_PATH } from '../src/nitro-flame-texture.ts';
+import { readFileSync } from 'node:fs';
+import { decodePngRgba } from './helpers/png-rgba.js';
 import { MAX_SPEED, NITRO_CAP_BONUS } from '../src/drive-rules.ts';
 import { VFX_RANGES, sprintFovOffset } from '../src/vfx-settings.ts';
 import { RACE_CAMERA, rigBack, rigLook, rigHeight, rigFov } from '../src/race-camera.ts';
@@ -86,6 +88,35 @@ test('the flame texture scrolls past one pixel no faster than 3 Hz in any channe
     assert.ok(tiles * cycles <= 3, `${sample} changes ${(tiles * cycles).toFixed(2)} times a second at one pixel`);
   }
   for (const name of ['halo', 'pool']) assert.doesNotMatch(materials[name].fragmentShader, /texture2D|sampler2D/, `${name}: wide overdraw takes no texture fetch`);
+});
+
+// FLAME_CYCLES is a promise about the image; this reads the shipped image itself. Per channel, the dark and light levels
+// the shader tells apart: R through `smoothstep(.25,.75,…)` (lick), G as mean ± one deviation (its edge roughening),
+// B through `smoothstep(.52,.85,…)` (hair). A swing from below the dark level to above the light level and back is one
+// cycle; the busiest column of the tile counts, since every column is some pixel's whole history.
+const LEVELS = { r: [0, .25, .75], g: [1, .357, .643], b: [2, .52, .85] };
+function busiestColumn({ width, height, pixels }, [channel, dark, light]) {
+  let most = 0;
+  for (let x = 0; x < width; x++) {
+    let state = 0, flips = 0;
+    for (let k = 0; k < 2 * height; k++) { // twice round the wrap, counting the second lap only
+      const v = pixels[((k % height) * width + x) * 4 + channel] / 255, now = v > light ? 1 : v < dark ? -1 : 0;
+      if (now && now !== state) { if (state && k >= height) flips++; state = now; }
+    }
+    most = Math.max(most, flips / 2);
+  }
+  return most;
+}
+
+test('the real flame image, scrolled as the shader scrolls it, changes one pixel no faster than 3 Hz', () => {
+  const image = decodePngRgba(readFileSync(new URL(`../public/${NITRO_FLAME_PATH}`, import.meta.url)), { allowRgb: true });
+  for (const [sample, coords, channels] of materials.streaks.fragmentShader.matchAll(SAMPLE)) {
+    const tiles = Number(coords.split(',')[1].match(/time\*(\d*\.?\d+)/)?.[1] ?? 0);
+    for (const channel of channels) {
+      const cycles = busiestColumn(image, LEVELS[channel]);
+      assert.ok(tiles * cycles <= 3, `${sample}.${channel}: ${cycles} cycles a tile x ${tiles} tiles/s = ${(tiles * cycles).toFixed(2)} Hz`);
+    }
+  }
 });
 
 // Same projection as `pixels()` in tests/sprint-plume.test.js (not exported there): CSS px one metre covers `behind` m
