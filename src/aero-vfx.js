@@ -287,7 +287,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       jet.power = pulse < 0 ? strength : THREE.MathUtils.lerp(SHOWROOM.idlePower, 1, pulse);
       jet.reach = settings.exhaustLength * look.stretch * (pulse < 0 ? (strength + (calm ? 0 : chainMotion)) * (0.65 + car.speed / 200)
         : THREE.MathUtils.lerp(SHOWROOM.idle, 1, pulse) * (0.65 + SHOWROOM.speed / 200));
-      jet.brightness = Math.min(settings.coreBrightness, calm ? (jet.nitroMix > 0 ? 0.65 : 0.9) : 3);
+      jet.brightness = Math.min(settings.coreBrightness, calm ? (jet.nitroMix > 0 ? 0.65 : 0.9) : 3) * (nitroTrail.streaks.visible ? 1 - 0.8 * Math.min(1, jet.nitroMix) : 1); // under a trail skin's flame the cone stays faint: its flat fill hid the tongues
       jet.diamonds = settings.machDiamonds; jet.extreme = settings.preset === 'extreme' ? 1 : 0;
       jet.quality = quality; jet.calm = calm; jet.showroom = studioDemo; jet.racing = active; jet.grounded = grounded;
       plume.update(jet);
