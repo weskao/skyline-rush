@@ -60,10 +60,10 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
       },
       {
         id: 'rival-items', kind: 'new', image: null,
-        title: { en: 'Rivals grab Freeze and EMP too', 'zh-TW': '對手也會搶冰凍與 EMP' },
+        title: { en: 'Rivals fight back with Freeze and EMP', 'zh-TW': '對手也會用冰凍與 EMP' },
         description: {
-          en: 'Rivals can now pick up Freeze and EMP and slow you down with them. Hit rivals frost over or short out with vivid new effects.',
-          'zh-TW': '對手現在也會撿冰凍與 EMP 來拖慢你；被擊中的對手會出現更鮮明的結冰與電擊特效。'
+          en: 'Rivals now pick up Freeze and EMP and use them on you. Hit rivals frost over or spark out.',
+          'zh-TW': '對手現在會撿冰凍與 EMP 來攻擊你；被擊中的對手會結冰或冒出電弧。'
         }
       },
       {
@@ -86,10 +86,10 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
       },
       {
         id: 'lobby-refresh', kind: 'improvement', image: { en: 'whats-new/lobby/track-rail.en.webp', 'zh-TW': 'whats-new/lobby/track-rail.zh-TW.webp' },
-        title: { en: 'A fresher lobby, Garage and podium', 'zh-TW': '大廳、車庫與頒獎台全新風貌' },
+        title: { en: 'A fresh look for lobby, Garage and podium', 'zh-TW': '大廳、車庫與頒獎台煥然一新' },
         description: {
-          en: 'New artwork across the race lobby, Garage and podium, a tidier track rail, and one Settings page for your race options.',
-          'zh-TW': '賽事大廳、車庫與頒獎台換上新美術，賽道列更整齊，賽事選項集中在同一個設定頁。'
+          en: 'New artwork across the race lobby, Garage and podium, easier track browsing, and all race options in one Settings page.',
+          'zh-TW': '賽事大廳、車庫與頒獎台換上新美術，選賽道更順手，賽事選項集中在同一個設定頁。'
         }
       },
       {
@@ -118,10 +118,10 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
       },
       {
         id: 'drift-brake', kind: 'improvement', image: null,
-        title: { en: 'Gentler braking out of drifts', 'zh-TW': '漂移煞車更溫和' },
+        title: { en: 'Smoother drift braking', 'zh-TW': '漂移煞車更順' },
         description: {
-          en: 'Braking mid-drift now eases you out of the slide. On phones, slide the pad to brake, and your steering thumbs no longer clash.',
-          'zh-TW': '漂移中煞車會平順收尾；手機改用滑動煞車，不易誤觸，左右轉向的拇指也不再互相干擾。'
+          en: 'Braking mid-drift now eases you out of the slide, and phone braking is more deliberate, so your steering thumbs no longer clash.',
+          'zh-TW': '漂移中煞車會平順收尾；手機煞車更不易誤觸，也不再干擾轉向拇指。'
         }
       },
       {
