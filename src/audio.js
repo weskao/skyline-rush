@@ -1,5 +1,6 @@
 import { acquisitionAudioBuffer } from './acquisition-audio.ts';
 import { createLoopingNoiseGain } from './audio-noise.ts';
+import { createAudioContextHealth } from './audio-context-health.ts';
 import { FEEDBACK_SOUNDS, ITEM_HIT_TEXTURES, STINGERS } from './feedback-sounds.ts';
 import { musicForMode } from './mode-audio.ts'; import { driftTier } from './drive-rules.ts';
 import { createRaceAudioEvents } from './race-audio-events.ts';
@@ -8,7 +9,7 @@ import { TRACKS, LOOP_STEPS, sprintFactor, pitch } from './music-tracks.ts';
 /** @param {(race: any) => number | null} gapWarning */
 export function createSound(gapWarning = () => null) {
   let context, oscillator, gain, filter, master, noiseBuffer, thrustGain, windGain, skidGain;
-  let music, warm, hats, snares, song = null, step = 0, nextStep = 0, madeAt = -Infinity;
+  let music, warm, hats, snares, song = null, step = 0, nextStep = 0;
   let opening = false;
   let enabled = false, musicOn = false, hidden = false, current = null, resumedAt = -Infinity;
   // Slider levels map to gain on a squared curve so the lower half of the slider stays audibly useful.
@@ -17,6 +18,7 @@ export function createSound(gapWarning = () => null) {
   const acquisitionVoices = new Map();
   const acquisitionBuffers = new Map();
   const notes = new Map(); // queued music sources → start time, so a song change or mute can drop the ones not yet heard
+  const contextHealth = createAudioContextHealth();
   const ignore = () => {};
   // Loading stalls the main thread (shader warm-up ≈ 0.6 s desktop, 1.5 s at 6× CPU) but not the audio thread, so the
   // intro is queued this far ahead before the 3D world exists; update() then continues from nextStep.
@@ -165,7 +167,7 @@ export function createSound(gapWarning = () => null) {
       acquisitionDuck = false;
       return;
     }
-    if (!enabled || hidden || !context || context.state !== 'running') return;
+    if (!enabled || hidden || !contextHealth.isRunning(context)) return;
     const acquisition = name.startsWith('acquisition-');
     const carPremiere = name === 'acquisition-car' || name.startsWith('acquisition-car-');
     const notes = FEEDBACK_SOUNDS[name.startsWith('acquisition-equipment-') ? 'acquisition-equipment' : name];
@@ -263,19 +265,18 @@ export function createSound(gapWarning = () => null) {
   }
   function open() {
     const tap = navigator.userActivation?.isActive ?? true;
-    // iOS WebKit can keep a context made at page load, or one interrupted in the background, suspended for good; a tap rebuilds it so it starts with the gesture.
-    if (context && tap && context.state !== 'running' && performance.now() - madeAt > 1000) {
+    if (context && tap && !pageHidden() && contextHealth.canRebuild(context)) {
       silenceCues();
       context.close().catch(() => {});
       context = null;
     }
     if (!context) {
-      madeAt = tap ? performance.now() : -Infinity;
       nextStep = 0;
       notes.clear(); // the old context's sources never end
       // iOS mutes web audio while the silent switch is on unless the page asks for media playback.
       try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { /* Keep the browser's default session. */ }
       context = new AudioContext();
+      contextHealth.reset(context, tap);
       oscillator = context.createOscillator();
       filter = context.createBiquadFilter();
       gain = context.createGain();
@@ -351,12 +352,12 @@ export function createSound(gapWarning = () => null) {
       if (context && musicOn) { cutMusic(true); song = null; prelude(); }
     },
     refreshOpeningMusic() {
-      if (opening && !hidden && context?.state === 'running') prelude();
+      if (opening && !hidden && contextHealth.isRunning(context)) prelude();
     },
     setEnabled,
     setMusic,
     setHidden,
-    running: () => context?.state === 'running',
+    running: () => contextHealth.isRunning(context),
     diagnostics: () => ({ state: context?.state ?? 'none', hidden, documentHidden: pageHidden(), musicOn, currentTime: context?.currentTime ?? null }),
     update(race, halfwayStarted = false, waitingForScenery = false) {
       const car = race.player;
@@ -366,7 +367,7 @@ export function createSound(gapWarning = () => null) {
         const time = performance.now();
         if (time - resumedAt >= 1000) { resumedAt = time; context.resume().catch(ignore); }
       }
-      const audible = enabled && !hidden && context?.state === 'running';
+      const audible = !hidden && contextHealth.isRunning(context) && enabled;
       const { silence, sounds, active, boosting } = raceEvents.update(race, audible,
         race.phase === 'racing' ? gapWarning(race) : null, halfwayStarted, waitingForScenery);
       if (silence) silenceCues();

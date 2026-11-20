@@ -1,6 +1,7 @@
 ---
 paths:
   - "src/audio.js"
+  - "src/audio-context-health.ts"
   - "src/audio-ui.ts"
   - "src/audio-settings.ts"
   - "src/user-activation.ts"
@@ -27,6 +28,10 @@ separate causes, each now removed in `src/audio.js` / `src/audio-ui.ts`:
   is on, the page is visible, the context is not running and the page has had a gesture
   (`navigator.userActivation.hasBeenActive`, so no pre-gesture console warnings). Per-frame: no
   allocations, no promises awaited.
+- **A system interruption can leave a frozen clock with state `running`.** Sample
+  `AudioContext.currentTime` during visible frames and check it on gestures. If it stops advancing,
+  reuse the gesture-only context rebuild for both audio channels. Keep the current race song, mixer
+  settings and 1 s rebuild guard. Guards: `tests/audio.test.js`, `tests/music-gesture-browser.spec.js`.
 - **Auto-unlock wrote storage.** `unlockAudio` re-applied the saved choice with `setAudio(..., false)`;
   only a player's toggle or slider release saves. An engine that failed to start must never turn the
   saved setting off for later visits. Guard: `tests/audio-ui.test.js`.

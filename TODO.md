@@ -1,3 +1,9 @@
+# 手機通知中斷後恢復比賽音訊
+
+- [x] RED → GREEN：重現音訊時鐘停住但狀態仍為 `running`，驗證已中斷的音訊可在同場比賽恢復配樂與音效，並保留音量。
+- [ ] 實機驗收：手機在比賽中出現系統鬧鐘或通知，關閉後觸碰遊戲，原賽道配樂與音效都能在同場比賽恢復。涵蓋手機橫向與直向。
+- [ ] 驗證修正分支目前提交的 GitHub CI。
+
 # Garage showcase camera selection (2026-11-20)
 
 - [x] RED → GREEN: DOM integration reproduced Paints changing `right` to `left` and Effects changing `right` to `rear`. Chromium reproduced the Paints failure in the running game. All three showcase Playwright cases now pass at 1440×900, 390×844 and 844×390, including category and preview actions, the inspect-mode round trip, and both arrows saving the new value. Desktop screenshots of Paints and Effects showed the same Right label, with zero page errors.

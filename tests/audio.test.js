@@ -528,10 +528,49 @@ test('opening audio trusts the live page visibility over a stale hidden flag', t
   sound.setHidden(true);
   assert.equal(sound.running(), false);
   document.hidden = false; // the page came back without a visibilitychange event
-  for (let tap = 0; tap < 4; tap++) { now += 1300; sound.setMusic(true); sound.setEnabled(true); }
+  for (let tap = 0; tap < 4; tap++) {
+    now += 1300;
+    const context = made.at(-1);
+    if (context.state === 'running') context.currentTime += 1.3;
+    sound.setMusic(true);
+    sound.setEnabled(true);
+  }
   assert.equal(sound.running(), true, 'a tap resumes audio instead of re-suspending it');
   assert.ok(made.length <= 2, `taps do not keep rebuilding contexts (${made.length} made)`);
 });
+
+for (const state of ['running', 'interrupted']) {
+  test(`a tap restores both race audio channels when the context is stuck as ${state}`, t => {
+    let now = 0;
+    t.mock.method(performance, 'now', () => now);
+    const { nodes, made, sound } = installTracked(t);
+    const race = createRace('spiral');
+    race.phase = 'racing';
+    sound.setMusic(true, .5);
+    sound.setEnabled(true, .5);
+    sound.update(race);
+    now += 5000;
+    made[0].currentTime = 5;
+    sound.update(race);
+    assert.equal(sound.running(), true, 'a moving clock remains healthy after a long frame');
+
+    made[0].state = state;
+    now += 1000;
+    assert.equal(sound.running(), false, 'a visible but stalled context needs a gesture to recover');
+    const start = nodes.length;
+    sound.setMusic(true, .5);
+    sound.setEnabled(true, .5);
+    sound.update(race);
+    sound.cue('pickup');
+    const fresh = nodes.slice(start);
+    assert.equal(made.length, 2, 'the same tap replaces the interrupted context once');
+    assert.ok(musicNotes(fresh).length > 0, 'the current race song schedules on the replacement');
+    assert.equal(musicBus(fresh).gain.value, .3125);
+    assert.ok(fresh.some(node => node.kind === 'oscillator' && node.frequency.value === 2093), 'new game effects play too');
+    assert.equal(fresh.find(node => node.kind === 'gain' && node.destination?.kind === 'compressor').gain.value, .4);
+    assert.equal(race.phase, 'racing');
+  });
+}
 
 test('update retries a stuck resume at most once a second while sound should play and the page is visible', t => {
   let now = 0;
