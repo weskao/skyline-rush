@@ -126,6 +126,10 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   `tests/browser-timeouts.test.js`. When a new Low-only cut gets an observable marker, add it to
   `LOW_GATED` there.
 - **Split WebGL preview sweeps into small batches.** Each track switch rebuilds the scene. Keep all catalog entries covered, but let Playwright schedule bounded cases independently. The desktop locked-preview sweep exhausted the 135-second budget as Coast started in CI run `43563563658`.
+  The Garage skin catalog grows the same way: previewing a drift trail also opens `GarageDriftPreview`, a second live
+  WebGL renderer, and the one-test Crimson GT sweep timed out at 367 s of 360 s (develop CI `44736477255`). Sweep one
+  `SKIN_CATEGORIES` entry per test with `reducedMotion: 'reduce'`. Enforced by `tests/browser-timeouts.test.js`
+  (*whole Garage skin catalog*); a sweep that must animate ends its loop line with `// motion: <why>`.
 - Wrap fixed waits and timeouts in `ciTimeout()`. This is enforced by the same test file.
 - **A page load is not a rendered Home.** `index.html` boots `src/startup-entry.ts`, which imports
   `main.js` dynamically (`3033736b`), so `domcontentloaded` and `load` fire before Home is rendered.
