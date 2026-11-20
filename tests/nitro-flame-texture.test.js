@@ -49,10 +49,15 @@ test('the shader accounts for at most this many light-dark cycles along the flow
   for (const [channel, cycles] of Object.entries(FLAME_CYCLES)) assert.ok(cycles >= 1, channel);
 });
 
-test('one home for the texture: only the loader names its path, only the unlocked trail imports the loader', () => {
+test('one home for the texture: only the loader names its path, and the path ships in the locked build', () => {
   const sources = fs.readdirSync('src', { recursive: true }).filter(file => /\.(js|ts|vue)$/.test(file)).map(file => file.replaceAll('\\', '/'));
   const holding = pattern => sources.filter(file => pattern.test(fs.readFileSync(`src/${file}`, 'utf8')));
-  assert.match(NITRO_FLAME_PATH, /^feature-assets\/garage-vfx-skins\/nitro-flame\/flame-noise\.png$/, 'inside the tree the locked build removes');
+  // The standard exhaust (src/sprint-plume.ts) samples it in every release mode: never under a tree the locked build deletes.
+  assert.match(NITRO_FLAME_PATH, /^feature-assets\/nitro-flame\/flame-noise\.png$/);
+  const removed = [...fs.readFileSync('vite.config.js', 'utf8').matchAll(/rmSync\(join\(outputDir, '([^']+)'\)/g)].map(match => match[1]);
+  assert.ok(removed.length > 0, 'the locked build still names what it deletes');
+  for (const tree of removed) assert.ok(!NITRO_FLAME_PATH.startsWith(tree), `${tree} is deleted from the locked build`);
+  assert.ok(fs.existsSync(`public/${NITRO_FLAME_PATH}`), 'the image is where the loader asks for it');
   assert.deepEqual(holding(/nitro-flame\/|flame-noise/), ['nitro-flame-texture.ts']);
-  assert.deepEqual(holding(/nitro-flame-texture/), ['garage-nitro-trail.js'], 'the locked bundle never references the texture');
+  assert.deepEqual(holding(/nitro-flame-texture/), ['garage-nitro-trail.js']);
 });

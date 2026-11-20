@@ -53,10 +53,13 @@ never writes a second copy.
 
 ### Flame noise texture (owner: art session)
 
-- Path: `public/feature-assets/garage-vfx-skins/nitro-flame/flame-noise.png`
-- Under `garage-vfx-skins/` on purpose: the locked production build already removes that tree
-  (`vite.config.js`, `scripts/assert-production-locked.mjs`) and swaps the trail for
-  `src/garage-nitro-trail-locked.js`, so the locked bundle neither ships nor requests the texture.
+- Path: `public/feature-assets/nitro-flame/flame-noise.png`
+- Outside `garage-vfx-skins/` on purpose (moved 2026-11-21, `docs/designs/sprint-tiers/DESIGN.md`): the locked
+  production build removes that tree (`vite.config.js`, `scripts/assert-production-locked.mjs`), and the standard
+  sprint exhaust (`src/sprint-plume.ts`), which ships in every release mode, samples the texture too. The locked
+  bundle therefore ships it and requests it once, when the first exhaust is created (page load): 293,450 bytes,
+  HTTP-cached, one mipmapped 512 x 512 upload. Until it arrives, and if it never does, the jets draw on the
+  loader's neutral texel.
 - 512 x 512, 8-bit RGB, linear data (not colour), no alpha, at most 300 KB.
 - Tileable on both axes. V is the flow axis (the trail's length); U wraps around the tube.
 - R: flame tongues. Large shapes stretched along V, full 0 to 1 range.
@@ -67,11 +70,12 @@ never writes a second copy.
 
 ### Texture loader (owner: shader session)
 
-- `src/nitro-flame-texture.ts` is the only code that names the texture path.
+- `src/nitro-flame-texture.ts` is the only code that names the texture path. Its importers are the NITRO trail
+  (`src/garage-nitro-trail.js`) and the sprint exhaust (`src/sprint-plume.ts`); both hold the same uniform object.
 - It returns a texture at once: a 1 x 1 neutral (128, 128, 128) `DataTexture` until the image arrives, then
   the image, with `RepeatWrapping`, mipmaps and no colour-space conversion. The shader must look acceptable on
   the neutral fallback, so a failed load is not a broken trail.
-- The shader session never commits a file under `public/feature-assets/garage-vfx-skins/nitro-flame/`.
+- The shader session never commits a file under `public/feature-assets/nitro-flame/`.
 
 ### Colour and power (existing homes)
 
@@ -90,7 +94,7 @@ never writes a second copy.
 
 | Session | Branch | Files |
 | --- | --- | --- |
-| Art | `feature/nitro-flame-art` | `assets-src/nitro-flame/**`, `public/feature-assets/garage-vfx-skins/nitro-flame/**`, `tests/nitro-flame-asset.test.js` |
+| Art | `feature/nitro-flame-art` | `assets-src/nitro-flame/**`, `public/feature-assets/nitro-flame/**`, `tests/nitro-flame-asset.test.js` |
 | Shader | `feature/nitro-flame-shader` | `src/garage-nitro-trail.js`, `src/nitro-flame-texture.ts`, `.claude/rules/nitro-trail-vfx.md`, `tests/nitro-trail-comfort.test.js`, `tests/garage-nitro-trail.test.js`, a new test for the loader |
 | Sparks | `feature/nitro-flame-sparks` | `src/nitro-sparks.ts`, the call site in `src/effects.js`, `tests/nitro-sparks.test.js` |
 
