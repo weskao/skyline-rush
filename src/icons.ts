@@ -7,6 +7,7 @@ export const icons = {
   practice: '<path d="m4 20 8-16 8 16M2 20h20M8 13h8m-10 4h12"/>',
   map: '<path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3Zm6-3v15m6-12v15"/>',
   flag: '<path d="M5 22V3m0 1 5-1 5 2 5-1v10l-5 1-5-2-5 1"/>',
+  eye: '<path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
   cameraOrbit: '<ellipse cx="12" cy="12" rx="9" ry="5"/><path d="m17 6 3 1-1 3m-7-1v6"/>',
   zoomIn: '<circle cx="10" cy="10" r="6"/><path d="m14 14 6 6M7 10h6m-3-3v6"/>',
   zoomOut: '<circle cx="10" cy="10" r="6"/><path d="m14 14 6 6M7 10h6"/>',

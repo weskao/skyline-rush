@@ -6427,3 +6427,13 @@ Base `origin/develop` `f9735e4c`. Plan and checklist: `docs/designs/3d-pipeline/
 - [x] At `97eaa229`: `npm test` 3,486 tests, 3,482 pass, 0 fail, 4 skipped; `npm run typecheck` clean; `npm run build` passed and `dist/models/spiral-landmarks/spiral-landmarks.glb` is the 2488ff2b… file.
 - [ ] Browser specs written and never executed, by owner instruction (2026-11-19): `tests/spiral-look-browser.spec.js` (kit, day sky and road on High, NaN scan, no compile after GO, Low fetches no look asset, load-failure fallback, draw-call caps home 540 / race 380) and the Sky Spiral case in `tests/track-look-quality-browser.spec.js`. They may fail on their first run.
 - [ ] Not done: `make verify`, real WebGL captures (desktop and phone, both orientations), draw calls and p50/p95, rule item 20 lane sweep, the kit on the non-day presets' bloom, concept parity review, owner art sign-off, exact-HEAD `quality-gate`. Not run, by owner instruction (no browser tests, 2026-11-19).
+
+## 2026-11-20 — Garage inspect mode (`feature/garage-inspect-mode`)
+- [x] Preview Studio merged into the one Garage as an eye-icon inspect toggle (檢視模式 / 結束檢視, Inspect / Done); single 車庫 / Garage title in both pages. `tests/garage-inspect-mode-browser.spec.js` 3 tests (title and copy in en and zh-TW, inspect camera per section, Home camera per section without saving the view).
+- [x] Camera follows the section: inspect Effects → rear, Paints → side, Cars → default orbit (`garageSectionCamera`); Garage Home Effects → rear, Paints → left, Cars → saved view, via a transient `previewView` in `src/vfx-ui.ts` that is never written to `skyline-rush-vfx`. `tests/garage-camera.test.js` RED before `garageSectionCamera` existed.
+- [x] Inspect gestures moved to `src/garage-studio-gestures.ts` so `src/garage-ui.ts` stays under 400 lines (369); the move shares one commit with the behavior change.
+- [x] Focused unit tests 13 of 13 (module-size, garage-camera, garage-ui, garage-view-state, legacy-js-names); `npm run typecheck` clean.
+- [x] 13 Garage/Studio/Coming Soon/foldable/crimson browser specs: 105 of 106. The one failure is `tests/crimson-gt-browser.spec.js:372`, which expects 22 `GARAGE_SKINS` entries against the catalog's 28; it is outside this diff and needs its own fix.
+- [x] Real WebGL zh-TW captures at 390×844, 844×390 and 1440×900 (Garage, Garage on Effects, inspect from Effects), annotated and sent to Telegram.
+- [ ] Deviation for owner review: the catalog stays visible in inspect mode, because about ten suites customise inside Studio.
+- [ ] Not done: full `npm test`, `make verify`, the remaining browser suites, a phone-device check, exact-HEAD `quality-gate`.
