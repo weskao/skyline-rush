@@ -125,6 +125,24 @@
 
 #touch-controls :is([data-nitro-state="active"], [data-boost-state="active"]) { --flame-rest: 1; --flame-alpha: 1; --flame-loop: .7s; }
 
+/* The sprint ladder (style.css, body[data-sprint-tier] and body[data-sprint-chain]): a running button burns at its
+   tier's height and pace in its tier's colours, so both buttons share one look when both run. The glow is static:
+   it is the ladder when the flame is off (Reduced Motion, Comfortable, HUD animation off, Low graphics). No tier
+   id here: a new tier is one rule in style.css. */
+body[data-sprint-tier] #touch-controls :is([data-nitro-state="active"], [data-boost-state="active"]) {
+  --flame-lift: calc(var(--tier-lift, 1) * var(--chain-lift, 1));
+  --flame-loop: calc(var(--tier-loop, .7s) * var(--chain-pace, 1));
+  --flame-glow: calc(var(--tier-glow, 0px) + var(--chain-glow, 0px));
+  --flame-tip: var(--tier-core);
+  --flame: var(--tier-rim);
+  --flame-edge: color-mix(in srgb, var(--tier-rim), black 40%);
+  box-shadow: 0 0 calc(var(--flame-glow) * .5) var(--tier-core), 0 0 var(--flame-glow) calc(var(--flame-glow) * .3) var(--tier-rim);
+}
+
+/* Pressed: the face sinks a pixel and the icon follows. The bezel and the hit area stay put. */
+#touch-controls :is(.touch-nitro, .touch-boost).is-held::after { inset: 2px; }
+#touch-controls :is(.touch-nitro, .touch-boost).is-held > svg { translate: 0 1px; }
+
 #touch-controls .touch-fly {
   --rim: var(--fly);
   --face-top: var(--fly-deep);
@@ -179,7 +197,8 @@
   mask: url('./sprint-flame-strip.webp') 0 0 / 1600% 100% no-repeat;
   opacity: var(--flame-alpha, 0);
   /* Squash toward the button's top edge: the tongues shorten, the side glow stays. */
-  transform: scaleY(var(--flame-rest, .2));
+  /* --flame-rest is the state's size, --flame-lift the sprint tier's share of it. */
+  transform: scaleY(calc(var(--flame-rest, .2) * var(--flame-lift, 1)));
   transform-origin: 50% var(--button-top);
   transition: opacity .25s, transform .3s ease-out;
 }
@@ -197,6 +216,7 @@
   inset: var(--button-top) calc(var(--flame-side) / (1 + 2 * var(--flame-side)) * 100%) calc(var(--flame-bottom) / var(--flame-box) * 100%);
   border: 2px solid var(--flame-tip);
   border-radius: 9px;
+  box-shadow: 0 0 10px var(--flame-tip), inset 0 0 6px var(--flame-tip);
   opacity: 0;
 }
 

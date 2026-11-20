@@ -39,13 +39,29 @@ test('desktop: pressing NITRO again during NITRO shows the chain level', async (
   await chargedStart(page);
   await page.keyboard.down('w');
   const frames = () => page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
+  // The sprint ladder in the real page: body[data-sprint-tier] and [data-sprint-chain] drive the NITRO button's
+  // static glow (the last box-shadow's blur), which widens with every step (src/sprint-tier-hud.ts).
+  const body = page.locator('body');
+  const glow = () => page.evaluate(() => Number(getComputedStyle(document.querySelector('#touch-controls .touch-nitro')).boxShadow.match(/([\d.]+)px [\d.]+px$/)?.[1] ?? 0));
+  let widest = 0;
   for (const level of ['NITRO ACTIVE', 'NITRO ×2', 'NITRO ×3']) {
     // Held across frames, then released: one press per charge, never a down/up pair inside one frame.
     await page.keyboard.down('e');
     await expect(page.locator('#flight-state')).toHaveText(level);
+    await expect(body).toHaveAttribute('data-sprint-tier', 'nitro');
+    await expect.poll(glow, level).toBeGreaterThan(widest);
+    widest = await glow();
     await page.keyboard.up('e');
     await frames();
   }
+  // BOOST held during NITRO is its own step with one caption on every line that names the tier.
+  await page.keyboard.down('Shift');
+  await expect(body).toHaveAttribute('data-sprint-tier', 'nitro-boost');
+  await expect(body).toHaveAttribute('data-sprint-chain', '3');
+  for (const line of ['#flight-state', '#nitro-status', '#speed-caption']) await expect(page.locator(line)).toHaveText('NITRO ×3 + BOOST');
+  await expect.poll(glow, 'combined tier').toBeGreaterThan(widest);
+  await page.keyboard.up('Shift');
+  await expect(body).toHaveAttribute('data-sprint-tier', 'nitro');
   await page.keyboard.up('w');
 });
 
