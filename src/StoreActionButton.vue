@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CollectibleIcon from './CollectibleIcon.vue';
 import { computed, useTemplateRef } from 'vue';
 
 const props = defineProps<{
@@ -6,6 +7,7 @@ const props = defineProps<{
   locale?: string;
   item?: string;
   disabled?: boolean;
+  pending?: boolean;
 }>();
 const labels = { redeem: { en: 'Redeem', 'zh-TW': '兌換' }, purchase: { en: 'Buy', 'zh-TW': '購買' } } as const;
 const label = computed(() => labels[props.kind][props.locale === 'zh-TW' ? 'zh-TW' : 'en']);
@@ -15,14 +17,20 @@ defineExpose({ focus: (options?: FocusOptions) => button.value?.focus(options) }
 
 <template>
   <button ref="button" type="button" class="store-action-button" :disabled="disabled"
-    :aria-label="item ? label + ' ' + item : undefined">
-    <slot>{{ label }}</slot>
+    :aria-busy="pending || undefined" :aria-label="item ? label + ' ' + item : undefined">
+    <CollectibleIcon :name="pending ? 'pending' : disabled ? 'locked' : kind === 'redeem' ? 'gift' : 'cart'" />
+    <span><slot>{{ label }}</slot></span>
   </button>
 </template>
 
 <style scoped>
 .store-action-button {
   box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  --collectible-gap: 0px;
   min-width: 0;
   min-height: 44px;
   padding: 8px 12px;

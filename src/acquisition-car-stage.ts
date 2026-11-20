@@ -3,7 +3,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { createModelCache, type ModelHandle } from './asset-model-loader.ts';
 import { CARS, type CarId } from './car-catalog.ts';
 import { createKtx2Provider } from './garage-model.ts';
-import { CAR_REVEAL_FOV, CAR_REVEAL_MS, carRevealShot, type CarRevealShot } from './acquisition-car-camera.ts';
+import { CAR_REVEAL_MS, carRevealShot, type CarRevealShot } from './acquisition-car-camera.ts';
 
 type DrawState = 'playing' | 'still' | 'static';
 
@@ -18,7 +18,7 @@ export async function playCarReveal(
   renderer.toneMappingExposure = .82;
   const scene = new THREE.Scene();
   scene.environmentIntensity = .72;
-  const camera = new THREE.PerspectiveCamera(CAR_REVEAL_FOV, 1, .1, 90);
+  const camera = new THREE.PerspectiveCamera(carRevealShot(0).fov, 1, .1, 90);
   const baseUrl = import.meta.env.BASE_URL;
   const decoder = createKtx2Provider(renderer, baseUrl);
   let ktx2: ReturnType<typeof decoder> | undefined;
@@ -111,21 +111,32 @@ export async function playCarReveal(
 
     const corners = [-1, 1].flatMap(x => [-1, 1].flatMap(y => [-1, 1].map(z => new THREE.Vector3(x * half.x, y * half.y, z * half.z))));
     const eye = new THREE.Vector3(), right = new THREE.Vector3(), up = new THREE.Vector3(), target = new THREE.Vector3();
-    const vertical = Math.tan(THREE.MathUtils.degToRad(CAR_REVEAL_FOV / 2));
+    const relative = new THREE.Vector3();
     let elapsed = 0, start: number | undefined;
     let lastShot = '';
     function draw(time: number): void {
       const angle = carRevealShot(time);
-      const { yaw, pitch, fill, focus } = angle;
-      target.set(0, -.17 * half.y, focus * half.z);
+      const { yaw, pitch, fill, focus, fov } = angle;
+      target.set(0, -.24 * half.y, focus * half.z);
+      if (camera.fov !== fov) {
+        camera.fov = fov;
+        camera.updateProjectionMatrix();
+      }
+      // Open the exposure slightly for the full-car title frame.
+      renderer.toneMappingExposure = angle.name === 'hero' ? .89 : .82;
       eye.set(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
       right.set(Math.cos(yaw), 0, -Math.sin(yaw));
       up.crossVectors(eye, right);
+      const vertical = Math.tan(THREE.MathUtils.degToRad(fov / 2)) * fill;
       const horizontal = vertical * camera.aspect;
-      const distance = Math.max(...corners.map(point => point.dot(eye) + Math.max(
-        Math.abs(point.dot(right)) / horizontal,
-        Math.abs(point.dot(up)) / vertical,
-      ))) / fill;
+      let distance = 0;
+      for (const corner of corners) {
+        relative.subVectors(corner, target);
+        distance = Math.max(distance, relative.dot(eye) + Math.max(
+          Math.abs(relative.dot(right)) / horizontal,
+          Math.abs(relative.dot(up)) / vertical,
+        ));
+      }
       camera.position.copy(eye).multiplyScalar(distance).add(target);
       camera.lookAt(target);
       try { renderer.render(scene, camera); }

@@ -113,17 +113,16 @@ test('other race rewards do not present an already available or trial GT', () =>
   }).map(item => item.id), ['neon']);
 });
 
-test('the vehicle premiere uses a low front dolly, a broadside pass, a rear push and a title hold', async () => {
+test('the vehicle premiere moves from signature to rear and side, then pulls back and holds the car', async () => {
   const { CAR_REVEAL_MS, carRevealShot } = await import('../src/acquisition-car-camera.ts');
-  assert.deepEqual([0, 1600, 3150, 4700, CAR_REVEAL_MS].map(time => carRevealShot(time).name),
-    ['signature', 'profile', 'thrusters', 'hero', 'hero']);
-  const nose = carRevealShot(1100);
-  const side = carRevealShot(2350);
-  const exhaust = carRevealShot(4550);
-  const hero = carRevealShot(CAR_REVEAL_MS);
-  assert.ok(nose.yaw > 2.4 && nose.pitch < .16 && nose.focus < 0);
-  assert.ok(Math.abs(side.yaw - Math.PI / 2) < .15);
-  assert.ok(exhaust.yaw < .46 && exhaust.focus > 0 && exhaust.fill > nose.fill);
-  assert.ok(hero.fill < exhaust.fill && hero.yaw > 2);
-  assert.deepEqual(carRevealShot(CAR_REVEAL_MS + 2000), hero);
+  const [front, rear, side, reveal, end] = [0, 980, 2150, 3580, CAR_REVEAL_MS].map(carRevealShot);
+  assert.deepEqual([front, rear, side, reveal, end].map(shot => shot.name),
+    ['signature', 'thrusters', 'profile', 'hero', 'hero']);
+  assert.equal(CAR_REVEAL_MS, 5800);
+  assert.ok(front.yaw < -2.6 && front.focus < -.2 && front.fill > 1);
+  assert.ok(Math.abs(rear.yaw) < .75 && rear.focus > .2);
+  assert.ok(Math.abs(side.yaw + Math.PI / 2) < .35);
+  assert.ok(end.fill < reveal.fill && end.fov > front.fov);
+  assert.deepEqual(carRevealShot(5050), end, 'the title holds on the finished composition');
+  assert.deepEqual(carRevealShot(CAR_REVEAL_MS + 2000), end);
 });

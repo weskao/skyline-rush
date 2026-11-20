@@ -720,8 +720,8 @@ test('premiere cues play stereo layers that follow the shots with bounded peaks'
   const { nodes, sound } = installAudio(t);
   sound.setEnabled(true);
   const starts = nodes.length;
-  const order = [['acquisition-car', 0], ['acquisition-car-signature', .2], ['acquisition-car-profile', 1.8],
-    ['acquisition-car-thrusters', 3.35], ['acquisition-car-hero', 4.9]];
+  const order = [['acquisition-car', 0], ['acquisition-car-signature', .2], ['acquisition-car-thrusters', 1.18],
+    ['acquisition-car-profile', 2.35], ['acquisition-car-hero', 3.78]];
   order.forEach(([name, at]) => sound.cue(name, at));
   const layers = nodes.slice(starts).filter(node => node.kind === 'buffer');
   assert.equal(layers.length, order.length);

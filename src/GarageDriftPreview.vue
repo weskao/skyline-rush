@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CollectibleIcon from './CollectibleIcon.vue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { garageStudioView, garageView } from './garage-view-state.ts';
 import { PAINTS } from './appearance.ts';
@@ -97,10 +98,7 @@ onBeforeUnmount(() => {
       <span><small>{{ title }}</small><strong>{{ label }}</strong></span>
       <button v-if="ready && allowed && !reduced" class="drift-playback" type="button"
         :data-paused="paused" :aria-label="action + ' · ' + title" :title="action" @click="pause">
-        <svg viewBox="0 0 24 24" :data-glyph="paused ? 'play' : 'pause'" aria-hidden="true" focusable="false">
-          <path v-if="paused" d="M8 4.8a1 1 0 0 1 1.5-.86l11 7.2a1 1 0 0 1 0 1.72l-11 7.2A1 1 0 0 1 8 19.2z"/>
-          <path v-else d="M6 5h3a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm9 0h3a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/>
-        </svg>
+        <CollectibleIcon :name="paused ? 'play' : 'pause'" />
       </button>
     </figcaption>
   </figure>
@@ -130,9 +128,6 @@ figcaption small { color: #a7becf; font-size: .72rem; }
 .drift-playback::before {
   content: ''; position: absolute; inset: 4px; border: 1px solid #b6ebff26;
   border-radius: inherit; pointer-events: none;
-}
-.drift-playback svg {
-  width: 21px; height: 21px; fill: currentColor; filter: drop-shadow(0 1px 2px #051927);
 }
 @media (hover: hover) {
   .drift-playback:hover { border-color: var(--edge); }

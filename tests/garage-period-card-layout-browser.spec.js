@@ -65,9 +65,11 @@ for (const locale of ['en', 'zh-TW']) {
       expect(await measurePeriodCards(board.locator('.garage-period-card'))).toEqual([]);
       const claim = await card('mission-race:daily').locator('.garage-mission-claim').boundingBox();
       expect(claim.height, 'claim touch height').toBeGreaterThanOrEqual(44);
-      // The reward shows as icon chips; each icon still names its currency for assistive tech.
+      // The reward chip exposes both its amount and currency to assistive tech.
       await expect(card('mission-race:daily').locator('.period-reward')).toContainText('+40');
-      await expect(card('mission-race:daily').getByRole('img', { name: locale === 'en' ? 'Demo coins' : '試玩金幣' })).toHaveCount(1);
+      const coins = card('mission-race:daily').getByRole('img', { name: locale === 'en' ? '+40 Demo coins' : '+40 試玩金幣' });
+      await expect(coins).toHaveCount(1);
+      await expect(coins.locator('img')).toHaveJSProperty('naturalWidth', 72);
       await board.locator('.garage-period-grid').screenshot({ path: test.info().outputPath('period-grid.png') });
     });
   }

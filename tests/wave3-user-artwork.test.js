@@ -20,7 +20,9 @@ test('the exact ten original 3D screenshot cutouts are committed, not placeholde
   assert.equal(Object.keys(hashes).length, 10);
   for (const [id, expectedHash] of Object.entries(hashes)) {
     const dir = id.startsWith('wallet-') ? 'wave3-demo' : 'garage-rewards-and-missions';
-    const path = new URL(`../public/feature-assets/${dir}/raster/${id}@3x.webp`, import.meta.url);
+    const path = id === 'wallet-coin'
+      ? new URL('../docs/designs/3x-asset-library/webp/collectible-ui/wallet-coin-original@3x.webp', import.meta.url)
+      : new URL(`../public/feature-assets/${dir}/raster/${id}@3x.webp`, import.meta.url);
     const file = readFileSync(path);
     assert.equal(file.toString('ascii', 0, 4), 'RIFF', id);
     assert.equal(file.toString('ascii', 8, 12), 'WEBP', id);

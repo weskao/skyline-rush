@@ -52,13 +52,13 @@ test('Garage drift preview toggles between accessible play and pause artwork', a
   const preview = page.locator('[data-drift-preview]');
   await preview.scrollIntoViewIfNeeded();
   const pause = preview.getByRole('button', { name: 'Pause · Live drift preview' });
-  await expect(pause.locator('svg[data-glyph="pause"]')).toBeVisible();
+  await expect(pause.locator('img[data-collectible-icon="pause"]')).toBeVisible();
   const { width, height } = await pause.boundingBox();
   expect(Math.round(Math.min(width, height))).toBeGreaterThanOrEqual(44);
 
   await pause.click();
   const play = preview.getByRole('button', { name: 'Play · Live drift preview' });
-  await expect(play.locator('svg[data-glyph="play"]')).toBeVisible();
+  await expect(play.locator('img[data-collectible-icon="play"]')).toBeVisible();
   await expect(preview).toHaveAttribute('data-motion', 'paused');
   await expect(play).toBeFocused();
   const settings = page.locator('[data-vfx="quality"]');
@@ -71,6 +71,6 @@ test('Garage drift preview toggles between accessible play and pause artwork', a
     await expect(preview).toHaveAttribute('data-motion', 'paused');
   }
   await play.press('Enter');
-  await expect(pause.locator('svg[data-glyph="pause"]')).toBeVisible();
+  await expect(pause.locator('img[data-collectible-icon="pause"]')).toBeVisible();
   await expect(preview).toHaveAttribute('data-motion', 'running');
 });

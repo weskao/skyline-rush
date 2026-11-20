@@ -2,7 +2,7 @@ import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { clickLobbyOption } from './helpers/home-lobby.js';
 
-// Every panel closes with the same round × (src/CloseButton.vue), named for screen readers, closed by a real tap.
+// Shared round close control, including Garage's illustrated ×.
 const PANELS = [
   ['History', '.history-button', '#history-screen', '#history-close', 'Close history'],
   ['Garage', '#garage-button', '#garage-screen', '#garage-close', 'Close garage'],
@@ -18,7 +18,11 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
         await clickLobbyOption(page, opener); // phones keep the mode list behind the Mode dropdown
         await expect(page.locator(panel), name).toBeVisible();
         const button = page.locator(close);
-        await expect(button, name).toHaveText('×');
+        if (name === 'Garage') {
+          await expect(button.locator('img[data-collectible-icon="close"]')).toHaveJSProperty('naturalWidth', 72);
+        } else {
+          await expect(button, name).toHaveText('×');
+        }
         await expect(button, name).toHaveAccessibleName(label);
         const shape = await button.evaluate(el => { const s = getComputedStyle(el); return { w: el.offsetWidth, h: el.offsetHeight, radius: s.borderRadius }; });
         expect(shape, name).toEqual({ w: 44, h: 44, radius: '50%' });
