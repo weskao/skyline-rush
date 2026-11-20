@@ -325,7 +325,7 @@ export function createRaceHud(options: HudOptions) {
     modePanels.update(race);
     const car = race.player;
     const impactAge = car.impact ? race.elapsed - car.impact.time : 10;
-    const calm = visual.comfortable || reducedMotion.matches;
+    const calm = !visual.enabled || visual.comfortable || reducedMotion.matches;
     const flying = car.altitude > 0.25;
     updateSpeedAndPosition(now, race, car, calm);
     updateProgress(race, car);

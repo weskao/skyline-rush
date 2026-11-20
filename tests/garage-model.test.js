@@ -316,3 +316,19 @@ test('the race GLB gets softer glass and clear coat without altering the Studio 
   assert.equal(glass.roughness, 0.07, 'the source model keeps its authored finish');
   model.dispose();
 });
+
+test('the selected car stays pending through compilation and settles on a failed compile', async () => {
+  let rejectCompile;
+  const compile = async () => new Promise((_, reject) => { rejectCompile = reject; });
+  const model = createGarageModel({ id: 'pipeline-probe', cache: fakeCache(), compile, dataset: {} });
+  const home = host();
+  assert.equal(model.sync(true, 'high', home, 'drive'), true, 'the model request is pending');
+  await settle();
+  assert.equal(model.sync(true, 'high', home, 'drive'), true, 'a decoded GLB is still pending during shader compilation');
+  rejectCompile(new Error('unsupported material'));
+  await settle();
+  assert.equal(model.sync(true, 'high', home, 'drive'), false, 'a failed compile settles to the procedural model');
+  assert.equal(drawn(home.body), true);
+  assert.equal(home.car.getObjectByName('wheel_fl'), undefined);
+  model.dispose();
+});

@@ -121,7 +121,7 @@ const touchUI = setupTouchControlsUI({
   clearButtonPresses,
   reducedMotion,
 });
-const vfx = setupVfxUI({ getWorld: () => world, onAirflowShown: () => showSwipeHint(), reducedMotion });
+const vfx = setupVfxUI({ getWorld: () => world, onAirflowShown: () => showSwipeHint(), reducedMotion, deviceSelection: startup.deviceSelection });
 const calmMotion = vfx.calm;
 const { motionOptions, enter } = createMotion(calmMotion);
 const hud = createRaceHud({
@@ -139,7 +139,7 @@ const hud = createRaceHud({
   timeTrialGhost: race => ghosts.mode(race),
   isAutoThrottle: autoAssist.isOn,
   getGoUntil: () => goUntil,
-  waitingForScenery: () => world?.trackSceneryPending(race) ?? false,
+  waitingForScenery: () => world?.raceFramePending(race) ?? false,
   setFly: on => controls.setFly(on),
   updatePadHint: (phase, elapsed) => touchUI.updatePadHint(phase, elapsed),
   motionOptions, touchPreference, reducedMotion,
@@ -206,7 +206,7 @@ const cupRecovery = setupCupRecovery({ unlocked: () => [...unlockedTracks], cue:
     cup = saved; daily = null; sprintSeries = null; stunt = null;
     raceSelect.restoreCup(saved);
     race.rivalVisualSeed = cupRivalVisualSeed(saved);
-    controls.clear(); leaveIntro(); startRace(race, world.trackSceneryPending(race)); focusRace(); sound.cue('ui');
+    controls.clear(); leaveIntro(); startRace(race); focusRace(); sound.cue('ui');
   },
 });
 const showTracks = () => { raceSelect.showTracks(); cupRecovery.refresh(); };
@@ -258,7 +258,7 @@ const { showGarage, adoptCar, syncSkins, previewPaint, startRace, acquisitionGar
   getEquippedPaint: () => equippedPaint,
   setEquippedPaint: id => { equippedPaint = id; saveCarPaint(equippedCar(), id); },
   getStars: () => starTotal(progress.stars), availablePaints, subscribeAccount: cloud.subscribeAccount, cue: sound.cue,
-  startSimulation, syncProgress: cloud.syncProgress,
+  startSimulation: race => startSimulation(race, true), syncProgress: cloud.syncProgress, // Free Drive waits for its first grid frame too.
 });
 function chooseTrack(/** @type {string | undefined} */ trackId = undefined) {
   if (tutorial) { endTutorial(false); return; }
@@ -301,7 +301,7 @@ function start() {
   if (race.mode === 'custom') saveRecentCustom(undefined, race.trackId, race.config);
   raceSelect.rememberTrack(race.trackId);
   leaveIntro();
-  startRace(race, world.trackSceneryPending(race));
+  startRace(race);
   sound.cue('ui');
   focusRace();
 }
@@ -328,8 +328,8 @@ function restart(trackId = race.trackId) {
   if (stunt && race.mode === 'stunt') race.stuntLimit = stuntHeatLimit(stunt);
   hud.resetMemory();
   goUntil = 0;
-  startRace(race, world.trackSceneryPending(race));
-  sound.update(race, false, world.trackSceneryPending(race));
+  startRace(race);
+  sound.update(race, false, world.raceFramePending(race));
   focusRace();
 }
 
@@ -506,10 +506,9 @@ function updateUI(now, input) {
   hud.update(now, input);
 }
 try {
-  startup.step(2); world = createWorld($('#world')); syncSkins();
+  startup.step(2); world = createWorld($('#world'), vfx.settings()); syncSkins();
   requestAnimationFrame(maybeShowReleaseNotes);
   showHomeStatus(); // the daily card can start a race now
-  world.configureVFX(vfx.settings());
   previewPaint(equippedPaint);
   let previousTime = performance.now(), accumulator = 0, hudElapsed = 0, wasCalm = calmMotion();
   const perfOverlay = createPerfOverlay(location.search, () => world.inspectRenderLoad(), !!import.meta.env.VITE_DIAG);
@@ -524,7 +523,7 @@ try {
     const countingDown = race.phase === 'countdown';
     const due = drainSteps(accumulator, countingDown ? 0 : dt); accumulator = due.accumulator;
     // Count elapsed seconds after the track scene has attached and warmed on a rendered frame.
-    if (countingDown && previousPhase === 'countdown' && !document.hidden && !world.trackSceneryPending(race)) advanceCountdown(race, Math.max(0, rawDelta));
+    if (countingDown && previousPhase === 'countdown' && !document.hidden && !world.raceFramePending(race)) advanceCountdown(race, Math.max(0, rawDelta));
     const input = controls.read();
     if (tutorial) prepareTutorialInput(input, tutorial.step);
     else {
@@ -549,28 +548,29 @@ try {
     presentationState = presentation.update(race, dt, calm, Math.max(0, rawDelta));
     const ghost = touchUI.prefs().ghost && race.session.presentation.ghostEnabled && race.phase !== 'ready' ? ghosts.forRace(race) : null;
     const shouldRender = fps.shouldRender(now, dt, race.phase === 'racing', document.hidden);
+    let drawn = false;
     if (shouldRender) {
       const renderStarted = performance.now();
       renderMotion.alpha = Math.max(0, Math.min(1, accumulator / SIM_STEP));
       try {
-        world.render(race, fps.takeElapsed(), race.phase === 'ready' ? now / 1000 : 0, input, presentationState, ghost && ghostAt(ghost, race.elapsed), renderMotion);
+        drawn = world.render(race, fps.takeElapsed(), race.phase === 'ready' ? now / 1000 : 0, input, presentationState, ghost && ghostAt(ghost, race.elapsed), renderMotion);
       } catch (error) {
         if (!startup.waitingForFrame) throw error;
         startup.fail('renderer'); cancelAnimationFrame(animationId);
         console.error('First 3D frame failed:', error); return;
       }
-      if (startup.waitingForFrame) {
+      if (drawn && startup.waitingForFrame) {
         cancelAnimationFrame(animationId); // The opaque startup screen only needs the first lobby frame.
         startup.ready(() => { controls.clear(); sound.cue('ui'); maybeShowReleaseNotes(); animationId = requestAnimationFrame(frame); });
       }
-      fps.completeRender(performance.now() - renderStarted);
+      if (drawn) fps.completeRender(performance.now() - renderStarted);
     }
-    sound.update(race, presentationState.halfwayStarted, countingDown && world.trackSceneryPending(race));
+    sound.update(race, presentationState.halfwayStarted, countingDown && world.raceFramePending(race));
     hudElapsed += dt; if (hudElapsed >= 0.075 || previousPhase !== race.phase) {
       updateUI(now / 1000, input); if (tutorial) renderTutorial();
       hudElapsed = 0;
     }
-    perfOverlay?.record(now, rawDelta, race.phase === 'racing', shouldRender);
+    perfOverlay?.record(now, rawDelta, race.phase === 'racing', drawn);
   }
   animationId = requestAnimationFrame(frame);
 } catch (error) {

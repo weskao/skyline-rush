@@ -30,10 +30,12 @@ export function createPickupMarkers(capacity, { renderer, envMap = null, models 
   }
   const pool = createMarkerPool('Nitro pickups', poolShapes, poolMaterials, capacity), aura = createPickupAura(capacity);
   const disposeStandIn = () => { for (const tier in shapes) { shapes[tier].dispose(); materials[tier].dispose(); } };
+  let loading = !!models;
   const ready = Promise.resolve(models).then(result => {
     if (disposed) result?.release(); else pending = result ?? null; // null: load failed, the stand-in stays
-  }, () => {});
+  }, () => {}).finally(() => { loading = false; });
   return {
+    get loading() { return loading; },
     pool, objects: [pool.group, aura.mesh], ready,
     /** Once per frame before placing. True on the frame the loaded models replace the stand-in: re-warm shaders. */
     frame(time, reducedMotion, swapAllowed) {

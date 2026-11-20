@@ -358,3 +358,27 @@ test('world.js hands the procedural sky dome, sun disc, sea plane, sea lines, mo
   assert.match(world, /const side = d \/ 60 % 2 \? 1 : -1;/);
   assert.doesNotMatch(world, /const side = i % 2 \? 1 : -1;\n\s+const yaw = curvedClassic/);
 });
+
+test('Sky Spiral scenery is pending until the selected road set is installed', async () => {
+  const textures = [];
+  const paved = [];
+  const spiral = { attachKit() {}, detachKit() {}, dispose() {}, update() {}, pave: material => paved.push(material) };
+  const road = { mesh: { material: new THREE.MeshStandardMaterial() }, load: file => new Promise(resolve => textures.push({ file, resolve })) };
+  const cache = { load: async id => ({ kind: 'model', id, instance: () => new THREE.Group(), release() {} }) };
+  const assets = createCoastAssets({ scenery, cache, spiral, road });
+  try {
+    assets.update('spiral', 'high', false);
+    await tick();
+    assets.update('spiral', 'high', false);
+    assert.equal(textures.length, 3);
+    assert.equal(assets.sceneryPending('spiral', 'high'), true, 'a loaded landmark does not reveal the untextured road');
+    for (const { resolve } of textures) resolve(new THREE.Texture());
+    await tick();
+    assert.equal(assets.sceneryPending('spiral', 'high'), true, 'decoded textures still need to be installed');
+    assert.equal(assets.update('spiral', 'high', false), true, 'the installed material requests a shader warmup');
+    assert.equal(assets.sceneryPending('spiral', 'high'), false);
+    assert.equal(paved.length, 1);
+  } finally {
+    assets.dispose();
+  }
+});

@@ -56,6 +56,25 @@ interface Deps {
   dataset?: Record<string, string | undefined>;
 }
 
+// Three.js texture loaders do not consistently support cancellation. Discard results that arrive after fallback.
+export function waitForSceneTexture<T extends THREE.Texture>(load: Promise<T>, timeoutMs = 30_000): Promise<T> {
+  return new Promise((resolve, reject) => {
+    let expired = false;
+    const timer = setTimeout(() => {
+      expired = true;
+      reject(new Error('Scene texture timed out'));
+    }, timeoutMs);
+    void load.then(texture => {
+      clearTimeout(timer);
+      if (expired) texture.dispose();
+      else resolve(texture);
+    }, error => {
+      clearTimeout(timer);
+      reject(error);
+    });
+  });
+}
+
 export function createCoastSky({ sky, sun, load, maxTextureSize, dataset = {} }: Deps) {
   // Transparent queue only to stay out of the wet mirror (its light sources are the opaque unlit meshes) and to draw
   // after the opaque scene; nothing blends.
@@ -107,17 +126,19 @@ export function createCoastSky({ sky, sun, load, maxTextureSize, dataset = {} }:
   return {
     /** The water mirrors what this mesh shows (coast-sea.ts): its map, colour scale, yaw and visibility. */
     dome,
+    get pending(): boolean { return status === 'loading'; },
     /** Per frame: a string compare unless the track, preset or tier changed. */
     update(trackId: string, preset: string, quality: VfxQuality, ultra: boolean): void {
       const plan = coastEnvPlan(trackId, preset, quality);
       if (plan.kind === 'room' || maxTextureSize < 4096) { hide(); return say('procedural'); }
       const name = plan.variant, width = coastSkyWidth(ultra, maxTextureSize), key = `${name}:${width}`;
-      if (shown?.key === key) return;
+      if (shown?.key === key) return say(key);
       if (shown && shown.name !== name) hide(); // never another preset's sky; a tier change keeps the old width up
-      if (!textures.has(key)) { request(name, key, width); say('loading'); }
+      if (!textures.has(key)) request(name, key, width);
       const ready = textures.get(key);
       if (ready === 'failed') { hide(); return say(`fallback:${name}`); }
       if (typeof ready === 'object') show(name, key, ready);
+      else say('loading');
     },
     dispose(): void {
       hide(); disposed = true;

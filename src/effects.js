@@ -131,6 +131,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
   const statusTint = createRivalStatusTint(RACE_DRIVER_IDS.length); // Shared pool for the player and rivals
   scene.add(statusTint.object);
   return {
+    get pickupsLoading() { return pickupMarkers.loading; },
     setDriftTrail(id) { skids?.setSkin(id); },
     // `origin`: the scene's floating origin (scene + origin = absolute; world.js), defaulting to the flat road's.
     update(race, dt, center, preview, reducedMotion, vehicles, options = {}, origin = null) {

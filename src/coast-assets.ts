@@ -5,7 +5,7 @@
 import type { BufferGeometry, Camera, Material, Matrix4, Mesh, Object3D, Scene, Texture, Vector3 } from 'three';
 import type { ShoreSink } from './coast-scenery-glb.ts';
 import { createCoastSea } from './coast-sea.ts';
-import { createCoastSky } from './coast-sky.ts';
+import { createCoastSky, waitForSceneTexture } from './coast-sky.ts';
 import type { ModelCache, ModelHandle } from './asset-model-loader.ts';
 import { TIERS, type MaterialFile, type MaterialTier } from './material-manifest.ts';
 import { modelUrl } from './model-manifest.ts';
@@ -34,8 +34,8 @@ interface Reflection {
   uniforms: ReflectionUniforms; setStrength(value: number): void; tag(scene: Object3D): void;
   render(renderer: never, scene: Scene, camera: Camera, height: number): void; dispose(): void;
 }
-type Sky = Pick<ReturnType<typeof createCoastSky>, 'update' | 'dispose'>;
-type Sea = Pick<ReturnType<typeof createCoastSea>, 'update' | 'dispose' | 'shore'>;
+type Sky = Pick<ReturnType<typeof createCoastSky>, 'update' | 'dispose' | 'pending'>;
+type Sea = Pick<ReturnType<typeof createCoastSea>, 'update' | 'dispose' | 'shore' | 'pending'>;
 interface Deps {
   scenery: Scenery; cache: Pick<ModelCache, 'load'>;
   /** Seconds, as the sea shader counts them (0 under reduced motion): with it the boats GLB loads and sails. */
@@ -95,6 +95,10 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
           requested = true;
           dataset[status] = 'loading';
           cache.load(id, { signal: controller.signal }).then(result => {
+            if (controller.signal.aborted) {
+              if (result.kind === 'model') result.release();
+              return;
+            }
             if (result.kind === 'model') { handle = result; return; }
             fallback(result.reason);
             console.warn(`[coast-assets] ${id} → ${result.fallback} (${result.reason})`);
@@ -128,18 +132,23 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
   const cityKit = neon && lateModel('neon-city', 'scenery', 'neonCity', source => neon.attachKit('city', source), () => neon.detachKit('city'));
   const landmarks = neon && lateModel('neon-landmarks', 'landmarks', 'neonLandmarks', source => neon.attachKit('landmarks', source), () => neon.detachKit('landmarks'));
   const spiralKit = spiral && lateModel('spiral-landmarks', 'landmarks', 'spiralLandmarks', source => spiral.attachKit(source), () => spiral.detachKit());
-  const requiredScenery = [scan, cityKit, landmarks, spiralKit];
+  const requiredScenery = [scan, boats, cityKit, landmarks, spiralKit];
 
   function loadRoad(id: string, tier: MaterialTier, key: string, { load, anisotropy }: Road, failed: () => void): void {
     roads.set(key, 'loading');
     const files = coastRoadFiles(TIERS[tier], id);
-    Promise.all([files.baseColor, files.normal, files.packed].map(load)).then(([baseColor, normal, packed]) => {
-      const made = createCoastRoadMaterial({ baseColor: baseColor!, normal: normal!, packed: packed! }, anisotropy, { detail: tier === 'ultra', ...reflection && { reflection: reflection.uniforms } });
-      if (controller.signal.aborted) made.dispose(); else roads.set(key, made);
-    }, error => {
+    void Promise.allSettled([files.baseColor, files.normal, files.packed].map(load)).then(([base, normals, data]) => {
+      if (base?.status === 'fulfilled' && normals?.status === 'fulfilled' && data?.status === 'fulfilled') {
+        const made = createCoastRoadMaterial({ baseColor: base.value, normal: normals.value, packed: data.value }, anisotropy,
+          { detail: tier === 'ultra', ...reflection && { reflection: reflection.uniforms } });
+        if (controller.signal.aborted) made.dispose(); else roads.set(key, made);
+        return;
+      }
+      for (const entry of [base, normals, data]) if (entry?.status === 'fulfilled') entry.value.dispose();
+      if (controller.signal.aborted) return;
       roads.set(key, 'failed');
       failed();
-      console.warn(`[coast-assets] ${id} ${tier} → procedural (${error})`);
+      console.warn(`[coast-assets] ${id} ${tier} → procedural (texture load failed)`);
     });
   }
   /** The loaded set for `id` at this tier, requested on first use; null while it loads, after a failure and on Low. */
@@ -149,6 +158,12 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
     const ready = roads.get(key);
     return typeof ready === 'object' ? ready : null;
   }
+  function roadPending(id: string | undefined, tier: MaterialTier | null, key: string, material?: Material | Material[]): boolean {
+    if (!road || !id || !tier) return false;
+    const entry = roads.get(key);
+    return entry !== 'failed' && (typeof entry !== 'object' || entry.material !== material);
+  }
+
   /** Frees the sets and tiers left behind: neither wanted by the road or a surface now, nor still worn by one. */
   function sweep(): void {
     for (const [key, entry] of roads) if (key !== roadKey && typeof entry === 'object' && entry.material !== road!.mesh.material && surfaces.every(part => key !== part.key && entry !== part.laid)) { entry.dispose(); roads.delete(key); }
@@ -177,6 +192,9 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
   function surface(slot: 'ground' | 'helix', status: string, pave?: (material: Material | null) => void) {
     const part = {
       key: '', laid: null as CoastRoad | null, // the set and tier wanted now; the set on the surface
+      pending(look: TrackLook | undefined, tier: MaterialTier | null): boolean {
+        return !!pave && roadPending(look?.[slot], tier, `${look?.[slot]}:${tier}:${slot}`, part.laid?.material);
+      },
       update(look: TrackLook | undefined, quality: VfxQuality, racing: boolean, preset: string, ultra: boolean): boolean {
         if (!road || !pave) return false;
         const id = look?.[slot], tier = id ? coastRoadTier(quality, ultra) : null;
@@ -205,10 +223,14 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
   }
 
   return {
-    /** Required scenery joins the starting grid before racing, or settles to the procedural fallback. */
-    sceneryPending(trackId: string, quality: VfxQuality): boolean {
+    /** Ready only after selected assets are installed or their loads have failed. Call after updating the look. */
+    sceneryPending(trackId: string, quality: VfxQuality, ultra = false): boolean {
       const look = detailedTrackLook(trackId, quality);
-      return requiredScenery.some(model => model?.pending(look));
+      if (!look) return false;
+      const tier = coastRoadTier(quality, ultra);
+      return !!sky?.pending || !!sea?.pending || requiredScenery.some(model => model?.pending(look))
+        || roadPending(look.road, tier, `${look.road}:${tier}`, road?.mesh.material)
+        || surfaces.some(part => part.pending(look, tier));
     },
     /** Per frame; true when new materials joined the scene and the caller must run its shader warmup. */
     update(trackId: string, quality: VfxQuality, racing: boolean, preset = 'track', ultra = false, route?: ClassicRoad, distance = 0, seed?: number): boolean {
@@ -260,7 +282,8 @@ export function createWorldCoastAssets(renderer: WorldRenderer,
     models ??= import('./asset-model-loader.ts').then(({ createModelCache }) => createModelCache({ baseUrl, loadKtx2 }));
     return (await models).load(id, options);
   };
-  const loadTexture = async (url: string) => ((await loadKtx2()) as unknown as Ktx2TextureLoader).loadAsync(modelUrl(url, baseUrl));
+  const loadTexture = (url: string) => waitForSceneTexture(loadKtx2().then(loader =>
+    (loader as unknown as Ktx2TextureLoader).loadAsync(modelUrl(url, baseUrl))));
   const road: Road = {
     mesh: targets.road,
     anisotropy: Math.min(8, renderer.capabilities.getMaxAnisotropy()), // grazing-angle asphalt; Medium+ only

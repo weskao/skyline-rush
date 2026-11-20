@@ -26,7 +26,7 @@ interface Options {
 export function createCoastLook({ scene, renderer, lens, room, roomIntensity, envs, baseUrl = '/', sun, cars }: Options) {
   const environments: Envs = envs ?? createCoastEnvironments(renderer as WebGLRenderer, baseUrl, cars); // tests inject `envs`; the real renderer is a full WebGLRenderer
   const grade = lens.uniforms;
-  let key = '';
+  let key = '', pending = false;
   let applied: CoastEnvName | null = null, palette: { color: Color; intensity: number; position?: Vector3 } | null = null; // the track's own sun
   let paletteTrack = ''; // the track the procedural lighting was saved on
   let baseExposure = renderer.toneMappingExposure;
@@ -58,21 +58,27 @@ export function createCoastLook({ scene, renderer, lens, room, roomIntensity, en
     applied = name;
   }
   return {
+    get pending(): boolean { return pending; },
     update(trackId: string, preset: string, quality: VfxQuality) {
       const plan = coastEnvPlan(trackId, preset, quality);
       // Keyed by track as well: world.js resets the sun and exposure on a track change, so a track that shares the
       // last one's sky (Coast to Sky Spiral, both `day`) must have them applied again.
       const next = plan.kind === 'room' ? 'room' : `${trackId}:${plan.variant}`;
       if (next === key) return;
-      key = next;
+      key = next; pending = false;
       if (plan.kind === 'room') return applyRoom(trackId);
       const ready = environments.get(plan.variant);
       if (ready) return applyVariant(plan.variant, ready, trackId);
-      if (applied && trackId !== paletteTrack) applyRoom(trackId); // never another track's sky while this one loads, or after it fails
-      void environments.preload([plan.variant]).then(() => {
+      if (applied && trackId !== paletteTrack) applyRoom(trackId);
+      pending = true;
+      const settle = () => {
+        if (key !== next) return;
         const texture = environments.get(plan.variant);
-        if (key === next && texture) applyVariant(plan.variant, texture, trackId);
-      });
+        if (texture) applyVariant(plan.variant, texture, trackId);
+        else if (applied) applyRoom(trackId);
+        pending = false;
+      };
+      void environments.preload([plan.variant]).then(settle, settle);
     },
     /** Bloom strength before boost feedback: the variant's while its HDRI is on screen, else world.js's own. */
     bloomStrength: (fallback: number): number => applied ? COAST_ENV_VARIANTS[applied].bloom.strength : fallback,
