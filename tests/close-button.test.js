@@ -17,10 +17,12 @@ test('close buttons are never hand-rolled outside CloseButton.vue', () => {
   assert.deepEqual(rogue, []);
 });
 
-test('the shared close button shows × and requires an accessible name', () => {
+test('the shared close button has a default × and keeps panel-specific artwork accessible', () => {
   const component = readFileSync(new URL('CloseButton.vue', src), 'utf8');
   assert.match(component, /defineProps<\{ label: string \}>/);
-  assert.match(component, /:aria-label="label"[^>]*>×<\/button>/);
+  assert.match(component, /:aria-label="label"[^>]*><slot>×<\/slot><\/button>/);
+  const garage = readFileSync(new URL('GaragePanel.vue', src), 'utf8');
+  assert.match(garage, /<CloseButton id="garage-close"[^>]*><CollectibleIcon name="close" \/><\/CloseButton>/);
   const uses = markup.flatMap(([, text]) => [...text.matchAll(/<CloseButton\b[^>]*>/g)].map(match => match[0]));
   assert.ok(uses.some(use => use.includes('id="guide-cancel"')), 'the first-start dialog has its accessible close control');
   assert.ok(uses.some(use => use.includes('id="leave-close"')), 'the leave-race dialog has its accessible close control');

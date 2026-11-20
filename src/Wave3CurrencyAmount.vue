@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { wave3CurrencyArtUrl } from './wave3-demo-art.ts';
+import CollectibleIcon from './CollectibleIcon.vue';
+import { currencyIcon } from './collectible-icons.ts';
 import { demoCurrencyLabel } from './wave3-currency-view.ts';
 import type { DemoCurrency } from './wave3-experience-contract.ts';
 
@@ -8,7 +9,7 @@ defineProps<{ currency: DemoCurrency; amount: number; locale: string }>();
 
 <template>
   <span class="currency-amount" :title="demoCurrencyLabel(currency, locale)">
-    <img :src="wave3CurrencyArtUrl(currency)" width="16" height="16" alt="" />
+    <CollectibleIcon :name="currencyIcon[currency]" />
     <span>{{ amount.toLocaleString(locale === 'zh-TW' ? 'zh-TW' : 'en-US') }}</span>
     <span class="currency-name">{{ ' ' + demoCurrencyLabel(currency, locale) }}</span>
   </span>

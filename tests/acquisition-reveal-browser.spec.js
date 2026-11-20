@@ -189,11 +189,15 @@ test('an apparel action can retry a failed apply and plays a single confirmation
   });
   const reveal = page.locator('#acquisition-reveal');
   const wear = reveal.getByRole('button', { name: '立即穿戴' });
+  const icon = wear.locator('img[data-collectible-icon]');
+  await expect(icon).toHaveAttribute('data-collectible-icon', 'clothing');
+  await expect(icon).toHaveJSProperty('naturalWidth', 72);
   await wear.tap();
   await expect(reveal.getByRole('status')).toHaveText('目前無法套用此獎勵。');
   await wear.tap();
   const equipped = reveal.getByRole('button', { name: '已穿戴' });
   await expect(equipped).toBeDisabled();
+  await expect(equipped.locator('img')).toHaveAttribute('data-collectible-icon', 'check');
   await equipped.press('Enter');
   await expect.poll(() => page.evaluate(() => window.revealCues.map(([name]) => name))).toEqual([
     'acquisition-clothing', 'action-unavailable', 'equip-confirmed',

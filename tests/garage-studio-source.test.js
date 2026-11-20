@@ -27,5 +27,5 @@ test('Garage exposes one labeled switch for ground and flight poses', () => {
   assert.match(actions[0], /:data-garage-mode="nextPose"/);
   assert.match(actions[0], /role="switch"/);
   assert.match(actions[0], /:aria-checked="garageStudioView.mode === 'flight'"/);
-  assert.match(actions[0], /GARAGE_POSE_ART\[pose\]/);
+  assert.match(actions[0], /<CollectibleIcon :name="pose" \/>/);
 });

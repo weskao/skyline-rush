@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CollectibleIcon from '../CollectibleIcon.vue';
 import { computed, inject } from 'vue';
 import { equipGarageSkin, garageSkinEntry, garageSkinState } from '#garage-skin-runtime';
 import type { SkinId } from '../garage-skin-catalog.ts';
@@ -16,6 +17,7 @@ function equip(): void {
 
 <template>
   <button type="button" data-garage-playtest-equip :disabled="equipped" @click="equip">
+    <CollectibleIcon :name="equipped ? 'check' : 'tools'" />
     {{ equipped ? (locale === 'zh-TW' ? '已裝備' : 'Equipped') : (locale === 'zh-TW' ? '測試裝備' : 'Equip for testing') }}
   </button>
 </template>

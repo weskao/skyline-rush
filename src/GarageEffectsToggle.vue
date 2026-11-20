@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CollectibleIcon from './CollectibleIcon.vue';
 import { computed, watch } from 'vue';
 import { garageStudioView } from './garage-view-state.ts';
 
@@ -24,7 +25,7 @@ watch(() => garageStudioView.effectsReminder, (reminder, _, onCleanup) => {
     <button id="garage-effects-toggle" type="button" :aria-label="copy.label"
       :aria-pressed="garageStudioView.effectsVisible" aria-controls="garage-preview"
       :data-reminder="Boolean(garageStudioView.effectsReminder)">
-      <span aria-hidden="true">✦</span>
+      <CollectibleIcon :name="garageStudioView.effectsVisible ? 'effects' : 'effects-off'" />
       {{ garageStudioView.effectsVisible ? copy.on : copy.off }}
       <span v-if="garageStudioView.effectsReminder" :key="garageStudioView.effectsReminder"
         class="garage-vfx-pulse" aria-hidden="true"></span>

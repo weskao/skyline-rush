@@ -19,11 +19,9 @@
 .demo-wallet { --wallet-edge: #62d1dc; }
 .demo-wallet-cell[data-demo-balance="coins"] { --wallet-edge: #dba258; }
 .demo-wallet-cell[data-demo-balance="diamonds"] { --wallet-edge: #a5a1ff; }
-.demo-wallet-cell > span:not(.wave3-demo-art) { min-width: 0; overflow-wrap: anywhere; }
+.demo-wallet-cell > span { min-width: 0; overflow-wrap: anywhere; }
 .demo-wallet-cell strong { display: block; margin-bottom: 2px; color: #f1f8ff; font-size: 18px;
   line-height: 1.12; font-variant-numeric: tabular-nums; }
-.demo-wallet-cell :deep(.wave3-demo-art) { width: 26px; min-width: 26px; height: 26px; padding: 0; }
-.demo-wallet-cell :deep(.artwork-img) { display: block; min-width: 0; min-height: 0; }
 .demo-concept-art { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; margin: 10px 0;
   scrollbar-width: thin; }
 .demo-concept-icon { box-sizing: border-box; display: grid; place-items: center; flex: 0 0 88px;
@@ -110,9 +108,6 @@ button:not(.store-action-button):disabled { cursor: not-allowed; opacity: .55; }
   .demo-detail-copy p { display: none; }
   .demo-actions button:not(.store-action-button) { padding-inline: 6px; font-size: 11px; }
   .demo-wallet-cell { gap: 4px; }
-  /* The img carries an inline 26 px height (GarageArtworkImage size); cap it with the box or it squashes. */
-  .demo-wallet-cell :deep(.wave3-demo-art) { width: 21px; min-width: 21px; height: 21px; }
-  .demo-wallet-cell :deep(.artwork-img) { max-height: 21px; }
 }
 @media (max-width: 360px) and (orientation: portrait) {
   .demo-header { gap: 6px; }
@@ -125,3 +120,12 @@ button:not(.store-action-button):disabled { cursor: not-allowed; opacity: .55; }
   .demo-item-preview :deep(.garage-skin-card-name) { min-block-size: 2.4em; font-size: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }
+
+
+.demo-filters button > .collectible-icon { display: block; margin: 0 auto 1px; }
+@container (min-width: 730px) {
+  .demo-filters button > .collectible-icon { display: inline-block; margin: 0 4px 0 0; }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .demo-filters button > .collectible-icon { display: block; margin: 0 auto 1px; }
+}

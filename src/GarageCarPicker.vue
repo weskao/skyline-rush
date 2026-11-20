@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CollectibleIcon from './CollectibleIcon.vue';
 import { CARS, GT_UNLOCK_STARS, carAccess, carArtwork, gtTrialEndsAt, type CarId } from './car-catalog.ts';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import { garageCars, garageStudioView } from './garage-view-state.ts';
@@ -22,7 +23,7 @@ const artworkBase = import.meta.env.BASE_URL;
           <GarageArtworkImage :src="artworkBase + carArtwork(id)" :size="144" :height="66" alt="" loading="eager" />
         </span>
         <span class="garage-car-name">{{ text('car.' + id) }}</span>
-        <span class="garage-car-badge" aria-hidden="true">{{ id === garageStudioView.car ? `✓ ${text('car.inUse')}` : access(id) === 'locked' ? text('car.preview') : text('car.select') }}</span>
+        <span class="garage-car-badge" aria-hidden="true"><CollectibleIcon :name="id === garageStudioView.car ? 'check' : access(id) === 'locked' ? 'locked' : 'car'" />{{ id === garageStudioView.car ? text('car.inUse') : access(id) === 'locked' ? text('car.preview') : text('car.select') }}</span>
       </button>
     </div>
     <div v-if="garageCars.access !== 'owned'" id="gt-access-detail" class="garage-gt-access">
@@ -30,7 +31,7 @@ const artworkBase = import.meta.env.BASE_URL;
       <span v-if="garageCars.access === 'trial' && garageCars.trialStartedAt !== undefined">
         {{ text('car.gt.trialUntil', { time: trialExpiry(garageCars.trialStartedAt) }) }}
       </span>
-      <button v-else-if="garageCars.trialStartedAt === undefined" type="button" class="text-button" data-gt-trial>
+      <button v-else-if="garageCars.trialStartedAt === undefined" type="button" class="text-button" data-gt-trial><CollectibleIcon name="play" />
         {{ text('car.gt.startTrial') }}
       </button>
       <span v-else>{{ text('car.gt.trialEnded') }}</span>

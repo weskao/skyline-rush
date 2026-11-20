@@ -1,0 +1,14 @@
+import type { SkinCategory } from './garage-skin-catalog.ts';
+import type { DemoCurrency } from './wave3-experience-contract.ts';
+
+export const collectibleIconUrl = (name: string): string =>
+  `${import.meta.env.BASE_URL}feature-assets/collectible-ui/${name}@3x.webp`;
+
+export const skinCategoryIcon: Record<SkinCategory | 'all', string> = {
+  all: 'collection', thruster: 'equipment', airflow: 'airflow', 'nitro-trail': 'nitro',
+  'launch-flare': 'launch', 'drift-trail': 'drift',
+};
+
+export const currencyIcon: Record<DemoCurrency, string> = {
+  points: 'price', coins: 'currency', diamonds: 'diamond',
+};

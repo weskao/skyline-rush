@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CollectibleIcon from './CollectibleIcon.vue';
 // Vue shell owns event-driven panels; main.js keeps the legacy racing HUD and simulation loop.
 // Static text carries data-i18n / data-i18n-title / data-i18n-aria-label keys; applyI18n() (src/i18n.js) fills them per locale.
 // Text that main.js always rewrites before it is seen (HUD readouts, statuses, route heading) stays untagged.
@@ -241,9 +242,9 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       <nav class="showcase-camera-dock" id="showcase-camera-dock" aria-label="Showcase camera" data-i18n-aria-label="vfx.view">
         <span class="showcase-camera-heading" data-i18n="showcase.heading">CAMERA VIEW</span>
         <div class="showcase-camera-actions">
-          <button type="button" id="showcase-camera-prev" aria-label="Previous camera view" data-i18n-aria-label="showcase.previous">‹</button>
+          <button type="button" id="showcase-camera-prev" aria-label="Previous camera view" data-i18n-aria-label="showcase.previous"><span class="showcase-dock-glyph" aria-hidden="true">‹</span><CollectibleIcon name="left" /></button>
           <span id="showcase-camera-name" role="status" aria-live="polite"></span>
-          <button type="button" id="showcase-camera-next" aria-label="Next camera view" data-i18n-aria-label="showcase.next">›</button>
+          <button type="button" id="showcase-camera-next" aria-label="Next camera view" data-i18n-aria-label="showcase.next"><span class="showcase-dock-glyph" aria-hidden="true">›</span><CollectibleIcon name="right" /></button>
         </div>
         <span class="showcase-camera-dots" id="showcase-camera-dots" aria-hidden="true"></span>
       </nav>

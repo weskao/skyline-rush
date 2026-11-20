@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CollectibleIcon from './CollectibleIcon.vue';
 import { computed, inject, nextTick, ref } from 'vue';
 import Wave3DemoStore from './Wave3DemoStore.vue';
 import Wave3DemoCollection from './Wave3DemoCollection.vue';
@@ -57,20 +58,20 @@ const returnToRace = () => document.querySelector<HTMLButtonElement>('#garage-cl
       <p>{{ locale === 'zh-TW' ? '完成賽事與挑戰，取得試玩獎勵並兌換暫時外觀。' :
         'Race and complete challenges to earn demo rewards and redeem temporary cosmetics.' }}</p>
       <nav class="wave3-demo-entry-actions">
-        <button v-if="!embedded" type="button" data-wave3-open-store @click="navigate('store')">{{ locale === 'zh-TW' ? '開啟試玩商城' : 'Open Demo Store' }}</button>
-        <button v-if="!embedded" type="button" data-wave3-open-collection @click="navigate('collection')">{{ locale === 'zh-TW' ? '試玩收藏' : 'Demo Collection' }}</button>
-        <button type="button" data-wave3-reset :disabled="resetting" @click="reset">{{ locale === 'zh-TW' ? '重設試玩' : 'Reset demo' }}</button>
+        <button v-if="!embedded" type="button" data-wave3-open-store @click="navigate('store')"><CollectibleIcon name="cart" />{{ locale === 'zh-TW' ? '開啟試玩商城' : 'Open Demo Store' }}</button>
+        <button v-if="!embedded" type="button" data-wave3-open-collection @click="navigate('collection')"><CollectibleIcon name="collection" />{{ locale === 'zh-TW' ? '試玩收藏' : 'Demo Collection' }}</button>
+        <button type="button" data-wave3-reset :disabled="resetting" @click="reset"><CollectibleIcon name="reset" />{{ locale === 'zh-TW' ? '重設試玩' : 'Reset demo' }}</button>
       </nav>
       <p v-if="resetFailed" role="status">{{ locale === 'zh-TW' ? '無法重設試玩進度，請再試一次。' : 'Could not reset demo progress. Try again.' }}</p>
     </template>
     <template v-else>
-      <button v-if="!embedded || page === 'collection'" type="button" class="wave3-demo-back" @click="navigate('home')">{{ backLabel }}</button>
+      <button v-if="!embedded || page === 'collection'" type="button" class="wave3-demo-back" @click="navigate('home')"><CollectibleIcon name="left" />{{ backLabel }}</button>
       <Wave3DemoStore v-if="page === 'store'" :port="wave3DemoExperience" :locale="locale" :active="active"
         :embedded="embedded"
         :trial-access="garageSkinEntry" :skin-revision="garageSkinState.revision"
         @preview="selectGarageSkin" @open-collection="openCollection">
         <template v-if="embedded" #navigation>
-          <button type="button" class="wave3-store-back" @click="navigate('home')">{{ backLabel }}</button>
+          <button type="button" class="wave3-store-back" @click="navigate('home')"><CollectibleIcon name="left" />{{ backLabel }}</button>
         </template>
       </Wave3DemoStore>
       <Wave3DemoCollection v-else :port="wave3DemoExperience" :locale="locale" :initial-item-id="collectionItem"
