@@ -13,6 +13,7 @@ import { createDriftCharge } from './drift-charge-vfx.js';
 import { createSkidMarks } from './skid-marks.js';
 import { createMiniBoostStreaks } from './mini-boost-streaks.js';
 import { LIFT_PORTS, liftPort } from './lift-ports.js';
+import { createNitroSparks } from './nitro-sparks.ts';
 import { blue, bonusStyles, gas, gold, mist, orange, pickupColors, purple, ringColors } from './effects-palette.ts';
 
 const COUNT = 480, flatShadow = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
@@ -109,7 +110,8 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
   }
   let classicRoute;
   const roadPoint = (d, x) => classicRoute?.point(d, x) ?? [roadCenter(d) + x, -d];
-  const burst = createParticleBurst(emit, roadPoint);
+  const burst = createParticleBurst(emit, roadPoint), nitroSparks = createNitroSparks(emit);
+  const headingAt = d => classicRoute?.heading(d) ?? Math.atan((roadCenter(d + 1) - roadCenter(d - 1)) / 2);
   const statusEmit = (d, x, y, ...rest) => { const [wx, wz] = roadPoint(d, x); emit(wx, y, -wz, ...rest); }; // rival-status-fx.ts
   // rings[0] flashes a crash, rings[1] a hit the shield blocked (ITEM-12); one shader program for both.
   const rings = [orange, blue].map(color => {
@@ -132,6 +134,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
   scene.add(statusTint.object);
   return {
     setDriftTrail(id) { skids?.setSkin(id); },
+    setNitroTrail(ids) { nitroSparks.setSkin(ids); },
     // `origin`: the scene's floating origin (scene + origin = absolute; world.js), defaulting to the flat road's.
     update(race, dt, center, preview, reducedMotion, vehicles, options = {}, origin = null) {
       dt = Math.max(0, dt);
@@ -247,6 +250,8 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
         if (lastLanding && active) burst(lastLanding, 65, mist, car.speed, true);
         if (lastLanding?.chain && active) burst(lastLanding, reducedMotion ? 6 : lowQuality ? 12 : 40, blue, car.speed);
       }
+      // NITRO sparks leave the player's rear ports through this pool (nitro-sparks.ts): none in calm modes or with VFX off.
+      if (active) nitroSparks.update(vehicles?.[0], car, headingAt(car.distance), center, originZ, dt, options.quality ?? 'high', reducedMotion);
       for (let source = 0; source <= race.rivals.length; source++) {
         const driver = source === 0 ? car : race.rivals[source - 1];
         const pose = vehicles?.[source];
@@ -266,7 +271,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
         if (!enabled || strengths[source] < 0.01 || dt === 0) continue;
         const d = preview ? source === 0 ? 340 : 375 + (source - 1) * 28 : driver.distance;
         const altitude = pose ? pose.position.y : preview ? source === 0 ? 1.6 : 5 : driver.altitude;
-        const heading = classicRoute?.heading(d) ?? Math.atan((roadCenter(d + 1) - roadCenter(d - 1)) / 2);
+        const heading = headingAt(d);
         const speed = preview ? 0 : driver.speed;
         if (pose) pose.updateWorldMatrix(true, false);
         emissions[source] = Math.min(12, emissions[source] + dt * strengths[source] * (reducedMotion ? 65 : source === 0 ? 240 : 90));
