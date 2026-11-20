@@ -44,7 +44,7 @@ onMounted(() => {
 });
 onUnmounted(() => unsubscribe?.());
 const copy = computed(() => locale.value === 'zh-TW' ? {
-  showroom: '3D 車輛展示間', title: '預覽工作室', open: '開啟全螢幕預覽', back: '返回車庫',
+  showroom: '3D 車輛展示間', title: '車庫', open: '檢視模式', back: '結束檢視',
   hint: '拖曳旋轉，雙指或滾輪縮放', angles: ['車頭', '車尾', '側面', '俯視', '斜後方'], free: '自由視角', angle: '鏡頭角度', prevAngle: '上一個角度', nextAngle: '下一個角度',
   left: '向左旋轉', right: '向右旋轉', zoomIn: '放大', zoomOut: '縮小',
   auto: '環繞', reset: '重設鏡頭', undo: '復原車漆', ground: '平地', flight: '飛行', wing: '尾翼', collection: '車漆收藏',
@@ -53,7 +53,7 @@ const copy = computed(() => locale.value === 'zh-TW' ? {
   preview: '試看', previewing: '試看中', cars: '車款', paints: '車漆', effects: '特效', missions: '任務',
   store: wave3DemoEnabled ? '試玩商城' : '商店展示', collectionTab: '試玩收藏', ready: '項可領取',
 } : {
-  showroom: '3D vehicle showroom', title: 'PREVIEW STUDIO', open: 'Open full-screen Studio', back: 'Back to Garage',
+  showroom: '3D vehicle showroom', title: 'Garage', open: 'Inspect', back: 'Done',
   hint: 'Drag to rotate. Pinch or scroll to zoom.', angles: ['Front', 'Rear', 'Side', 'Top', '3/4 view'], free: 'Free view', angle: 'Camera angle', prevAngle: 'Previous angle', nextAngle: 'Next angle',
   left: 'Rotate left', right: 'Rotate right', zoomIn: 'Zoom in', zoomOut: 'Zoom out',
   auto: 'Orbit', reset: 'Reset camera', undo: 'Undo paint', ground: 'Ground', flight: 'Flight', wing: 'Wing', collection: 'Paint collection',
@@ -75,9 +75,10 @@ const isPreviewingPaint = (id: string): boolean =>
 <template>
   <dialog id="garage-screen" @close="resetGarage" class="history-screen garage-screen" :data-page="garageStudioView.page" aria-labelledby="garage-title">
     <header class="garage-heading">
-      <button v-show="garageStudioView.page === 'studio'" id="garage-studio-back" type="button" :aria-label="copy.back">‹ {{ copy.back }}</button>
-      <h2 id="garage-title">{{ garageStudioView.page === 'studio' ? copy.title : (locale === 'zh-TW' ? '車庫' : 'Garage') }}</h2>
-      <button id="garage-studio-open" v-show="garageStudioView.page === 'home'" type="button" class="garage-entry">{{ copy.open }} ↗</button>
+      <h2 id="garage-title">{{ copy.title }}</h2>
+      <!-- Inspect mode is a state of the one Garage, not a second page: both buttons sit in the same spot. -->
+      <button id="garage-studio-open" v-show="garageStudioView.page === 'home'" type="button" class="garage-entry garage-inspect-toggle"><svg v-bind="ICON_ATTRS" v-html="icons.eye"></svg><span>{{ copy.open }}</span></button>
+      <button v-show="garageStudioView.page === 'studio'" id="garage-studio-back" type="button" class="garage-inspect-toggle" :aria-label="copy.back"><svg v-bind="ICON_ATTRS" v-html="icons.eye"></svg><span>{{ copy.back }}</span></button>
       <CloseButton id="garage-close" label="Close garage" data-i18n-aria-label="garage.close" /></header>
     <div class="garage-layout" :data-demo-store="wave3DemoEnabled && section === 'store' ? '' : undefined"
       :data-demo-catalog="wave3DemoEnabled && (section === 'store' || section === 'collection') ? '' : undefined">
@@ -201,6 +202,8 @@ const isPreviewingPaint = (id: string): boolean =>
 #garage-screen .garage-heading { display: flex; align-items: center; gap: 6px; flex: none; min-height: 44px; }
 #garage-screen .garage-heading h2 { margin: 0; flex: 1; min-width: 0; font-size: clamp(18px, 2.4vw, 26px); }
 #garage-screen .garage-heading > button:not(.close-button), #garage-screen .garage-camera-controls button, #garage-screen .garage-entry { min-height: 44px; border: 1px solid #698297; border-radius: 6px; background: #1b3044; padding: 8px 12px; }
+#garage-screen .garage-inspect-toggle { display: inline-flex; align-items: center; gap: 6px; }
+#garage-screen .garage-inspect-toggle svg { width: 20px; height: 20px; flex: none; }
 #garage-screen .garage-entry { flex: 0 1 auto; align-self: center; max-width: min(49vw, 240px); border-color: var(--accent); font-weight: 700; line-height: 1.15; font-size: clamp(11px, 1.5vw, 13px); padding-inline: 9px; }
 /* Preserve both 96px artwork columns after the catalog's padding and scrollbar. */
 #garage-screen .garage-layout { min-height: 0; flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) clamp(272px, 27vw, 400px); gap: 8px; }
@@ -244,7 +247,6 @@ const isPreviewingPaint = (id: string): boolean =>
 /* Actual 3D car and studio lighting are rendered by Three.js; CSS owns controls only. */
 #garage-screen.garage-screen { color: #e8f3fb; background: radial-gradient(ellipse at 32% 22%, #193549 0, #0a1624 56%, #060e1b 100%); }
 #garage-screen[data-page="studio"] .garage-heading { border-bottom: 1px solid #28475b; padding-bottom: 3px; }
-#garage-screen[data-page="studio"] .garage-heading h2 { margin-left: 5px; font-style: italic; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
 #garage-screen .garage-kicker { margin: 0; color: #71c8dd; letter-spacing: .2em; font-size: 10px; }
 #garage-screen[data-page="studio"] .garage-visual { background: #091827; border: 1px solid #294858; border-radius: 10px; padding: 4px; }
 #garage-screen[data-page="studio"] .garage-preview { border-color: #31576c; background: #08121f; box-shadow: inset 0 0 50px #06101b; }

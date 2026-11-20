@@ -6,7 +6,9 @@ import { currentGarageSkins, selectedGarageSkins, cancelGarageSkinPreview, subsc
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import type { GaragePose } from './track-preview.ts';
 import { garageStudioView, updateGarageStudioView, updateGarageView } from './garage-view-state.ts';
-import { defaultGarageCamera, dragGarageCamera, garagePreset, stepGarageAngle, toggleGarageOrbit, zoomGarageCamera, releaseGarageOrbit, setGarageMode, toggleGarageWing } from './garage-camera.ts';
+import { defaultGarageCamera, dragGarageCamera, garagePreset, stepGarageAngle, toggleGarageOrbit, zoomGarageCamera, setGarageMode, toggleGarageWing, garageSectionCamera, GARAGE_SECTION_SHOWCASE } from './garage-camera.ts';
+import { setupGarageStudioGestures } from './garage-studio-gestures.ts';
+import type { ShowcaseView } from './vfx-settings.ts';
 import type { GarageCamera } from './garage-camera.ts';
 import type { GarageLighting } from './garage-stage.ts';
 import { t } from './i18n.ts';
@@ -48,6 +50,8 @@ interface GarageDependencies {
   startSimulation: typeof import('./frame-pacing.ts').startRace;
   syncProgress(): Promise<unknown>;
   subscribeAccount(listener: (uid: string | null) => void): void;
+  /** Temporary home-showcase view while the Garage is open; null restores the saved one (vfx-ui.ts). */
+  previewShowcaseView?(view: ShowcaseView | null): void;
 }
 
 export function garagePresentation(
@@ -60,7 +64,7 @@ export function garagePresentation(
 
 // Preserve the existing WebGL canvas, paint entitlement source and race state.
 export function setupGarageUI({
-  getWorld, canOpen, clearControls, cue, getEquippedPaint, setEquippedPaint, getStars, availablePaints, subscribeAccount, startSimulation, syncProgress,
+  getWorld, canOpen, clearControls, cue, getEquippedPaint, setEquippedPaint, getStars, availablePaints, subscribeAccount, startSimulation, syncProgress, previewShowcaseView,
 }: GarageDependencies) {
   const $ = <T extends HTMLElement = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   const garageScreen = $<HTMLDialogElement>('#garage-screen');
@@ -75,8 +79,7 @@ export function setupGarageUI({
   let previousPaint: string | null = null;
   const owned = (): string[] => availablePaints(getStars());
   let camera = defaultGarageCamera();
-  let orbitBeforeGesture = false;
-  const contacts = new Map<number, { x: number; y: number }>();
+  let section = 'cars';
   let pendingStudioInspection = false;
   function syncSkins(): void {
     const equipped = currentGarageSkins();
@@ -198,12 +201,13 @@ export function setupGarageUI({
     setCamera(zoomGarageCamera(camera, multiplier), garageStudioView.angle);
   }
   function showPage(page: 'home' | 'studio'): void {
-    if (page === 'home') contacts.clear();
+    if (page === 'home') gestures.clear();
     updateGarageStudioView({ page });
     delete preview.dataset.carInFrame;
     syncWorldCamera();
     getWorld()?.resize();
     syncSkins();
+    followSection();
     inspectStudioAfterFrame();
     queueMicrotask(() => (page === 'studio' ? preview : $('#garage-studio-open')).focus({ preventScroll: true }));
   }
@@ -222,14 +226,19 @@ export function setupGarageUI({
     if (page === 'home' || page === 'studio') history.back();
     else { leavingGarage = false; garageScreen.close(); }
   }
-  function releaseContact(id: number): void {
-    const hadPointer = contacts.delete(id);
-    if (!hadPointer || contacts.size !== 0 || !garageScreen.open) return;
-    if (garageStudioView.page === 'studio' && camera.autoRotate !== orbitBeforeGesture) {
-      setCamera(releaseGarageOrbit(camera, orbitBeforeGesture));
+  /** Turn the camera to the part the open section changes: the Studio camera inspecting, the showcase on Home. */
+  function followSection(): void {
+    if (garageStudioView.page === 'home') {
+      if (Object.hasOwn(GARAGE_SECTION_SHOWCASE, section)) previewShowcaseView?.(GARAGE_SECTION_SHOWCASE[section]!);
+      return;
     }
-    clearControls();
+    const next = garageSectionCamera(section, camera);
+    if (next) setCamera(next.camera, next.angle);
   }
+  garageScreen.querySelector('.garage-section-nav')!.addEventListener('click', event => {
+    const next = (event.target as Element).closest<HTMLElement>('[data-garage-section]')?.dataset.garageSection;
+    if (next) { section = next; followSection(); }
+  });
 
   function equipPaint(id: string): void {
     previousPaint = getEquippedPaint() === id ? previousPaint : getEquippedPaint();
@@ -308,7 +317,9 @@ export function setupGarageUI({
     } else garageScreen.close();
   });
   garageScreen.addEventListener('close', () => {
-    contacts.clear();
+    gestures.clear();
+    section = 'cars';
+    previewShowcaseView?.(null);
     $('#app').prepend($('#world'));
     dockParent.insertBefore(dock, dockNext);
     getWorld()?.setGarageCamera(null);
@@ -349,46 +360,9 @@ export function setupGarageUI({
     { ...garagePreset('cinematic'), mode: camera.mode, wing: camera.wing }, 'cinematic',
   ));
   $('#garage-auto-rotate').addEventListener('click', () => setCamera(toggleGarageOrbit({ ...camera, yaw: currentCameraYaw() })));
-  preview.addEventListener('pointerdown', event => {
-    if (garageStudioView.page !== 'studio' || event.pointerType === 'mouse' && event.button !== 0) return;
-    if (contacts.size === 0) orbitBeforeGesture = camera.autoRotate;
-    contacts.set(event.pointerId, { x: event.clientX, y: event.clientY });
-    preview.setPointerCapture(event.pointerId);
-    event.preventDefault();
-  });
-  preview.addEventListener('pointermove', event => {
-    const old = contacts.get(event.pointerId);
-    if (!old || garageStudioView.page !== 'studio') return;
-    const now = { x: event.clientX, y: event.clientY };
-    if (contacts.size === 1) rotateCamera(now.x - old.x, now.y - old.y);
-    else {
-      const other = [...contacts].find(([id]) => id !== event.pointerId)?.[1];
-      if (other) {
-        const before = Math.hypot(old.x - other.x, old.y - other.y);
-        const after = Math.hypot(now.x - other.x, now.y - other.y);
-        if (after > 4) zoomCamera(before / after);
-      }
-    }
-    contacts.set(event.pointerId, now);
-    event.preventDefault();
-  });
-  for (const name of ['pointerup', 'pointercancel', 'lostpointercapture'] as const)
-    preview.addEventListener(name, event => releaseContact((event as PointerEvent).pointerId));
-  preview.addEventListener('wheel', event => {
-    if (garageStudioView.page !== 'studio') return;
-    event.preventDefault();
-    zoomCamera(Math.exp(Math.sign(event.deltaY) * .1));
-  }, { passive: false });
-  preview.addEventListener('keydown', event => {
-    if (garageStudioView.page !== 'studio') return;
-    if (event.key === 'ArrowLeft') rotateCamera(-25, 0);
-    else if (event.key === 'ArrowRight') rotateCamera(25, 0);
-    else if (event.key === 'ArrowUp') rotateCamera(0, -25);
-    else if (event.key === 'ArrowDown') rotateCamera(0, 25);
-    else if (event.key === '+' || event.key === '=') zoomCamera(.85);
-    else if (event.key === '-') zoomCamera(1.15);
-    else return;
-    event.preventDefault();
+  const gestures = setupGarageStudioGestures({
+    preview, isOpen: () => garageScreen.open, isStudio: () => garageStudioView.page === 'studio',
+    camera: () => camera, setCamera, rotate: rotateCamera, zoom: zoomCamera, clearControls,
   });
   showGarage();
   return { showGarage, adoptCar, syncSkins, previewPaint, startRace };

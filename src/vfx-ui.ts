@@ -20,13 +20,16 @@ export function setupVfxUI({ getWorld, onAirflowShown, reducedMotion }: VfxOptio
   const airflowToggles = document.querySelectorAll<HTMLButtonElement>('#airflow-toggle, #home-airflow-toggle');
   const deviceSelection = readInitialDeviceVisuals();
   let visual = deviceSelection.settings;
+  /** Garage-only camera view; shown and rendered but never saved (garage-ui.ts section camera). */
+  let previewView: ShowcaseView | null = null;
   const calm = (): boolean => visual.comfortable || reducedMotion.matches;
   function stopMotionIfCalm(): void {
     if (calm()) document.getAnimations().forEach(animation => animation.cancel());
   }
   function showAeroMode(): void { $('#aero-mode').textContent = t(visual.aeroMode === 'downforce' ? 'hud.highDownforce' : 'hud.lowDrag'); }
   function showVFX(): void {
-    getWorld()?.configureVFX(visual);
+    const view = previewView ?? visual.view;
+    getWorld()?.configureVFX(previewView ? { ...visual, view } : visual);
     for (const control of vfxControls) {
       const key = control.dataset.vfx as keyof VfxSettings;
       if (control.type === 'checkbox') control.checked = visual[key] as boolean;
@@ -34,9 +37,9 @@ export function setupVfxUI({ getWorld, onAirflowShown, reducedMotion }: VfxOptio
       if (control.type === 'range') (control.previousElementSibling as HTMLOutputElement).value = String(visual[key]);
     }
     const dock = $('#showcase-camera-dock');
-    const viewIndex = SHOWCASE_VIEWS.indexOf(visual.view);
-    $('#showcase-camera-name').textContent = t('vfx.view.' + visual.view);
-    dock.setAttribute('data-view', visual.view);
+    const viewIndex = SHOWCASE_VIEWS.indexOf(view);
+    $('#showcase-camera-name').textContent = t('vfx.view.' + view);
+    dock.setAttribute('data-view', view);
     $('#showcase-camera-dots').replaceChildren(...SHOWCASE_VIEWS.map((_view, i) => {
       const dot = document.createElement('i');
       dot.classList.toggle('is-active', i === viewIndex);
@@ -69,7 +72,9 @@ export function setupVfxUI({ getWorld, onAirflowShown, reducedMotion }: VfxOptio
     showVFX();
   });
   function stepShowcaseView(delta: number): void {
-    visual = vfxSettings({ ...visual, view: stepView(visual.view, delta) });
+    // Stepping from a Garage preview view saves the view the player lands on, as stepping always has.
+    visual = vfxSettings({ ...visual, view: stepView(previewView ?? visual.view, delta) });
+    previewView = null;
     showVFX();
   }
   $('#showcase-camera-prev').addEventListener('click', () => stepShowcaseView(-1));
@@ -83,10 +88,15 @@ export function setupVfxUI({ getWorld, onAirflowShown, reducedMotion }: VfxOptio
     calm,
     stopMotionIfCalm,
     toggleAirflow,
+    previewView(view: ShowcaseView | null): void {
+      if (view === previewView) return;
+      previewView = view;
+      showVFX();
+    },
     /** One-off language switch: the camera name and aero mode label. */
     relabel(): void {
       showAeroMode();
-      $('#showcase-camera-name').textContent = t('vfx.view.' + visual.view);
+      $('#showcase-camera-name').textContent = t('vfx.view.' + (previewView ?? visual.view));
     },
   };
 }

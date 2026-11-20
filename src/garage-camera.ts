@@ -1,3 +1,4 @@
+import type { ShowcaseView } from './vfx-settings.ts';
 /** Studio camera is an event-driven snapshot; only the renderer reads it each frame. */
 export interface GarageCamera {
   yaw: number;
@@ -80,3 +81,13 @@ export function garageFramedDistance(
   const fit = Math.max(width / (vTan * safeAspect), height / vTan);
   return Math.max(4, depth + fit * (1.12 + (Math.min(safeZoom, 1.6) - .75) * .45));
 }
+
+const SECTION_ANGLES: Readonly<Record<string, string>> = { paints: 'side', effects: 'rear' };
+/** Inspect-mode camera for a Garage section: Effects faces the exhaust, Paints the flank, Cars orbits; others keep it. */
+export function garageSectionCamera(section: string, camera: GarageCamera): { camera: GarageCamera; angle: string } | null {
+  const angle = SECTION_ANGLES[section];
+  const base = section === 'cars' ? defaultGarageCamera() : angle ? garagePreset(angle) : null;
+  return base && { camera: { ...base, zoom: camera.zoom, mode: camera.mode, wing: camera.wing }, angle: angle ?? '' };
+}
+/** Garage Home borrows the home showcase camera; null = the player's own saved view. Sections not listed keep it. */
+export const GARAGE_SECTION_SHOWCASE: Readonly<Record<string, ShowcaseView | null>> = { cars: null, paints: 'left', effects: 'rear' };
