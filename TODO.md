@@ -1,3 +1,9 @@
+# Garage showcase camera selection (2026-11-20)
+
+- [x] RED → GREEN: DOM integration reproduced Paints changing `right` to `left` and Effects changing `right` to `rear`. Chromium reproduced the Paints failure in the running game. All three showcase Playwright cases now pass at 1440×900, 390×844 and 844×390, including category and preview actions, the inspect-mode round trip, and both arrows saving the new value. Desktop screenshots of Paints and Effects showed the same Right label, with zero page errors.
+- [x] Typecheck, production and trial builds, and `npm test` passed (3,637 passed, 4 skipped).
+- [ ] Verify real-device touch and the exact-HEAD CI quality gate. The default local `make verify` browser stage could not launch Google Chrome, so the focused browser tests used Chromium Headless Shell.
+
 # Alpine triangle budget after the motorsport rivals (2026-11-20)
 
 - [x] Root cause of the quality-gate failure in [run 44610480338](https://github.com/weskao/skyline-rush/actions/runs/44610480338): a per-object probe on Alpine at 1440×900 Medium measured the seven rivals at 6,474 triangles before 2f904b5f and 15,208 after it. World Tour scenery was unchanged at 34,284. Gated scenery went from 63,963 to 72,205, over the 66,490 limit.
