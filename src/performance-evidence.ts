@@ -16,7 +16,7 @@ export interface PerformanceEvidence {
   version: 1; source: 'software-webgl-ci' | 'browser-webgl'; track: string;
   quality: Quality; viewport: { width: number; height: number; pixelRatio: number };
   browser: string; commit: string; drawCalls: number; triangles: number;
-  /** The player car's share of `triangles`; the scenery budget excludes it. */
+  /** The drawn cars' share of `triangles` (player and rivals); the scenery budget excludes it. */
   carTriangles: number;
   p50Ms: number; p95Ms: number; fps: number; windowSeconds: number;
 }
