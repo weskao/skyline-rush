@@ -38,22 +38,60 @@ test('inspect-mode camera turns to the part each Garage section changes', async 
   await expect(page.locator('#garage-auto-rotate')).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('Garage Home section camera is temporary and never rewrites the saved showcase view', async ({ page }) => {
-  await page.goto('/');
-  const dock = page.locator('#showcase-camera-dock');
-  const saved = await dock.getAttribute('data-view');
-  const stored = () => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-vfx') ?? '{}').view ?? null);
-  const before = await stored();
-  await openGarage(page);
-  await openGarageSection(page, 'effects');
-  await expect(dock).toHaveAttribute('data-view', 'rear');
-  await openGarageSection(page, 'paints');
-  await expect(dock).toHaveAttribute('data-view', 'left');
-  expect(await stored()).toBe(before);
-  await openGarageSection(page, 'cars');
-  await expect(dock).toHaveAttribute('data-view', saved);
-  await openGarageSection(page, 'effects');
-  await page.locator('#garage-close').click();
-  await expect(dock, 'closing the Garage restores the home camera').toHaveAttribute('data-view', saved);
-  expect(await stored()).toBe(before);
-});
+for (const [width, height] of [[1440, 900], [390, 844], [844, 390]]) {
+  test(`only the Garage showcase arrows change its selected view at ${width}x${height}`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', view: 'right' })));
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    await page.locator('#garage-button').click();
+    const dock = page.locator('#showcase-camera-dock');
+    const name = dock.locator('#showcase-camera-name');
+    const stored = () => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-vfx') ?? '{}').view);
+    await expect(page.locator('#garage-screen #showcase-camera-dock')).toBeVisible();
+    await expect(dock).toHaveAttribute('data-view', 'right');
+    const selectedName = await name.textContent();
+
+    for (const section of ['paints', 'effects', 'missions', 'store', 'collection', 'cars']) {
+      const tab = page.locator(`[data-garage-section="${section}"]`);
+      if (section === 'collection' && !await tab.isVisible()) continue;
+      await tab.click();
+      await expect(tab).toHaveAttribute('aria-pressed', 'true');
+      await expect(dock, `${section} keeps the showcase view`).toHaveAttribute('data-view', 'right');
+      await expect(name).toHaveText(selectedName);
+    }
+
+    await page.locator('[data-car="crimson-gt"]').click();
+    await expect(dock).toHaveAttribute('data-view', 'right');
+    await openGarageSection(page, 'paints');
+    await page.locator('[data-paint="obsidian"]').click();
+    await expect(dock).toHaveAttribute('data-view', 'right');
+    await openGarageSection(page, 'effects');
+    await page.locator('[data-skin="thruster-ion"] .garage-skin-preview-hitarea').click();
+    await expect(dock).toHaveAttribute('data-view', 'right');
+
+    for (const id of ['garage-pose-action', 'garage-wing', 'garage-lighting', 'garage-effects-toggle']) {
+      await page.locator(`#${id}`).click();
+      await expect(dock, `${id} keeps the showcase view`).toHaveAttribute('data-view', 'right');
+    }
+
+    await page.locator('#garage-studio-open').click();
+    await expect(dock).toBeHidden();
+    await page.locator('#garage-studio-back').click();
+    await expect(dock).toBeVisible();
+    await expect(dock).toHaveAttribute('data-view', 'right');
+    await expect.poll(stored).toBe('right');
+
+    await dock.locator('#showcase-camera-prev').click();
+    await expect(dock).toHaveAttribute('data-view', 'left');
+    await expect(name).not.toHaveText(selectedName);
+    await expect.poll(stored).toBe('left');
+    await dock.locator('#showcase-camera-next').click();
+    await expect(dock).toHaveAttribute('data-view', 'right');
+    await expect(name).toHaveText(selectedName);
+    await expect.poll(stored).toBe('right');
+    await page.locator('#garage-close').click();
+    await expect(page.locator('#garage-screen #showcase-camera-dock')).toHaveCount(0);
+    await expect(dock).toHaveAttribute('data-view', 'right');
+  });
+}
