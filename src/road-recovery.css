@@ -10,13 +10,13 @@
 }
 body[data-phase="racing"]:not([data-tutorial], .layout-editing) #vehicle-reset-button {
   display: grid;
-  grid-template-rows: 18px 10px;
+  grid-template-rows: 18px 12px;
   place-content: center;
   place-items: center;
   gap: 2px;
 }
 #vehicle-reset-button svg { width: 18px; height: 18px; }
-#vehicle-reset-button > span { font-size: 9px; font-weight: 700; line-height: 1; }
+#vehicle-reset-button > span { font-size: 12px; font-weight: 700; line-height: 1; }
 @media (any-pointer: coarse) { #vehicle-reset-button .key-badge { display: none; } }
 
 #race-recovery {
