@@ -10,7 +10,7 @@ import { updateCoachView } from './tutorial-coach-state.ts';
 import { createApp } from 'vue';
 import App from './App.vue';
 import { icon } from './icons.ts';
-import { startRace as startSimulation, stepRace, dailyChallenge, gapChargeWarning } from './game.js';
+import { startRace as startSimulation, stepRace, dailyChallenge, gapChargeWarning, requestRaceReset } from './game.js';
 import { createRace } from './race-factory.ts';
 import { createControls } from './input.ts';
 import { createSprintSeries, nextSprintGrid } from './sprint-series.ts';
@@ -108,7 +108,7 @@ const keymap = setupKeyMapUI({ clearControls: () => controls.clear(), say });
 // Its action callback only runs on input, so the handlers declared further down are ready by then.
 const controls = createControls(window, action => {
   if (!startup.entered || document.querySelector('dialog[open]')) { controls.clear(); return; }
-  ({ start, restart, pause, item: itemUI.activate, sound: toggleSound, camera: changeCamera, assist: autoAssist.toggle, airflow: vfx.toggleAirflow })[action]?.();
+  ({ start, restart, pause, item: itemUI.activate, reset: () => !tutorial && requestRaceReset(race), sound: toggleSound, camera: changeCamera, assist: autoAssist.toggle, airflow: vfx.toggleAirflow })[action]?.();
 }, { getSettings: () => touchUI.inputPrefs(), getKeyMap: () => keymap.getKeyMap(), onTilt: () => touchUI.onTilt() });
 const touchUI = setupTouchControlsUI({
   controls,

@@ -12,7 +12,7 @@ interface StorageLike { getItem(key: string): string | null; setItem(key: string
 interface RebindResult { map: KeyMap; swapped: DriveAction | null; error?: 'unknown-action' | 'invalid' | 'reserved' }
 
 // Fixed one-shot actions cannot be rebound, so shortcuts never conflict with driving.
-export const ACTION_KEYS = { Escape: 'pause', KeyP: 'pause', Backspace: 'restart', KeyC: 'camera', KeyM: 'sound', F2: 'assist', KeyV: 'airflow', KeyQ: 'item', Enter: 'start' };
+export const ACTION_KEYS = { Escape: 'pause', KeyP: 'pause', Backspace: 'restart', KeyC: 'camera', KeyR: 'reset', KeyM: 'sound', F2: 'assist', KeyV: 'airflow', KeyQ: 'item', Enter: 'start' };
 const copyKeyMap = (map: KeyMap): KeyMap =>
   Object.fromEntries(Object.entries(map).map(([action, codes]) => [action, [...codes]])) as KeyMap;
 
@@ -36,16 +36,30 @@ export function rebind(map: KeyMap, action: string, key: unknown): RebindResult 
 export function validateKeyMap(value: unknown): KeyMap {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return resetKeyMap();
   const stored = value as Record<string, unknown>;
+  // R was bindable before vehicle recovery. Keep every other saved binding.
+  const keys = Object.keys(DEFAULT_KEY_MAP) as DriveAction[];
   const seen = new Set<string>();
-  for (const action of Object.keys(DEFAULT_KEY_MAP)) {
+  const migrated: Partial<KeyMap> = {};
+  const unbound: DriveAction[] = [];
+
+  for (const action of keys) {
     const codes = stored[action];
     if (!Array.isArray(codes) || !codes.length) return resetKeyMap();
-    for (const code of codes) {
+    const kept = codes.filter(code => code !== 'KeyR');
+    migrated[action] = kept;
+    if (!kept.length) unbound.push(action);
+    for (const code of kept) {
       if (typeof code !== 'string' || !code || Object.hasOwn(ACTION_KEYS, code) || seen.has(code)) return resetKeyMap();
       seen.add(code);
     }
   }
-  return Object.fromEntries(Object.keys(DEFAULT_KEY_MAP).map(action => [action, [...(stored[action] as string[])]])) as KeyMap;
+  for (const action of unbound) {
+    const fallback = DEFAULT_KEY_MAP[action].find(code => !seen.has(code));
+    if (!fallback) return resetKeyMap();
+    seen.add(fallback);
+    migrated[action] = [fallback];
+  }
+  return migrated as KeyMap;
 }
 
 export function loadKeyMap(storage?: StorageLike): KeyMap {

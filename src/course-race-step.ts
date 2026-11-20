@@ -6,7 +6,7 @@ import { routeLength, sampleRoute } from './course-route-frame.ts';
 import { COURSE_RUNTIMES, isCourseRuntime } from './course-runtimes.ts';
 import { chooseBranchByLateral, courseCarGap, courseNoRoadAt, courseRemaining, createCourseRuntime, placeCourseCar,
   moveFinishedCourseCar, rankCourseRuntime, recoverCourseCar, setCourseContact, stepCourseCar, type CourseHazard, type CourseRuntime, type CourseStepEvent } from './course-race.ts';
-import { dropCar, type FallingCar } from './road-falls.ts';
+import { RESET_BACKTRACK, startRoadRecovery, type FallingCar, type RecoverySeat } from './road-falls.ts';
 import { knock } from './car-collisions.js';
 import { isParkedRival, parkFinishedRival } from './finished-rival.js';
 import { attachCourseItems, groundAt, groundOffset, projectCourseItems, type CourseItem } from './course-items.ts';
@@ -96,7 +96,7 @@ function recover(rt: CourseRuntime, id: string): { edgeId: string; localS: numbe
 
 /**
  * H2 + H6 for the player, called right after its odometer integration (game.js `gapNow`): measured step; over a flight
- * gap below GAP_CLEARANCE, or on a rejected sweep, a `dropCar` fall re-seated by `recoverCourseCar` — that frame sweeps
+ * gap below GAP_CLEARANCE, or on a rejected sweep, start recovery using `recoverCourseCar` — that frame sweeps
  * no gate, hazard or score; else the hazard sweep. Returns false: the legacy 1D gap drop never runs on a course.
  */
 export function stepCoursePlayer(race: CourseHost, dt: number, contact: Contact): false {
@@ -106,9 +106,8 @@ export function stepCoursePlayer(race: CourseHost, dt: number, contact: Contact)
     () => chooseBranchByLateral(rt.spec.graph, prevEdge, player.x, BRANCH_DEADBAND));
   if (event === 'rejected' || (courseNoRoadAt(rt, PLAYER_ID) && player.altitude < GAP_CLEARANCE)) {
     const seat = recover(rt, PLAYER_ID);
-    dropCar(player, seat.odometer, player.distance, race.elapsed, GAP_SLOWDOWN); // fall.from: the odometer where it fell
-    placeCourseCar(rt, PLAYER_ID, seat.edgeId, seat.localS, player);
-    projectCourseItems(race);
+    if (event === 'rejected') player.distance = rt.cars.get(PLAYER_ID)!.last.distance;
+    startRoadRecovery(player, { distance: seat.odometer, course: seat }, player.distance, race.elapsed, GAP_SLOWDOWN, 'fall', event !== 'rejected');
     return false;
   }
   if (event === 'crossed') projectCourseItems(race, prevEdge, edgeStart); // before game.js's ring/pickup loops
@@ -120,6 +119,21 @@ export function stepCoursePlayer(race: CourseHost, dt: number, contact: Contact)
     syncCourseContact(race, player);
   }
   return false;
+}
+
+export function courseResetSeat(rt: CourseRuntime): RecoverySeat {
+  const car = rt.cars.get(PLAYER_ID)!, { currentEdgeId, localS } = car.travel;
+  if (rt.spec.recoveryEdge[currentEdgeId]) {
+    const seat = recover(rt, PLAYER_ID);
+    return { distance: seat.odometer, course: seat };
+  }
+  const s = Math.max(0, localS - RESET_BACKTRACK);
+  return { distance: car.edgeStart + s, course: { edgeId: currentEdgeId, localS: s } };
+}
+
+export function placeCourseRecovery(race: CourseHost, seat: NonNullable<RecoverySeat['course']>): void {
+  placeCourseCar(race.course!, PLAYER_ID, seat.edgeId, seat.localS, { ...race.player, altitude: 0 });
+  projectCourseItems(race);
 }
 
 /** H2 for rivals, after this frame's distance integration: poses, gates, hazards, branch choice, finish times, standings. */

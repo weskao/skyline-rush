@@ -14,6 +14,9 @@ paths:
   - "src/track-swipe.ts"
   - "src/track-swipe-ui.ts"
   - "src/world.js"
+  - "src/road-falls.ts"
+  - "src/road-recovery-view.ts"
+  - "src/course-race-step.ts"
   - "src/main.js"
   - "src/garage-*.ts"
   - "src/GaragePanel.vue"
@@ -162,6 +165,22 @@ reuse or transpose another course's loop.
   `feature/epic-multiroute-longform-tracks` owns shared integration.
   Never merge map branch history, overwrite newer shared files, change
   sibling branches, `develop` or `main`, or deploy without explicit approval.
+
+## Recovering from a gap or flight shortcut
+
+- Use the shared recovery in `src/road-falls.ts`. Show gravity and modest vehicle
+  pitch/roll until the fade, relocate the camera and car together during that
+  fade, and settle the car onto the road before returning control. Keep the
+  phases and recovery point consistent at every quality. Reduced Motion skips
+  the added tumble and camera reframing.
+- Provide approach road before a gap, including the whole launch ramp where there
+  is one. For a flight-only branch or span, return to the authored ground fallback
+  at the split. Retain validated checkpoints and any completed circuit sectors.
+- R in a live race returns the car to nearby safe road with the same fade and
+  landing. Both recovery types keep the race clock and the other racers moving.
+  Skip pickup, hazard and checkpoint sweeps during the relocation. Verify a
+  successful jump, a failed jump, and a keyboard reset before releasing a
+  course with a gap.
 
 ## Regression matrix and evidence
 

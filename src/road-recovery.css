@@ -1,0 +1,39 @@
+#race-recovery {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+#race-recovery::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #071421;
+  opacity: var(--recovery-fade, 0);
+}
+
+#race-recovery > span {
+  position: absolute;
+  inset-block-start: max(94px, 22%);
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  width: max-content;
+  max-width: calc(100vw - 28px);
+  padding: 7px 14px;
+  border: 1px solid #80cbe475;
+  border-radius: 4px;
+  background: #091b2ae8;
+  color: #e6f7ff;
+  font: 700 clamp(15px, 2vw, 21px)/1.15 'Barlow Condensed', 'Segoe UI', sans-serif;
+  letter-spacing: .06em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+#race-recovery[data-stage="fall"] > span:first-child {
+  border-color: #ffb27a85;
+  color: #ffe0bd;
+}
+#race-recovery[data-stage="fall"] > span:last-child,
+#race-recovery[data-stage="return"] > span:first-child { display: none; }

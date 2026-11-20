@@ -107,7 +107,7 @@ test('no FLY: falling in each gap recovers onto the parallel ground edge at the 
     let split = null, at = null, before = null;
     const { race } = botRace(60, path, { pilot: false, trace: (r, you) => {
       if (you.travel.currentEdgeId === air && split === null) split = you.edgeStart;
-      if (r.player.falls === 1 && at === null) at = { ...you.travel, distance: r.player.distance };
+      if (r.player.recovery?.reseated && r.player.falls === 1 && at === null) at = { ...you.travel, distance: r.player.distance };
       if (r.player.falls === 0) before = { nextCheckpoint: you.travel.nextCheckpoint };
     } });
     assert.ok(split !== null, `took ${air}`);

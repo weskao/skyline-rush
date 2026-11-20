@@ -40,8 +40,8 @@ test('rebinding to a key the action already owns narrows it to that key without 
 test('reserved action keys and unknown actions are refused', () => {
   assert.equal(rebind(DEFAULT_KEY_MAP, 'fly', 'Escape').map, DEFAULT_KEY_MAP);
   assert.equal(rebind(DEFAULT_KEY_MAP, 'fly', 'Escape').error, 'reserved');
-  for (const key of ['Backspace', 'F2']) assert.equal(rebind(DEFAULT_KEY_MAP, 'nitro', key).error, 'reserved', key);
-  for (const key of ['KeyR', 'KeyT']) assert.equal(rebind(DEFAULT_KEY_MAP, 'nitro', key).error, undefined, `${key} is free to bind`);
+  for (const key of ['Backspace', 'F2', 'KeyR']) assert.equal(rebind(DEFAULT_KEY_MAP, 'nitro', key).error, 'reserved', key);
+  assert.equal(rebind(DEFAULT_KEY_MAP, 'nitro', 'KeyT').error, undefined);
   assert.equal(rebind(DEFAULT_KEY_MAP, 'warp', 'KeyF').error, 'unknown-action');
 });
 

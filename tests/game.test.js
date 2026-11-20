@@ -522,7 +522,11 @@ test('every track can be finished', () => {
   for (const id of TRACK_IDS) {
     const race = racingOn(id);
     assert.equal(race.trackId, id);
-    advance(race, 300, { throttle: true });
+    const bridge = id === 'canyon' ? sectionOf(id, 'gap') : null;
+    for (let i = 0; i < 300 * 60 && race.phase === 'racing'; i++) {
+      const distance = race.player.distance;
+      stepRace(race, { throttle: true, fly: !!bridge && distance >= bridge.from - 65 && distance < bridge.to }, 1 / 60);
+    }
     assert.equal(race.phase, 'finished', id);
     assert.equal(race.player.distance, RACE_TRACKS[id].length);
     assert.ok(race.result.time > 30, id);
@@ -557,13 +561,17 @@ test('flying into a tunnel roof is barrier contact; driving or flying outside is
   assert.equal(outside.player.altitude > TUNNEL_CEILING, true);
 });
 
-test('falling into a gap slows the car and respawns it past the gap; flying over is safe', () => {
+test('falling into a gap slows the car and returns it before the gap; flying over is safe', () => {
   const gap = sectionOf('canyon', 'gap');
   const fall = racingOn('canyon');
   Object.assign(fall.player, { distance: gap.from + 5, speed: 60 });
   stepRace(fall, {}, 1 / 60);
   assert.equal(fall.player.falls, 1);
-  assert.ok(fall.player.distance > gap.to);
+  assert.ok(fall.player.distance < gap.to);
+  advance(fall, 0.4);
+  assert.ok(fall.player.altitude < 0);
+  advance(fall, 0.84);
+  assert.ok(fall.player.distance < gap.from);
   assert.ok(fall.player.speed < 40);
   assert.equal(fall.player.altitude, 0);
   stepRace(fall, {}, 1 / 60);
@@ -599,18 +607,18 @@ test('Aurora uphill ground recharge is slower and returns to normal outside the 
   }
 });
 
-test('a gap respawn skips rings traversed by the jump but collects a later ring normally', () => {
+test('a gap rewind sweeps no rings and leaves the approach ring collectible', () => {
   const gap = sectionOf('canyon', 'gap');
   const race = racingOn('canyon');
   race.rivals = [];
   race.pickups = [];
-  race.rings = [gap.from + 10, gap.to + 3, gap.to + 6].map(distance => ({ distance, x: 0, altitude: 0, radius: RING_RADIUS, type: 'nitro', group: 0 }));
+  race.rings = [gap.from - 66, gap.from + 10, gap.to + 3].map(distance => ({ distance, x: 0, altitude: 0, radius: RING_RADIUS, type: 'nitro', group: 0 }));
   Object.assign(race.player, { distance: gap.from + 5, speed: 60, x: 0 });
   stepRace(race, {}, 1 / 60);
   assert.equal(race.player.falls, 1);
   assert.equal(race.player.rings, 0);
   assert.equal(race.player.nitro, 0);
-  advance(race, 0.1);
+  advance(race, 1.55, { throttle: true });
   assert.equal(race.player.rings, 1);
   assert.equal(race.player.nitro, 0.5);
   assert.equal(race.player.perfectLines, 0);
@@ -1618,6 +1626,7 @@ test('races count charge run-outs and gap falls for tuning', () => {
   Object.assign(fall.player, { distance: gap.from - 1, speed: 60 });
   advance(fall, 0.2, { throttle: true });
   assert.equal(fall.player.falls, 1);
+  advance(fall, 1.3);
   Object.assign(fall.player, { distance: fall.length - 1, fuelOuts: 2 });
   advance(fall, 0.2, { throttle: true });
   assert.equal(fall.result.fuelOuts, 2);

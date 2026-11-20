@@ -23,6 +23,7 @@ exactly. Topics whose work often starts before a scoped file is open:
 | --- | --- |
 | Home / HUD layout, any `(orientation: landscape)` or `max-height` media query | `.claude/rules/orientation-layout.md` (iOS paints portrait and landscape differently; check both) |
 | Creating or modifying any course, including its sky, weather, lighting or graphics-tier fallback | `.claude/rules/playable-course-shared-template.md` |
+| Track gaps, failed flight, or vehicle resets | `.claude/rules/playable-course-shared-template.md` (shared recovery) |
 | Shortcut or hidden-path rewards on a course | `.claude/rules/ring-layout.md` |
 | A finish area, or any road that does not close into a loop | `.claude/rules/road-runout.md` (the drawn road runs on past the finish; it never ends in the air) |
 | Course music, or music while a map is only selected on the home screen | `.claude/rules/playable-course-shared-template.md` |

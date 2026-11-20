@@ -8,6 +8,7 @@ function capture(car, out = {}) {
 
 export function captureRaceMotion(race, previous = {}) {
   previous.player = capture(race.player, previous.player);
+  previous.player.reseated = race.player.recovery?.reseated;
   for (const kind of ['rivals', 'traffic']) {
     const snapshots = previous[kind] ??= [];
     const vehicles = race[kind];
@@ -35,7 +36,7 @@ export function smoothDriftYaw(yaw, drift, dt) {
 
 // Reuse a buffer per visible car rather than allocating 50+ interpolated objects every frame.
 export function poseFor(mesh, car, previous, alpha) {
-  return previous && alpha < 1 ? interpolateMotion(car, previous, alpha, mesh.userData.renderMotion ??= {}) : car;
+  return previous && alpha < 1 && !(car.recovery?.reseated && !previous.reseated) ? interpolateMotion(car, previous, alpha, mesh.userData.renderMotion ??= {}) : car;
 }
 
 // NITRO/BOOST ignition squat (presentation only): the nose lifts SQUAT_PITCH radians (about 2 degrees) at a full squat share.
