@@ -163,7 +163,10 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   `tests/browser-timeouts.test.js` (*imports /src in the page*).
 - **A raw `browser.newPage()` skips the suite's Low start and CI canvas size.** Pass the fixture's `viewport` and
   `deviceScaleFactor` and seed a tier; crimson-gt's second page rendered High while the first kept running and
-  timed out on CI (44674764907).
+  timed out on CI (44674764907). Even at Low, two live renderers starve the runner: the second page never set
+  `window.gameScene` in 30 s while `gameplayPage` kept drawing the GT (44716140443). Give the second page its
+  own test, or open pages one at a time and close each. Enforced by `tests/browser-timeouts.test.js` (*never
+  opens a second browser page beside it*).
 - **A test must fit its budget with room to spare on CI.** CI steps the game at about 1/4 speed (each slow
   frame is clamped to 0.05 s), so a flow that plays N s of game time needs about 4N s of wall clock. A test
   whose passing CI run (the `(1.7m)` in the job log) uses more than about half of its budget gets an explicit

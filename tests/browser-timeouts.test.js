@@ -347,6 +347,15 @@ test('a spec counting requests on the gameplay page leaves the fixture page firs
   assert.deepEqual(offenders, [], 'Count requests with watchRequests(page, pattern) from tests/helpers/gameplay-browser.js (see .claude/rules/browser-test-stability.md)');
 });
 
+// Two live renderers starve a CPU-only runner: crimson-gt's second raw page never booted while the fixture page kept
+// drawing the GT, even at Low and the CI canvas size (develop 44691631919, 44716140443).
+test('a test on the gameplay page never opens a second browser page beside it', () => {
+  const offenders = FILES.filter(file => file.endsWith('browser.spec.js')).flatMap(file =>
+    readFileSync(new URL(file, import.meta.url), 'utf8').split('\n').flatMap((line, i) =>
+      /async \(\{[^}]*\bgameplayPage\b[^}]*\}/.test(line) && /async \(\{[^}]*\bbrowser\b[^}]*\}/.test(line) ? [`tests/${file}:${i + 1}`] : []));
+  assert.deepEqual(offenders, [], 'Split the second page into its own test, or open each page in turn and close it (see .claude/rules/browser-test-stability.md)');
+});
+
 // Specs start at Low (tests/helpers/test.js), which turns off the Garage GIF artwork (GarageArtworkImage.vue vfxAllowed),
 // the mini-boost streaks and the full pickup collect effect. Six specs asserted them and failed on CI run 44012297806.
 const LOW_GATED = /garage-animated\/|data-animation-active', ?(?:'true'|String\()|'Mini boost streaks'|'Pickup collect VFX'/;

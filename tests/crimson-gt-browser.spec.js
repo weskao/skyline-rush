@@ -401,22 +401,20 @@ test('keyboard: Tab walks the cars in catalog order, Enter equips the focused ca
   expect(errors).toEqual([]);
 });
 
-test('low quality loads only the GT low LOD; a missing GLB falls back to the procedural car', async ({ gameplayPage: page, gameplayURL, browser, viewport, deviceScaleFactor }) => {
+test('low quality loads only the GT low LOD', async ({ gameplayPage: page, gameplayURL }) => {
   const { requests, errors } = await prepare(page, gameplayURL, { quality: 'low', storage: GT });
   await modelReady(page);
   expect(requests).toEqual(['/models/crimson-gt/crimson-gt-low.glb']);
   await expect.poll(() => page.evaluate(() => ['body', 'wheel_fl_spin', 'wing_blade', 'thruster_04'].every(n => window.gameScene.player.getObjectByName(n)))).toBe(true);
   expect(errors).toEqual([]);
+});
 
-  // A raw browser page skips the suite's Low start and CI canvas size; at High and full DPR it never rendered on CI.
-  const other = await browser.newPage({ viewport, deviceScaleFactor });
-  await captureHooks(other);
-  await other.route(GLB, route => route.fulfill({ status: 404, body: '' }));
-  const second = await prepare(other, gameplayURL, { quality: 'low', storage: GT });
-  await expect(world(other)).toHaveAttribute('data-garage-model', 'fallback:missing', { timeout: ciTimeout(15000) });
-  expect(await glbRoots(other)).toBe(0);
-  expect(second.errors).toEqual([]);
-  await other.close();
+test('a missing GT GLB falls back to the procedural car', async ({ gameplayPage: page, gameplayURL }) => {
+  await page.route(GLB, route => route.fulfill({ status: 404, body: '' }));
+  const { errors } = await prepare(page, gameplayURL, { quality: 'low', storage: GT });
+  await expect(world(page)).toHaveAttribute('data-garage-model', 'fallback:missing', { timeout: ciTimeout(15000) });
+  expect(await glbRoots(page)).toBe(0);
+  expect(errors).toEqual([]);
 });
 
 test('a race started before the GLB arrives stays on the procedural car and compiles nothing; the GT dresses the car once the race is left', async ({ gameplayPage: page, gameplayURL }) => {
