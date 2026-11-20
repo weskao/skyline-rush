@@ -2,6 +2,7 @@
 
 - [x] RED：Chromium 延遲高畫質車模可看到啟動畫面底下的 3D canvas 提前顯示。單元測試重現地標已載入、路面仍未套用，以及車模尚在 shader 編譯的狀態。
 - [x] GREEN：共用載入狀態等待當前畫質的資產，跳過暫時畫面的繪製。新增天空載入取消選擇、材質逾時與車模編譯失敗的回歸測試。
+- [x] 上場載入動畫 RED → GREEN：Chromium 延遲車模時顯示掃光進度條，首幀完成才切到起跑倒數。動畫遵循減少動態效果、舒適模式與特效開關。
 - [ ] 完整瀏覽器與 World Tour 套件、實機 Android／iOS 驗證、最終提交的 GitHub CI。
 
 # 獲得彈窗立即套用（2026-11-21）
@@ -16,6 +17,32 @@
 - [x] RED → GREEN: DOM integration reproduced Paints changing `right` to `left` and Effects changing `right` to `rear`. Chromium reproduced the Paints failure in the running game. All three showcase Playwright cases now pass at 1440×900, 390×844 and 844×390, including category and preview actions, the inspect-mode round trip, and both arrows saving the new value. Desktop screenshots of Paints and Effects showed the same Right label, with zero page errors.
 - [x] Typecheck, production and trial builds, and `npm test` passed (3,637 passed, 4 skipped).
 - [ ] Verify real-device touch and the exact-HEAD CI quality gate. The default local `make verify` browser stage could not launch Google Chrome, so the focused browser tests used Chromium Headless Shell.
+
+# 底部標語清理
+
+- [x] 移除「超越公路」與「原創街機飛行競速」及對應英文文案。首頁的置中版本入口可開啟最新消息。
+- [x] 先確認舊頁面無法通過底部標語的回歸檢查。33 項相關測試、型別檢查與正式版建置已通過。
+- [ ] 檢查本提交的 GitHub CI 結果。
+
+# EMP 黃色電光與減益提示視野
+
+- [x] EMP 閃電圖示、玩家與對手的電弧、時速表及畫面邊緣改為金黃與暖白。調低邊緣光的透明度。
+- [x] 減益卡片縮窄，背景改為半透明，標題與倒數使用各自狀態色。7 個瀏覽器案例、78 個相關單元測試與正式版建置已通過。
+- [x] 恢復歷史影片的已審查說明文字，release-notes 指紋測試通過。
+- [ ] 驗證本分支 HEAD 的 GitHub quality-gate。
+
+# 減益圖示、EMP 配色與時速表提示
+
+- [x] 中央提示套用 120 × 120 透明圖示，畫面顯示 40 × 40 CSS 像素。圖示載入失敗時顯示原線條圖。
+- [x] EMP 使用鈷藍、電紫和冷白。畫面邊緣、玩家及對手的車身電弧、衝擊環與火花使用對應配色。時速表依冰凍或 EMP 狀態變色，減少動態或關閉特效時保留靜態提示。
+- [x] 圖示與時速表先補 RED，再驗證圖示透明邊界、回退、四種視窗、減少動態及玩家／對手共用的 EMP 色相。6 個瀏覽器案例、相關單元測試、型別檢查與正式版建置均已通過。
+- [ ] 驗證本分支 HEAD 的 GitHub quality-gate。
+
+# 玩家減益中央提示
+
+- [x] 冰凍與電擊在比賽畫面中央各自顯示圖示、減益名稱和剩餘秒數。兩者並列時，50% 里程提示顯示在上方。
+- [x] `tests/item-ui.test.js` 先驗證中央狀態缺失的 RED，再驗證倒數、暫停、解除和對外施放。Playwright 的桌面、手機直向、手機橫向及摺疊視窗測試通過。TypeScript、Vue、JS 型別檢查與 production build 通過。已從實際遊戲擷取桌面及手機橫直向畫面。
+- [ ] 驗證功能分支 HEAD 的 GitHub quality-gate。
 
 # Alpine triangle budget after the motorsport rivals (2026-11-20)
 
