@@ -9,7 +9,6 @@ export interface AudioChannelView {
 }
 type Channel = 'music' | 'sfx';
 interface AudioView extends Record<Channel, AudioChannelView> {
-  settingsIcon: 'sound' | 'mute';
   muteAllText: string;
 }
 const initial: AudioChannelView = { enabled: true, level: 100, percent: '100%', displayText: '100%', valueText: '100%' };
@@ -18,7 +17,6 @@ const initial: AudioChannelView = { enabled: true, level: 100, percent: '100%', 
 export const audioView = reactive<AudioView>({
   music: { ...initial },
   sfx: { ...initial },
-  settingsIcon: 'sound',
   muteAllText: 'Mute all',
 });
 

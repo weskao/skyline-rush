@@ -1,3 +1,4 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -18,7 +19,7 @@ const coach = page => page.locator('#tutorial-coach');
 const step = (page, name) => expect(coach(page)).toHaveAttribute('data-step', name, { timeout: ciTimeout(name === 'airChain' ? 30000 : 10000) });
 const begin = async page => {
   await page.goto('/');
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   await expect(page.locator('#tutorial-open')).toBeVisible();
   await page.locator('#tutorial-open').click();
   await step(page, 'throttle');
@@ -109,7 +110,7 @@ const keyboardToNitro = async page => {
 
 test('practice opens with the race countdown, stands still at GO, and THROTTLE then FLY answer', async ({ page }) => {
   await page.goto('/');
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   // The 3-2-1 runs on wall clock (3 s) while a slow runner spends that long on two expects: sample it in the page, per frame.
   await page.evaluate(() => {
     const seen = window.__countdownFrames = { frames: 0, guide: 0 };
@@ -161,7 +162,7 @@ test('keyboard practice requires real actions, completes all ten steps and prese
   await page.locator('#tutorial-exit').click();
   await expect(coach(page)).toBeHidden();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   await page.locator('#guide-open').click();
   await expect(page.locator('#guide-practice')).toHaveText('Practice again');
 });
@@ -265,7 +266,7 @@ test('practice restores a paused race and uses the current custom throttle key',
   await page.keyboard.press('Escape');
   await expect(page.locator('#race-status')).toHaveText('PAUSED');
   const distance = await page.locator('#distance').textContent();
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   await page.locator('#tutorial-open').click();
   await expect(page.locator('#tutorial-input')).toContainText('Z');
   await keyStep(page, 'z', 'left');
@@ -402,7 +403,7 @@ test.describe('granted tilt and rotation', () => {
   test.use({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
   test('orientation input advances steering and survives a viewport rotation', async ({page}) => {
     await page.goto('/');
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('[data-controls="mode"][value="tilt"]').check();
     await expect(page.locator('#touch-controls')).toHaveAttribute('data-steer-mode','tilt');
     const tilt = value => page.evaluate(value => {
@@ -498,14 +499,15 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
       await gesture(button('throttle'),'left');
       await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('left'),'right',effectiveMode==='slide'?-55:0);
       await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('right'),'brake',effectiveMode==='slide'?55:0);
-      await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('brake'),'drift',0,effectiveMode==='slide'?55:0);
+      await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('brake'),'drift',0,effectiveMode==='slide'?66:0);
       await driftReady(page);
       if (effectiveMode === 'slide') {
         // One thumb: slide down (brake) and sideways (steer) on the pad.
         const b = await page.locator('.touch-pad').boundingBox();
         const p = { id: 1, x: b.x + b.width / 2, y: b.y + b.height * .25 };
         await touch('touchStart', [p]);
-        await touch('touchMove', [{ ...p, x: p.x - 55, y: p.y + 55 }]);
+        await touch('touchMove', [{ ...p, y: p.y + 66 }]);
+        await touch('touchMove', [{ ...p, x: p.x - 55, y: p.y + 66 }]);
       } else await touch('touchStart', [await point(button('left'), 1), await point(button('brake'), 2)]);
       await driftCharged(page);
       await touch('touchEnd', []);

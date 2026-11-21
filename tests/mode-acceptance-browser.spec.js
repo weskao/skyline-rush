@@ -1,12 +1,14 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
+import { reloadWithBlockedStorage } from './helpers/test.js';
 
 // Roadmap 9B / 9C / 9D acceptance through real controls, desktop and phone.
 const CLASSIC_KEYS = ['skyline-rush-best-tracks', 'skyline-rush-best', 'skyline-rush-daily', 'skyline-rush-ghosts', 'skyline-rush-history',
   'skyline-rush-medals', 'skyline-rush-stars', 'skyline-rush-unlocked'];
 const classicStorage = page => page.evaluate(keys => keys.map(key => localStorage.getItem(key)), CLASSIC_KEYS);
 const pickMode = async (page, mode) => {
-  await page.locator(`button[data-race-mode="${mode}"]`).click();
+  await clickLobbyOption(page, `button[data-race-mode="${mode}"]`);
   await expect(page.locator('body')).toHaveAttribute('data-race-mode', mode);
 };
 const teleportToFinish = page => page.evaluate(() => {
@@ -113,12 +115,7 @@ for (const [name, viewport, hasTouch] of [
   test('9D: Time Attack plays to its result with storage blocked and a readable HUD', async ({ gameplayPage: page }) => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.addInitScript(() => {
-      for (const method of ['getItem', 'setItem', 'removeItem'])
-        Storage.prototype[method] = () => { throw new DOMException('blocked', 'SecurityError'); };
-    });
-    await page.reload(); // blocked from the first script on, as in a locked-down browser
-    if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+    await reloadWithBlockedStorage(page);
     await pickMode(page, 'time');
     await page.locator('#start-button').click();
     // With storage blocked the first start still offers a direct route to the race.

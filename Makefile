@@ -2,7 +2,7 @@
 NPM := npm
 .DEFAULT_GOAL := dev
 
-.PHONY: build help dev dev-diag dev-unlocked dev-feature test-unlocked phone phone-diag phone-unlocked perf perf-modes perf-phone run verify deploy deploy-netlify stop-old-dev reclaim-dev-port
+.PHONY: build help setup dev dev-diag dev-unlocked dev-feature test-unlocked phone phone-diag phone-unlocked perf perf-modes perf-phone run verify deploy deploy-netlify stop-old-dev reclaim-dev-port
 
 # Dev servers run inside local Auth/Firestore emulators: Google sign-in uses fake accounts and never
 # touches production saves. VITE_FIREBASE_EMULATOR points the page at them; Ctrl+C stops both.
@@ -55,7 +55,7 @@ phone-diag: ## `make phone-diag [name|off] [y=1]`: like `make phone`, with the o
 	VITE_DIAG=1 $(MAKE) phone $(if $(y),y=$(y)) $(if $(via),PHONE_VITE_ARGS="--via $(via)") $(if $(DEV_FEATURE_NAME),DEV_FEATURE_NAME=$(DEV_FEATURE_NAME))
 
 # Compile with the development-only access implementation. Never produces a distributable build.
-dev-unlocked: stop-old-dev reclaim-dev-port node_modules ## `make dev-unlocked`: local-only Vite server with all tracks and paints unlocked
+dev-unlocked: stop-old-dev reclaim-dev-port node_modules ## `make dev-unlocked`: local Vite playtest with all race-ready tracks, cars, paints and equipment
 	$(WITH_EMULATORS) '$(NPM) run dev -- --config vite.unlocked.config.js'
 
 test-unlocked: dev-unlocked ## Alias: `make test-unlocked` also opens the all-unlocked local dev server
@@ -71,7 +71,7 @@ phone: node_modules ## `make phone [name|off] [y=1]`: menu (y=1: Recommended ans
 
 # The unlocked config binds 127.0.0.1 so `make dev-unlocked` stays Mac-only; phone-dev's own `--host 0.0.0.0` CLI
 # flag overrides it, so this is the only phone-reachable all-unlocked server. Still a dev server: never a build.
-phone-unlocked: ## `make phone-unlocked [name|off] [y=1]`: like `make phone`, with all tracks and paints unlocked
+phone-unlocked: ## `make phone-unlocked [name|off] [y=1]`: phone Vite playtest with all race-ready tracks, cars, paints and equipment
 	$(MAKE) phone PHONE_VITE_ARGS="-- --config vite.unlocked.config.js" $(if $(y),y=$(y)) $(if $(DEV_FEATURE_NAME),DEV_FEATURE_NAME=$(DEV_FEATURE_NAME))
 
 # Frame times of production builds, read from the in-game `?perf` strip. BASE=<git ref> (e.g. main) adds an A/B
@@ -120,8 +120,11 @@ run: node_modules ## `make run`: unit tests, production build and Chrome browser
 verify: node_modules ## `make verify`: type checks, units, production build, browser and World Tour suites
 	$(NPM) run typecheck
 	$(NPM) test
-	$(NPM) run test:browser
-	npx playwright test --config=playwright.world-tour.config.js
+	@if [ -z "$${PLAYWRIGHT_PORT:-}" ]; then \
+	  PLAYWRIGHT_PORT=$$(node scripts/free-local-port.mjs) || exit 1; \
+	fi; \
+	export PLAYWRIGHT_PORT; \
+	$(NPM) run test:browser && npx playwright test --config=playwright.world-tour.config.js
 
 # Lists every target that carries a `## description`.
 help: ## `make help`: list these commands
@@ -158,8 +161,14 @@ deploy-netlify: node_modules ## `make deploy-netlify`: production build of this 
 	  "$$(git rev-parse --abbrev-ref HEAD)" "$$(git describe --tags --always)"); \
 	if [ -f "$(TG_SEND)" ]; then TG_MSG_TYPE=deploy-done bash "$(TG_SEND)" send "$$msg"; else echo "TG: send skipped — $(TG_SEND) not found"; fi
 
+setup: node_modules ## `make setup`: install npm dependencies (crucible included) and enable the git hooks; other targets do this too
+
 # Installs dependencies on first run and whenever package-lock.json changes; also enables the repo's git hooks.
+# A worktree that links node_modules to another checkout keeps the link while both lockfiles match:
+# a checkout only bumps the lockfile's mtime, and npm install would replace the link with a full copy.
 node_modules: package-lock.json
-	$(NPM) install
+	@if [ -L $@ ] && cmp -s package-lock.json "$$(readlink $@)/../package-lock.json"; then \
+	  echo "node_modules: shared via $$(readlink $@), lockfile unchanged; skipping npm install"; \
+	else $(NPM) install; fi
 	@git config core.hooksPath .githooks
 	@touch $@

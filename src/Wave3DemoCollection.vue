@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import CollectibleIcon from './CollectibleIcon.vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
-import { skinArtwork } from './garage-skin-catalog.ts';
+import GarageSkinCardFace from './GarageSkinCardFace.vue';
 import { wave3DemoArtUrl } from './wave3-demo-art.ts';
 import type { SkinId } from './garage-skin-catalog.ts';
 import type { ExperienceSnapshot, Wave3ExperiencePort } from './wave3-experience-contract.ts';
@@ -15,6 +16,7 @@ const props = withDefaults(defineProps<{
   locale?: string;
   trialAccess?: (id: SkinId) => DemoTrialAccess | null;
   skinRevision?: number;
+  initialItemId?: SkinId;
 }>(), { locale: 'en' });
 const emit = defineEmits<{
   (event: 'preview', itemId: SkinId): void;
@@ -27,12 +29,19 @@ const tr = (en: string, zh: string) => props.locale === 'zh-TW' ? zh : en;
 const snapshot = ref<ExperienceSnapshot>(props.port.getSnapshot());
 const filter = ref<'all' | DemoItemStatus>('all');
 const filters = ['all', 'demo-unlocked', 'trial', 'locked', 'preview-only'] as const;
+const filterIcon = { all: 'collection', 'demo-unlocked': 'unlocked', trial: 'pending', locked: 'locked', 'preview-only': 'inspect' };
 const selectedId = ref<SkinId | null>(null);
+const collection = ref<HTMLElement | null>(null);
 const message = ref('');
 
 watch(() => props.port, (port, _, onCleanup) => {
   snapshot.value = port.getSnapshot();
-  selectedId.value = null;
+  const initial = props.initialItemId;
+  selectedId.value = initial && canEquipDemoPreview(initial, snapshot.value) ? initial : null;
+  filter.value = selectedId.value ? 'demo-unlocked' : 'all';
+  if (selectedId.value) void nextTick(() => {
+    collection.value?.querySelector<HTMLButtonElement>('[aria-pressed="true"][data-demo-id]')?.focus();
+  });
   message.value = '';
   const stop = port.subscribe(next => {
     if (next.accountId !== snapshot.value.accountId) {
@@ -48,7 +57,6 @@ const statusFor = (id: SkinId): DemoItemStatus => {
   void props.skinRevision; // Integration owner passes this reactive revision for trial expiry.
   return demoItemStatus(id, snapshot.value, props.trialAccess?.(id));
 };
-const artwork = (id: SkinId) => skinArtwork(id, import.meta.env.BASE_URL);
 const emptyArt = wave3DemoArtUrl('demo-collection-empty');
 const items = computed(() => WAVE3_DEMO_ITEMS.filter(item =>
   filter.value === 'all' || statusFor(item.id) === filter.value));
@@ -98,11 +106,11 @@ function closePreview(): void {
 </script>
 
 <template>
-  <section class="wave3-demo-collection" data-wave3-demo-collection
+  <section ref="collection" class="wave3-demo-collection" data-wave3-demo-collection
     :aria-label="tr('Demo Collection', '試玩收藏')" @keydown.esc.stop="closePreview">
     <header class="collection-head">
       <div>
-        <span class="collection-kicker">{{ tr('LOCAL COSMETIC PREVIEWS', '本機外觀試玩') }}</span>
+        <span class="collection-kicker">{{ tr('TEMPORARY COSMETIC PREVIEWS', '試玩外觀') }}</span>
         <h3>{{ tr('Demo Collection', '試玩收藏') }}</h3>
         <p>{{ tr('Demo unlocks are disposable and never permanent ownership.',
           '試玩取得的外觀可重設，並非永久擁有權。') }}</p>
@@ -121,13 +129,13 @@ function closePreview(): void {
       </span>
       <span>{{ tr('Your Demo Collection is empty. Browse cosmetics and earn demo points in races to try an unlock.',
         '目前沒有試玩收藏。可瀏覽外觀，並透過比賽取得試玩點數後兌換。') }}</span>
-      <button type="button" @click="emit('open-store')">{{ tr('Open Demo Store', '開啟試玩商城') }}</button>
+      <button type="button" @click="emit('open-store')"><CollectibleIcon name="cart" />{{ tr('Open Demo Store', '開啟試玩商城') }}</button>
     </p>
 
     <nav class="collection-filters" :aria-label="tr('Filter collection statuses', '篩選收藏狀態')">
       <button v-for="state in filters" :key="state" type="button"
         :aria-pressed="filter === state" @click="filter = state; closePreview()">
-        {{ filterLabel(state) }}
+        <CollectibleIcon :name="filterIcon[state]" />{{ filterLabel(state) }}
       </button>
     </nav>
 
@@ -138,13 +146,7 @@ function closePreview(): void {
       <button v-for="item in items" :key="item.id" type="button" class="collection-item"
         :data-demo-id="item.id" :data-demo-status="statusFor(item.id)"
         :aria-pressed="selectedId === item.id" @click="preview(item.id)">
-        <span class="collection-image">
-          <GarageArtworkImage :src="artwork(item.id)?.src ?? ''"
-            :fallback-src="artwork(item.id)?.fallback" :size="96"
-            :alt="item.name[locale === 'zh-TW' ? 'zh-TW' : 'en']"
-            :fallback-text="item.name[locale === 'zh-TW' ? 'zh-TW' : 'en']" />
-        </span>
-        <strong>{{ item.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</strong>
+        <GarageSkinCardFace :skin-id="item.id" :locale="locale" />
         <span class="collection-state">{{ demoItemStatusText(statusFor(item.id), locale) }}</span>
         <span v-if="equipped === item.id" class="collection-equipped">{{ tr('Demo equipped', '試玩已裝備') }}</span>
       </button>
@@ -158,17 +160,17 @@ function closePreview(): void {
           '試用資格由車庫管理；此處僅預覽，不會額外發放試用權限。') }}
       </p>
       <div class="collection-actions">
-        <button type="button" @click="emit('preview', selected.id)">{{ tr('Inspect preview', '檢視預覽') }}</button>
+        <button type="button" @click="emit('preview', selected.id)"><CollectibleIcon name="inspect" />{{ tr('Inspect preview', '檢視預覽') }}</button>
         <button type="button" :disabled="!canEquipDemoPreview(selected.id, snapshot) || equipped === selected.id"
-          @click="equipSelected">{{ equipped === selected.id ? tr('Demo equipped', '試玩已裝備') : tr('Equip demo preview', '裝備試玩外觀') }}</button>
-        <button type="button" @click="closePreview">{{ tr('Close preview', '關閉預覽') }}</button>
+          @click="equipSelected"><CollectibleIcon :name="equipped === selected.id ? 'check' : 'tools'" />{{ equipped === selected.id ? tr('Demo equipped', '試玩已裝備') : tr('Equip demo preview', '裝備試玩外觀') }}</button>
+        <button type="button" @click="closePreview"><CollectibleIcon name="close" />{{ tr('Close preview', '關閉預覽') }}</button>
       </div>
       <p class="collection-message" role="status" aria-live="polite">{{ message }}</p>
     </section>
 
     <div class="collection-actions collection-footer">
-      <button type="button" @click="emit('open-store')">{{ tr('Browse Demo Store', '瀏覽試玩商城') }}</button>
-      <button type="button" @click="emit('return-to-race')">{{ tr('Return to racing', '返回比賽') }}</button>
+      <button type="button" @click="emit('open-store')"><CollectibleIcon name="cart" />{{ tr('Browse Demo Store', '瀏覽試玩商城') }}</button>
+      <button type="button" @click="emit('return-to-race')"><CollectibleIcon name="track" />{{ tr('Return to racing', '返回比賽') }}</button>
     </div>
     <p class="collection-disclaimer">{{ tr('Only this device · No payment · No Cloud Save grants · Guest-friendly',
       '僅限此裝置 · 無付款 · 不授予雲端收藏 · 訪客可用') }}</p>
@@ -199,8 +201,6 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .collection-item { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 8px;
   text-align: center; background: linear-gradient(160deg, #14354d, #111d35); border: 1px solid #476787; border-radius: 13px; }
 .collection-item[aria-pressed="true"] { border-color: #73eff4; box-shadow: 0 0 0 1px #4cbce8; }
-.collection-image { box-sizing: border-box; width: 112px; height: 112px; padding: 8px; display: grid; place-items: center; }
-.collection-item strong { font-size: 12px; overflow-wrap: anywhere; }
 .collection-state, .collection-equipped { font-size: 11px; border: 1px solid #9f7ad1; border-radius: 16px; padding: 3px 7px; }
 .collection-item[data-demo-status="demo-unlocked"] .collection-state, .collection-equipped {
   color: #96ffe4; border-color: #44cfae; }

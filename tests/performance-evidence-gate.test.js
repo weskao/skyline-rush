@@ -50,8 +50,9 @@ test('CI evidence gate requires all 35 ten-track/viewpoint records and rejects m
 });
 
 // The pre-pool baseline predates the GLB player car (equipped in races since ba867d53); CI 44046135203 failed
-// three tracks on its ~11.5K triangles alone. The budget measures the scenery, so the car is subtracted.
-test('triangle budget excludes the player car but still catches scenery growth',()=>{
+// three tracks on its ~11.5K triangles alone, and the 2f904b5f rivals tipped Alpine. The budget measures the scenery,
+// so every drawn car is subtracted.
+test('triangle budget excludes the drawn cars but still catches scenery growth',()=>{
   const dir=mkdtempSync(join(tmpdir(),'skyline-perf-car-'));
   try {
     runs.forEach(x=>emit(dir,x));

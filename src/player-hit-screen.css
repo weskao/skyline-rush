@@ -1,0 +1,27 @@
+@import './debuff/freeze/freeze.css';
+@import './debuff/emp/emp.css';
+
+/* Incoming attacks tint the view around the driving line, beneath all interactive HUD.
+   Each effect's own look is in its folder under src/debuff/; this file keeps what they share. */
+#player-hit-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgb(var(--hit-rgb) / .55), transparent 21% 79%, rgb(var(--hit-rgb) / .55)),
+    linear-gradient(0deg, rgb(var(--hit-rgb) / .37), transparent 21% 81%, rgb(var(--hit-rgb) / .50));
+  box-shadow: inset 0 0 0 2px rgb(var(--hit-rgb) / .45);
+}
+#player-hit-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--hit-edge-detail);
+  mask-image: radial-gradient(ellipse at center, transparent 56%, #000 82%);
+}
+#player-hit-screen .hit-layer { position: absolute; inset: 0; overflow: hidden; }
+@media (prefers-reduced-motion: no-preference) {
+  #player-hit-screen[data-calm="false"]:not([hidden]) { animation: hit-screen-settle .24s ease-out both; }
+}
+@keyframes hit-screen-settle { from { opacity: .55; } to { opacity: 1; } }

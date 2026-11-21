@@ -31,9 +31,20 @@ test('every World Tour home preview is a full, dynamic four-car airborne showcas
   expect(errors).toEqual([]);
 });
 
-const LANDMARKS=[['taipei','office'],['tokyo','tower'],['alpine','mountain'],['coastal','lighthouse'],['cosmic','cosmic-gate']];
+test('the rebuilt curved roads keep three actors in the portrait home frame', async ({ page }) => {
+  test.setTimeout(ciTimeout(100000));
+  await openWorldTour(page, { width: 390, height: 844 });
+  for (const id of ['canyon', 'aurora', 'spiral']) {
+    const { first } = await homePreview(page, id);
+    expect(first).toHaveLength(4);
+    expect(first.filter(({ x, y, z }) => Math.abs(x) < 1 && Math.abs(y) < 1 && Math.abs(z) < 1).length, id)
+      .toBeGreaterThanOrEqual(3);
+  }
+});
+
+const LANDMARKS=[['spiral','sky-tower'],['taipei','office'],['tokyo','tower'],['alpine','mountain'],['coastal','lighthouse'],['cosmic','cosmic-gate']];
 for(const [layout,viewport] of [['landscape',{width:640,height:360}],['portrait',{width:390,height:844}]]) {
-  test(`every World Tour ${layout} home preview frames its signature landmark`,async({page},info)=>{
+  test(`Sky Spiral and World Tour ${layout} previews frame their signature landmarks`,async({page},info)=>{
     test.setTimeout(ciTimeout(100000));
     await openWorldTour(page,viewport);
     for(const [id,kind] of LANDMARKS) await test.step(id,async()=>{
@@ -44,7 +55,10 @@ for(const [layout,viewport] of [['landscape',{width:640,height:360}],['portrait'
       if(layout==='landscape'){
         expect(landmark.minX,`${id} landscape right of the home UI`).toBeGreaterThan(.04);
         expect(landmark.maxX,`${id} landscape inside the frame`).toBeLessThan(.98);
-      }else expect(Math.abs((landmark.minX+landmark.maxX)/2),`${id} portrait centred`).toBeLessThan(1);
+      } else {
+        expect(landmark.minX, `${id} portrait left edge in frame`).toBeGreaterThan(-.98);
+        expect(landmark.maxX, `${id} portrait right edge in frame`).toBeLessThan(.98);
+      }
       expect(landmark.unobstructed,`${id} ${layout}: roadside props must not hide the landmark`).toBeGreaterThan(.6);
       await page.screenshot({path:info.outputPath(`world-tour-${id}-${layout}-landmark-showcase.png`)});
     });
@@ -74,8 +88,8 @@ for (const id of MAPS) {
 // In-race approach: the chase camera keeps the signature landmark in view and
 // clear of roadside props on its kerb (the plaza), not just on the home screen.
 // Two pages: five maps in one outran the folded-test budget (about 150 CI seconds).
-const APPROACHES=[['taipei','office',[1250,1400,1550]],['tokyo','tower',[2980,3080,3180]],
-  ['alpine','mountain',[5750,5900]],['coastal','lighthouse',[850,950]],['cosmic','cosmic-gate',[3820,3920]]];
+const APPROACHES=[['taipei','office',[940,1060,1240]],['tokyo','tower',[6500,6570,6710]],
+  ['alpine','mountain',[5575,5750]],['coastal','lighthouse',[1260,1380]],['cosmic','cosmic-gate',[3820,3920]]];
 for(const group of [APPROACHES.slice(0,2),APPROACHES.slice(2)]) {
   test(`racing toward the landmark keeps it in view and unobstructed: ${group.map(([id])=>id).join(', ')}`,async({page})=>{
     test.setTimeout(ciTimeout(100000));

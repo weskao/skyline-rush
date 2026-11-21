@@ -6,7 +6,7 @@ export const CLEARANCE = .18;
 /** Equipped airflow skin motion per pattern p: base + p * step, in units of the fitted motion scale. */
 export const SKIN_MOTION = { ripple: [.025, .024], sway: [.045, .012] } as const;
 type Section = { left: number; right: number; top: number };
-type AirflowProfile = { bounds: THREE.Box3; sections: Section[] };
+export type AirflowProfile = { bounds: THREE.Box3; sections: Section[] };
 type Point = [x: number, y: number, z: number];
 
 /** Sample the visible neutral-pose shell in car coordinates, once per model or LOD change. */

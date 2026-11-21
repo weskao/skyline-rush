@@ -1,5 +1,6 @@
 import type { ReleaseEntry } from './release-notes.ts';
 import { GARAGE_CARS_COPY } from './locales/garage-cars.ts';
+import { NEWER_ARCHIVED_RELEASE_NOTES } from './release-notes-archive-newer.ts';
 import { ARCHIVED_RELEASE_NOTES } from './release-notes-archive.ts';
 import { RECENT_ARCHIVED_RELEASE_NOTES } from './release-notes-archive-recent.ts';
 
@@ -11,7 +12,190 @@ import { RECENT_ARCHIVED_RELEASE_NOTES } from './release-notes-archive-recent.ts
 export const UPCOMING = 'upcoming';
 export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
   {
-    version: UPCOMING, date: '2026-11-16', image: null,
+    version: UPCOMING, date: '2026-11-20', image: null,
+    video: {
+      desktop: {
+        src: { en: 'whats-new/gt-premiere/gt-premiere.desktop.en.mp4', 'zh-TW': 'whats-new/gt-premiere/gt-premiere.desktop.zh-TW.mp4' },
+        poster: { en: 'whats-new/gt-premiere/gt-premiere.desktop.en.jpg', 'zh-TW': 'whats-new/gt-premiere/gt-premiere.desktop.zh-TW.jpg' }
+      },
+      mobile: {
+        src: { en: 'whats-new/gt-premiere/gt-premiere.mobile.en.mp4', 'zh-TW': 'whats-new/gt-premiere/gt-premiere.mobile.zh-TW.mp4' },
+        poster: { en: 'whats-new/gt-premiere/gt-premiere.mobile.en.jpg', 'zh-TW': 'whats-new/gt-premiere/gt-premiere.mobile.zh-TW.jpg' }
+      }
+    },
+    highlights: [
+      {
+        id: 'gt-unlock', kind: 'new', image: null,
+        title: { en: `Earn the ${GARAGE_CARS_COPY.en['car.crimson-gt']} at 18 stars`, 'zh-TW': `18 顆星解鎖${GARAGE_CARS_COPY['zh-TW']['car.crimson-gt']}` },
+        description: {
+          en: 'Collect 18 Career stars to keep it for good, or start a one-time 24-hour test drive in the Garage. A new unlock scene shows off every car you win.',
+          'zh-TW': '集滿 18 顆生涯星星就能永久擁有，或先在車庫試駕 24 小時；新的解鎖畫面會帶你欣賞每台贏得的車。'
+        }
+      },
+      {
+        id: 'rival-fleet', kind: 'new', image: null,
+        video: {
+          desktop: {
+            src: { en: 'whats-new/rival-fleet/rival-fleet.desktop.en.mp4', 'zh-TW': 'whats-new/rival-fleet/rival-fleet.desktop.zh-TW.mp4' },
+            poster: { en: 'whats-new/rival-fleet/rival-fleet.desktop.en.jpg', 'zh-TW': 'whats-new/rival-fleet/rival-fleet.desktop.zh-TW.jpg' }
+          },
+          mobile: {
+            src: { en: 'whats-new/rival-fleet/rival-fleet.mobile.en.mp4', 'zh-TW': 'whats-new/rival-fleet/rival-fleet.mobile.zh-TW.mp4' },
+            poster: { en: 'whats-new/rival-fleet/rival-fleet.mobile.en.jpg', 'zh-TW': 'whats-new/rival-fleet/rival-fleet.mobile.zh-TW.jpg' }
+          }
+        },
+        title: { en: 'A varied motorsport field of rivals', 'zh-TW': '對手賽車陣容更多樣' },
+        description: {
+          en: 'Rivals now race as sculpted motorsport cars, restyled and shuffled every race, so each starting grid looks different.',
+          'zh-TW': '對手換上全新賽車造型，每場重新配色洗牌，每次起跑的陣容都不一樣。'
+        }
+      },
+      {
+        id: 'startup-screen', kind: 'new', image: { en: 'whats-new/startup-screen/startup.en.webp', 'zh-TW': 'whats-new/startup-screen/startup.zh-TW.webp' },
+        title: { en: 'A new Skyline Rush startup screen', 'zh-TW': '全新啟動畫面' },
+        description: {
+          en: 'A full-screen welcome with fresh artwork greets you on every launch, fitted to phones, tablets and desktops.',
+          'zh-TW': '每次開啟都會看到全新美術的歡迎畫面，手機、平板與電腦都完整呈現。'
+        }
+      },
+      {
+        id: 'drift-trail-styles', kind: 'new', image: 'whats-new/drift-trail-styles/garage-drift-trails.webp',
+        title: { en: 'Five new drift trail styles', 'zh-TW': '五款全新漂移痕跡' },
+        description: {
+          en: 'Preview and try Embercut, Prism Ribbon, Glacier Fracture, Voltage Arc and Nebula Dust for free in Garage Effects. Equip one to leave its trail on the road.',
+          'zh-TW': '到車庫「特效」即時預覽並免費試用熾焰、虹光流帶、裂冰晶痕、霓電弧與星雲微塵。裝備後，漂移時就會在路面留下你選的痕跡。'
+        }
+      },
+      {
+        id: 'rival-items', kind: 'new', image: null,
+        video: {
+          desktop: {
+            src: { en: 'whats-new/rival-items/rival-items.desktop.en.mp4', 'zh-TW': 'whats-new/rival-items/rival-items.desktop.zh-TW.mp4' },
+            poster: { en: 'whats-new/rival-items/rival-items.desktop.en.jpg', 'zh-TW': 'whats-new/rival-items/rival-items.desktop.zh-TW.jpg' }
+          },
+          mobile: {
+            src: { en: 'whats-new/rival-items/rival-items.mobile.en.mp4', 'zh-TW': 'whats-new/rival-items/rival-items.mobile.zh-TW.mp4' },
+            poster: { en: 'whats-new/rival-items/rival-items.mobile.en.jpg', 'zh-TW': 'whats-new/rival-items/rival-items.mobile.zh-TW.jpg' }
+          }
+        },
+        title: { en: 'Rivals fight back with Freeze and EMP', 'zh-TW': '對手也會用冰凍與 EMP' },
+        description: {
+          en: 'Rivals can hit you with Freeze or EMP. Your car frosts over or crackles with gold lightning, and a center countdown shows how long it lasts.',
+          'zh-TW': '對手會用冰凍或 EMP 攻擊你：車身結霜或竄出金色電弧，畫面中央也會倒數效果剩餘時間。'
+        }
+      },
+      {
+        id: 'sky-spiral-life', kind: 'improvement', image: null,
+        video: {
+          desktop: {
+            src: { en: 'whats-new/sky-spiral/sky-spiral.desktop.en.mp4', 'zh-TW': 'whats-new/sky-spiral/sky-spiral.desktop.zh-TW.mp4' },
+            poster: { en: 'whats-new/sky-spiral/sky-spiral.desktop.en.jpg', 'zh-TW': 'whats-new/sky-spiral/sky-spiral.desktop.zh-TW.jpg' }
+          },
+          mobile: {
+            src: { en: 'whats-new/sky-spiral/sky-spiral.mobile.en.mp4', 'zh-TW': 'whats-new/sky-spiral/sky-spiral.mobile.zh-TW.mp4' },
+            poster: { en: 'whats-new/sky-spiral/sky-spiral.mobile.en.jpg', 'zh-TW': 'whats-new/sky-spiral/sky-spiral.mobile.zh-TW.jpg' }
+          }
+        },
+        title: { en: 'A brighter Sky Spiral', 'zh-TW': '天際螺旋更明亮' },
+        description: {
+          en: 'Sky Spiral now races under a bright day sky. Higher graphics settings add cloud-sea landmarks, circling seabirds and a drifting airship.',
+          'zh-TW': '天際螺旋換上明亮白天；較高畫質還有雲海地標、盤旋海鳥與飄浮飛船。'
+        }
+      },
+      {
+        id: 'lobby-refresh', kind: 'improvement', image: { en: 'whats-new/lobby/track-rail.en.webp', 'zh-TW': 'whats-new/lobby/track-rail.zh-TW.webp' },
+        title: { en: 'A fresh look for lobby, Garage and podium', 'zh-TW': '大廳、車庫與頒獎台煥然一新' },
+        description: {
+          en: 'New artwork across the race lobby, Garage and podium, easier track browsing, and all race options in one Settings page with clearer tabs.',
+          'zh-TW': '賽事大廳、車庫與頒獎台換上新美術，選賽道更順手，賽事選項集中在同一個設定頁，分頁也更清楚。'
+        }
+      },
+      {
+        id: 'garage-inspect', kind: 'improvement', image: { en: 'whats-new/garage-inspect/inspect.en.webp', 'zh-TW': 'whats-new/garage-inspect/inspect.zh-TW.webp' },
+        title: { en: 'Inspect your car in the Garage', 'zh-TW': '在車庫近看愛車' },
+        description: {
+          en: 'Open Inspect to look your car over up close. The camera follows the section you open: the exhaust for Effects, the flank for Paints.',
+          'zh-TW': '開啟檢視模式近看愛車，鏡頭會跟著你開啟的分頁：特效看排氣口，車漆看車身側面。'
+        }
+      },
+      {
+        id: 'setting-toasts', kind: 'improvement', image: { en: 'whats-new/setting-toasts/toast.en.webp', 'zh-TW': 'whats-new/setting-toasts/toast.zh-TW.webp' },
+        title: { en: 'Clear feedback when you toggle a setting', 'zh-TW': '切換設定有清楚提示' },
+        description: {
+          en: 'Sound, Airflow and Auto accelerate show a quick ON or OFF badge. Turning Visual effects off now always asks first.',
+          'zh-TW': '音效、氣流與自動加速切換時會跳出開／關標示；關閉視覺特效前每次都會先確認。'
+        }
+      },
+      {
+        id: 'road-runs-on', kind: 'improvement', image: { en: 'whats-new/minimap-gaps/minimap-gaps.en.webp', 'zh-TW': 'whats-new/minimap-gaps/minimap-gaps.zh-TW.webp' },
+        title: { en: 'Roads keep going past the finish', 'zh-TW': '終點之後道路繼續延伸' },
+        description: {
+          en: 'Every course now runs on beyond the finish line instead of ending in mid-air, and the route map marks each gap in the road.',
+          'zh-TW': '各賽道的路在終點後不再斷在半空，路線小地圖也會標出每一處路面缺口。'
+        }
+      },
+      {
+        id: 'drift-brake', kind: 'improvement', image: null,
+        title: { en: 'Smoother drift braking', 'zh-TW': '漂移煞車更順' },
+        description: {
+          en: 'Braking mid-drift now eases you smoothly out of the slide. On phones, the brake is harder to hit by accident and stays clear of your steering thumbs.',
+          'zh-TW': '漂移中煞車會平順收尾；手機煞車更不易誤觸，也不再干擾轉向拇指。'
+        }
+      },
+      { id: 'race-stopwatch', kind: 'new', image: { en: 'whats-new/race-stopwatch/stopwatch.en.webp', 'zh-TW': 'whats-new/race-stopwatch/stopwatch.zh-TW.webp' },
+        title: { en: 'Keep time with the new race clock', 'zh-TW': '全新賽事計時器' },
+        description: { en: 'A stopwatch beside your position tracks every run, with clear cues for the start, pause and finish.', 'zh-TW': '名次旁新增碼錶，跑了多久一眼就能看見；起跑、暫停與完賽也有清楚提示。' }
+      },
+      { id: 'sprint-flames', kind: 'new', image: null,
+        video: {
+          desktop: {
+            src: { en: 'whats-new/sprint-flames/sprint-flames.desktop.en.mp4', 'zh-TW': 'whats-new/sprint-flames/sprint-flames.desktop.zh-TW.mp4' },
+            poster: { en: 'whats-new/sprint-flames/sprint-flames.desktop.en.jpg', 'zh-TW': 'whats-new/sprint-flames/sprint-flames.desktop.zh-TW.jpg' }
+          },
+          mobile: {
+            src: { en: 'whats-new/sprint-flames/sprint-flames.mobile.en.mp4', 'zh-TW': 'whats-new/sprint-flames/sprint-flames.mobile.zh-TW.mp4' },
+            poster: { en: 'whats-new/sprint-flames/sprint-flames.mobile.en.jpg', 'zh-TW': 'whats-new/sprint-flames/sprint-flames.mobile.zh-TW.jpg' }
+          }
+        },
+        title: { en: 'Three ways to light up your thrusters', 'zh-TW': '三種加速尾焰，各有特色' },
+        description: { en: 'BOOST, NITRO and both together now have distinct flames and race cues. Preview all three looks on your car in the Garage.', 'zh-TW': 'BOOST、NITRO 與兩者齊開都有專屬尾焰及提示；到車庫就能預覽三種效果。' }
+      },
+      { id: 'chasm-rescue', kind: 'improvement', image: null,
+        title: { en: 'Bigger jumps, better recoveries', 'zh-TW': '斷崖更刺激，重返賽道更輕鬆' },
+        description: { en: 'Sky Spiral\'s wider gaps need a fast BOOST launch or flight. Fall in and you return to safe ground; keep missing one gap and you get a lift past it.', 'zh-TW': '天際螺旋的寬闊斷崖需要高速 BOOST 或飛行才能通過；掉下去會回到安全路面，同一處連續失足還會助你越過。' }
+      },
+      { id: 'reward-quick-equip', kind: 'improvement', image: null,
+        title: { en: 'Equip your rewards right away', 'zh-TW': '新獎勵，一鍵裝備' },
+        description: { en: 'When you earn a new car or item, equip it straight from the reveal instead of hunting for it in the Garage.', 'zh-TW': '獲得新車或新裝備時，就能直接在獎勵畫面套用，不必再回車庫尋找。' }
+      },
+      { id: 'first-frame-quality', kind: 'fix', image: null,
+        title: { en: 'Your chosen graphics, right from the start', 'zh-TW': '一開跑就是選好的畫質' },
+        description: { en: 'Tracks, cars and effects now appear in your selected quality from the first race view, without flashing a lower-quality scene.', 'zh-TW': '賽道、車子與特效從第一個比賽畫面就使用你選的畫質，不再先閃出低畫質場景。' }
+      },
+      { id: 'phone-audio-return', kind: 'fix', image: null,
+        title: { en: 'Sound returns after interruptions', 'zh-TW': '手機中斷後，聲音回來了' },
+        description: { en: 'Alarms, calls and notifications no longer leave your race silent. Tap back into the game to bring music and sound effects back.', 'zh-TW': '鬧鐘、來電或通知打斷遊戲後，返回並點一下畫面，就能繼續聽見音樂與音效。' }
+      },
+      {
+        id: 'finished-rivals', kind: 'fix', image: null,
+        title: { en: 'Finished rivals stay on the road', 'zh-TW': '已完賽對手不會消失' },
+        description: {
+          en: 'Rivals that cross the line stay visible and can still be bumped while you finish.',
+          'zh-TW': '對手過線後仍留在賽道上，你完賽時依然看得到、也能碰撞。'
+        }
+      },
+      {
+        id: 'account-confirm', kind: 'fix', image: null,
+        title: { en: 'Account actions confirm in the game', 'zh-TW': '帳號操作改由遊戲內確認' },
+        description: {
+          en: 'Switching accounts, importing and deleting Cloud Save now ask in a game dialog instead of a browser pop-up.',
+          'zh-TW': '切換帳號、匯入與刪除雲端存檔，現在都在遊戲內視窗確認，不再跳出瀏覽器視窗。'
+        }
+      }
+    ]
+  },
+  {
+    version: '0.32.0', date: '2026-11-17', image: null,
     video: {
       desktop: {
         src: { en: 'whats-new/nitro-chain/nitro-chain.desktop.en.mp4', 'zh-TW': 'whats-new/nitro-chain/nitro-chain.desktop.zh-TW.mp4' },
@@ -208,176 +392,7 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
       }
     ]
   },
-  {
-    version: '0.31.0', date: '2026-11-10', image: null,
-    video: {
-      desktop: {
-        src: { en: 'whats-new/catch-up-rings/catch-up-rings.desktop.en.mp4', 'zh-TW': 'whats-new/catch-up-rings/catch-up-rings.desktop.zh-TW.mp4' },
-        poster: { en: 'whats-new/catch-up-rings/catch-up-rings.desktop.en.jpg', 'zh-TW': 'whats-new/catch-up-rings/catch-up-rings.desktop.zh-TW.jpg' }
-      },
-      mobile: {
-        src: { en: 'whats-new/catch-up-rings/catch-up-rings.mobile.en.mp4', 'zh-TW': 'whats-new/catch-up-rings/catch-up-rings.mobile.zh-TW.mp4' },
-        poster: { en: 'whats-new/catch-up-rings/catch-up-rings.mobile.en.jpg', 'zh-TW': 'whats-new/catch-up-rings/catch-up-rings.mobile.zh-TW.jpg' }
-      }
-    },
-    highlights: [
-      {
-        id: 'catch-up-rings', kind: 'new', image: null,
-        title: { en: 'Rings help you catch up when you fall behind', 'zh-TW': '落後時有補給圈幫你追上' },
-        description: {
-          en: 'Trailing the pack? Extra rings with NITRO charge now appear ahead of you, and how many depends on the length of the race.',
-          'zh-TW': '落後時前方會多出帶有 NITRO 的圈，數量依賽程長短調整。'
-        }
-      },
-      {
-        id: 'practice-steps', kind: 'new', image: { en: 'whats-new/practice-steps/practice.en.jpg', 'zh-TW': 'whats-new/practice-steps/practice.zh-TW.jpg' },
-        title: { en: 'Practice teaches one move at a time', 'zh-TW': '練習一次教一個動作' },
-        description: {
-          en: 'Each lesson waits until you do the move. You can skip a step, and stay on the practice road to try it again.',
-          'zh-TW': '每堂課要做出動作才會過關，可以跳過單一步驟，也能在練習路上再練一次。'
-        }
-      },
-      {
-        id: 'garage-lighting', kind: 'new', image: { en: 'whats-new/garage-lighting/garage-night.en.jpg', 'zh-TW': 'whats-new/garage-lighting/garage-night.zh-TW.jpg' },
-        title: { en: 'Day and night lighting in the Garage', 'zh-TW': '車庫新增日夜燈光' },
-        description: {
-          en: 'A new button next to the pose buttons switches the showroom between day and night light.',
-          'zh-TW': '姿勢按鈕旁的新按鈕可切換車庫的白天與夜晚燈光。'
-        }
-      },
-      {
-        id: 'ring-chime', kind: 'new', image: null,
-        title: { en: 'Every ring you collect now chimes', 'zh-TW': '收集每個圈都有提示音' },
-        description: {
-          en: 'Any ring you pick up plays a short chime, so you can hear it even when your eyes are elsewhere.',
-          'zh-TW': '撿到任何圈都會響起短短的提示音，眼睛沒盯著也聽得到。'
-        }
-      },
-      {
-        id: 'results-cloud', kind: 'new', image: { en: 'whats-new/results-cloud/results-cloud.en.jpg', 'zh-TW': 'whats-new/results-cloud/results-cloud.zh-TW.jpg' },
-        title: { en: 'Results tell you if your race reached the cloud', 'zh-TW': '成績畫面顯示雲端同步狀態' },
-        description: {
-          en: 'The results screen shows whether your race is saved to the cloud, or invites you to sign in to back it up.',
-          'zh-TW': '成績畫面會顯示這場比賽是否已同步到雲端，未登入時可直接登入備份。'
-        }
-      },
-      {
-        id: 'minimap-arrow', kind: 'improvement', image: { en: 'whats-new/minimap-arrow/minimap-arrow.en.jpg', 'zh-TW': 'whats-new/minimap-arrow/minimap-arrow.zh-TW.jpg' },
-        title: { en: 'Your minimap marker shows where you are heading', 'zh-TW': '小地圖標記會指出行進方向' },
-        description: {
-          en: 'A glowing arrow on the route map points the way you are driving.',
-          'zh-TW': '路線小地圖上有發光箭頭，指出你正往哪個方向開。'
-        }
-      },
-      {
-        id: 'race-screen', kind: 'improvement', image: { en: 'whats-new/race-screen/race-screen.en.jpg', 'zh-TW': 'whats-new/race-screen/race-screen.zh-TW.jpg' },
-        title: { en: 'A tidier race screen', 'zh-TW': '更清爽的比賽畫面' },
-        description: {
-          en: 'On phones, your place is more compact, and the progress bar and boosts sit at the edges so the road stays open.',
-          'zh-TW': '手機上的名次更精簡，賽程進度和加速鈕都靠畫面邊緣，路面比較開闊。'
-        }
-      },
-      {
-        id: 'fair-rivals', kind: 'improvement', image: null,
-        title: { en: 'Fairer, friendlier rivals', 'zh-TW': '對手更公平，新手更好跟上' },
-        description: {
-          en: 'Rivals now race by your rules, and on the first two tracks and Normal they are a little easier to keep up with.',
-          'zh-TW': '對手不再有隱藏的速度優勢，加速、BOOST 和 NITRO 都和你一樣。前兩條賽道與普通難度再稍微放慢，新手比較跟得上。'
-        }
-      }
-    ]
-  },
-  {
-    version: '0.30.0', date: '2026-11-05', image: null,
-    video: {
-      desktop: {
-        src: { en: 'whats-new/roadster-2/roadster-2.desktop.en.mp4', 'zh-TW': 'whats-new/roadster-2/roadster-2.desktop.zh-TW.mp4' },
-        poster: { en: 'whats-new/roadster-2/roadster-2.desktop.en.jpg', 'zh-TW': 'whats-new/roadster-2/roadster-2.desktop.zh-TW.jpg' }
-      },
-      mobile: {
-        src: { en: 'whats-new/roadster-2/roadster-2.mobile.en.mp4', 'zh-TW': 'whats-new/roadster-2/roadster-2.mobile.zh-TW.mp4' },
-        poster: { en: 'whats-new/roadster-2/roadster-2.mobile.en.jpg', 'zh-TW': 'whats-new/roadster-2/roadster-2.mobile.zh-TW.jpg' }
-      }
-    },
-    highlights: [
-      {
-        id: 'roadster-redesign', kind: 'new',
-        image: { en: 'whats-new/roadster-2/roadster-2-angles.jpg', 'zh-TW': 'whats-new/roadster-2/roadster-2-angles.jpg' },
-        title: { en: 'A sharper, more detailed Roadster', 'zh-TW': '全新造型的 Roadster' },
-        description: {
-          en: 'Your Roadster has a low wedge nose, star wheels, a four-port rear diffuser and a fold-out airbrake wing. Spin it in the Garage to see every angle.',
-          'zh-TW': '低趴楔形車頭、星形輪框、四孔尾部擴散器和可展開的尾翼。到車庫轉一圈，各個角度都看得到。'
-        }
-      },
-      {
-        id: 'unique-rivals', kind: 'new',
-        image: { en: 'whats-new/roadster-2/roadster-2-racers.en.jpg', 'zh-TW': 'whats-new/roadster-2/roadster-2-racers.zh-TW.jpg' },
-        title: { en: 'Every rival drives a different car', 'zh-TW': '每位對手都開不同的車' },
-        description: {
-          en: 'The seven rivals now each have their own look, and everyday traffic comes in more shapes, so you can tell who is beside you at a glance.',
-          'zh-TW': '七位對手各有自己的造型，路上的一般車輛也更多樣，一眼就能分辨身旁是誰。'
-        }
-      },
-      {
-        id: 'coming-soon-tracks', kind: 'new',
-        image: { en: 'whats-new/coming-soon/coming-soon.en.jpg', 'zh-TW': 'whats-new/coming-soon/coming-soon.zh-TW.jpg' },
-        title: { en: 'Six new tracks are coming soon', 'zh-TW': '六條新賽道即將推出' },
-        description: {
-          en: 'Preview Dune Tempest, Monsoon Ruins, Skyfall Archipelago, Volcanic Crown, Stormline Megacity and Frostbite Canyon on Home. You cannot race them yet.',
-          'zh-TW': '在首頁預覽沙暴裂谷、雨林失落神殿、浮空群島、熔火天脊、霓虹暴雨都市和極地冰原峽谷，目前還不能比賽。'
-        }
-      },
-      {
-        id: 'garage-poses', kind: 'improvement',
-        image: { en: 'whats-new/roadster-2/garage-home.en.jpg', 'zh-TW': 'whats-new/roadster-2/garage-home.zh-TW.jpg' },
-        title: { en: 'A bigger car and quick poses in the Garage', 'zh-TW': '車庫的車更大，姿勢更好切換' },
-        description: {
-          en: 'The Garage page now shows your car larger, with Ground, Flight and wing buttons and camera views right underneath.',
-          'zh-TW': '車庫首頁的車變大了，下方直接有平地、起飛、尾翼按鈕和鏡頭視角，隨手就能切換。'
-        }
-      },
-      {
-        id: 'smoother-motion', kind: 'improvement', image: null,
-        title: { en: 'Smoother car movement', 'zh-TW': '車輛移動更流暢' },
-        description: {
-          en: 'Cars glide more smoothly on screen, and drifting turns ease in instead of snapping.',
-          'zh-TW': '車子在畫面上滑行更順暢，甩尾轉向也不再突然一彈。'
-        }
-      },
-      {
-        id: 'home-swipe', kind: 'improvement', image: null,
-        title: { en: 'Swiping tracks on Home feels natural', 'zh-TW': '首頁滑動換賽道更自然' },
-        description: {
-          en: 'Dragging the Home preview with a mouse now follows your pointer, and a long enough drag switches track right away.',
-          'zh-TW': '用滑鼠拖曳首頁預覽時，畫面會跟著游標走；拖得夠遠就會立刻換賽道。'
-        }
-      },
-      {
-        id: 'tidy-home', kind: 'improvement', image: null,
-        title: { en: 'A tidier Home screen', 'zh-TW': '更整齊的首頁' },
-        description: {
-          en: 'Start, Garage, History and Practice sit on one row on desktop, and phones hide keyboard settings until you use a keyboard.',
-          'zh-TW': '桌機的開始、車庫、歷史紀錄和練習排在同一列；手機在用到鍵盤前不再顯示鍵盤設定。'
-        }
-      },
-      {
-        id: 'practice-finish', kind: 'fix', image: null,
-        title: { en: 'Practice no longer freezes at the end', 'zh-TW': '練習結束後畫面不再凍結' },
-        description: {
-          en: 'After the last lesson the road and your car keep moving, with a completion message and a clear Back to game button.',
-          'zh-TW': '完成最後一堂課後，道路和車子會繼續動，並出現完成訊息和醒目的「回到遊戲」按鈕。'
-        }
-      },
-      {
-        id: 'low-places-results', kind: 'fix', image: null,
-        title: { en: 'Results show for 5th to 8th place', 'zh-TW': '第 5 到第 8 名也看得到成績' },
-        description: {
-          en: 'Finishing 5th to 8th in a mode race now shows your results screen and saves the run to History.',
-          'zh-TW': '在各模式競速拿到第 5 到第 8 名時，現在會正常顯示成績畫面，並把這次成績存進歷史紀錄。'
-        }
-      }
-    ]
-  },
+  ...NEWER_ARCHIVED_RELEASE_NOTES,
   ...RECENT_ARCHIVED_RELEASE_NOTES,
   ...ARCHIVED_RELEASE_NOTES,
 ]);

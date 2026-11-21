@@ -1,10 +1,11 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { openGarageSection } from './helpers/garage-browser.js';
 import { test, programs, modelInstances as instances, landed } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 import { PAINTS } from '../src/appearance.ts';
 import { defaultPaint } from '../src/car-catalog.ts';
-import { GARAGE_SKINS } from '../src/garage-skin-catalog.ts';
+import { GARAGE_SKINS, SKIN_CATEGORIES } from '../src/garage-skin-catalog.ts';
 
 // Task 4c Roadster GLB: every Garage paint and skin (read from the catalogs, so a new one joins automatically) shows
 // on the GLB car in Garage Home, Preview Studio, the Home showcase and the race, as uniforms on the existing VFX ports.
@@ -53,51 +54,58 @@ const modelReady = page => expect(page.locator('#world')).toHaveAttribute('data-
 const PREMIUM_FLARE = 'launch-flare-white';
 const HEAVIEST = ['thruster-void', 'airflow-prism', 'nitro-trail-purple', PREMIUM_FLARE]; // one per category
 
-async function previewEverything(page) {
-  for (const [id, paint] of Object.entries(PAINTS)) {
-    await openGarageSection(page, 'paints');
-    await page.locator(`[data-paint="${id}"]`).click();
-    await expect.poll(async () => { const a = await audit(page); return [a.paint, a.proc]; }).toEqual([paint.paint.slice(1), paint.paint.slice(1)]);
-  }
-  for (const { id, category } of GARAGE_SKINS) {
+/** Garage Home on the GLB car with its GPU baseline, taken once the showroom has drawn (and so compiled) every skin's hidden parts. */
+async function openGarageHome(page, url) {
+  const errors = await prepare(page, url);
+  await page.locator('#garage-button').click();
+  await modelReady(page);
+  await expect.poll(() => audit(page)).not.toBeNull();
+  await page.waitForTimeout(ciTimeout(500));
+  return { errors, home: await gpu(page) };
+}
+
+async function previewSkins(page, category) {
+  for (const { id } of GARAGE_SKINS.filter(skin => skin.category === category)) { // motion: the looping launch flare is judged after the sweep
     await openGarageSection(page, 'effects');
     await page.locator(`[data-skin="${id}"] .garage-skin-preview-hitarea`).click();
     await expect(page.locator('#garage-preview')).toHaveAttribute(`data-skin-preview-${category}`, id);
     await expect.poll(async () => (await audit(page)).hidden, { message: id }).toEqual([]);
   }
+  // The drift-trail preview draws a procedural car in its own renderer; leaving it once disposed the game's shared
+  // nozzle and fascia materials, releasing a program (140 -> 139). Ending on the premium flare leaves it explicitly.
   await page.locator(`[data-skin="${PREMIUM_FLARE}"] .garage-skin-preview-hitarea`).click();
   await expect.poll(() => glowOnGlb(page), { timeout: ciTimeout(10000) }).toBe(true); // the showroom loops the flare
 }
 
-test('Garage Home and Preview Studio: every paint and skin on the GLB car, without new programs or geometry', async ({ gameplayPage: page, gameplayURL }) => {
-  test.setTimeout(ciTimeout(180000));
-  const errors = await prepare(page, gameplayURL);
-  await page.locator('#garage-button').click();
-  await modelReady(page);
-  await expect.poll(() => audit(page)).not.toBeNull();
-  await page.waitForTimeout(ciTimeout(500)); // the showroom draws (and so compiles) every skin's hidden parts first
-  const home = await gpu(page);
-  await previewEverything(page);
-  expect(await gpu(page)).toEqual(home); // settled: last preview polled above
+test('Garage Home: every paint on the GLB car, without new programs or geometry', async ({ gameplayPage: page, gameplayURL }) => {
+  const { errors, home } = await openGarageHome(page, gameplayURL);
+  for (const [id, paint] of Object.entries(PAINTS)) {
+    await openGarageSection(page, 'paints');
+    await page.locator(`[data-paint="${id}"]`).click();
+    await expect.poll(async () => { const a = await audit(page); return [a.paint, a.proc]; }).toEqual([paint.paint.slice(1), paint.paint.slice(1)]);
+  }
+  expect(await gpu(page)).toEqual(home); // settled: last paint polled above
+  expect(errors).toEqual([]);
+});
+
+// One category per test: the whole catalog, Home then Studio, used 360 s of one 540 s CI budget (run 44736477255).
+for (const category of SKIN_CATEGORIES) test(`Garage Home and Preview Studio: every ${category} skin on the GLB car, without new programs or geometry`, async ({ gameplayPage: page, gameplayURL }) => {
+  test.setTimeout(ciTimeout(120000));
+  const { errors, home } = await openGarageHome(page, gameplayURL);
+  await previewSkins(page, category);
+  expect(await gpu(page)).toEqual(home); // settled: flare polled above
   expect((await audit(page)).sweep).toBe(false);
-  await attach(page, 'garage-home-flare');
+  await attach(page, `garage-home-${category}`);
 
   await page.locator('#garage-studio-open').click();
   await expect.poll(async () => Object.keys(await instances(page))).toContain('studio');
   await expect.poll(async () => (await audit(page))?.sweep).toBe(true); // the Studio paint sweep rides on the GLB paint
   await page.waitForTimeout(ciTimeout(500));
   const studio = await gpu(page);
-  for (const { id, category } of GARAGE_SKINS) {
-    await openGarageSection(page, 'effects');
-    await page.locator(`[data-skin="${id}"] .garage-skin-preview-hitarea`).click();
-    await expect(page.locator('#garage-preview')).toHaveAttribute(`data-skin-preview-${category}`, id);
-    await expect.poll(async () => (await audit(page)).hidden, { message: id }).toEqual([]);
-  }
-  await page.locator(`[data-skin="${PREMIUM_FLARE}"] .garage-skin-preview-hitarea`).click();
-  await expect.poll(() => glowOnGlb(page), { timeout: ciTimeout(10000) }).toBe(true);
-  expect(await gpu(page)).toEqual(studio); // settled: polled above
-  await attach(page, 'garage-studio-flare');
-  for (const { id } of GARAGE_SKINS.filter(s => !s.default)) await expect(page.locator(`[data-skin="${id}"]`)).toHaveAttribute('data-owned', 'false'); // preview grants nothing
+  await previewSkins(page, category);
+  expect(await gpu(page)).toEqual(studio); // settled: flare polled above
+  await attach(page, `garage-studio-${category}`);
+  for (const { id } of GARAGE_SKINS.filter(s => s.category === category && !s.default)) await expect(page.locator(`[data-skin="${id}"]`)).toHaveAttribute('data-owned', 'false'); // preview grants nothing
   expect(errors).toEqual([]);
 });
 
@@ -119,9 +127,14 @@ test('race with the heaviest skin of each category: launch flare wraps the GLB, 
   await expect.poll(async () => Object.keys(await instances(page))).toEqual(['home']);
 
   await page.locator('#start-button').click();
-  await expect.poll(() => glowOnGlb(page), { timeout: ciTimeout(15000) }).toBe(true); // 3-2-1 holds the flare
-  await attach(page, 'race-countdown-flare');
+  await expect.poll(() => page.evaluate(() => {
+    const car = window.gameScene.player;
+    const pool = car.getObjectByName('Launch flare burst');
+    return !!pool?.visible && pool.material.uniforms.charging.value === 1 && !car.getObjectByName('Launch flare body glow')?.visible;
+  }), { timeout: ciTimeout(15000) }).toBe(true);
+  await expect.poll(() => glowOnGlb(page), { timeout: ciTimeout(15000) }).toBe(true);
   await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(15000) });
+  await attach(page, 'race-launch-flare');
   await page.waitForTimeout(ciTimeout(300));
   const before = await programs(page);
   await page.evaluate(() => {
@@ -158,7 +171,7 @@ test('Home and Coming Soon showcases wear the selected paint on the GLB', async 
   const hex = async () => { const a = await audit(page); return a && [a.paint, a.proc]; };
   const shown = [equipped, equipped];
   await expect.poll(hex).toEqual(shown);
-  await page.locator('[data-upcoming-track="dune-tempest"]').click();
+  await clickLobbyOption(page, '[data-upcoming-track="dune-tempest"]');
   await expect.poll(async () => Object.keys(await instances(page))).toEqual(['showcase']);
   await expect.poll(hex).toEqual(shown);
   await attach(page, 'coming-soon-paint');

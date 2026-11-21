@@ -1,7 +1,10 @@
+import { openSettingsSection } from './helpers/settings-browser.js';
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { resizeTo } from './helpers/viewport.js';
+import { openLobbyModes } from './helpers/home-lobby.js';
 // CI speed: the three touch sizes share one booted page per check and are resized in place (each size is also freshly booted in one
 // check), the two promoted-Garage widths share a page per locale and the four NEW-tag sizes share one page. Desktop mouse tests boot alone.
 
@@ -14,7 +17,8 @@ const inViewport = async (page, locator) => {
 test('Garage replaces Practice beside Start, advertises NEW and still opens the showroom', async ({ page }) => {
   await page.goto('/');
   const primary = page.locator('.intro-primary');
-  expect(await primary.locator('button').evaluateAll(buttons => buttons.map(button => button.id))).toEqual(['start-button', 'garage-button']);
+  // Home renders after the dynamic main.js import, so a one-shot read after goto can find no buttons yet.
+  await expect.poll(() => primary.locator('button').evaluateAll(buttons => buttons.map(button => button.id))).toEqual(['start-button', 'garage-button']);
   expect(await page.locator('.intro-actions > button').evaluateAll(buttons => buttons.map(button => button.id || 'history'))).toEqual(['history', 'practice-button']);
   const garage = page.locator('#garage-button');
   await expect(garage.locator('.garage-new-tag')).toHaveText('NEW');
@@ -137,11 +141,10 @@ async function expectHomeEntriesReachable(page, width, height) {
 
 // Compact rows may draw smaller than 44px but must still answer a 44px-tall tap (drawn box or hit area).
 async function expectCompactTouchTargets(page, width, height) {
-  const modes = page.locator('#lobby-modes-toggle');
-  if (!await page.locator('button[data-race-mode="classic"]').isVisible()) await modes.click();
+  await openLobbyModes(page);
   await page.locator('button[data-race-mode="custom"]').evaluate(el => el.click());
   await page.locator('#race-mode-rules > summary').scrollIntoViewIfNeeded();
-  const groups = ['.aero-tools > button, .aero-tools > details > summary, .aero-tools > .custom-select > button',
+  const groups = ['#settings-button',
     '#showcase-camera-prev, #showcase-camera-next', 'button[data-race-mode]', '#race-mode-rules > summary'];
   for (const selector of groups) for (const control of await page.locator(selector).all()) {
     await control.scrollIntoViewIfNeeded();
@@ -153,20 +156,21 @@ async function expectCompactTouchTargets(page, width, height) {
   await page.locator('#settings-button').click();
   expect((await page.locator('#mute-all').boundingBox()).height, `${width}x${height} #mute-all`).toBeGreaterThanOrEqual(44);
   // Close the audio panel again so the next size starts from the same page.
-  await page.locator('#settings-button').click();
+  await page.locator('#settings-close').click();
   await expect(page.locator('#settings-panel')).toBeHidden();
 }
 
 async function expectTopBarPanelsTouchable(page, width, height) {
   const touch = width < 1001;
   const tall = async locator => { for (const el of await locator.all()) expect((await el.boundingBox()).height, `${width}x${height} ${await el.getAttribute('aria-label') ?? await el.textContent()}`).toBeGreaterThanOrEqual(44); };
-  await page.locator('#settings-button').click();
-  if (touch) await tall(page.locator('#settings-panel input[type="range"]'));
+  await openSettingsSection(page, 'audio');
+  if (touch) await tall(page.locator('#settings-audio input[type="range"]'));
   await page.keyboard.press('Escape');
-  await page.locator('.aero-tools > .custom-select > button').click();
-  if (touch) await tall(page.locator('.aero-tools > .custom-select [role="option"]'));
+  await openSettingsSection(page, 'language');
+  await page.locator('#settings-language .custom-select > button').click();
+  if (touch) await tall(page.locator('#settings-language .custom-select [role="option"]'));
   await page.keyboard.press('Escape');
-  await page.locator('#vfx-panel > summary').click();
+  await toggleSettingsSection(page, 'display');
   // A fixed-width select must never spill past the panel's padding (320px wrapped "Showcase camera").
   const spill = await page.locator('.vfx-settings').evaluate(panel => {
     const edge = panel.getBoundingClientRect().right - parseFloat(getComputedStyle(panel).paddingRight);
@@ -175,8 +179,8 @@ async function expectTopBarPanelsTouchable(page, width, height) {
   expect(spill, `${width}x${height}`).toEqual([]);
   if (touch) { await page.locator('#vfx-reset').scrollIntoViewIfNeeded(); await tall(page.locator('#vfx-reset')); }
   // Fold the VFX panel away again so the next size starts from the same page.
-  await page.locator('#vfx-panel > summary').click();
-  await expect(page.locator('#vfx-panel')).not.toHaveAttribute('open', '');
+  await toggleSettingsSection(page, 'display');
+  await expect(page.locator('#settings-display')).toBeHidden();
 }
 
 // Desktop (mouse) boots alone: hasTouch/isMobile are fixed per browser context. The three touch sizes share one booted
@@ -240,7 +244,7 @@ test('keyboard can step the showcase angle without starting a race', async ({ pa
   await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   const previous = page.locator('#showcase-camera-prev');
-  await expect(previous).toBeVisible({ timeout: ciTimeout(2500) });
+  await expect(previous).toBeVisible();
   await previous.focus();
   await page.keyboard.press('Enter'); // Drive wraps back to the last view
   await expect(page.locator('#showcase-camera-dock')).toHaveAttribute('data-view', 'orbit');

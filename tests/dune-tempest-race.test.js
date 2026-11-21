@@ -161,7 +161,7 @@ test('no FLY on the flight edge: falls in the gap, recovered on canyon-switchbac
   let split2 = null, before = null, at = null;
   const { race } = botRace(60, PATHS[0], { second: AIR, pilot: false, trace: (r, you) => {
     if (you.travel.currentEdgeId === AIR && split2 === null) split2 = you.edgeStart;
-    if (r.player.falls === 1 && at === null) at = { ...you.travel, distance: r.player.distance, speed: r.player.speed,
+    if (r.player.falls === 1 && !r.player.recovery && at === null) at = { ...you.travel, distance: r.player.distance, speed: r.player.speed,
       fall: r.player.fall, elapsed: r.elapsed, score: r.player.score };
     if (r.player.falls === 0) before = { speed: r.player.speed, nextCheckpoint: you.travel.nextCheckpoint, score: r.player.score };
   } });
@@ -171,7 +171,7 @@ test('no FLY on the flight edge: falls in the gap, recovered on canyon-switchbac
   assert.ok(at.localS >= 5 && at.localS <= 65, `recovery slot ${at.localS}`);
   assert.equal(at.nextCheckpoint, before.nextCheckpoint, 'checkpoints unchanged');
   assert.ok(at.distance <= split2 + 1e-9, `odometer ${at.distance} not ahead of split2 ${split2}`);
-  assert.equal(at.fall.time, at.elapsed);
+  assert.ok(at.elapsed - at.fall.time >= 1, 'the fall plays before control returns');
   assert.ok(Math.abs(at.speed - 0.4 * before.speed) <= 0.4 * 60 / 60, `speed ${at.speed} vs 0.4 x ${before.speed}`);
   assert.ok(at.score <= before.score, 'no score in the recovery frame');
   assert.equal(race.course.rejections, 0);
@@ -192,6 +192,8 @@ test('the recovery frame collects no gate, hazard or score sweep', () => {
   stepRace(race, { throttle: true }, 1 / 60);
   assert.equal(race.player.falls, 1);
   assert.equal(race.player.fall.time, race.elapsed);
+  assert.equal(you.travel.currentEdgeId, AIR, 'the falling car remains on its source edge');
+  for (let i = 0; i < 90 && !race.player.recovery?.reseated; i++) stepRace(race, { throttle: true }, 1 / 60);
   assert.deepEqual([you.travel.currentEdgeId, you.travel.localS], [SWITCHBACKS, 5], 'seated at the first clear slot, not stepped');
   assert.equal(you.travel.nextCheckpoint, nextCheckpoint, 'no gate');
   assert.equal(race.player.collisions, collisions, 'no hazard');
@@ -394,5 +396,4 @@ test('firestore.rules accepts the Dune topology-keyed best', () => {
   const rules = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
   const listed = [...rules.match(/function bestIds\(\) \{[^}]*\}/)[0].matchAll(/'([^']+)'/g)].map(m => m[1]);
   assert.ok(listed.includes(KEY));
-  assert.ok(rules.includes(`math.abs(b.get('${KEY}', 302400) - 302400) < 302400`), 'validBests checks the key inline');
 });

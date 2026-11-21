@@ -12,8 +12,8 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     const catalog = page.locator('#garage-vfx-catalog');
     await expect(catalog).toBeVisible();
     await expect(catalog).toHaveAttribute('data-preview-contract', 'live-shared-aero');
-    await expect(catalog.locator('[data-skin]')).toHaveCount(22);
-    await expect(catalog.getByRole('button')).toHaveCount(44);
+    await expect(catalog.locator('[data-skin]')).toHaveCount(28);
+    await expect(catalog.locator('[data-skin] button')).toHaveCount(56);
     await expect(page.locator('[data-paint="pearl"]')).toHaveAttribute('data-state', 'equipped');
     await expect(page.locator('#garage-preview #world')).toBeVisible();
     const screenshot = await page.screenshot();
@@ -38,6 +38,32 @@ test('selected artwork animates at original 3x dimensions while retaining WebP f
   const dims = await ion.evaluate(img => ({ width: img.naturalWidth, height: img.naturalHeight }));
   expect(dims).toEqual({ width: 288, height: 288 });
 });
+});
+
+test('Comfort uses static NITRO card art on High while the same card animates in standard mode', async ({ page }) => {
+  await page.addInitScript(() => {
+    const comfortable = new URL(location.href).searchParams.has('test-comfort');
+    localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'high', comfortable }));
+    localStorage.setItem('skyline-rush-music', 'off');
+  });
+  const trail = page.locator('[data-skin="nitro-trail-gold"] img');
+  for (const url of ['/', '/?test-comfort']) {
+    await page.goto(url);
+    await openGarage(page);
+    await openGarageSection(page, 'effects');
+    await trail.scrollIntoViewIfNeeded();
+    await expect(trail).toBeInViewport();
+    await trail.evaluate(img => new Promise(resolve => {
+      const observer = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) {
+          observer.disconnect();
+          requestAnimationFrame(() => requestAnimationFrame(resolve));
+        }
+      });
+      observer.observe(img);
+    }));
+    await expect(trail).toHaveAttribute('data-animation-active', String(url === '/'));
+  }
 });
 
 test('unavailable GIF and original WebP fall back to category SVG, without granting ownership', async ({ page }) => {

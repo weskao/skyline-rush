@@ -1,3 +1,4 @@
+import { seedGtCareer } from './helpers/gt-progress.js';
 import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
@@ -20,6 +21,7 @@ for (const car of ['roadster', 'crimson-gt']) test(`NITRO on High leaves the ${c
     localStorage.setItem('skyline-rush-car', JSON.stringify(car));
     localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'high', enabled: true, comfortable: false }));
   }, car);
+  if (car === 'crimson-gt') await seedGtCareer(page);
   await page.reload();
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
   if (car === 'crimson-gt') await expect(page.locator('#world')).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(20000) });

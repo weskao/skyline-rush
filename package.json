@@ -22,6 +22,7 @@
     "typecheck:vue": "vue-tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
+    "crucible": "npm:@codepawlhq/crucible@0.21.0",
     "firebase": "^13.1.0",
     "three": "0.186.1",
     "vue": "^3.5.44"
@@ -37,14 +38,27 @@
     "vue-tsc": "3.3.13"
   },
   "overrides": {
-    "@grpc/grpc-js": "^1.14.6"
+    "@grpc/grpc-js": "^1.14.6",
+    "crucible": {
+      "three": "$three"
+    }
+  },
+  "allowScripts": {
+    "@codepawlhq/crucible@0.21.0": true,
+    "@firebase/util": false,
+    "esbuild": true,
+    "fsevents": false,
+    "protobufjs": false
   },
   "imports": {
+    "#garage-playtest-storage": "./src/access/garage-production.ts",
+    "#garage-playtest-equip": "./src/access/garage-production.ts",
     "#garage-skin-ui": "./src/GarageSkinCatalog.vue",
     "#garage-skin-runtime": "./src/garage-skin-runtime.ts",
     "#garage-skin-palette": "./src/garage-skin-palette.ts",
     "#garage-void-beams": "./src/garage-void-beams.js",
     "#garage-launch-flare": "./src/garage-launch-flare.js",
+    "#garage-drift-trail": "./src/garage-drift-trail.js",
     "#garage-nitro-trail": "./src/garage-nitro-trail.js",
     "#garage-release-config": "./src/garage-release-trial.ts",
     "#wave3-demo-race": "./src/wave3-race-events.ts",

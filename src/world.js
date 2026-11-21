@@ -18,17 +18,18 @@ import { classicRoadRoute, legacyClassicRoad } from './classic-road-routes.ts';
 import { createClassicRoadRender } from './classic-road-render.ts';
 import { createEffects } from './effects.js';
 import { createAeroVFX } from './aero-vfx.js';
-import { vfxSettings, createSprintVfx, sprintFovOffset } from './vfx-settings.ts';
+import { vfxSettings, createSprintVfx, sprintBloomBoost, sprintFovOffset } from './vfx-settings.ts';
 import { raceCameraView, rigBack, rigLook, rigHeight, rigFov, rigShake, rigKick, rigRumble, rigJolt, rumbleFloor, stepCameraSwing, frameChaseSightline } from './race-camera.ts';
-import { renderPixelRatioForQuality } from './render-resolution.ts';
+import { observeRenderSize, renderPixelRatioForQuality, renderSamples } from './render-resolution.ts';
 import { warmupShaders } from './shader-warmup.ts';
 import { createRenderer } from './webgl-renderer.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
 import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.ts';
 import { createGarageStage, GARAGE_LIGHTING } from './garage-stage.ts';
-import { applyCarReflections, createCarEnvironment } from './car-reflections.ts';
+import { applyCarReflections, createCarEnvironment, outdoorCarRoughness } from './car-reflections.ts';
 import { createCarBounds } from './car-bounds.ts'; import { drawnTriangles } from './perf.ts';
+import { currentFoldableLayout, updateFoldableProjection } from './foldable-viewport.ts';
 import { createUpcomingShowcase } from './upcoming-showcase.ts';
 import { UPCOMING_ENVIRONMENTS } from './upcoming-scenes/index.ts';
 import { createCircuitScene } from './circuit-scene.ts';
@@ -36,11 +37,12 @@ import { createFrostbiteRaceScene } from './frostbite-race-scene.ts'; import { f
 import { createCourseRaceScene } from './course-race-scene.ts'; import { graphOrigin, graphCarVisual, graphLookAhead, graphFinishVisual } from './course-render-pose.ts'; import { courseItemFrame, courseItemPoint } from './course-items.ts'; import { isCourseRuntime } from './course-runtimes.ts';
 import { FROSTBITE_ID, FROSTBITE_SPAN, frostbiteObjectSpan, frostbiteSpanLift } from './courses/frostbite-race.ts';
 import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
-import { instances, material, block, CAR_STYLES, RIVAL_CAR_STYLES, makeCar, stepWing, isCircuitFinisher } from './car-model.js';
+import { instances, material, block, CAR_STYLES, makeCar, stepWing } from './car-model.js';
 import { createTrafficFleet } from './traffic-fleet.ts';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
 import { createWorldCoastAssets } from './coast-assets.ts';
-import { landmarkBounds } from './landmark-bounds.ts';
+import { nearestLandmark } from './landmark-bounds.ts';
+import { chooseShowcaseFraming } from './showcase-framing.ts';
 import { createContactShadow } from './contact-shadow.ts';
 import { isRaining, racePreset } from './board-effects.ts';
 import { createClassicTrackScenery } from './classic-track-scenery.ts';
@@ -48,36 +50,35 @@ import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
 import { createSkyScene } from './sky-scene.js';
 import { skyPosition as finiteSkyPosition, skyFrame as finiteSkyFrame } from './sky-track.ts';
 import { orientCarOnRoad, placeGroundShadow } from './vehicle-pose.ts';
+import { createRoadRecoveryView, poseRoadRecovery, frameRoadRecovery } from './road-recovery-view.ts';
 import { poseFor, smoothDriftYaw, squatPitch, rearAxleLift } from './vehicle-render-motion.js';
-import { trackPoint as finitePoint, trackFrame as finiteFrame, trackLocalPosition as finitePosition, lookAheadDistance } from './track-paths.ts';
+import { trackPoint as finitePoint, trackFrame as finiteFrame, trackLocalPosition as finitePosition, lookAheadDistance, trackRunoutFrame } from './track-paths.ts';
 import { HERO_PREVIEWS,SHOWCASE_BACKS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.ts';
 import { sectionSignKey } from './section-signs.ts';
 import { createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
 import { createRampPool, drawRamps } from './ramp-view.ts'; import { createHazardRenderer } from './hazard-render.ts';
 import { createWorldGarageModel } from './garage-model.ts';
-import { createGhostPhase } from './grace-fade.ts'; import { attachRivalDriveVfx } from './rival-drive-vfx.ts';
+import { createGhostPhase } from './grace-fade.ts'; import { createRivalFleet } from './rival-fleet.js';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
 const box = new THREE.BoxGeometry(1, 1, 1);
 const TOUR_IDS = new Set(['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic']);
 const framedRoad = (id, endless = false) => TOUR_IDS.has(id) || id === CIRCUIT_ID || (!endless && (id === FROSTBITE_ID || MEASURED_COURSE_IDS.has(id) || isCourseRuntime(id)));
-export function createWorld(canvas) {
+export function createWorld(canvas, visual = vfxSettings()) {
   // Scoped continuation: finite career/Ghost path API still clamps at the finish.
   let endlessActive=false, curvedClassic = false, classicRoute = legacyClassicRoad;
   const roadCenter = d => classicRoute.point(d)[0], roadHeading = d => classicRoute.heading(d);
   const classicPosition = (d, x, y, origin) => {
     const [px, pz] = classicRoute.point(d, x), [ox, oz] = classicRoute.point(origin);
-    return [px - ox, y, pz - oz];
+    return [px - ox, y + (classicRoute.elevation?.(d) ?? 0) - (classicRoute.elevation?.(origin) ?? 0), pz - oz];
   };
   const skyPosition=(d,x=0,y=0,o=0)=>finiteSkyPosition(d,x,y,o,endlessActive),skyFrame=d=>finiteSkyFrame(d,endlessActive),
     trackPoint=(id,d)=>finitePoint(id,d,endlessActive),trackFrame=(id,d,span=false)=>finiteFrame(id,d,endlessActive,span),
     trackLocalPosition=(id,d,x=0,y=0,o=0)=>finitePosition(id,d,x,y,o,endlessActive);
   const renderer = createRenderer(canvas);
   renderer.info.autoReset=false; // Combine scene and composer submissions per frame for QA.
-  let renderPixelRatio=Math.min(devicePixelRatio,1.5);
-  let adaptiveScale = 1;
-  renderer.setPixelRatio(renderPixelRatio);
+  renderer.setPixelRatio(renderPixelRatioForQuality(visual.quality, devicePixelRatio, 1));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.12;
@@ -86,11 +87,9 @@ export function createWorld(canvas) {
   scene.fog = new THREE.FogExp2('#94758a', 0.0013);
   const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 3000);
   const motionPreference = matchMedia('(prefers-reduced-motion: reduce)'), touchPreference = matchMedia('(pointer: coarse)');
-  // The scene is rendered into this target, not the canvas, so it must carry the MSAA samples or every
-  // edge stays jagged and crawls as the camera moves (the flicker seen on the start screen and in races).
-  const msaaSamples = quality => quality === 'low' ? 2 : 4;
-  const sceneTarget = samples => new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples });
-  const composer = new EffectComposer(renderer, sceneTarget(4)); // configureVFX re-targets for the saved quality tier
+  const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(1, 1, {
+    type: THREE.HalfFloatType, samples: renderSamples(visual.quality),
+  }));
   const renderPass = new RenderPass(scene, camera); composer.addPass(renderPass);
   const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.42, 0.55, 1.1);
   // The bloom blur spreads one NaN/Inf scene texel into a screen-sized black rectangle (seen when a nozzle shader hit
@@ -213,14 +212,14 @@ export function createWorld(canvas) {
   scene.add(finish);
   const player = makeCar(CAR_STYLES.roadster);
   scene.add(player);
-  applyCarReflections(player, carEnvironment);
+  applyCarReflections(player, carEnvironment, 'outdoor');
   const ghostPhase = createGhostPhase(player); // before aero VFX attach to it
   const rearLight = player.userData.rearLight;
-  const rivals = RIVAL_CAR_STYLES.map(style => { const car = makeCar(style); applyCarReflections(car, carEnvironment); attachRivalDriveVfx(car); scene.add(car); return car; }); // NITRO/BOOST cues (rival-drive-vfx.ts)
+  const fleet = createRivalFleet(scene, carEnvironment), rivals = fleet.cars;
   const flightVehicles = [player, ...rivals];
   // ×2 covers the double-traffic daily modifier. Instanced (traffic-fleet.ts): `traffic` holds poses, not meshes.
   const trafficFleet = createTrafficFleet(scene, Math.max(...Object.values(RACE_TRACKS).map(track => Math.round(36 * track.trafficDensity * 2)))), traffic = trafficFleet.cars;
-  applyCarReflections(trafficFleet.group, carEnvironment);
+  applyCarReflections(trafficFleet.group, carEnvironment, 'outdoor');
   // Best-run ghost: the player's shape in one translucent material.
   const ghostCar = makeCar(CAR_STYLES.roadster);
   const ghostMaterial = new THREE.MeshBasicMaterial({ color: '#8fd3ff', transparent: true, opacity: 0.3, depthWrite: false });
@@ -231,7 +230,7 @@ export function createWorld(canvas) {
   const skyScene = createSkyScene(scene);
   const worldTourScene = createWorldTourScene(scene);
   const coastScenery = createCoastScenery(scene), classicScenery = createClassicTrackScenery(scene);
-  const coastAssets = createWorldCoastAssets(renderer, { scene, scenery: coastScenery, road, sky, sun, sea, seaLines, mountains, city, towers, replaced: [classicScenery.groups.neon, poles, lamps, pillars, tunnelRoofs, tunnelWalls] }, canvas.dataset);
+  const coastAssets = createWorldCoastAssets(renderer, { scene, scenery: coastScenery, road, sky, sun, sea, seaLines, mountains, city, towers, poles, replaced: [classicScenery.groups.neon, poles, lamps, pillars, tunnelRoofs, tunnelWalls], spiral: skyScene.parts }, canvas.dataset);
   // Inspect car occlusion only when the showroom angle changes.
   const showcaseOccluders = scene.getObjectByName('World Tour authored scenery');
   const showcaseRay = new THREE.Raycaster();
@@ -251,76 +250,34 @@ export function createWorld(canvas) {
   const orbitTurns = [0,1,2,3,4,5,6,7].map(i=>i*Math.PI/4), spin = (v,a) => v.clone().sub(player.position).applyAxisAngle(camera.up,a).add(player.position);
   // Frame the full vehicle silhouette, including wheels.
   const { projectedCarBounds, carCorner } = createCarBounds(showcaseProbe, camera, player, () => aero.group);
-  let framingKey = '', framingBack = 0, framingLookY = 0; const framingAxis = new THREE.Vector3();
+  let framingKey = '', framing = { back: 0, down: 0, side: 0 };
+  const framingAxis = new THREE.Vector3(), framingRight = new THREE.Vector3();
+  const showcaseLandmarks = () => trackId === 'spiral' ? skyScene.landmarks()
+    : trackId === CIRCUIT_ID ? circuitScene.landmarks() : TOUR_IDS.has(trackId) ? worldTourScene.landmarks() : [];
 
   function frameShowcaseCar(distance) {
-    // Hover wheels fold out over ~0.5 s and widen the car: reframe as they move, not once from the first frame.
+    // Reframe as the hovering wheels fold out and widen the car.
     const key=[trackId,visual.view,visual.airflow,visual.quality,camera.aspect.toFixed(3),garageHomePreview,
       Math.round(player.userData.wheels[0].rotation.z*4)].join(':');
-    // Dolly straight away from the car for the chosen angle (re-aimed each frame as orbit turns); only drive follows the road's chase axis.
     if(visual.view!=='drive') framingAxis.copy(desiredCamera).sub(player.position).setY(0).normalize();
     if(key!==framingKey) {
       framingKey=key;
-      framingBack=0;
-      framingLookY=0;
-      const originalEye=desiredCamera.clone(), originalLook=lookTarget.clone();
       const frame=trackId==='spiral'?skyFrame(distance):
         curvedClassic||framedRoad(trackId, endlessActive)?trackFrame(trackId,distance):null;
       if(visual.view==='drive') framingAxis.set(...(frame?frame.forward:[0,0,-1])).negate();
-      // Try the smallest look adjustment first, then dolly out if a wide
-      // vehicle cannot fit. No per-track offsets or expensive per-frame probes.
-      // A portrait phone (aspect ~0.46) needs far more dolly than a desktop; when
-      // nothing fits, keep the least-cropped candidate instead of the unframed shot.
-      let found=false, bestScore=Infinity, bestLookY=0, bestBack=0;
-      const turns=visual.view==='orbit'?orbitTurns:[0];
-      projectedCarBounds(originalEye,originalLook); // measure the car once; candidates only re-project it
-      // The drive shot also owns the signature landmark: tilting down to catch the wheels
-      // must not push its top out of frame, so that top is a fit constraint too.
-      // Frostbite keeps its race-only framing: the home landmark fit stays on Tour/Circuit roads.
-      const landmark=visual.view==='drive'&&framedRoad(trackId, endlessActive)&&trackId!==FROSTBITE_ID&&!MEASURED_COURSE_IDS.has(trackId)?landmarkBounds(trackId===CIRCUIT_ID?circuitScene.landmarks():worldTourScene.landmarks(),originalLook):null;
-      // Landscape keeps the landmark clear of the home panel on the left (NDC x >= .04).
-      const clearLeft=camera.aspect>1;
-      // Fine steps near the camera: a tight landmark leaves only a ~1 m dolly window.
-      search: for(const back of SHOWCASE_BACKS) {
-        const eye=originalEye.clone().addScaledVector(framingAxis,back);
-        for(const down of [0,.25,.5,.75,1,1.5,2,3,4,5,6,8,10,12]) {
-          const look=originalLook.clone();look.y-=down;
-          // Fit inside the edge limits with a small margin: the hovering car bobs after this
-          // one-off search, so a zero-margin fit crops it again a moment later.
-          const carMiss=Math.max(...turns.map(a=>{ const b=projectedCarBounds(spin(eye,a),spin(look,a),false);
-            return Math.max(-.92-b.minX,b.maxX-.92,-.88-b.minY,b.maxY-.88); }));
-          let miss=carMiss;
-          if(landmark) {
-            carCorner.set((landmark.min.x+landmark.max.x)/2,landmark.max.y,(landmark.min.z+landmark.max.z)/2)
-              .project(showcaseProbe);
-            if(carCorner.z<1) miss=Math.max(miss,carCorner.y-.97);
-            if(clearLeft) for(const x of [landmark.min.x,landmark.max.x])
-              for(const y of [landmark.min.y,landmark.max.y])
-                for(const z of [landmark.min.z,landmark.max.z]) {
-                  carCorner.set(x,y,z).project(showcaseProbe);
-                  if(carCorner.z<1) miss=Math.max(miss,.03-carCorner.x);
-                }
-          }
-          // The whole car is the hard requirement; the landmark only breaks ties among the
-          // candidates that fit it. With no fit at all, keep the least-cropped car.
-          const score=carMiss<0?miss-1e3:carMiss;
-          if(score<bestScore) {
-            bestScore=score;
-            bestBack=back;
-            bestLookY=-down;
-          }
-          if(miss<0) {
-            framingBack=back;
-            framingLookY=-down;
-            found=true;
-            break search;
-          }
-        }
-      }
-      if(!found) { framingBack=bestBack; framingLookY=bestLookY; }
+      framingRight.set(...(frame?frame.right:[1,0,0]));
+      const landmarks=visual.view==='drive'?showcaseLandmarks():[];
+      const landmark=landmarks.find(hero=>hero.visible&&hero.userData.landmarkKind===HERO_PREVIEWS[trackId]?.landmark)
+        ?? nearestLandmark(landmarks,lookTarget);
+      projectedCarBounds(desiredCamera,lookTarget);
+      framing=chooseShowcaseFraming({
+        eye:desiredCamera,look:lookTarget,axis:framingAxis,right:framingRight,landmark,
+        probe:showcaseProbe,corner:carCorner,carBounds:projectedCarBounds,spin,
+        turns:visual.view==='orbit'?orbitTurns:[0],backs:SHOWCASE_BACKS,
+      });
     }
-    desiredCamera.addScaledVector(framingAxis,framingBack);
-    lookTarget.y+=framingLookY;
+    desiredCamera.addScaledVector(framingAxis,framing.back);
+    lookTarget.addScaledVector(framingRight,framing.side).y-=framing.down;
   }
 
   function showroomClearShare(eye, look, projection = null) {
@@ -396,54 +353,55 @@ export function createWorld(canvas) {
   const aero = createAeroVFX(scene, player, shadow);
   const garageModel = createWorldGarageModel(canvas, renderer, camera), homeModelHost = { name: 'home', car: player, keep: aero.group, scene, fitAirflow: aero.fitAirflow };
   const sprintVisual = createSprintVfx();
-  // Stable rendering-only adapter: never changes the race simulation or Vue reactive state.
   const sprintInput = { phase: 'ready', nitro: false, chain: 0, boost: false, speed: 0, cap: 110, dt: 0, enabled: true, quality: 'high', reducedMotion: false };
-  let visual = vfxSettings(), garageHomeVisual = { ...visual, airflow: true }, garageHiddenVisual = { ...visual, enabled: false };
+  let garageHomeVisual = { ...visual, airflow: true }, garageHiddenVisual = { ...visual, enabled: false };
   const projectedNozzle = new THREE.Vector3(), aeroOrigin = new THREE.Vector3();
   const desiredCamera = new THREE.Vector3();
   const lookTarget = new THREE.Vector3();
   const smoothLook = new THREE.Vector3(0, 2, -25), rumble = new THREE.Vector3(), jolt = new THREE.Vector3(); // rumble: the world offset (rumble + jolt) added after lookAt last frame
   let cameraMode = 0, cameraSwing = 0;
-  let initialized = false, lastRace = null, trackId, carBank = 0, seenFall = null, spanLift = new THREE.Vector3(), nextLift = new THREE.Vector3(); const courseOriginPoint = [0, 0, 0]; // Frostbite span: a respawn (up to ~500 m back) cuts the camera; the lift carries it
+  const recoveryView = createRoadRecoveryView(canvas);
+  let initialized = false, lastRace = null, trackId, carBank = 0, spanLift = new THREE.Vector3(), nextLift = new THREE.Vector3(); const courseOriginPoint = [0, 0, 0];
   const classicRoadRender = createClassicRoadRender({ road, laneLines, curbs, edgeLines, railLights, tunnelRoofs, tunnelWalls, shortcutDeck, surfaceMarks }, segments, put, SHORTCUT_TOLERANCE);
   let photoView = null, photoCapture = null, garageCamera = null, garageHomePreview = false, garagePose = null, garageLighting = 'bright';
   const syncGarageLighting = () => { lens.uniforms.gain.value = garageCamera || garagePose ? GARAGE_LIGHTING[garageLighting] : 1; };
   const raceVisuals = createRaceVisuals({ scene, renderer, sky: sky.material.uniforms });
-  let sizeKey = '', warmupPending = true, garageWarmupPending = true;
+  let warmupPending = true, garageWarmupPending = true;
   const restoreWarmup = () => { warmupPending = garageWarmupPending = true; };
   canvas.addEventListener('webglcontextrestored', restoreWarmup);
-  function resize() {
-    const { width, height } = canvas.getBoundingClientRect();
-    // setSize reallocates the drawing buffer and every composer target, blanking a frame; mobile URL-bar and
-    // dialog events fire resize with an unchanged size, so only act when size, pixel ratio or MSAA really changed.
-    const key = `${width}x${height}@${renderPixelRatio}/${composer.renderTarget1.samples}`;
-    if (key === sizeKey) return;
-    sizeKey = key;
-    renderer.setSize(width, height, false);
-    composer.setSize(width, height);
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
+  const sizing = observeRenderSize(canvas, renderer, composer, camera, visual.quality);
+  let paintedGrid = null, frameLoading = true;
+  canvas.setAttribute('data-frame-loading', '');
+  function waitForFrame() {
+    if (!frameLoading) canvas.setAttribute('data-frame-loading', '');
+    frameLoading = true;
+    return false;
   }
-  resize();
-  // iOS fires resize on rotation before the new layout lands; observing the canvas catches the settled size.
-  new ResizeObserver(resize).observe(canvas);
+  function drawFrame(race, dt) {
+    renderer.info.reset(); // Exclude shader warmup draws and previous frames from the counters.
+    composer.render(dt);
+    if (race.phase !== 'ready') paintedGrid = race;
+    if (frameLoading) canvas.removeAttribute('data-frame-loading');
+    frameLoading = false;
+    return true;
+  }
   function updateCar(mesh, car, distance, center, time, dt, isPlayer = false, input = {}, pose = car) {
     const graphView = lastRace?.course && isCourseRuntime(trackId) ? graphCarVisual(lastRace.course, isPlayer ? 'YOU' : car.id, courseOriginPoint) : null;
     const relative = graphView ? graphView.separation : physicalGap(trackId, distance, pose.distance);
-    // Tour and sky routes end at the finish and trackPoint clamps there, so cars
-    // past it would pile up at the arch like parked cars; they leave the scene instead.
-    const pastFinish = isCircuitFinisher(lastRace, car) || graphView?.finished || (!endlessActive && (trackId === 'spiral' || TOUR_IDS.has(trackId) || trackId === FROSTBITE_ID || MEASURED_COURSE_IDS.has(trackId)) && pose.distance > lastRace.length);
-    mesh.visible = isPlayer || (graphView ? relative < 900 && !pastFinish : relative > -55 && relative < 900 && !pastFinish);
+    const pastLine = !endlessActive && pose.distance > lastRace.length;
+    const offRoad = car.finishTime == null && (graphView?.finished || (pastLine && trackId !== CIRCUIT_ID && (trackId === 'spiral' || framedRoad(trackId))));
+    mesh.visible = isPlayer || (!offRoad && relative < 900 && (graphView != null || relative > -55));
     if (!mesh.visible) return; mesh.userData.roadDistance = pose.distance; mesh.userData.span = !!car.span; mesh.userData.altitude = (pose.altitude || 0) - (car.span ? FROSTBITE_SPAN.altitude - SHORTCUT_TOLERANCE : 0); // the pose the shadow sits under (a span car's on the deck)
     if (curvedClassic || trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
+      const frame = graphView?.frame ?? (pastLine && car.finishTime != null ? trackRunoutFrame(trackId, pose.distance) : trackFrame(trackId, pose.distance, car.span));
       if (curvedClassic) mesh.position.fromArray(classicPosition(pose.distance, pose.x, pose.altitude || 0, distance));
       else if (graphView) mesh.position.fromArray(graphView.position);
-      else if (trackId === 'spiral') mesh.position.fromArray(skyPosition(pose.distance, pose.x, pose.altitude || 0, distance));
       else {
-        const f=trackFrame(trackId,pose.distance,car.span),p=f.point,o=trackPoint(trackId,distance);
-        mesh.position.set(p.x-o.x+f.right[0]*pose.x+f.up[0]*(pose.altitude||0),p.y-o.y+f.right[1]*pose.x+f.up[1]*(pose.altitude||0),p.z-o.z+f.right[2]*pose.x+f.up[2]*(pose.altitude||0));
+        const { point, right, up } = frame, origin = trackPoint(trackId, distance);
+        mesh.position.set(point.x - origin.x + right[0] * pose.x + up[0] * (pose.altitude || 0),
+          point.y - origin.y + right[1] * pose.x + up[1] * (pose.altitude || 0),
+          point.z - origin.z + right[2] * pose.x + up[2] * (pose.altitude || 0));
       }
-      const frame = graphView?.frame ?? (trackId === 'spiral' ? skyFrame(pose.distance) : trackFrame(trackId,pose.distance,car.span));
       // Compose every visual offset in local car axes, retaining the actual road pitch/bank.
       // Reading/writing Euler rotation after setting the track quaternion used to
       // overwrite its banking and snap near 90-degree spiral headings.
@@ -464,6 +422,7 @@ export function createWorld(canvas) {
       mesh.rotation.x = THREE.MathUtils.damp(mesh.rotation.x, car.thrusting ? -0.06 : Math.min(0.08, -(pose.verticalSpeed || 0) * 0.006), 7, dt);
     }
     if (!mesh.userData.jets) return; // a traffic pose: its instanced car has no moving parts
+    if (mesh.userData.rivalFitOffset) mesh.translateZ(mesh.userData.rivalFitOffset);
     mesh.userData.jets.visible = !!car.thrusting;
     mesh.userData.brakeLight.color.copy(mesh.userData.lightColor).multiplyScalar(Math.max(car.braking ? 2.3 : 1, mesh.userData.driveCue?.update(car, visual, motionPreference.matches || visual.comfortable, time, distance) ?? 1)); // rivals only carry driveCue
     const { wing } = mesh.userData;
@@ -476,10 +435,11 @@ export function createWorld(canvas) {
       wheel.rotation.z = THREE.MathUtils.damp(wheel.rotation.z, target, 7, dt);
       wheel.rotation.y = wheel.position.z < 0 ? -(pose.steering || 0) * 0.3 : 0;
       if (wheel.children[2]) wheel.children[2].rotation.x -= pose.speed * dt / 0.44;
+      else if (mesh.userData.rivalDetail) wheel.children[1].rotateY(pose.speed * dt / 0.44);
     });
   }
   return {
-    resize, setUpcomingTrack(id) { return upcomingStage.setTrack(id); }, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture, carEnvironment); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; syncGarageLighting(); }, setCosmeticSkins(ids) { aero.setSkins(ids); upcomingStage.setAirflowSkin(ids?.airflow); }, setGaragePose(pose) { garagePose = pose; syncGarageLighting(); }, setGarageLighting(level) { garageLighting = level; syncGarageLighting(); },
+    resize: sizing.resize, setUpcomingTrack(id) { return upcomingStage.setTrack(id); }, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture, carEnvironment); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; syncGarageLighting(); }, setCosmeticSkins(ids) { aero.setSkins(ids); effects.setDriftTrail(ids?.['drift-trail']); effects.setNitroTrail(ids); upcomingStage.setAirflowSkin(ids?.airflow); }, setGaragePose(pose) { garagePose = pose; syncGarageLighting(); }, setGarageLighting(level) { garageLighting = level; syncGarageLighting(); },
     setGarageSkinPreview(ids, home = false, visible = true) {
       garagePreviewSkins = ids;
       garageHomePreview = home && !garageCamera;
@@ -494,22 +454,14 @@ export function createWorld(canvas) {
         inspectGarageStudio() { if (garageStage && garageCamera) return garageStage.inspectBounds(camera); if (!garageHomePreview) return null; const { minX, maxX, minY, maxY } = projectedCarBounds(camera.position, smoothLook); return { minX, maxX, minY, maxY, inFrame: minX > -.94 && maxX < .94 && minY > -.94 && maxY < .94 }; }, // Home: QA reads how much of the showroom the car fills
     previewAppearance(paint) {
       garagePaint = paint; garageStage?.setPaint(paint); upcomingStage.setPaint(paint);
-      const paintMaterial = player.userData.body.material; paintMaterial.color.set(paint.paint); paintMaterial.metalness = paint.metalness; paintMaterial.roughness = paint.roughness;
+      const paintMaterial = player.userData.body.material; paintMaterial.color.set(paint.paint); paintMaterial.metalness = paint.metalness; paintMaterial.roughness = outdoorCarRoughness(paint.roughness);
       player.userData.lightColor.fromArray(paint.light);
     },
-    setRenderScale(scale) { adaptiveScale = scale; this.configureVFX(visual); },
-    trackSceneryPending: race => !race.endless?.practice && coastAssets.sceneryPending(race.trackId, visual.quality),
+    setRenderScale: sizing.setScale,
+    raceFramePending: race => paintedGrid !== race || frameLoading,
     configureVFX(options) {
       visual=vfxSettings(options); garageHomeVisual = { ...visual, airflow: true }; garageHiddenVisual = { ...visual, enabled: false }; garageStage?.configureVFX(visual);
-      const nextRatio=renderPixelRatioForQuality(visual.quality,devicePixelRatio,adaptiveScale);
-      const samples=msaaSamples(visual.quality);
-      if(samples!==composer.renderTarget1.samples) composer.reset(sceneTarget(samples));
-      if(Math.abs(nextRatio-renderPixelRatio)>.001){
-        renderPixelRatio=nextRatio;
-        renderer.setPixelRatio(nextRatio);
-        composer.setPixelRatio(nextRatio);
-      }
-      resize();
+      sizing.setQuality(visual.quality);
     },
     cycleCamera() { cameraMode = (cameraMode + 1) % 2; return cameraMode; },
     resetRaceCamera() { initialized = false; cameraMode = cameraSwing = carBank = 0; },
@@ -527,15 +479,17 @@ export function createWorld(canvas) {
       return new Promise((resolve,reject) => { photoCapture = { resolve, reject }; });
     },
     render(race, dt, idleTime, input = {}, presentation = {}, ghost = null, motion = null) {
-      garageModel?.frame(visual.quality === 'low' ? 'low' : 'high', race.phase, garageHomePreview || !!garageCamera, garageCamera ? garageStage?.modelHost ?? null : null, race.phase === 'ready' ? upcomingStage.modelHost : null, homeModelHost);
-      if (garageCamera && garageStage && race.phase === 'ready') { renderPass.scene = garageStage.scene; garageStage.update(camera, garageCamera, idleTime, motionPreference.matches || visual.comfortable); lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0; configureBloom(bloom, visual.quality, .01, 1.1); if (garageWarmupPending) { garageWarmupPending = false; warmupShaders(renderer, garageStage.scene, camera, composer.renderTarget1); } renderer.info.reset(); composer.render(dt); return; } // r186 bloom is stronger in the Studio's bright environment.
-      // The original home showcase owns only scenery and camera; no race state or entry.
-      if (race.phase === 'ready' && upcomingStage.scene) {
+      const modelPending = garageModel.frame(visual.quality === 'low' ? 'low' : 'high', race.phase, garageHomePreview || !!garageCamera, garageCamera ? garageStage?.modelHost ?? null : null, race.phase === 'ready' ? upcomingStage.modelHost : null, homeModelHost, race.mode === 'free' && (!initialized || lastRace !== race));
+      const preview = race.phase === 'ready', recovery = recoveryView.update(race.phase, race.player.recovery);
+      updateFoldableProjection(camera, garageCamera || photoView ? null : currentFoldableLayout(), preview, preview && !garageCamera && !garageHomePreview && !upcomingStage.scene && !framedRoad(race.trackId) && !(visual.enabled && visual.airflow));
+      if (garageCamera && garageStage && preview) { renderPass.scene = garageStage.scene; garageStage.update(camera, garageCamera, idleTime, motionPreference.matches || visual.comfortable); lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0; configureBloom(bloom, visual.quality, .01, 1.1); if (garageWarmupPending) { garageWarmupPending = false; warmupShaders(renderer, garageStage.scene, camera, composer.renderTarget1); } return drawFrame(race, dt); } // r186 bloom is stronger in the Studio's bright environment.
+      if (preview && upcomingStage.scene) {
+        if (modelPending && !garageHomePreview) return waitForFrame();
         renderPass.scene = upcomingStage.scene;
         upcomingStage.update(camera, idleTime, visual, motionPreference.matches || visual.comfortable);
         lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0;
         configureBloom(bloom, visual.quality, UPCOMING_HOME_BLOOM, UPCOMING_BLOOM_THRESHOLD);
-        renderer.info.reset(); composer.render(dt); return;
+        return drawFrame(race, dt);
       }
       renderPass.scene = scene;
       endlessActive = !!race.endless;
@@ -543,12 +497,10 @@ export function createWorld(canvas) {
       curvedClassic = !!authoredClassic;
       classicRoute = authoredClassic ?? legacyClassicRoad;
       const lighting = upcomingRaceLighting(race.trackId);
-      const preview = race.phase === 'ready';
       const car = race.player;
       const alpha = race.phase === 'racing' ? motion?.alpha ?? 1 : 1, visualCar = poseFor(player, car, motion?.previous?.player, alpha);
       const reducedMotion = motionPreference.matches || visual.comfortable;
       const motionDt = preview || race.phase === 'racing' || race.phase === 'countdown' ? dt : 0;
-      if (lastRace !== race) { effects.reset(); aero.reset(); sprintVisual.reset(); rearLight.reset(); lastRace = race; initialized = false; carBank = 0; for (const mesh of [player, ...rivals, ...traffic]) mesh.userData.driftYaw = 0; }
       if (trackId !== race.trackId) {
         sprintVisual.reset();
         raceVisuals.reset();
@@ -582,6 +534,11 @@ export function createWorld(canvas) {
       raceVisuals.apply(visualPreset); const blizzard = preview ? 0 : blizzardLevel(trackId, visualCar.distance, !!race.config.themes); raceVisuals.blizzard(blizzard);
       const distance = preview ? previewDistance(trackId) : visualCar.distance;
       if (coastAssets.update(trackId, visual.quality, race.phase === 'racing', visualPreset, visual.ultra, curvedClassic ? classicRoute : undefined, distance, race.endless ? race.seed : undefined)) warmupPending = true; // new materials compile before GO
+      if (race.phase !== 'racing' && !garageHomePreview && (modelPending || coastLook.pending
+        || coastAssets.sceneryPending(trackId, visual.quality, visual.ultra)
+        || (race.pickups.length > 0 && effects.pickupsLoading))) return waitForFrame();
+      if (fleet.sync(race, visual.quality)) flightVehicles.splice(1, rivals.length, ...rivals);
+      if (lastRace !== race) { effects.reset(); aero.reset(); sprintVisual.reset(); rearLight.reset(); lastRace = race; initialized = false; carBank = 0; for (const mesh of [player, ...rivals, ...traffic]) mesh.userData.driftYaw = 0; }
       if(trackId==='coast'){coastScenery.show();coastScenery.update(classicRoute,distance,visual.quality,race.endless ? race.seed : undefined,reducedMotion ? 0 : race.elapsed + idleTime);} else coastScenery.hide();
       if(trackId==='neon'||trackId==='canyon'||trackId==='aurora') classicScenery.update(trackId,classicRoute,distance,visual.quality); else classicScenery.hide();
       sea.visible = mountains.visible = sky.visible && (!lighting || endlessActive); // Finite courses own their rebased terrain.
@@ -688,7 +645,7 @@ export function createWorld(canvas) {
       pillars.instanceMatrix.needsUpdate = true;
       for (let i = 0; i < 24; i++) {
         const d = Math.floor(distance / 60) * 60 + (i - 1) * 60;
-        const side = i % 2 ? 1 : -1;
+        const side = d / 60 % 2 ? 1 : -1;
         const yaw = curvedClassic ? -roadHeading(d) : 0;
         put(poles, i * 2, ...classicPosition(d, side * 12.7, 6.5, distance), .14, 13, .14, yaw);
         put(poles, i * 2 + 1, ...classicPosition(d, side * 10.9, 12.9, distance), 3.7, .14, .18, yaw);
@@ -731,6 +688,7 @@ export function createWorld(canvas) {
         });
       } else {
         updateCar(player, car, distance, center, time, motionDt, true, input, visualCar);
+        if (recovery) poseRoadRecovery(player, recovery, visualCar.altitude, race.course?.cars.get('YOU').travel.altitude, reducedMotion);
         if (race.phase === 'finished') {
           const finishTravel = presentation.finishDistance || 0;
           if (curvedClassic) player.position.fromArray(classicPosition(visualCar.distance + finishTravel, visualCar.x, visualCar.altitude, distance));
@@ -750,7 +708,7 @@ export function createWorld(canvas) {
         const ghostSpan = trackId === FROSTBITE_ID && frostbiteObjectSpan(ghost.distance, ghost.x, ghost.altitude);
         if (curvedClassic) {
           ghostCar.position.fromArray(classicPosition(ghost.distance, ghost.x, ghost.altitude, distance));
-          ghostCar.rotation.set(0, -roadHeading(ghost.distance), 0);
+          ghostCar.rotation.set(classicRoute.pitch?.(ghost.distance) ?? 0, -roadHeading(ghost.distance), 0, 'YXZ');
         } else if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
           if(trackId==='spiral')ghostCar.position.fromArray(skyPosition(ghost.distance,ghost.x,ghost.altitude,distance));
           else {const f=trackFrame(trackId,ghost.distance,ghostSpan),p=f.point,o=trackPoint(trackId,distance);
@@ -763,9 +721,9 @@ export function createWorld(canvas) {
         }
       }
       const { roadDistance, altitude: lift, span } = player.userData; // Classic: equals player.position.y; banked/sloped roads: height above the road
-      if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) placeGroundShadow(shadow, graphCentre ? race.course.cars.get('YOU').pose : trackId === 'spiral' ? skyFrame(roadDistance) : trackFrame(trackId, roadDistance, span), player.position, lift);
+      if (classicRoute.elevation || trackId === 'spiral' || framedRoad(trackId, endlessActive)) placeGroundShadow(shadow, graphCentre ? race.course.cars.get('YOU').pose : trackId === 'spiral' ? skyFrame(roadDistance) : trackFrame(trackId, roadDistance, span), player.position, lift);
       else { shadow.position.set(player.position.x, 0.03, player.position.z); shadow.rotation.set(-Math.PI / 2, 0, 0); }
-      updateContactShadow(lift, visual.quality);
+      updateContactShadow(lift, visual.quality, !recovery || recovery.reseated);
       const graphFinish = graphCentre ? graphFinishVisual(race.course, courseOriginPoint) : null;
       if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
         if (graphFinish) finish.position.fromArray(graphFinish.position);
@@ -783,9 +741,9 @@ export function createWorld(canvas) {
         phase: race.phase, nitro: car.nitroTime > 0, chain: car.nitroTime > 0 ? car.nitroBurst : 0, boost: !!(car.boosting || car.miniBoost > 0),
         speed: visualCar.speed, dt: motionDt, enabled: visual.enabled, quality: visual.quality, reducedMotion, ultra: visual.ultra,
       });
-      const portrait = camera.aspect < 0.8, view = raceCameraView(cameraMode, portrait), sprintFrame = sprintVisual.update(sprintInput), chaseFov = reducedMotion ? 64 : rigFov(view, visualCar.speed) + sprintFovOffset(sprintFrame, visual); // chaseFov drives the dolly: no impact pinch
+      const portrait = camera.aspect < 0.8, first = cameraMode === 1 && (!recovery || reducedMotion), view = raceCameraView(first ? 1 : 0, portrait), sprintFrame = sprintVisual.update(sprintInput), chaseFov = reducedMotion ? 64 : rigFov(view, visualCar.speed) + sprintFovOffset(sprintFrame, visual); // chaseFov drives the dolly: no impact pinch
       const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, origin ?? aeroOrigin.set(center, 0, -distance), garageHomePreview ? garageHomeVisual : visual, reducedMotion, sprintFrame, garageHomePreview);
-      const boostStrength = race.phase === 'racing' ? sprintFrame.power : 0;
+      const sprintActive = race.phase === 'racing' && !reducedMotion && visual.enabled;
       if (photoView && race.phase === 'paused') {
         desiredCamera.set(player.position.x + Math.sin(photoView.angle) * 14,
           player.position.y + 5, player.position.z + Math.cos(photoView.angle) * 14);
@@ -812,27 +770,17 @@ export function createWorld(canvas) {
           lookTarget.copy(player.position).add(new THREE.Vector3(pose.lookSide,pose.lookHeight-1.6,-pose.lookAhead));
         }
       } else if (preview && HERO_PREVIEWS[trackId]) {
-        // Same shot scale and 3/4 chase angle as the original five course
-        // previews, rotated into the local road frame (including hills).
-        // A world-space lookTarget at the next waypoint previously made the
-        // Alpine and Cosmic cars too small or cut off.
-        const info=HERO_PREVIEWS[trackId],frame=trackFrame(trackId,distance);
+        const pose=showcaseCameraPose(trackId,'drive',time,portrait),frame=trackFrame(trackId,distance);
         const right=new THREE.Vector3(...frame.right),forward=new THREE.Vector3(...frame.forward);
         desiredCamera.copy(player.position)
-          .addScaledVector(right,portrait?7.8:info.cameraSide)
-          .addScaledVector(forward,-(portrait?13.8:info.cameraBack))
-          // Reference maps use absolute 5.1 m camera eye height, while the
-          // showcased car floats at 1.6 m. Preserve the SAME relative view.
-          .add(new THREE.Vector3(0,portrait?4.3:info.cameraHeight,0));
+          .addScaledVector(right,pose.cameraSide).addScaledVector(forward,-pose.cameraBack).y+=pose.cameraHeight;
         lookTarget.copy(player.position)
-          .addScaledVector(right,portrait?1:info.lookSide)
-          .addScaledVector(forward,info.lookAhead)
-          .add(new THREE.Vector3(0,info.lookHeight-1.6,0));
+          .addScaledVector(right,pose.lookSide).addScaledVector(forward,pose.lookAhead).y+=pose.lookHeight-1.6;
       } else if (preview) {
         desiredCamera.fromArray(classicPosition(distance - (portrait ? 13.8 : 11.8), portrait ? 7.8 : 8.3, portrait ? 5.9 : 5.1, distance));
         lookTarget.fromArray(classicPosition(distance + 3.5, portrait ? 1 : -1.4, 1.4, distance));
       } else {
-        const first = cameraMode === 1, back = rigBack(view, chaseFov), look = rigLook(view, chaseFov, sprintFrame.fov), height = rigHeight(view, visualCar.altitude);
+        const back = rigBack(view, chaseFov), look = rigLook(view, chaseFov, sprintFrame.fov), height = rigHeight(view, visualCar.altitude);
         cameraSwing = reducedMotion ? 0 : stepCameraSwing(cameraSwing, player.userData.driftYaw ?? 0, view, dt);
         if (curvedClassic) {
           const heading = roadHeading(distance);
@@ -855,6 +803,7 @@ export function createWorld(canvas) {
           lookTarget.set(visualCar.x * 0.7 + (roadCenter(distance + 30) - center) * 0.35, visualCar.altitude * 0.85 + look, -25);
         }
       }
+      frameRoadRecovery(desiredCamera, lookTarget, player, recovery, visualCar.altitude, reducedMotion);
       desiredCamera.z -= reducedMotion ? 0 : (presentation.goPush || 0) * 1.4;
       const impactAge = car.impact ? race.elapsed - car.impact.time : 10; const impact = !preview && impactAge < 0.65 ? (1 - impactAge / 0.65) ** 2 * car.impact.intensity : 0;
       const landingAge = car.landing ? race.elapsed - car.landing.time : 10; const landing = landingAge < 0.55 ? Math.exp(-landingAge * 8) * Math.min(1, car.landing.speed / 14) : 0;
@@ -866,15 +815,11 @@ export function createWorld(canvas) {
         frameShowcaseCar(distance);
       }
       const smoothing = !initialized && !preview ? 1 : 1 - Math.exp(-dt * 7); camera.position.sub(rumble); if (trackId === FROSTBITE_ID && !endlessActive) { nextLift.fromArray(frostbiteSpanLift(distance, !!car.span)); camera.position.add(nextLift).sub(spanLift); smoothLook.add(nextLift).sub(spanLift); spanLift.copy(nextLift); } // a span car moves fast in road-local space: no lerp lag
-      if (!initialized || (car.fall !== seenFall && (trackId === FROSTBITE_ID || !!race.course))) { camera.position.copy(desiredCamera); smoothLook.copy(lookTarget); initialized = true; } seenFall = car.fall;
-      camera.position.lerp(desiredCamera, smoothing); smoothLook.lerp(lookTarget, smoothing);
-      // A paused photo needs immediate framing; dt-based camera smoothing is zero on pause.
-      if (photoView && race.phase === 'paused') {
-        camera.position.copy(desiredCamera);
-        smoothLook.copy(lookTarget);
-      }
+      const snap = !initialized || recoveryView.cut || (photoView && race.phase === 'paused');
+      camera.position.lerp(desiredCamera, snap ? 1 : smoothing); smoothLook.lerp(lookTarget, snap ? 1 : smoothing);
+      initialized = true;
       camera.lookAt(smoothLook);
-      carBank = THREE.MathUtils.damp(carBank, !reducedMotion && cameraMode === 1 && visualCar.altitude > 1 ? -(input.steer || 0) * 0.025 : 0, 5, dt); // flight banks first person only: the chase horizon stays level
+      carBank = THREE.MathUtils.damp(carBank, !reducedMotion && first && visualCar.altitude > 1 ? -(input.steer || 0) * 0.025 : 0, 5, dt); // flight banks first person only: the chase horizon stays level
       camera.rotation.z += carBank;
       // Applied after lookAt, so the shake never feeds the smoothed camera position.
       const shakeSetting = reducedMotion || race.phase !== 'racing' || !visual.enabled ? 0 : visual.shake, shake = rigShake(view, visualCar.speed, shakeSetting);
@@ -891,27 +836,24 @@ export function createWorld(canvas) {
       lens.uniforms.nozzle.value.set(projectedNozzle.x * 0.5 + 0.5, projectedNozzle.y * 0.5 + 0.5);
       lens.uniforms.pressure.value = reducedMotion || visual.quality === 'low' || projectedNozzle.z > 1 ? 0 : feedback.strength * 0.6;
       lens.uniforms.time.value = time;
-      const boostGlow = reducedMotion || !visual.enabled ? 0 : visual.bloom * (boostStrength * .25 + feedback.ignition * .2);
+      const boostGlow = sprintActive ? sprintBloomBoost(sprintFrame, visual.bloom, feedback.ignition) : 0;
       const bloomStrength = lighting ? upcomingRaceBloom(boostGlow) : TOUR_IDS.has(trackId) ? .085 : coastLook.bloomStrength(trackId === 'coast' ? COAST_LIGHTING.bloom : .42) + boostGlow;
       configureBloom(bloom, visual.quality, bloomStrength, lighting ? UPCOMING_BLOOM_THRESHOLD : coastLook.bloomThreshold(1.1));
       if (warmupPending) { warmupPending = false; warmupShaders(renderer, scene, camera, composer.renderTarget1); }
-      renderer.info.reset(); // Exclude warmup draws and previous frames.
-      composer.render(dt);
+      drawFrame(race, dt);
       if (photoCapture) {
         const request = photoCapture;
         photoCapture = null;
         void capturePhoto(renderer).then(request.resolve, request.reject);
       }
+      return true;
     },
-    inspectRenderLoad() { return {drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,carTriangles:drawnTriangles(player,camera),textures:renderer.info.memory.textures,geometries:renderer.info.memory.geometries}; },
+    inspectRenderLoad() { return {drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,carTriangles:flightVehicles.reduce((sum,car)=>sum+drawnTriangles(car,camera),0),textures:renderer.info.memory.textures,geometries:renderer.info.memory.geometries}; },
     inspectPrograms() { return renderer.info.programs.length; }, // QA only: shader programs compiled so far
     inspectShowcase() {
-      // Read-only projection for browser QA: verify the player and all three
-      // rivals stay within the real camera on curving/elevated preview roads.
       camera.updateMatrixWorld(true);
       return [player,...rivals].map((mesh,i)=>{
         const projected=mesh.getWorldPosition(new THREE.Vector3()).project(camera);
-        // The axle span collapses edge-on; measure the actual body silhouette.
         const body=mesh.userData.body,vertices=body.geometry.attributes.position;
         const point=new THREE.Vector3();
         let minX=Infinity,maxX=-Infinity;
@@ -937,7 +879,7 @@ export function createWorld(canvas) {
       camera.updateMatrixWorld(true);
       const raycaster=new THREE.Raycaster();
       const shown=object=>{for(let o=object;o;o=o.parent)if(!o.visible)return false;return true;};
-      return worldTourScene.landmarks().map(hero=>{
+      return showcaseLandmarks().map(hero=>{
         // Bounds from the projected mesh vertices: box corners overstate the
         // on-screen extent of cones and rings seen at an angle.
         const box=new THREE.Box3().setFromObject(hero),v=new THREE.Vector3();
@@ -967,16 +909,16 @@ export function createWorld(canvas) {
           let node=hit.object;while(node&&node!==hero)node=node.parent;
           if(node)hits++;
         }
-        return {kind:hero.userData.entry.kind,visible:hero.visible,minX,maxX,minY,maxY,
+        return {kind:hero.userData.landmarkKind ?? hero.userData.entry?.kind,visible:hero.visible,minX,maxX,minY,maxY,
           inFront:zs.every(z=>z<1),unobstructed:samples?hits/samples:0,
           distance:camera.position.distanceTo(box.getCenter(new THREE.Vector3()))};
       });
     },
     dispose() {
-      coastLook.dispose(); garageModel?.dispose(); upcomingStage.dispose(); garageStage?.dispose(); stopLocaleSigns(); // the GLB leaves the cars before their materials are disposed
+      sizing.dispose(); coastLook.dispose(); garageModel?.dispose(); upcomingStage.dispose(); garageStage?.dispose(); stopLocaleSigns(); // the GLB leaves the cars before their materials are disposed
       canvas.removeEventListener('webglcontextrestored', restoreWarmup);
       circuitScene.dispose(); frostbiteScene.dispose(); courseScene.dispose(); measuredScenes.dispose(); skyScene.dispose(); worldTourScene.dispose(); coastAssets.dispose(); coastScenery.dispose(); classicScenery.dispose();
-      effects.dispose();
+      effects.dispose(); fleet.dispose();
       scene.traverse(object => {
         if (object.geometry) object.geometry.dispose();
         if (object.material) for (const mat of [].concat(object.material)) mat.dispose();

@@ -1,15 +1,17 @@
 import { createModeAudioState, modeAudioCues, type ModeAudioRace } from './mode-audio.ts';
 import { createRivalCues, type RivalCueRace } from './rival-cues.ts';
+import type { RoadRecovery } from './road-falls.ts';
 import { skipsCountdown } from './frame-pacing.ts';
+import { itemHit, type ItemAttack, type ItemHits } from './item-attacks.ts';
 
 // Pure race → sound transitions for the Web Audio engine: what to play this frame, never how it sounds.
-interface AudioCar {
+interface AudioCar extends ItemHits {
   boosting?: boolean; nitroTime: number; miniBoost: number; fuel: number;
   thrusting?: boolean;
   impact?: { time: number; intensity: number; kind?: string } | null;
   landing?: { time: number; speed: number; chain?: boolean } | null;
   nearMiss?: unknown; trick?: unknown; shieldBlock?: unknown;
-  fall?: unknown; driftPayout?: unknown; boostTunnelEvent?: unknown;
+  recovery?: RoadRecovery; driftPayout?: unknown; boostTunnelEvent?: unknown;
   inShortcut?: boolean; perfectLines?: number; slipstream?: { paid: boolean };
 }
 export interface AudioRace extends ModeAudioRace {
@@ -41,11 +43,13 @@ export interface RaceAudioFrame {
 export function createRaceAudioEvents() {
   const modeAudioState = createModeAudioState(), rivalCues = createRivalCues();
   const warnings = new Set<number>(), shortcuts = new Set<string | number>();
-  let lastFall: unknown, lastDrift: unknown, lastTunnel: unknown, lastEdge: string | undefined;
+  let priorRecovery: RoadRecovery | undefined, priorReseated = false;
+  let lastDrift: unknown, lastTunnel: unknown, lastEdge: string | undefined;
   let lastNitro = 0, lastPerfect = 0, draftPaid = false, wasShortcut = false;
   let previousRace: AudioRace | undefined, previousPhase: string | null = null, previousCount: number | null = null;
   let lastImpact: AudioCar['impact'] = null, lastLanding: AudioCar['landing'] = null;
   let lastNearMiss: unknown = null, lastTrick: unknown = null, lastShieldBlock: unknown = null;
+  let lastItemHit: ItemAttack | null = null, lastEmpUntil = 0, lastFreezeUntil = 0;
   let wasThrusting = false, wasBoosting = false, lowCharge = false;
   let collectedPickups = new WeakSet<object>(), collectedRings = new WeakSet<object>();
   // One frame object is reused every tick (no per-frame garbage); read it before the next update.
@@ -56,6 +60,9 @@ export function createRaceAudioEvents() {
     update(race: AudioRace, enabled: boolean, gap: number | null = null, halfwayStarted = false, waitingForScenery = false): RaceAudioFrame {
       const car = race.player;
       const active = race.phase === 'racing';
+      const recovery = car.recovery, reseated = recovery?.reseated === true;
+      const item = active || race.phase === 'paused' ? itemHit(race, car) : null;
+      const empUntil = car.empUntil ?? 0, freezeUntil = car.freezeUntil ?? 0;
       const boosting = !!car.boosting || car.nitroTime > 0 || car.miniBoost > 0;
       const freshRace = race !== previousRace;
       const count = race.phase === 'countdown' && !waitingForScenery && !skipsCountdown(race) ? Math.ceil(race.countdown) : null;
@@ -94,6 +101,11 @@ export function createRaceAudioEvents() {
         }
         sounds.push(...modeEvents);
         if (active) {
+          if (!freshRace) {
+            if (item === 'emp' && empUntil > lastEmpUntil) sounds.push('emp-hit');
+            else if (item === 'freeze' && freezeUntil > lastFreezeUntil) sounds.push('freeze-hit');
+            else if (!item && lastItemHit && previousPhase === 'racing') sounds.push(lastItemHit === 'emp' ? 'emp-clear' : 'freeze-thaw');
+          }
           if (car.impact && car.impact !== lastImpact && race.elapsed - car.impact.time < 0.2)
             sounds.push({ intensity: car.impact.intensity, landing: false, barrier: car.impact.kind === 'barrier' });
           if (car.landing && car.landing !== lastLanding && race.elapsed - car.landing.time < 0.2) {
@@ -110,7 +122,11 @@ export function createRaceAudioEvents() {
           else if (boosting && !wasBoosting) sounds.push('boost');
           if (!freshRace && car.slipstream?.paid && !draftPaid) sounds.push('draft-reward');
           if (!freshRace && newShortcut) sounds.push('shortcut-entry');
-          if (!freshRace && car.fall && car.fall !== lastFall) sounds.push('fall-recovery');
+          if (!freshRace && recovery) {
+            const started = recovery !== priorRecovery;
+            if (started) sounds.push(recovery.falling ? 'recovery-fall' : recovery.reason === 'reset' ? 'recovery-reset' : 'recovery-rescue');
+            if (reseated && (started || !priorReseated)) sounds.push('recovery-return');
+          } else if (!freshRace && priorReseated) sounds.push('recovery-touchdown');
           else if (newGap) sounds.push('gap-warning');
           else if (car.fuel < 20 && !lowCharge) sounds.push('low');
           if (halfwayStarted) sounds.push('halfway');
@@ -129,13 +145,15 @@ export function createRaceAudioEvents() {
         }
       }
       if (perfect && finalRing >= 0) sounds[finalRing] = 'perfect-line';
-      lastFall = car.fall; lastDrift = car.driftPayout; lastTunnel = car.boostTunnelEvent;
+      priorRecovery = recovery; priorReseated = reseated;
+      lastDrift = car.driftPayout; lastTunnel = car.boostTunnelEvent;
       lastNitro = car.nitroTime; lastPerfect = car.perfectLines ?? 0;
       draftPaid = car.slipstream?.paid === true;
       wasShortcut = car.inShortcut === true; lastEdge = edge;
       for (const cue of rivalCues.update(race)) if (enabled && active) sounds.push(cue.kind === 'take' ? 'rival-pickup' : 'rival-nitro');
       previousPhase = race.phase;
       previousCount = count;
+      lastItemHit = item; lastEmpUntil = empUntil; lastFreezeUntil = freezeUntil;
       lastImpact = car.impact;
       lastLanding = car.landing;
       lastNearMiss = car.nearMiss;

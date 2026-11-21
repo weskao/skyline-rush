@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { ciTimeout } from './helpers/ci.js';
@@ -27,7 +28,7 @@ for (const [name, viewport, hasTouch] of VIEWPORTS) test.describe(`mini-boost st
     await page.evaluate(() => localStorage.setItem('skyline-rush-unlocked', JSON.stringify(['taipei'])));
     await page.reload();
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-    await page.locator('[data-track="taipei"]').click();
+    await clickLobbyOption(page, '[data-track="taipei"]');
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15_000) });
     await page.keyboard.down('w');

@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
@@ -42,7 +43,7 @@ for (const track of ['coast', 'neon', 'spiral', CLIMB]) test(`${LABEL} ${VIEW}: 
   }, [QUALITY_STORAGE_KEY, AUTO]);
   await page.reload();
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-  await page.locator(track === CLIMB ? `[data-upcoming-track="${track}"]` : `[data-track="${track}"]`).click();
+  await clickLobbyOption(page, track === CLIMB ? `[data-upcoming-track="${track}"]` : `[data-track="${track}"]`);
   await expect(page.locator('#start-button')).toBeEnabled();
   await page.locator('#start-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(20000) });

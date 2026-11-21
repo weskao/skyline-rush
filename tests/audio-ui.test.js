@@ -21,17 +21,22 @@ test('audio switches, sliders, Mute all and the autoplay unlock are wired by the
 });
 
 // Minimal DOM for the controller: no channel rows, one Mute all button, window listeners and storage recorded.
-async function setupWithEngine(t, sound) {
-  const listeners = {}, writes = [];
+async function setupWithEngine(t, sound, prefs = { music: true, sfx: true }) {
+  const listeners = {}, documentListeners = {}, writes = [];
   let muteAll;
-  globalThis.document = { hidden: false, querySelectorAll: () => [], querySelector: () => ({ addEventListener: (type, fn) => { muteAll = fn; } }) };
+  globalThis.document = {
+    hidden: false,
+    addEventListener: (type, fn) => { (documentListeners[type] ??= []).push(fn); },
+    querySelectorAll: () => [],
+    querySelector: () => ({ addEventListener: (type, fn) => { muteAll = fn; } }),
+  };
   globalThis.window = { addEventListener: (type, fn) => { (listeners[type] ??= []).push(fn); } };
   globalThis.localStorage = { setItem: (key, value) => writes.push([key, value]) };
   t.after(() => { delete globalThis.document; delete globalThis.window; delete globalThis.localStorage; });
   const { setupAudioUI } = await import('../src/audio-ui.ts');
-  const audio = { music: true, sfx: true };
-  setupAudioUI({ audio, volume: { music: 1, sfx: 1 }, sound });
-  return { audio, listeners, writes, muteAll: () => muteAll() };
+  const audio = { ...prefs };
+  setupAudioUI({ audio, volume: { music: 1, sfx: 0.65 }, sound });
+  return { audio, listeners, documentListeners, writes, muteAll: () => muteAll() };
 }
 const failingEngine = (calls = []) => ({
   setMusic: () => false, setEnabled: () => false, running: () => false, cue() {}, setHidden: hidden => calls.push(hidden),
@@ -42,6 +47,34 @@ test('an engine that fails to start on load or on a tap never saves the player\'
   assert.deepEqual(writes, [], 'the start-up unlock leaves storage alone');
   for (const fn of listeners.pointerdown) fn();
   assert.deepEqual(writes, [], 'a gesture unlock leaves storage alone');
+});
+
+test('a failed unlock leaves the saved channel choices available for the next touch', async t => {
+  const attempts = [];
+  const sound = {
+    ...failingEngine(),
+    setMusic(on, level) { attempts.push([on, level]); return attempts.length > 1; },
+  };
+  const { audio, listeners, writes } = await setupWithEngine(t, sound, { music: true, sfx: false });
+  for (const fn of listeners.touchend) fn();
+  assert.deepEqual(attempts, [[true, 1], [true, 1]], 'retry the requested music after the temporary failure');
+  assert.deepEqual(audio, { music: true, sfx: false });
+  assert.deepEqual(writes, []);
+});
+
+test('the lobby applies the saved effects setting when opening music already runs', async t => {
+  for (const enabled of [true, false]) {
+    const effects = [];
+    const sound = {
+      ...failingEngine(),
+      running: () => true,
+      setEnabled(on, level) { effects.push([on, level]); return on; },
+    };
+    const { writes, listeners } = await setupWithEngine(t, sound, { music: true, sfx: enabled });
+    for (const tap of listeners.pointerdown) tap();
+    assert.deepEqual(effects, [[enabled, 0.65]]);
+    assert.deepEqual(writes, []);
+  }
 });
 
 test('the player\'s own Mute all still saves the choice', async t => {
@@ -59,6 +92,20 @@ test('pageshow and focus resync the engine\'s hidden flag from the live page', a
     for (const fn of listeners[type]) fn();
     assert.deepEqual(calls, [false], `${type} passes document.hidden`);
   }
+});
+
+test('navigation and background lifecycle events suspend and restore audio even without a focus event', async t => {
+  const calls = [];
+  const { listeners, documentListeners } = await setupWithEngine(t, failingEngine(calls));
+  listeners.pagehide?.forEach(fn => fn());
+  listeners.pageshow?.forEach(fn => fn());
+  document.hidden = true;
+  documentListeners.visibilitychange?.forEach(fn => fn());
+  document.hidden = false;
+  documentListeners.resume?.forEach(fn => fn());
+  documentListeners.freeze?.forEach(fn => fn());
+  documentListeners.resume?.forEach(fn => fn());
+  assert.deepEqual(calls, [true, false, true, false, true, false]);
 });
 
 test('the VITE_DIAG snapshot carries the live audio state, inside the diagnostic-only branch', async () => {

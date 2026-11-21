@@ -1,4 +1,4 @@
-import { expect } from './test.js';
+import { expect, gotoHome } from './test.js';
 import { CATALOGS } from '../../src/i18n.ts';
 
 // Race HUD matrix shared by tests/responsive-browser.spec.js and its in-page-resize equivalence proof.
@@ -25,7 +25,7 @@ export const RACE_HUD_CLASSES = [
 // AIRFLOW on: its telemetry panel once covered the speed readout on phones (375x667 Android report).
 export async function bootAirflowRace(page, context, locale, insets) {
   if (insets) await (await context.newCDPSession(page)).send('Emulation.setSafeAreaInsetsOverride', { insets });
-  await page.goto('/');
+  await gotoHome(page);
   await page.waitForTimeout(700);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
   await page.keyboard.press('v');

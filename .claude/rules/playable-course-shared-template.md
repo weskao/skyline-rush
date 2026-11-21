@@ -6,9 +6,17 @@ paths:
   - "src/upcoming-tracks.ts"
   - "src/upcoming-scenes/index.ts"
   - "src/track-preview.ts"
+  - "src/track-look.ts"
+  - "src/sky-scene.js"
+  - "src/spiral-look.ts"
+  - "src/coast-look.ts"
+  - "src/race-visuals.ts"
   - "src/track-swipe.ts"
   - "src/track-swipe-ui.ts"
   - "src/world.js"
+  - "src/road-falls.ts"
+  - "src/road-recovery-view.ts"
+  - "src/course-race-step.ts"
   - "src/main.js"
   - "src/garage-*.ts"
   - "src/GaragePanel.vue"
@@ -44,6 +52,23 @@ Before touching a course, read `AGENTS.md`, `CLAUDE.md`,
 `docs/superpowers/specs/2026-11-03-playable-coursegraph-contract.md`,
 `.claude/rules/track-showcase.md`, `.claude/rules/vehicle-road-stability.md`,
 and the map's source handoff/plan. Honor stricter scoped rules as well.
+
+## Atmosphere across graphics tiers
+
+- Give each course one source of truth for its default atmosphere and supported race
+  presets. Resolve time of day and weather from course and preset before choosing the
+  graphics tier. A given preset keeps the same daylight, dusk, night, fog, rain or snow
+  identity in the showcase and in the race from Low through Ultra, including failed or
+  loading detailed assets. Keep the sky, key light, haze and landmark palette coherent.
+- Graphics tiers may simplify geometry, textures, reflections and atmospheric effects.
+  Use a lightweight approximation for defining scenery such as a cloud sea, and keep
+  Low independent of detailed GLB, HDRI and KTX2 requests. For Sky Spiral, the default and
+  Day both show a bright sky over clouds with pale architecture and blue rail lights.
+- When creating or changing a course look, compare Low and the detailed tier for the
+  default and supported explicit presets, plus a missing-asset fallback. Check the
+  showcase and in-race WebGL at matching camera poses on desktop, phone portrait and
+  phone landscape. Sky Spiral's guards are `tests/spiral-look.test.js`,
+  `tests/coast-look.test.js` and `tests/spiral-look-browser.spec.js`.
 
 ## Exclusive in-race music
 
@@ -126,6 +151,8 @@ reuse or transpose another course's loop.
   Use the existing `src/game.js`, `src/world.js`, RaceFactory and physics;
   never invent a second per-course simulation/renderer or flatten genuine
   branch topology into a fake one-dimensional race.
+- A gap the car must jump goes in `spec.noRoad`; the minimap then marks it by itself
+  (`.claude/rules/route-minimap.md`).
 - A new course keeps the classic per-km ring/pickup density and Classic road traffic: set
   `topology` and a classic-range `trafficDensity`, never strip the item lists
   (`.claude/rules/ring-layout.md`, `tests/course-item-density.test.js` covers every registered course).
@@ -138,6 +165,57 @@ reuse or transpose another course's loop.
   `feature/epic-multiroute-longform-tracks` owns shared integration.
   Never merge map branch history, overwrite newer shared files, change
   sibling branches, `develop` or `main`, or deploy without explicit approval.
+
+## Gap length, launch speed and visible road parity
+
+- Author each gap as real empty geometry at **all quality tiers**, using the same
+  `sections` / `spec.noRoad` as the physics, minimap and recovery. Do not leave
+  an invisible collision deck or let low-speed cars coast across a hole.
+- On Sky Spiral the three gaps measure **160 / 165 / 170 m**, with automatic
+  jump launch requiring **94 m/s (338 km/h)**, above the normal throttle cap
+  of 88 m/s but attainable with BOOST (102 m/s cap). Players can also use FLY
+  at lower speed; a supported flight must stay physically airborne until the
+  landing road. First-half failures return **180 m before the launch ramp** for
+  a new BOOST run-up. This threshold does not apply to Event Lab ramps (32 m/s).
+- Canyon Skyway has **160 m** of missing deck and no automatic jump launch;
+  powered flight is its intended crossing. Do not invent one global threshold
+  for other CourseGraph and flight-only routes without measuring their run-ups.
+- On **classic** gaps, compare the actual fall position with the gap's midpoint:
+  first half (including exactly 50%) recovers on the approach, past 50% recovers
+  on solid road **18 m beyond the far lip**. After **three consecutive falls at
+  the same gap**, an early failure also rescues at the far side; failures at
+  different gaps start a new streak. Clear the streak on successful progress
+  beyond that gap. R/manual reset does not count toward rescue or move the car
+  beyond the chasm. Never place a car beyond FINISH or in another gap.
+- Rescue is not a win: retain fall count, speed slowdown, lost combo and normal
+  running clock/rival movement, and skip rings, pickups, hazard/checkpoint sweeps
+  during relocation. Use a short bilingual rescue cue; do not cover the road.
+  Preserve CourseGraph's authored split/recovery-edge/checkpoint rules rather
+  than applying simple linear-distance teleportation to flight-only branches.
+- Guard tests: throttle-only failure, BOOST and FLY success, failed recovery
+  and reset, all three Sky Spiral gaps, Canyon FLY, 30/60/120 FPS, Low/high
+  geometry parity and enough acceleration distance. Endless/Elimination still
+  use solid classic roads in place of gaps, and remain traversable.
+
+## Recovering from a gap or flight shortcut
+
+- Use the shared recovery in `src/road-falls.ts`. Show gravity and modest vehicle
+  pitch/roll until the fade, relocate the camera and car together during that
+  fade, and settle the car onto the road before returning control. Keep the
+  phases and recovery point consistent at every quality. Reduced Motion skips
+  the added tumble and camera reframing.
+- Provide approach road before a gap, including the whole launch ramp where there
+  is one. For a flight-only branch or span, return to the authored ground fallback
+  at the split. Retain validated checkpoints and any completed circuit sectors.
+- R in a live race returns the car to nearby safe road with the same fade and
+  landing. Both recovery types keep the race clock and the other racers moving.
+  Skip pickup, hazard and checkpoint sweeps during the relocation. Verify a
+  successful jump, a failed jump, and a keyboard reset before releasing a
+  course with a gap.
+- Keep the same vehicle reset beside Pause on touch devices. Give each recovery
+  cause its own SFX cue, then cue return and touchdown from the simulation.
+  Never queue all three sounds from a button click. Keep the keyboard and touch
+  instructions in the Driving Guide and Controls.
 
 ## Regression matrix and evidence
 

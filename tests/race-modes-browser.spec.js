@@ -1,3 +1,5 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
 
@@ -11,7 +13,7 @@ test('solo Time Attack shows real 3D preview, starts, and hides unused opponents
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('button[data-race-mode="time"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="time"]');
   await expect(page.locator('body')).toHaveAttribute('data-race-mode', 'time');
   await expect(page.locator('button[data-race-mode="time"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#mode-description')).toContainText('Solo best-time');
@@ -26,7 +28,7 @@ test('custom 0-opponent race still starts; Classic remains selectable', async ({
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('button[data-race-mode="custom"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="custom"]');
   await expect(page.locator('#race-mode-rules')).toBeVisible();
   await page.locator('[data-race-rule="rivals"]').evaluate(select => {
     select.value = '0';
@@ -44,7 +46,7 @@ test('Free Drive starts immediately without a countdown and keeps its return pat
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('button[data-race-mode="free"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="free"]');
   await page.locator('#start-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-race-mode', 'free');
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
@@ -57,7 +59,7 @@ test('Obstacle Run uses the original world renderer with visible race state', as
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('button[data-race-mode="gauntlet"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="gauntlet"]');
   await expect(page.locator('#mode-description')).toContainText('Dodge barriers');
   await page.locator('#start-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
@@ -68,7 +70,7 @@ test('Obstacle Run uses the original world renderer with visible race state', as
 test('solo HUD never displays a misleading four-player race rank', async ({ page }) => {
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('button[data-race-mode="time"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="time"]');
   await page.locator('#start-button').click();
   await expect(page.locator('.position-stat > div > span').first()).toHaveText('');
   await expect(page.locator('.position-stat .stat-label')).toHaveText('Time Attack');
@@ -81,7 +83,7 @@ test('mobile game mode picker remains operable on phone portrait', async ({ page
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('button[data-race-mode="gauntlet"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="gauntlet"]');
   await expect(page.locator('button[data-race-mode="gauntlet"]')).toHaveAttribute('aria-pressed', 'true');
   // 10A mode-first order (user-approved): on a phone Start follows the track and rules rows, one scroll away.
   await page.locator('#start-button').scrollIntoViewIfNeeded();
@@ -96,7 +98,7 @@ test('Custom Race sprint stage selector displays the first of three heats', asyn
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
-  await page.locator('button[data-race-mode="custom"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="custom"]');
   await page.locator('[data-race-rule="stages"]').evaluate(select => {
     select.value = '3';
     select.dispatchEvent(new Event('change', { bubbles: true }));
@@ -111,7 +113,7 @@ test('Checkpoint Rush displays the real 3D course and dynamic gate HUD', async (
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
-  await page.locator('button[data-race-mode="checkpoint"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="checkpoint"]');
   await expect(page.locator('#mode-description')).toContainText('glowing gates');
   await page.locator('#start-button').click();
   await expect(page.locator('#checkpoint-hud')).toBeVisible();
@@ -124,7 +126,7 @@ test('Extreme Obstacle Run updates its intensity setting and warning system', as
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
-  await page.locator('button[data-race-mode="gauntlet"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="gauntlet"]');
   await expect(page.locator('#gauntlet-rules')).toBeVisible();
   await page.locator('#hazard-tier').evaluate(select => {
     select.value = 'extreme';
@@ -140,7 +142,7 @@ test('Clean Time Trial shows accessible rule toggle and clean driving HUD', asyn
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   await page.goto('/');
-  await page.locator('button[data-race-mode="time"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="time"]');
   await expect(page.locator('#time-trial-rules')).toBeVisible();
   await page.locator('#time-trial-rules > summary').click();
   await expect(page.locator('#clean-trial')).toBeVisible();
@@ -154,7 +156,7 @@ test('Clean Time Trial shows accessible rule toggle and clean driving HUD', asyn
 
 test('Championship Cup honestly requires three previously unlocked tracks', async ({ page }) => {
   await page.goto('/');
-  await page.locator('button[data-race-mode="cup"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="cup"]');
   await expect(page.locator('button[data-race-mode="cup"]')).toHaveAttribute('aria-pressed','true');
   await expect(page.locator('#start-button')).toBeDisabled();
   await expect(page.locator('#lobby-access-note')).toContainText('Unlock at least 3 tracks');
@@ -162,7 +164,7 @@ test('Championship Cup honestly requires three previously unlocked tracks', asyn
 
 test('Cup length cannot bypass locked tracks with Enter',async({page})=>{
  await page.goto('/');
- await page.locator('button[data-race-mode="cup"]').click();
+ await clickLobbyOption(page, 'button[data-race-mode="cup"]');
  await page.locator('#cup-length').evaluate(select=>{
    select.value='5';select.dispatchEvent(new Event('change',{bubbles:true}));
  });
@@ -177,7 +179,7 @@ test('Free Drive shows live, zeroed practice telemetry without showing rival ran
   page.on('pageerror',error=>errors.push(error.message));
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('button[data-race-mode="free"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="free"]');
   await page.locator('#start-button').click();
   await expect(page.locator('#practice-hud')).toBeVisible();
   await expect(page.locator('#practice-hud')).toContainText('AIR');
@@ -192,7 +194,7 @@ test('Stunt Attack offers a timed score challenge with live arcade feedback', as
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('button[data-race-mode="stunt"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="stunt"]');
   await expect(page.locator('#stunt-rules')).toBeVisible();
   await page.locator('#stunt-duration').evaluate(select => {
     select.value='180';
@@ -209,7 +211,7 @@ test('Stunt Attack displays its score HUD in a real desktop WebGL screenshot', a
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('button[data-race-mode="stunt"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="stunt"]');
   await page.locator('#start-button').click();
   await expect(page.locator('#stunt-hud')).toBeVisible();
   await page.screenshot({ path:'test-results/race-mode-stunt-attack.png' });
@@ -220,44 +222,50 @@ test('1920x1080 intro fits without clipping and VFX remains reachable after musi
   await closeMusicPrompt(page);
   const overflow = await page.locator('#intro').evaluate(el => el.scrollHeight - el.clientHeight);
   expect(overflow).toBeLessThanOrEqual(0);
-  await page.locator('#vfx-panel > summary').click();
-  await expect(page.locator('#vfx-panel')).toHaveAttribute('open','');
+  await toggleSettingsSection(page, 'display');
+  await expect(page.locator('#settings-display')).toBeVisible();
   await page.screenshot({ path:'test-results/race-mode-layout-desktop.png' });
 });
-test('402x714 phone intro fades at its scroll edge and its last row scrolls clear of the fade', async ({ page }) => {
-  // iPhone 17 Pro Safari's visible viewport: the intro scrolls, so a hard clip made Garage look cut by the footer
+test('402x714 phone setup scrolls to its last card while the primary actions stay fixed', async ({ page }) => {
+  // Approximate the iPhone 17 Pro Safari viewport with the browser chrome open.
   await page.setViewportSize({ width: 402, height: 714 });
   await page.goto('/');
   await closeMusicPrompt(page);
-  const intro = page.locator('#intro');
-  const fade = await intro.evaluate(el => { const cs = getComputedStyle(el); return cs.getPropertyValue('mask-image') || cs.getPropertyValue('-webkit-mask-image'); });
-  expect(fade).toContain('linear-gradient');
-  await intro.evaluate(el => { el.scrollTop = el.scrollHeight; });
-  const gap = await intro.evaluate(el => el.getBoundingClientRect().bottom - el.querySelector('#race-rules-row').getBoundingClientRect().bottom); // the setup's last row since the 10A mode-first order
-  expect(gap).toBeGreaterThanOrEqual(24);
+  const setup = page.locator('#intro .lobby-setup');
+  const start = page.locator('#start-button');
+  const initial = await start.boundingBox();
+  expect(await setup.evaluate(el => el.scrollHeight - el.clientHeight)).toBeGreaterThan(0);
+  await setup.evaluate(el => { el.scrollTop = el.scrollHeight; });
+  await expect(page.locator('#daily-card-start')).toBeInViewport({ ratio: 1 });
+  await expect(page.locator('#garage-button')).toBeInViewport({ ratio: 1 });
+  await expect(start).toBeInViewport({ ratio: 1 });
+  expect(await start.boundingBox()).toEqual(initial);
 });
 
 test('completed Custom setup appears as a recent preset without touching unlocks', async ({ page }) => {
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('button[data-race-mode="custom"]').click();
+  const readUnlocks = () => page.evaluate(() => localStorage.getItem('skyline-rush-unlocked'));
+  const unlocks = await readUnlocks();
+  await clickLobbyOption(page, 'button[data-race-mode="custom"]');
   await page.locator('#start-button').click();
   await page.reload();
   await closeMusicPrompt(page);
-  await page.locator('button[data-race-mode="custom"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="custom"]');
   await expect(page.locator('#recent-custom')).toBeVisible();
   await page.locator('#recent-custom > summary').click();
-  const preset=page.locator('#recent-custom-runs button').first();
+  const preset = page.locator('#recent-custom-runs button').first();
   await expect(preset).toContainText('Coast');
   await preset.click();
   await expect(page.locator('[data-track="coast"]')).toHaveAttribute('aria-pressed','true');
-  await page.screenshot({path:'test-results/race-mode-recent-custom.png'});
+  await expect(page.locator('#lobby-hero-track')).toHaveText('Coast');
+  expect(await readUnlocks()).toBe(unlocks);
 });
 
 test('Checkpoint Rush shows directional guidance and perfect gate counter', async ({ page }) => {
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('button[data-race-mode="checkpoint"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="checkpoint"]');
   await page.locator('#start-button').click();
   await expect(page.locator('#checkpoint-hud')).toBeVisible();
   await expect(page.locator('#checkpoint-hud')).toContainText('GATES 0/');
@@ -270,7 +278,7 @@ test('Checkpoint Rush shows directional guidance and perfect gate counter', asyn
 test('Custom active power-ups show a safe accessible item slot',async({page})=>{
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/');await closeMusicPrompt(page);
-  await page.locator('button[data-race-mode="custom"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="custom"]');
   await page.locator('#race-mode-rules > summary').click();
   await page.locator('[data-race-rule="itemRules"]').evaluate(select => { select.value = 'all'; select.dispatchEvent(new Event('change', { bubbles: true })); });
   await page.locator('#start-button').click();
@@ -284,7 +292,7 @@ test('Custom active power-ups show a safe accessible item slot',async({page})=>{
 test('Elimination mode shows a live knockout countdown in actual WebGL',async({page})=>{
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/');await closeMusicPrompt(page);
-  await page.locator('button[data-race-mode="elimination"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="elimination"]');
   await expect(page.locator('#mode-description')).toContainText('knocked out');
   await page.locator('#start-button').click();
   await expect(page.locator('#elimination-hud')).toBeVisible();
@@ -298,7 +306,7 @@ test('Custom hazards toggle off, then render with safe physics and warning UI', 
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('button[data-race-mode="custom"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="custom"]');
   await page.locator('#race-mode-rules > summary').click();
   await page.locator('[data-race-rule="hazards"]').evaluate(select => {
     select.value = 'extreme';
@@ -317,7 +325,7 @@ test('paused Free Drive supports orbit, lighting and local PNG export', async ({
   page.on('pageerror',err=>errors.push(err.message));
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('button[data-race-mode="free"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="free"]');
   await page.locator('#start-button').click();
   await page.locator('#pause-button').click();
   await expect(page.locator('#photo-open')).toBeVisible();
@@ -347,7 +355,7 @@ test('paused Free Drive supports orbit, lighting and local PNG export', async ({
 test('lobby summaries reflect race data and show access reasons beside Start', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('.route-drivers')).toHaveText('8 DRIVERS', { timeout: ciTimeout(2500) });
+  await expect(page.locator('.route-drivers')).toHaveText('8 DRIVERS');
   await expect(page.locator('#mode-rules-summary')).toContainText('7 AI');
   await expect(page.locator('#lobby-mode-name')).toHaveText('Classic Race');
   await expect(page.locator('#lobby-track-name')).toHaveText('Coast');
@@ -357,27 +365,27 @@ test('lobby summaries reflect race data and show access reasons beside Start', a
   await page.keyboard.press('Enter');
   await expect(tracks).toHaveAttribute('aria-expanded', 'true');
   const coast = page.locator('[data-track="coast"]');
-  await page.keyboard.press('Tab');
   await expect(coast).toBeFocused();
   await page.keyboard.press('ArrowRight');
   await expect(page.locator('[data-track="neon"]')).toBeFocused();
   await page.keyboard.press('Enter');
+  await page.locator('#track-choose-confirm').click();
   await expect(page.locator('#lobby-track-name')).toHaveText('Neon Downtown');
   await expect(page.locator('#start-button')).toBeDisabled();
   await expect(page.locator('#start-button')).toHaveAccessibleDescription(/Coast/);
   await expect(page.locator('#lobby-access-note')).toBeInViewport();
 
-  await page.locator('[data-upcoming-track="dune-tempest"]').click();
+  await clickLobbyOption(page, '[data-upcoming-track="dune-tempest"]');
   await expect(page.locator('#lobby-track-name')).toHaveText('Dune Tempest');
   await expect(page.locator('#start-button')).toBeDisabled();
   await expect(page.locator('#start-button')).toHaveAccessibleDescription(/Preview only/);
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
 
-  await coast.click();
+  await clickLobbyOption(page, '[data-track="coast"]');
   const modes = page.locator('#lobby-modes-toggle');
   await modes.click();
   await expect(modes).toHaveAttribute('aria-expanded', 'true');
-  await page.locator('button[data-race-mode="time"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="time"]');
   await expect(page.locator('#lobby-mode-name')).toHaveText('Time Attack');
   await expect(page.locator('.route-drivers')).toHaveText('SOLO');
   await expect(page.locator('#start-button')).toBeEnabled();

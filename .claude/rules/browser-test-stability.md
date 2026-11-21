@@ -1,5 +1,6 @@
 ---
 paths:
+  - "Makefile"
   - "tests/**/*browser.spec.js"
   - "tests/helpers/**"
   - "playwright*.config.js"
@@ -11,6 +12,12 @@ CI renders WebGL on CPU, several times slower than a laptop (`slow = 3` in `test
 A spec that passes 68 of 68 runs locally can still fail 1 in 2 on CI. Main/develop runs from
 2026-10-27 to 2026-11-04 failed 15 times. Most failures were timing races, not product bugs.
 Write every assertion so that runner speed cannot change its outcome.
+
+Keep Playwright helper imports outside the source string served by a module mock. A test-only import in the served module can break application startup before the first assertion.
+
+A spec that fails to load reddens every shard, because CI plans shards from `playwright test --list`. Trap
+(2026-11-20, develop `a7a6afd1`): two merges both added `clickLobbyOption` to `result-cloud-browser.spec.js`
+and the duplicate import failed all 16 browser shards. Enforced by `tests/browser-specs-load.test.js` (`npm test`, pre-push).
 
 ## Freeze, then assert
 
@@ -41,14 +48,32 @@ Write every assertion so that runner speed cannot change its outcome.
   judge it by `paused` read once or by the `play()` promise. A hero clip resuming after a viewer
   closes failed 1 in 2 CI runs this way (`release-media-zoom-browser.spec.js`, not yet
   reproduced).
+- **Measure one-shot sound cues on the audio rendering thread.** A stalled WebGL frame can
+  make a `ScriptProcessorNode` miss an entire cue (CI 44250995528). Arm an `AudioWorkletNode`
+  before the action and retain its measured peak for the browser assertion.
 
 ## Assert only what a player can see
 
+- **Accept earned rewards before measuring the mobile results dock.** The native acquisition dialog
+  owns the top layer. Parallel locator evaluations can stall on the automatic dismissal handler
+  (CI `44486279087`). The portrait dock spec keeps the real dialog open, taps Continue, verifies
+  it closes and then reads all controls in one browser tick, before and after scrolling.
 - Hidden elements keep stale text. Check `toBeVisible()` before you judge text, or the
   assertion passes or fails on copy no player sees. Example: hidden `#bonus-status` still held
   "NEXT · AIR +25 · 6 M" in English after a switch to zh-TW.
 - Compare against the text actually shown, not a literal guessed in advance. Read it once the
   element is visible and the state is frozen, then assert that it changes.
+- **Reach a lobby mode button the way a player does.** At 1000px wide or less, or 500px tall or less,
+  the lobby folds the mode list (`#lobby-mode-options`) behind `#lobby-modes-toggle`
+  (`src/race-lobby.css`), so `button[data-race-mode="…"]` is in the DOM but hidden. A direct
+  `.click()` waits out the whole timeout and reads like a product bug. Use `clickLobbyOption()` or
+  `openLobbyModes()` from `tests/helpers/home-lobby.js`; both do nothing extra on desktop.
+  `close-button`, `event-lab` and `mode-first-setup` failed this way at 390x844.
+  **Enforced by** `tests/lobby-mode-helper.test.js`: a spec that names a mode button must call the
+  helper. It cannot see a single missed click in a spec that already uses the helper; run the
+  spec at a phone size. The helpers wait for Home (`lobbyShown`) before `isVisible()`, which answers at
+  once: called right after `page.goto` it found no button and expanded the Mode list on desktop, pushing
+  the Cup recovery panel 82px past `#intro` (develop CI 44674764907). Guarded in the same test file.
 
 ## Catalog drift and deterministic physics
 
@@ -78,6 +103,11 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   "Showcase camera" combobox (`498d84d0`), so a page-wide `getByRole('combobox', { name })` hit strict mode in
   `browser.spec.js` and `custom-controls-browser.spec.js` (2026-11-16). Scope role locators to the landmark
   that owns the control (`getByRole('complementary', { name: 'Airflow and visual effects' })`).
+- **Rival `i` is `window.gameScene.rivals[i]`, never the i-th scene child.** `createRivalFleet`
+  (`src/rival-fleet.js`) keeps one pooled car per chassis in scene order and deals each race a shuffled
+  lineup, so `scene.children.filter(o => o.userData.driveCue)[1]` was another rival's car and the NITRO
+  trail read false (rival-drive-vfx, CI 44395376200). Enforced by `tests/browser-timeouts.test.js`
+  (*gameScene.rivals, not scene order*).
 - A merge that changes a shared HUD, road or asset rule runs the browser specs that assert it before it lands
   (`git grep` the selector or asset name in `tests/*browser.spec.js`); do not rely on develop's CI to finish.
 
@@ -96,7 +126,51 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   `tests/browser-timeouts.test.js`. When a new Low-only cut gets an observable marker, add it to
   `LOW_GATED` there.
 - **Split WebGL preview sweeps into small batches.** Each track switch rebuilds the scene. Keep all catalog entries covered, but let Playwright schedule bounded cases independently. The desktop locked-preview sweep exhausted the 135-second budget as Coast started in CI run `43563563658`.
+  The Garage skin catalog grows the same way: previewing a drift trail also opens `GarageDriftPreview`, a second live
+  WebGL renderer, and the one-test Crimson GT sweep timed out at 367 s of 360 s (develop CI `44736477255`). Sweep one
+  `SKIN_CATEGORIES` entry per test with `reducedMotion: 'reduce'`. Enforced by `tests/browser-timeouts.test.js`
+  (*whole Garage skin catalog*); a sweep that must animate ends its loop line with `// motion: <why>`.
 - Wrap fixed waits and timeouts in `ciTimeout()`. This is enforced by the same test file.
+- **A page load is not a rendered Home.** `index.html` boots `src/startup-entry.ts`, which imports
+  `main.js` dynamically (`3033736b`), so `domcontentloaded` and `load` fire before Home is rendered.
+  The first wait after `page.goto` keeps the default expect budget. Trap (2026-11-19): the lobby
+  summaries spec gave `.route-drivers` 2.5 s and saw it empty in 1 of 3 local runs, which blocked the
+  pre-push layout gate. Enforced by `tests/browser-timeouts.test.js` (*first wait after a page load*).
+  A key pressed before `main.js` subscribes is lost for good, so no wait retries it. Trap (2026-11-20, since
+  `74da0992`): the airflow showcase spec pressed `v` straight after `page.goto` and failed 7 of 7 viewports;
+  the "music-off stays silent" spec passed without the game hearing its gesture. Load with `gotoHome(page)`
+  (`tests/helpers/test.js`) before the first key press. Enforced by the same test file (*key press after a
+  page load*). The same holds for `window.gameScene`/`window.gameplay`: `garage-model-lifecycle` read
+  `gameScene.renderer` straight after its load helper and got undefined on CI (44674764907); a load helper
+  whose callers read the scene ends with `waitForHome(page)`. Not machine-enforced: 74 specs follow a load
+  with the music-prompt `isVisible()` check, which answers at once, so the pattern alone proves nothing.
+  A dispatched gesture and an absence branch fail the same way: `dispatchEvent` before `main.js` subscribes
+  reaches no listener, and `if (!await x.isVisible())` takes the wrong branch (44674764907: the wallet summary
+  tapped while hidden in portrait; `contextmenu` not cancelled). Load with `gotoHome(page)` and scope title
+  locators to Home (`#intro-title`): the startup h1 stays in the DOM. Enforced by the same test file
+  (*gesture or absence branch after a page load*). `page.reload()` resolves before `main.js` runs too: take a
+  storage or state baseline only after `waitForHome(page)`.
+- **A route handler can outlive its test.** A spec that ends on a navigation leaves `route.fetch()` in flight;
+  closing the context disposes the response and fails a passed test with "Response has been disposed"
+  (hazard-captures, track-themes, 44674764907). The shared context fixture runs `unrouteAll` with
+  `ignoreErrors`; a spec on plain `@playwright/test` does it in `afterEach`. Enforced by
+  `tests/browser-timeouts.test.js` (*cannot outlive its test*).
+- **The setting toast lives 1.8 s (`TOAST_MS`).** Find, check and measure `#game-toast .game-toast-pill` in one
+  `page.waitForFunction`, as for the halfway card; chained locator reads found it gone on CI (toggle-feedback,
+  44674764907). Enforced by `tests/browser-timeouts.test.js` (*self-expiring element in one page tick*). A fixed
+  sleep or an `isVisible()` check after a load is not readiness either; that guard rejects both.
+- **Two tabs racing a store confirm depend on order.** Since `2a98ebde` a tab withdraws a confirmation another
+  tab's commit made stale; hold the demo Web Lock until both tabs show `aria-busy`, then release it
+  (`wave3-economy-transactions-browser.spec.js`).
+- **The preview serves `dist/` only.** A page-side `import('/src/…')` needs `test` from `gameplay-browser.js` (Vite
+  dev server); on the preview it fails with "Failed to fetch dynamically imported module". Enforced by
+  `tests/browser-timeouts.test.js` (*imports /src in the page*).
+- **A raw `browser.newPage()` skips the suite's Low start and CI canvas size.** Pass the fixture's `viewport` and
+  `deviceScaleFactor` and seed a tier; crimson-gt's second page rendered High while the first kept running and
+  timed out on CI (44674764907). Even at Low, two live renderers starve the runner: the second page never set
+  `window.gameScene` in 30 s while `gameplayPage` kept drawing the GT (44716140443). Give the second page its
+  own test, or open pages one at a time and close each. Enforced by `tests/browser-timeouts.test.js` (*never
+  opens a second browser page beside it*).
 - **A test must fit its budget with room to spare on CI.** CI steps the game at about 1/4 speed (each slow
   frame is clamped to 0.05 s), so a flow that plays N s of game time needs about 4N s of wall clock. A test
   whose passing CI run (the `(1.7m)` in the job log) uses more than about half of its budget gets an explicit
@@ -125,6 +199,11 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   the line, 12 for the 0.6 s results reveal at 0.05 s each) cost 39 stalls: 11.9 s, past the 10 s expect, while
   a real slow device took 5.4 s. Key the stall on the frame timestamp (`stalledFrame`); enforced by
   `tests/browser-timeouts.test.js` (*slow-frame shim*).
+- **A page-wide animation wait must survive a cancel.** `document.getAnimations()` also holds the setting toast
+  (`GameToast.vue`, 1.8 s entry, unmounted by `TOAST_MS`); a cancelled animation rejects `finished` with
+  AbortError. Trap (2026-11-20): pressing `v` raised the toast and `readAirflowStart` failed 7 of 7 viewports.
+  Write `a.finished.catch(() => {})` or scope to one element. Enforced by `tests/browser-timeouts.test.js`
+  (*a page-wide animation wait tolerates a cancelled animation*).
 - **Measure an overlay after its entry animation.** The Garage (`history-in`, translateX 22px), history, pause
   and results (`enter()` in `src/motion.ts`) all open with a transform. A rect read mid-entry is shifted and goes
   through float32 transform math: a 144 px Garage thumbnail measured 144.00001526 in 1 of 30 runs, the paused
@@ -132,6 +211,15 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   `openGarage()` and follow pause/results/history with `await settled(<overlay locator>)` (both in
   `tests/helpers/test.js`); never loosen a pixel bound to absorb it. Enforced by the same test file
   (*overlay geometry*) for every spec that opens one of them and then calls `getBoundingClientRect`/`boundingBox`.
+- **Read the results dock's hit targets together.** Use one `evaluateAll` per poll for the sticky dock and
+  sign-in button. All targets share a layout sample, and the poll can report missing controls without
+  waiting on several independent locator evaluations (CI 44468157574).
+- **Read a timed cue in the tick that finds it.** The halfway card lives 2.15 s of race time; on CI,
+  `toBeVisible` + two `toContainText` + `locator.evaluate` outlived it and the evaluate got a detached node
+  (`parentElement` null, run 44269822759). Find, read and measure a self-expiring element inside one
+  `page.waitForFunction`, then assert on the returned snapshot (`race-halfway-browser.spec.js`). The per-map sweep
+  repeated it and measured a zero rect on Monsoon (dx 480, CI 44395376200). Enforced by `tests/browser-timeouts.test.js`
+  (*halfway card in one page tick*).
 - **Poll the condition you assert, not a weaker proxy.** `expect.poll(...).not.toEqual(before)` passes on the
   first change, which can be the live loop's own HUD tick (`updateUI` runs every 0.075 s) from before your
   stepped frames were drawn; a one-shot read on the next line then judged all eight minimap markers and found
@@ -169,6 +257,10 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   A single local pass does not prove a fix.
 
 ## A long local run needs a checkout nobody else moves
+
+- **Use a free preview port for local gates.** Another worktree's preview can hold port 5178.
+  `make verify` and the pre-push layout gate use `scripts/free-local-port.mjs`.
+  Both stages of `make verify` use the same port and honor an explicit `PLAYWRIGHT_PORT`.
 
 - **Gameplay specs serve live source.** `tests/helpers/gameplay-browser.js` starts a Vite dev server on
   the checkout, so a file that changes mid-run (a merge, a pull, another session's edit) reloads the page

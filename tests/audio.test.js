@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createSound } from '../src/audio.js';
-import { createRace } from '../src/game.js';
+import { createRace, requestRaceReset, stepRace } from '../src/game.js';
 
 const midiHz = note => 440 * 2 ** ((note - 69) / 12);
 
@@ -23,7 +23,10 @@ function installAudio(t) {
     createBiquadFilter() { return node('filter'); }
     createDynamicsCompressor() { return node('compressor'); }
     createBufferSource() { return node('buffer'); }
-    createBuffer() { return { getChannelData: () => new Float32Array(100) }; }
+    createBuffer(numberOfChannels, length, sampleRate) {
+      const channels = Array.from({ length: numberOfChannels }, () => new Float32Array(length));
+      return { numberOfChannels, length, sampleRate, getChannelData: channel => channels[channel] };
+    }
     resume() { this.state = 'running'; return Promise.resolve(); }
     suspend() { this.state = 'suspended'; return Promise.resolve(); }
     close() { return Promise.resolve(); }
@@ -160,6 +163,34 @@ test('collected pickups produce one cue and never replay while muted, paused or 
   const next = createRace(); next.phase = 'racing'; next.pickups[0].taken = true;
   sound.update(next);
   assert.equal(tones(), collected, 'new race does not replay preexisting collection state');
+});
+
+test('vehicle reset creates a confirmation, return air sweep and tyre touchdown on Web Audio', t => {
+  const { sound, race, nodes } = audioScene(t);
+  let index = nodes.length;
+  const read = () => {
+    sound.update(race);
+    const added = nodes.slice(index);
+    index = nodes.length;
+    return {
+      tones: added.filter(node => node.kind === 'oscillator').map(node => node.frequency.value),
+      bursts: added.filter(node => node.kind === 'buffer' && !node.loop).length,
+    };
+  };
+  assert.equal(requestRaceReset(race), true);
+  assert.deepEqual(read(), { tones: [540, 1120], bursts: 0 });
+  assert.deepEqual(read(), { tones: [], bursts: 0 });
+  const stages = [];
+  while (race.player.recovery) {
+    stepRace(race, {}, 1 / 60);
+    const added = read();
+    if (added.tones.length || added.bursts) stages.push(added);
+  }
+  assert.deepEqual(stages, [
+    { tones: [345, 1010], bursts: 1 },
+    { tones: [54, 167], bursts: 1 },
+  ]);
+  assert.deepEqual(read(), { tones: [], bursts: 0 });
 });
 
 test('NITRO reuses boost ignition once per activation and sustains the thrust sound', t => {
@@ -400,6 +431,30 @@ test('backgrounding cancels pending stingers and suppresses new sounds', t => {
 // A prelude note is any music oscillator: cues are sine tones and none play here; the engine hum starts without a time.
 const musicNotes = nodes => nodes.filter(node => node.kind === 'oscillator' && typeof node.started === 'number' && node.type !== 'sine');
 const musicBus = nodes => nodes.filter(node => node.kind === 'gain' && node.destination?.kind === 'compressor')[1];
+
+test('equipment unlock keeps the enabled menu soundtrack playing', async t => {
+  const { ACQUISITION_SOUNDS } = await import('../src/feedback-sounds.ts');
+  const { nodes, sound } = installAudio(t);
+  const race = createRace();
+  sound.setEnabled(true);
+  sound.setMusic(true);
+  const bus = musicBus(nodes);
+  const homeLevel = bus.gain.value;
+  assert.ok(homeLevel > 0);
+
+  sound.update(race);
+  assert.equal(bus.gain.value, homeLevel);
+  sound.setMusic(true);
+  assert.equal(bus.gain.value, homeLevel);
+  sound.cue(ACQUISITION_SOUNDS.equipment);
+  sound.update(race);
+  assert.equal(bus.gain.value, homeLevel);
+
+  sound.setMusic(false);
+  sound.update(race);
+  assert.equal(bus.gain.value, 0);
+});
+
 function trackContexts() {
   const made = [];
   globalThis.AudioContext = class extends globalThis.AudioContext { constructor() { super(); made.push(this); } };
@@ -501,10 +556,49 @@ test('opening audio trusts the live page visibility over a stale hidden flag', t
   sound.setHidden(true);
   assert.equal(sound.running(), false);
   document.hidden = false; // the page came back without a visibilitychange event
-  for (let tap = 0; tap < 4; tap++) { now += 1300; sound.setMusic(true); sound.setEnabled(true); }
+  for (let tap = 0; tap < 4; tap++) {
+    now += 1300;
+    const context = made.at(-1);
+    if (context.state === 'running') context.currentTime += 1.3;
+    sound.setMusic(true);
+    sound.setEnabled(true);
+  }
   assert.equal(sound.running(), true, 'a tap resumes audio instead of re-suspending it');
   assert.ok(made.length <= 2, `taps do not keep rebuilding contexts (${made.length} made)`);
 });
+
+for (const state of ['running', 'interrupted']) {
+  test(`a tap restores both race audio channels when the context is stuck as ${state}`, t => {
+    let now = 0;
+    t.mock.method(performance, 'now', () => now);
+    const { nodes, made, sound } = installTracked(t);
+    const race = createRace('spiral');
+    race.phase = 'racing';
+    sound.setMusic(true, .5);
+    sound.setEnabled(true, .5);
+    sound.update(race);
+    now += 5000;
+    made[0].currentTime = 5;
+    sound.update(race);
+    assert.equal(sound.running(), true, 'a moving clock remains healthy after a long frame');
+
+    made[0].state = state;
+    now += 1000;
+    assert.equal(sound.running(), false, 'a visible but stalled context needs recovery');
+    const start = nodes.length;
+    sound.setMusic(true, .5);
+    sound.setEnabled(true, .5);
+    sound.update(race);
+    sound.cue('pickup');
+    const fresh = nodes.slice(start);
+    assert.equal(made.length, 2, 'the same tap replaces the interrupted context once');
+    assert.ok(musicNotes(fresh).length > 0, 'the current race song schedules on the replacement');
+    assert.equal(musicBus(fresh).gain.value, .3125);
+    assert.ok(fresh.some(node => node.kind === 'oscillator' && node.frequency.value === 2093), 'new game effects play too');
+    assert.equal(fresh.find(node => node.kind === 'gain' && node.destination?.kind === 'compressor').gain.value, .4);
+    assert.equal(race.phase, 'racing');
+  });
+}
 
 test('update retries a stuck resume at most once a second while sound should play and the page is visible', t => {
   let now = 0;
@@ -533,6 +627,82 @@ test('update retries a stuck resume at most once a second while sound should pla
   assert.equal(resumes, silent, 'no retry while both channels are off');
 });
 
+test('a frozen running clock can recover when an overlay goes away without any lifecycle event or new tap', async t => {
+  let now = 0;
+  t.mock.method(performance, 'now', () => now);
+  const { sound, made } = installTracked(t);
+  sound.setMusic(true);
+  const ctx = made[0];
+  const race = createRace('spiral');
+  race.phase = 'racing';
+  t.mock.method(ctx, 'resume', () => {
+    if (ctx.state === 'suspended') {
+      ctx.state = 'running';
+      ctx.currentTime += .01;
+    }
+    return Promise.resolve();
+  });
+  now = 600;
+  sound.update(race);
+  await Promise.resolve();
+  assert.equal(sound.running(), true, 'suspending and resuming restarts the stalled clock');
+  assert.equal(made.length, 1);
+});
+
+test('an audio focus interruption waits for the OS to release the session before retrying', t => {
+  const session = { type: 'auto', state: 'active' };
+  Object.defineProperty(navigator, 'audioSession', { value: session, configurable: true });
+  t.after(() => { delete navigator.audioSession; });
+  let now = 0;
+  t.mock.method(performance, 'now', () => now);
+  const { sound, made } = installTracked(t);
+  sound.setMusic(true);
+  const ctx = made[0];
+  const race = createRace();
+  const resume = t.mock.method(ctx, 'resume', () => {
+    ctx.state = 'running';
+    ctx.currentTime += .01;
+    return Promise.resolve();
+  });
+  session.state = 'interrupted';
+  ctx.state = 'interrupted';
+  now = 2000;
+  sound.setHidden(false); // Some systems send focus before the call or other app gives audio back.
+  sound.update(race);
+  assert.equal(resume.mock.callCount(), 0);
+  session.state = 'inactive';
+  sound.update(race);
+  assert.equal(resume.mock.callCount(), 1, 'the first visible frame after release retries playback');
+  assert.equal(sound.running(), true);
+});
+
+for (const cause of ['page hides', 'player mutes', 'context changes', 'context is disposed']) {
+  test(`a pending audio recovery does not resume the old output when the ${cause}`, async t => {
+    let now = 0;
+    t.mock.method(performance, 'now', () => now);
+    const { sound, made } = installTracked(t);
+    sound.setMusic(true);
+    const [ctx] = made;
+    const race = createRace();
+    const resume = t.mock.method(ctx, 'resume');
+    const suspended = Promise.withResolvers();
+    const suspend = t.mock.method(ctx, 'suspend', () => suspended.promise);
+    now = 2000;
+    sound.update(race);
+    assert.equal(suspend.mock.callCount(), 1, 'the clock recovery has started');
+    now = 3300;
+    sound.update(race);
+    assert.equal(suspend.mock.callCount(), 1, 'only one suspend/resume cycle can be pending');
+    if (cause === 'page hides') sound.setHidden(true);
+    else if (cause === 'player mutes') sound.setMusic(false);
+    else if (cause === 'context is disposed') sound.dispose();
+    else { sound.setMusic(true); assert.equal(made.length, 2); }
+    suspended.resolve();
+    await Promise.resolve();
+    assert.equal(resume.mock.callCount(), 0);
+  });
+}
+
 test('diagnostic builds can read the live audio state', t => {
   const { sound } = installAudio(t);
   sound.setMusic(true);
@@ -555,6 +725,74 @@ test('sprint readiness plays two distinct SFX phrases and respects mute', t => {
   assert.deepEqual(pitches('boost-ready'), []);
 });
 
+test('store cues play short distinct SFX without joining the music stingers', async t => {
+  const { ACQUISITION_SOUNDS, FEEDBACK_SOUNDS, STINGERS } = await import('../src/feedback-sounds.ts');
+  const { nodes, sound } = installAudio(t);
+  const cues = ['redeem-review', 'redeem-cancelled', ACQUISITION_SOUNDS.equipment, 'action-unavailable'];
+  const pitches = name => {
+    const start = nodes.length;
+    sound.cue(name);
+    return nodes.slice(start).filter(node => node.kind === 'oscillator').map(node => node.frequency.value);
+  };
+  sound.setEnabled(true);
+  for (const cue of cues) {
+    assert.ok(FEEDBACK_SOUNDS[cue]?.length, cue);
+    assert.equal(STINGERS.has(cue), false, cue);
+    assert.ok(Math.max(...FEEDBACK_SOUNDS[cue].map(([, , duration, delay]) => duration + delay)) <= .35, cue);
+  }
+  const phrases = cues.map(pitches);
+  assert.ok(phrases.every(phrase => phrase.length > 0));
+  assert.equal(new Set(phrases.map(phrase => phrase.join(','))).size, cues.length);
+  sound.setEnabled(false);
+  for (const cue of cues) assert.deepEqual(pitches(cue), []);
+});
+
+test('the equipment reveal plays the original bass sweep and two rising notes', async t => {
+  const { ACQUISITION_SOUNDS } = await import('../src/feedback-sounds.ts');
+  const { nodes, sound } = installAudio(t);
+  sound.setEnabled(true);
+  const start = nodes.length;
+  sound.cue(ACQUISITION_SOUNDS.equipment);
+  const voices = nodes.slice(start).filter(node => node.kind === 'oscillator');
+  assert.deepEqual(voices.map(voice => [voice.type, voice.started, voice.frequency.value]), [
+    ['sine', 0, 150],
+    ['sine', .07, 699],
+    ['sine', .13, 1319],
+  ]);
+});
+
+test('Freeze and EMP play distinct attack and recovery cues through the race SFX bus', t => {
+  const { nodes, sound } = installAudio(t);
+  const race = createRace(); race.phase = 'racing';
+  sound.setEnabled(true, .5);
+  sound.update(race);
+  const limiter = nodes.find(node => node.kind === 'compressor');
+  const master = nodes.find(node => node.kind === 'gain' && node.destination === limiter && node.gain.value > 0);
+  const record = change => {
+    const start = nodes.length;
+    change(); sound.update(race);
+    const voices = nodes.slice(start).filter(node => node.kind === 'oscillator' || node.kind === 'buffer');
+    for (const voice of voices) {
+      let target = voice.destination;
+      while (target && target !== master) target = target.destination;
+      assert.equal(target, master, 'cues go through the user-controlled effects bus');
+      assert.ok(voice.stopped < .6, 'one-shot cue');
+      voice.onended();
+    }
+    return voices;
+  };
+  const freeze = record(() => { race.player.freezeUntil = 2; });
+  assert.ok(freeze.some(node => node.kind === 'buffer') && freeze.some(node => node.type === 'sine'));
+  assert.ok(record(() => { race.elapsed = 2; }).length > 0, 'thaw sounds');
+  const emp = record(() => { race.player.empUntil = 3.5; });
+  assert.ok(emp.some(node => node.type === 'square') && emp.some(node => node.kind === 'buffer'));
+  assert.ok(record(() => { race.elapsed = 3.5; }).length > 0, 'EMP recovery sounds');
+  sound.setEnabled(false);
+  assert.deepEqual(record(() => { race.player.freezeUntil = 5.5; }), []);
+  sound.setEnabled(true);
+  assert.deepEqual(record(() => {}), [], 'unmuting does not replay the hit');
+});
+
 test('the halfway chime is a short rising stinger, so it ducks the mix only briefly', async () => {
   const { FEEDBACK_SOUNDS, STINGERS } = await import('../src/feedback-sounds.ts');
   const notes = FEEDBACK_SOUNDS.halfway;
@@ -562,4 +800,118 @@ test('the halfway chime is a short rising stinger, so it ducks the mix only brie
   assert.equal(notes[0][0], 698);
   assert.deepEqual(notes.map(([from]) => from), [...notes.map(([from]) => from)].sort((a, b) => a - b));
   assert.ok(Math.max(...notes.map(([, , duration, delay]) => duration + delay)) <= .4);
+});
+
+test('acquisition motifs are distinct, fit the reveal and use the existing SFX mute', async t => {
+  const { ACQUISITION_KIND } = await import('../src/acquisition-reveal.ts');
+  const { ACQUISITION_SOUNDS } = await import('../src/feedback-sounds.ts');
+  // The mock renders no audio. Keep wall time fixed while scheduling cues at the same audio time.
+  t.mock.method(performance, 'now', () => 0);
+  const { nodes, sound } = installAudio(t);
+  assert.deepEqual(Object.keys(ACQUISITION_SOUNDS).sort(), Object.values(ACQUISITION_KIND).sort());
+  sound.setEnabled(true);
+  const heard = cue => {
+    const start = nodes.length;
+    sound.cue(cue);
+    return nodes.slice(start).filter(node => node.kind === 'oscillator' || node.kind === 'buffer');
+  };
+  const cues = [...Object.values(ACQUISITION_SOUNDS), 'acquisition-select'];
+  assert.equal(new Set(cues).size, Object.values(ACQUISITION_KIND).length + 1);
+  const signatures = cues.map(cue => {
+    const voices = heard(cue);
+    assert.ok(voices.length > 0, cue);
+    assert.ok(Math.max(...voices.map(node => node.stopped)) <= 1.4, cue);
+    // The mock never fires onended automatically. Each cue tests the same clean voice budget.
+    voices.forEach(node => node.onended());
+    return voices.map(node => node.kind === 'buffer' ? node.buffer.length : node.frequency.value).join(',');
+  });
+  assert.equal(new Set(signatures).size, cues.length);
+  sound.setEnabled(false);
+  for (const cue of cues) assert.deepEqual(heard(cue), []);
+});
+
+test('opening music stays queued before rendering and hands off once to the original lobby track', t => {
+  const { nodes, made, sound } = installTracked(t);
+  sound.setOpening(true);
+  sound.setMusic(true, 0.7);
+  const opening = musicNotes(nodes);
+  assert.ok(opening.some(note => note.started < .25 && note.frequency.value === midiHz(62)));
+  assert.ok(musicBus(nodes).gain.value < 0.7, 'the waiting mix has room for the lobby theme');
+
+  made[0].currentTime = 6;
+  sound.refreshOpeningMusic();
+  assert.ok(musicNotes(nodes).at(-1).started > 10, 'the overlay does not need the rendering loop to keep playing');
+  const openingNotes = musicNotes(nodes);
+  sound.update(createRace());
+  assert.equal(musicNotes(nodes).length, openingNotes.length, 'a lobby render under the overlay does not change songs');
+
+  sound.setOpening(false);
+  const lobby = musicNotes(nodes).slice(openingNotes.length);
+  assert.ok(lobby.some(note => note.started < 6.25 && note.frequency.value === midiHz(57)));
+  assert.ok(openingNotes.filter(note => note.started > 6).every(note => note.stopped === undefined));
+  assert.equal(made.length, 1, 'opening and lobby share the same audio context');
+});
+
+test('muted startup never creates an audio context or queues the opening track', t => {
+  const { made, sound } = installTracked(t);
+  sound.setOpening(true);
+  sound.setMusic(false);
+  sound.refreshOpeningMusic();
+  sound.setOpening(false);
+  assert.equal(made.length, 0);
+});
+
+test('premiere cues play stereo layers that follow the shots with bounded peaks', t => {
+  const { nodes, sound } = installAudio(t);
+  sound.setEnabled(true);
+  const starts = nodes.length;
+  const order = [['acquisition-car', 0], ['acquisition-car-signature', .2], ['acquisition-car-thrusters', 1.18],
+    ['acquisition-car-profile', 2.35], ['acquisition-car-hero', 3.78]];
+  order.forEach(([name, at]) => sound.cue(name, at));
+  const layers = nodes.slice(starts).filter(node => node.kind === 'buffer');
+  assert.equal(layers.length, order.length);
+  layers.forEach(({ buffer, started }, index) => {
+    assert.equal(started, order[index][1]);
+    assert.equal(buffer.numberOfChannels, 2);
+    assert.ok(buffer.length / buffer.sampleRate >= .9);
+    const left = buffer.getChannelData(0);
+    const right = buffer.getChannelData(1);
+    assert.ok(left.some((sample, i) => Math.abs(sample - right[i]) > .015));
+    assert.ok(left.every((sample, i) => Math.abs(sample) <= .6 && Math.abs(right[i]) <= .6));
+    assert.ok(left.some(sample => Math.abs(sample) > .09));
+    assert.ok(Math.abs(left.at(-1)) < .001);
+  });
+  sound.setEnabled(false);
+  const muted = nodes.length;
+  sound.cue('acquisition-car-hero');
+  assert.equal(nodes.length, muted);
+});
+
+test('equipment plays a distinct activation layer for each Garage category', t => {
+  const { nodes, sound } = installAudio(t);
+  sound.setEnabled(true);
+  for (const category of ['thruster', 'airflow', 'nitro-trail', 'launch-flare', 'drift-trail']) {
+    sound.cue('acquisition-stop');
+    sound.cue('acquisition-equipment-' + category);
+  }
+  const activations = nodes.filter(node => node.kind === 'buffer' && node.started === 0 && node.buffer.numberOfChannels === 2);
+  assert.equal(activations.length, 5);
+  const footprints = activations.map(({ buffer }) => Array.from(buffer.getChannelData(0).filter((_, i) => i % 1200 === 0)));
+  assert.equal(new Set(footprints.map(series => series.join(','))).size, 5);
+});
+
+test('stopping the reveal fades its stereo score and leaves unrelated feedback audible', t => {
+  const { nodes, sound } = installAudio(t);
+  sound.setEnabled(true);
+  const start = nodes.length;
+  sound.cue('acquisition-car-hero');
+  const camera = nodes.slice(start).find(node => node.kind === 'buffer');
+  assert.ok(camera);
+  const beforeEquip = nodes.length;
+  sound.cue('equip-confirmed');
+  const equip = nodes.slice(beforeEquip).filter(node => node.kind === 'oscillator');
+  assert.ok(equip.length);
+  sound.cue('acquisition-stop');
+  assert.ok(camera.stopped > 0 && camera.stopped < .08);
+  assert.ok(equip.every(node => Number.isFinite(node.stopped)));
 });

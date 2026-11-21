@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
@@ -54,7 +55,7 @@ for (const [device, viewport, touch] of [
     test.setTimeout(ciTimeout(180_000));
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.locator('[data-upcoming-track="skyfall-archipelago"]').click();
+    await clickLobbyOption(page, '[data-upcoming-track="skyfall-archipelago"]');
     await expect(page.locator('#start-button')).toBeEnabled();
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(16_000) });

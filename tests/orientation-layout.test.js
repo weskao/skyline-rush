@@ -22,6 +22,16 @@ test('independent portrait and landscape layouts validate unsafe points and drop
   assert.equal(orientationForViewport(400, 400), 'portrait');
 });
 
+test('old steering clusters fall back to the new brake location without moving saved arrows', () => {
+  const brake = { x: 0.16, y: 0.78 }, left = { x: 0.12, y: 0.9 };
+  const currentBrake = { x: 0.68, y: 0.89 };
+  const { portrait, landscape } = normalizeOrientationLayouts({ version: 2, portrait: { brake, left }, landscape: { brake } });
+  assert.deepEqual(portrait, { left });
+  assert.deepEqual(landscape, {});
+  assert.deepEqual(normalizeOrientationLayouts(null, { brake, left }).portrait, { left });
+  assert.deepEqual(normalizeOrientationLayouts({ version: 3, portrait: { brake: currentBrake }, landscape: {} }).portrait, { brake: currentBrake });
+});
+
 test('custom layouts round-trip in a separate key without overwriting v1 controls and reset cleanly', () => {
   const storageMap = new Map([['skyline-rush-controls', '{"version":1}']]);
   const storage = { getItem: key => storageMap.get(key) ?? null, setItem: (key, value) => storageMap.set(key, value) };

@@ -1,6 +1,8 @@
 import { classicRoadRoute } from './classic-road-routes.ts';
+import { hasRoadProfile, profileRoad } from './track-profile-road.ts';
 import { raceTrack } from './race-tracks.ts';
 import { minimapGraph } from './course-minimap.ts';
+import { COURSE_RUNTIMES } from './course-runtimes.ts';
 import { createCourseRouteProjection } from './course-route-map.ts';
 import { routeLength } from './course-route-frame.ts';
 import { groundAt } from './course-items.ts';
@@ -33,7 +35,7 @@ const svg = (tag: string, attrs: Record<string, string | number> = {}): SVGEleme
   return node;
 };
 export function routeSamples(trackId: string): RouteSample[] {
-  if (!cache.has(trackId)) cache.set(trackId, trackOverview(trackId, 128));
+  if (!cache.has(trackId)) cache.set(trackId, trackOverview(trackId, trackId === 'spiral' ? 256 : 128));
   return cache.get(trackId)!;
 }
 const pointText = (p: {x: number; y: number}): string => `${p.x.toFixed(2)},${p.y.toFixed(2)}`;
@@ -103,6 +105,35 @@ export function routeElevationCues(trackId: string): readonly GradeCue[] {
   }
   return gradeCache.get(trackId)!;
 }
+// A gap in the road (`.claude/rules/route-minimap.md`): the route line is cut over the true span,
+// a dotted jump crosses it and two caps close both ends. Spans come from the physics' own data:
+// classic `type: 'gap'` sections (Sky Spiral's from SKY_JUMPS) and each course runtime's `noRoad`.
+interface GapPaths { cut: string; caps: string }
+const gapCache = new Map<string, GapPaths | null>();
+const GAP_STEPS = 8, GAP_CAP = 3.5; // samples per span; cap half-length in map units
+export function routeGapPaths(trackId: string): GapPaths | null {
+  if (gapCache.has(trackId)) return gapCache.get(trackId)!;
+  const graph = minimapGraph(trackId), noRoad = COURSE_RUNTIMES[trackId]?.spec.noRoad;
+  const projection = graph && noRoad ? createCourseRouteProjection(graph, 64) : null;
+  const spans = projection ? Object.entries(noRoad!).flatMap(([edgeId, gaps]) => gaps.map(([from, to]) => ({ from, to,
+    at: (s: number) => { const p = projection.marker(edgeId, s); return { x: p.x * 100, y: p.y * 100 }; } })))
+    : graph ? [] : (raceTrack(trackId)?.sections ?? []).filter(s => s.type === 'gap')
+      .map(({ from, to }) => ({ from, to, at: (d: number) => routeMarker(trackId, d) }));
+  let cut = '', caps = '';
+  for (const { from, to, at } of spans) {
+    const points = Array.from({ length: GAP_STEPS + 1 }, (_, i) => at(from + (to - from) * i / GAP_STEPS));
+    cut += `M${points.map(pointText).join(' L')} `;
+    for (const [end, toward] of [[points[0], points[1]], [points[GAP_STEPS], points[GAP_STEPS - 1]]]) {
+      const dx = toward.x - end.x, dy = toward.y - end.y, length = Math.hypot(dx, dy) || 1;
+      const nx = -dy / length * GAP_CAP, ny = dx / length * GAP_CAP;
+      caps += `M${pointText({ x: end.x - nx, y: end.y - ny })} L${pointText({ x: end.x + nx, y: end.y + ny })} `;
+    }
+  }
+  const paths = spans.length ? { cut: cut.trim(), caps: caps.trim() } : null;
+  gapCache.set(trackId, paths);
+  return paths;
+}
+const GAP_STYLE = 'fill:none;vector-effect:non-scaling-stroke;pointer-events:none;';
 const routeLabel = (trackId: string, locale: string = getLocale()): string => {
   const label = t('route.aria', { name: trackName(trackId, locale) }, locale);
   return routeElevationCues(trackId).length ? `${label} · ${t('route.grade', undefined, locale)}` : label;
@@ -119,13 +150,13 @@ function streamingRoute(point: (d: number) => readonly [number, number], distanc
   return { sector, start, end: start + 700, line: samples.map(p => pointText(project(p))).join(' '), marker: (d: number) => project(point(d)) };
 }
 export const hasStreamingRouteMap = (trackId: string, mode: string): boolean =>
-  (mode === 'endless' || mode === 'elimination') && (trackId === 'spiral' || !!classicRoadRoute(trackId));
+  (mode === 'endless' || mode === 'elimination') && (!!classicRoadRoute(trackId) || hasRoadProfile(trackId));
 
 export function createRouteMap(trackId: string, { live = false, streaming = false }: { live?: boolean; streaming?: boolean } = {}) {
   const streamRoad = streaming ? trackId === 'spiral' ? (d: number) => {
     const { x, z } = skyPoint(d, true);
     return [x, z] as const;
-  } : classicRoadRoute(trackId)?.point : undefined;
+  } : (classicRoadRoute(trackId) ?? profileRoad(trackId))?.point : undefined;
   let window: ReturnType<typeof streamingRoute> | undefined;
   const element = svg('svg', { viewBox: '0 0 100 100', class: `route-overview theme-${trackId}`, role: 'img' }); // aria-label: relabel() below
   const graph = minimapGraph(trackId);
@@ -150,13 +181,22 @@ export function createRouteMap(trackId: string, { live = false, streaming = fals
     return pointText(at ? { x: p.x * 100, y: p.y * 100 } : p);
   };
   if (trail) element.append(trail);
+  // Endless/Elimination clear every section, so a streaming map has no gap to mark.
+  const gaps = streamRoad ? null : routeGapPaths(trackId);
+  if (gaps) element.append(
+    svg('path', { d: gaps.cut, class: 'route-gap-cut', 'aria-hidden': 'true',
+      style: `${GAP_STYLE}stroke:var(--map-bg,#051025);stroke-width:5px;stroke-linecap:butt` }),
+    svg('path', { d: gaps.cut, class: 'route-gap-dots', 'aria-hidden': 'true',
+      style: `${GAP_STYLE}stroke:#ff7b54;stroke-width:1.4px;stroke-dasharray:1.4 1.6;stroke-linecap:butt` }),
+    svg('path', { d: gaps.caps, class: 'route-gap-caps', 'aria-hidden': 'true',
+      style: `${GAP_STYLE}stroke:#ff7b54;stroke-width:1.8px;stroke-linecap:round` }));
   const upper = streamRoad ? '' : spiralUpperRoutePolyline(trackId);
   if (upper) {
     element.append(svg('polyline', { points: upper, class: 'route-spiral-upper', fill: 'none', 'aria-hidden': 'true' }));
     element.append(svg('polyline', { points: spiralUpperDirectionChevron(trackId),
       class: 'route-spiral-direction', fill: 'none', 'aria-hidden': 'true' }));
   }
-  for (const cue of routeElevationCues(trackId)) {
+  for (const cue of streamRoad ? [] : routeElevationCues(trackId)) {
     const { x, y } = cue;
     const top = cue.direction === 'up';
     const tip = (y + (top ? -3 : 3)).toFixed(2);

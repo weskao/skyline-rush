@@ -1,6 +1,8 @@
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
+import { clickLobbyOption } from './helpers/home-lobby.js';
+import { waitForHome } from './helpers/test.js';
 
 // 10A: rule presets and saved Custom setups are shortcuts, never progress: unlocks, reward eligibility and the
 // skyline-rush-controls / skyline-rush-history formats stay byte-identical through choosing, saving, loading and racing them.
@@ -40,12 +42,14 @@ test('choosing, saving, loading and racing presets leaves unlocks, eligibility, 
     localStorage.setItem('skyline-rush-controls', JSON.stringify({ mode: 'buttons', hand: 'right', fullLock: 80, size: 'L', opacity: 0.8, flyMode: 'tap', sensitivity: 1.2, ghost: true, layout: {}, version: 1 }));
   });
   await page.reload();
+  // The reload resolves before main.js runs; its load-time controls write must land before the baseline.
+  await waitForHome(page);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-  const stored = () => page.evaluate(keys => keys.map(key => localStorage.getItem(key)), GUARDED);
+  const stored =() => page.evaluate(keys => keys.map(key => localStorage.getItem(key)), GUARDED);
   const before = await stored();
   const counts = () => page.evaluate(keys => keys.map(key => window.storageWrites[key] ?? 0), GUARDED);
   const loadWrites = await counts();
-  await page.locator('button[data-race-mode="custom"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="custom"]');
   await page.locator('#race-mode-rules > summary').click();
   for (const preset of ['traffic', 'noitems', 'air', 'precision', 'traffic']) {
     await page.locator(`[data-race-preset="${preset}"]`).click();
@@ -57,7 +61,7 @@ test('choosing, saving, loading and racing presets leaves unlocks, eligibility, 
   await page.locator('.brand').click();
   if (await page.locator('#leave-screen').isVisible()) await page.locator('#leave-end').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
-  await page.locator('button[data-race-mode="custom"]').click(); // leaving the results screen returns to Classic
+  await clickLobbyOption(page, 'button[data-race-mode="custom"]'); // leaving the results screen returns to Classic
   if (!await page.locator('#race-mode-rules').evaluate(details => details.open)) await page.locator('#race-mode-rules > summary').click();
   await page.locator('[data-race-preset="standard"]').click(); // move off the saved rules so loading must restore them
   // Load the saved setup back from Recent Custom races and race it again.

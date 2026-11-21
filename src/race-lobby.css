@@ -1,4 +1,19 @@
 /* Home lobby. Keep the scroll panel and its fixed landscape actions free of new stacking contexts. */
+#intro.lobby-compact { animation: none; } /* The startup handoff animates only the individual controls. */
+body[data-phase="ready"] :is(.scene-shade, .topbar),
+.upcoming-scene::after { background: none; }
+
+/* Keep the highlight anchored to its button as Start moves between the dock and the landscape rail. */
+.intro .primary-button::after, .race-overlay .next-button::after {
+  border-radius: inherit;
+  background: linear-gradient(100deg, transparent 44%, rgb(255 255 255 / .42) 50%, transparent 56%) 100% 0 / 300% 100% no-repeat;
+  translate: none;
+}
+@keyframes start-sheen {
+  0%, 55% { background-position: 100% 0; }
+  100% { background-position: 0 0; }
+}
+
 .lobby-visually-hidden {
   position: absolute;
   width: 1px;
@@ -24,7 +39,6 @@
 }
 .lobby-picker-toggle > span { color: #aed1df; }
 #lobby-track-status { margin-inline-start: auto; font-size: 10px; }
-#lobby-tracks-toggle::after { margin-inline-start: 0; }
 .lobby-picker-toggle::after { content: '＋'; margin-inline-start: auto; color: var(--accent); }
 .lobby-picker-toggle[aria-expanded="true"]::after { content: '−'; }
 .lobby-picker-toggle:disabled::after { visibility: hidden; }
@@ -39,9 +53,6 @@
 }
 .intro .race-mode-tabs button { flex: 0 0 auto; min-height: 44px; padding-inline: 8px; }
 .intro .race-mode-heading:has([aria-expanded="true"]) + .race-mode-tabs { flex-wrap: wrap; }
-#lobby-tracks-toggle { width: min(550px, 100%); margin-top: 6px; }
-#lobby-tracks-toggle[aria-expanded="true"] + .track-select { flex-wrap: wrap; }
-#lobby-tracks-toggle[aria-expanded="true"] + .track-select button { flex: 1 0 128px; }
 #lobby-access-note {
   flex-basis: 100%;
   margin: 0;
@@ -99,9 +110,7 @@ details.performance-notice {
 .performance-notice button { display: block; margin: 0 0 8px auto; min-height: 44px; }
 
 @media (min-width: 1001px) and (min-height: 501px) and (max-height: 1160px) {
-  #lobby-tracks-toggle[aria-expanded="true"] + .track-select { max-height: 168px; }
   .intro .race-mode-heading { margin-bottom: 4px; }
-  #lobby-tracks-toggle { margin-top: 3px; }
 }
 @media (max-width: 1000px) and (min-height: 501px) {
   body[data-phase="ready"]:not(.airflow-active) .intro {
@@ -114,10 +123,6 @@ details.performance-notice {
   .intro .home-intro-topbar { margin-bottom: 6px; }
   .intro .race-mode-picker:not(.race-rules-row) { margin-top: 0; padding: 5px; }
   .intro .race-mode-heading { margin-bottom: 3px; }
-  .intro #lobby-tracks-toggle { margin-bottom: 6px; }
-  .intro .track-select button { min-height: 64px; }
-  .intro .track-select .track-preview { height: 24px; margin-bottom: 4px; }
-  .intro .track-select .track-route-map { height: 26px; margin: 0; }
   .intro .intro-actions { display: flex; gap: 8px 12px; margin-top: 8px; }
   .intro .intro-primary { display: contents; }
   .intro .intro-actions > .text-button { margin: 0; }
@@ -144,10 +149,8 @@ details.performance-notice {
 @media (max-width: 760px) and (min-height: 501px) and (max-height: 680px) {
   #lobby-modes-toggle[aria-expanded="false"] { width: 100%; }
   .race-mode-heading:has(#lobby-modes-toggle[aria-expanded="false"]) + .race-mode-tabs,
-  #lobby-tracks-toggle[aria-expanded="false"] + .track-select { display: none; }
   .intro #mode-description { display: none; }
   .intro .track-note { display: none; }
-  .intro #lobby-tracks-toggle[aria-expanded="true"] ~ .track-note { display: block; }
   .intro #mode-eligibility { display: none; }
   .intro #rules-restore { display: none; }
   body:not([data-race-mode="classic"]) .intro #rules-restore { display: inline-flex; }
@@ -179,47 +182,11 @@ details.performance-notice {
   }
   .intro:has(.home-resource-strip) .race-mode-heading { padding-inline-end: 210px; }
   .intro .race-mode-heading:has(#lobby-modes-toggle[aria-expanded="false"]) + .race-mode-tabs { display: none; }
-  .intro .track-select { margin-top: 0; }
   /* Collapsed or expanded, a card shows everything portrait does: a square route map beside the name and
      KM + status. The old 58-66px stacked card drew the route over the sky and cut the KM row; side by side the card
      stays ~50px, so the first row still clears the pinned Garage row under iPhone Chrome's toolbar (667x375). */
-  .intro:has(.race-mode-picker) .track-select button {
-    display: grid;
-    grid-template: auto auto / 42px minmax(0, 1fr);
-    align-content: center;
-    column-gap: 8px;
-    flex-basis: 168px;
-    height: auto;
-    padding: 3px 4px;
-  }
-  #lobby-tracks-toggle[aria-expanded="true"] + .track-select button { flex: 1 0 168px; }
   /* The sky / teaser art backs the whole card, dimmed under the text; a 4px strip made the Coming Soon art unreadable. */
-  .intro:has(.race-mode-picker) .track-select .track-preview {
-    position: absolute;
-    inset: 0;
-    grid-area: auto;
-    height: auto;
-    margin: 0;
-    opacity: .5;
-    -webkit-mask-image: linear-gradient(90deg, transparent 10%, #000 70%);
-    mask-image: linear-gradient(90deg, transparent 10%, #000 70%);
-  }
-  .intro:has(.race-mode-picker) .track-select button > :is(strong, span:last-child) { position: relative; line-height: 1.2; text-shadow: 0 1px 3px rgb(3 10 20 / .9); }
-  .intro:has(.race-mode-picker) .track-select button > span.track-route-map {
-    grid-area: 1 / 1 / 3;
-    position: relative;
-    inset: auto;
-    width: 42px;
-    height: 42px;
-    margin: 0;
-    background: var(--map-bg, rgb(4 14 29 / .48));
-  }
-  .intro .track-select button > :is(strong, span:last-child) { grid-column: 2; }
-  .intro .track-select button > strong { align-self: end; }
-  .intro .track-select button > span:last-child { align-self: start; }
-  .intro .track-select button > span:last-child { font-size: 10px; }
   .intro .track-note { margin: 2px 0; }
-  .intro #lobby-tracks-toggle { margin-top: 2px; }
   details.performance-notice { top: calc(128px + var(--safe-top)); z-index: 2; }
 }
 @media (max-height: 340px) and (orientation: landscape), (max-width: 760px) and (max-height: 500px) and (orientation: landscape) {
@@ -234,8 +201,6 @@ details.performance-notice {
   .intro #lobby-modes-toggle { width: 100%; }
   .intro :is(#mode-description, #mode-eligibility, .track-note),
   body[data-race-mode="classic"] .intro #rules-restore { display: none; }
-  .intro #lobby-tracks-toggle[aria-expanded="true"] ~ .track-note { display: block; }
-  #lobby-tracks-toggle[aria-expanded="false"] + .track-select { display: none; }
   .intro .race-rules-row { margin-top: 0; }
   .intro .race-rules-head { min-height: 22px; }
   .intro #race-rules-step { position: absolute; clip-path: inset(50%); }
@@ -253,3 +218,288 @@ details.performance-notice {
     z-index: 8;
   }
 }
+
+/* Keep the 3D scene visible beside the lobby. Track artwork carries the desktop strip. */
+.intro .lobby-picker-toggle > svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+.intro :is(.garage-button, .history-button, .practice-button) { gap: 6px; }
+.lobby-action-art { width: 24px; height: 24px; flex: none; object-fit: contain; }
+.intro #intro-title { text-wrap: balance; }
+
+@media (min-width: 1001px) and (min-height: 701px) {
+  body:not([data-fold-axis="vertical"], [data-fold-axis="horizontal"], .airflow-active) .intro {
+    max-width: min(76vw, 1200px);
+  }
+  body:not([data-fold-axis="vertical"], [data-fold-axis="horizontal"], .airflow-active) .intro :is(.race-mode-picker, .track-note, .intro-actions) {
+    max-width: 670px;
+  }
+}
+
+@media (max-width: 1000px) and (min-height: 501px) {
+  body:not(.airflow-active) .intro #intro-title { display: block; margin: 4px 0 10px; font-size: clamp(24px, 5vw, 38px); }
+}
+
+@media (max-width: 370px), (max-height: 350px) and (orientation: landscape) {
+  .lobby-action-art { width: 18px; height: 18px; }
+  .intro :is(.garage-button, .history-button, .practice-button) { gap: 4px; }
+}
+
+/* The ready panel stays lightweight while the game scene renders behind it. */
+.lobby-race-heading {
+  position: relative; isolation: isolate; overflow: hidden; width: min(480px, 100%);
+  padding: 8px 12px; border: 1px solid #4b7183; border-radius: 8px;
+  background: linear-gradient(100deg, #0a182b, #122d41c9);
+}
+.lobby-race-heading > img {
+  display: none; position: absolute; inset: 0; width: 100%; height: 100%;
+  z-index: -1; object-fit: cover; opacity: .38; mask-image: linear-gradient(90deg, #0002, #000);
+}
+.lobby-compact .lobby-race-heading #intro-title {
+  display: block; margin: 0 0 3px; font-size: clamp(20px, 3.3vw, 40px); line-height: 1.05;
+}
+.lobby-compact .lobby-race-heading .lobby-race-distance { margin: 0; }
+.lobby-race-distance { margin: 0 0 8px; color: #d7edf8; font: 700 13px/1.25 system-ui, sans-serif; }
+.intro .race-mode-tabs button > svg { width: 18px; height: 18px; flex: none; }
+.intro .race-mode-tabs button { display: inline-flex; align-items: center; gap: 5px; }
+@media (max-width: 1000px), (max-height: 500px) {
+  .lobby-compact .race-mode-heading:has(#lobby-modes-toggle[aria-expanded="false"]) + .race-mode-tabs { display: none; }
+  .lobby-compact #mode-description { display: none; }
+  .lobby-compact .race-mode-heading:has([aria-expanded="true"]) #mode-description { display: block; }
+  .lobby-compact .race-mode-picker:has(#lobby-modes-toggle) { width: min(550px, 100%); }
+  .lobby-compact #lobby-modes-toggle { width: 100%; }
+  .lobby-compact #lobby-track-status { margin-inline-start: auto; }
+}
+@media (min-width: 1001px) and (min-height: 701px) {
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .bottomline { bottom: max(4px, var(--safe-bottom)); }
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .lobby-compact {
+    display: flex; flex-direction: column;
+    justify-content: flex-start;
+    top: calc(118px + var(--safe-top));
+    left: max(clamp(24px, 3.2vw, 64px), var(--safe-left));
+    bottom: calc(max(4px, var(--safe-bottom)) + 48px);
+    margin-bottom: 0;
+    max-height: none;
+  }
+}
+body:is([data-phase="racing"], [data-phase="countdown"]):not([data-tutorial], .airflow-active) #restart-button { display: none; }
+
+@media (min-width: 1001px) and (min-height: 701px) {
+  body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .overlay-content {
+    width: min(1100px, calc(100% - 48px)); grid-template-columns: minmax(0, 1fr) minmax(290px, .7fr);
+  }
+  body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .result-stats strong { font-size: 44px; }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .lobby-compact .lobby-race-heading { flex: none; padding-block: 4px; }
+  .lobby-compact .lobby-race-heading #intro-title { font-size: clamp(18px, 2.8vw, 26px); }
+  .lobby-compact .home-intro-topbar:has(.home-resource-strip) { position: static; }
+  .lobby-compact:has(.home-resource-strip) .race-mode-heading { padding-inline-end: 0; }
+  .lobby-compact .lobby-race-heading { margin-block-end: 4px; }
+}
+
+/* The results column owns the receipt and keeps its disclosure clear of the next action. */
+.result-rewards:not(:has(.wave3-demo-results:not([hidden]))),
+body:not([data-phase="finished"]) .result-rewards { display: none; }
+.result-rewards { min-width: 0; grid-column: 1 / -1; }
+.result-rewards > .wave3-demo-results { margin-inline: auto; width: 100%; }
+/* Keep the earned stars and score visible. Scoring criteria wrap as two readable lines. */
+body[data-phase="finished"] #result-style {
+  grid-template-columns: auto auto;
+  justify-content: center;
+  align-items: center;
+  column-gap: 10px;
+}
+#result-style small { grid-column: 1 / -1; text-wrap: pretty; }
+@media (max-height: 500px) and (orientation: landscape) {
+  .result-rewards > .wave3-demo-results { padding-inline: 4px; gap: 4px; max-height: none; }
+  .result-rewards .wave3-demo-results__heading { font-size: 10px; }
+  .result-rewards .wave3-demo-results__mark { width: 18px; height: 18px; }
+  .result-rewards .wave3-demo-results__points { font-size: 10px; }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .overlay-content:has(.result-rewards > .wave3-demo-results:not([hidden])) {
+    --result-action-width: max(246px, 41%);
+    position: relative;
+    grid-template-columns: minmax(0, 1fr) var(--result-action-width);
+  }
+  /* Anchor the receipt to the summary column throughout its reveal and exit. */
+  body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .result-rewards > .wave3-demo-results { position: static; }
+  body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .result-rewards .wave3-demo-results__details {
+    inset: 0 calc(var(--result-action-width) + 24px) auto 0;
+    max-height: 100%;
+  }
+}
+
+/* Classic's default rules require no setup on compact home screens. */
+@media (max-width: 1000px), (max-height: 500px) {
+  body[data-race-mode="classic"] .lobby-compact:not(:has([aria-expanded="true"])) #race-rules-row { display: none; }
+}
+
+
+body[data-fold-axis] #intro.lobby-compact .lobby-race-heading #intro-title { display: block; }
+
+/* Keep the existing layout outside the portrait dock. */
+.lobby-setup { display: contents; }
+
+/* Portrait keeps account controls above the scene and race setup in the bottom dock. */
+@media (max-width: 760px) and (orientation: portrait) {
+  body[data-phase="ready"]:not([data-fold-axis]) .topbar .brand > span {
+    display: flex;
+    font-size: clamp(18px, 5.15vw, 23px);
+    letter-spacing: .8px;
+    white-space: nowrap;
+  }
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .intro .home-intro-topbar {
+    position: fixed;
+    top: calc(76px + var(--safe-top));
+    left: max(12px, var(--safe-left));
+    right: max(12px, var(--safe-right));
+    gap: 4px 8px;
+    align-content: start;
+    pointer-events: none;
+  }
+  body:not([data-fold-axis]) .intro .home-intro-topbar > .route-label {
+    flex: 0 0 auto;
+    gap: 4px;
+  }
+  body:not([data-fold-axis]) .intro .home-intro-topbar > .route-label > span { display: none; }
+  body:not([data-fold-axis]) .intro .home-intro-topbar :is(button, summary) { pointer-events: auto; }
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .bottomline { bottom: var(--home-footer-bottom, var(--safe-bottom)); }
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) #intro.lobby-compact {
+    --lobby-bottom: calc(var(--safe-bottom) + 48px);
+    inset: auto max(12px, var(--safe-right)) var(--lobby-bottom) max(12px, var(--safe-left));
+    width: auto;
+    max-width: none;
+    max-height: clamp(182px, calc(36dvh - var(--lobby-bottom)), 300px);
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    mask-image: none;
+    animation: none;
+  }
+  body:not([data-fold-axis], .airflow-active) .intro .lobby-setup {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    align-items: start;
+    gap: 5px;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    padding: 4px 2px 2px;
+  }
+  body:not([data-fold-axis], .airflow-active) .intro .lobby-setup > .race-mode-picker { margin: 0; }
+  body:not([data-fold-axis], .airflow-active) .intro .lobby-setup > #race-mode-picker { padding: 0; }
+  body:not([data-fold-axis], .airflow-active) .intro #race-mode-picker .race-mode-heading { margin: 0; }
+  body:not([data-fold-axis], .airflow-active) .intro .lobby-picker-toggle { width: 100%; gap: 5px; }
+  body:not([data-fold-axis], .airflow-active) .intro .lobby-picker-toggle > strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  body:not([data-fold-axis], .airflow-active) .lobby-setup .track-note { display: none; }
+  body:not([data-fold-axis], .airflow-active) .lobby-setup .lobby-race-heading { width: 100%; padding-block: 5px; }
+  body:not([data-fold-axis], .airflow-active) .lobby-setup .lobby-race-heading #intro-title { font-size: 20px; }
+  body:not([data-fold-axis], .airflow-active) .lobby-setup .lobby-race-distance { font-size: 11px; }
+  body:not([data-fold-axis], .airflow-active) .lobby-setup :is(.showcase-camera-dock, .daily-card) { margin-block: 0; }
+  body:not([data-fold-axis], .airflow-active) .lobby-setup :is(.showcase-camera-heading, .showcase-camera-dots) { display: none; }
+  body[data-phase="ready"]:not(.airflow-active, [data-fold-axis]) .intro .intro-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0;
+    padding: 5px 2px 0;
+    gap: 4px;
+    background: linear-gradient(180deg, #0a182bf2, #091321);
+  }
+  body:not([data-fold-axis], .airflow-active) .intro .intro-primary { display: contents; }
+  .intro .intro-actions #start-button { width: 100%; min-width: 0; max-width: none; height: 46px; }
+  .intro .intro-actions :is(.garage-button, .history-button, .practice-button) {
+    min-height: 44px;
+    padding: 0 4px;
+    justify-content: center;
+    white-space: nowrap;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  body[data-phase="ready"]:not([data-fold-axis]) { --home-version-width: 64px; }
+  body[data-phase="ready"]:not([data-fold-axis]) .bottomline {
+    top: auto;
+    right: auto;
+    bottom: calc(max(4px, var(--safe-bottom)) + max(var(--browser-bar), 100% - 100dvh));
+    left: 50%;
+    translate: -50% 0;
+    width: var(--home-version-width);
+  }
+  body[data-phase="ready"]:not([data-fold-axis]) .build-version {
+    width: 100%;
+    padding-inline: 4px;
+    white-space: nowrap;
+    text-shadow: 0 1px 3px #000;
+  }
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) #intro {
+    --version-side-room: calc(50vw - var(--home-version-width) / 2 - 4px);
+    --version-panel-limit: calc((var(--version-side-room) - max(16px, var(--safe-left))) / var(--z));
+    --panel-width: min(520px, calc((100vw - 280px - var(--safe-left) - var(--safe-right)) / var(--z)), var(--version-panel-limit));
+    --rail: min(210px, calc((var(--version-side-room) - max(16px, var(--safe-right))) / var(--z)));
+  }
+}
+@media (max-width: 760px) and (max-height: 500px) and (orientation: landscape) {
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) #intro .intro-actions > :is(.garage-button, .history-button, .practice-button) {
+    flex-direction: column;
+    gap: 2px;
+    padding-inline: 4px;
+    letter-spacing: .05em;
+    line-height: 1.1;
+  }
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) #intro .intro-actions .lobby-action-art {
+    width: 16px;
+    height: 16px;
+  }
+}
+@media (min-width: 800px) and (max-height: 500px) and (orientation: landscape) {
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) #intro {
+    --panel-width: min(420px, 43vw, var(--version-panel-limit));
+  }
+}
+@media (min-width: 1200px) and (min-height: 701px) {
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) #intro { max-width: min(680px, 40vw); }
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .intro-controls { flex-wrap: wrap; }
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .intro-wordmark {
+    font-size: clamp(46px, 4.4vw, 68px);
+    margin-block-end: 10px;
+  }
+}
+
+.toolbar .home-airflow-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  min-width: 44px;
+  min-height: 44px;
+  padding-inline: 10px;
+  border: 1px solid #557a91;
+  border-radius: 7px;
+  background: #0d2234e8;
+  color: #daeff9;
+  font-size: 11px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+.toolbar .home-airflow-toggle[aria-pressed="true"] {
+  border-color: #96e3ff;
+  background: #255669;
+  color: #eaffff;
+}
+body:not([data-phase="ready"]) #home-airflow-toggle { display: none; }
+#airflow-toggle > svg, .toolbar .home-airflow-toggle > svg { width: 18px; height: 18px; flex: none; }
+
+body[data-fold-axis] #intro .lobby-race-heading { width: 100%; }
+body[data-fold-axis] #intro .race-mode-heading:has(#lobby-modes-toggle[aria-expanded="false"]) + .race-mode-tabs { display: none; }
+
+body:is([data-phase="countdown"], [data-phase="racing"]) #settings-button { display: none; }
+body[data-phase="ready"] .toolbar :is(#camera-button, #pause-button) { display: none; }

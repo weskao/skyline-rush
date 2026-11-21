@@ -1,6 +1,6 @@
 import { openGarageSection } from './helpers/garage-browser.js';
 import { ciTimeout } from './helpers/ci.js';
-import { test, expect } from './helpers/test.js';
+import { test, expect, gotoHome } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 
 test('home displays three compact resource icons with genuine demo points', async ({ page }) => {
@@ -48,7 +48,7 @@ test('home displays three compact resource icons with genuine demo points', asyn
 });
 
 for (const viewport of [{ width: 568, height: 320 }, { width: 756, height: 265 }]) {
-  test(`the Home resource menu fits alongside the mode picker at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+  test(`the Home resource menu stays above the mode picker at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
     const wallet = page.locator('#intro [data-wave3-wallet]');
@@ -57,7 +57,7 @@ for (const viewport of [{ width: 568, height: 320 }, { width: 756, height: 265 }
     await expect(resources).toBeVisible();
     const [resourceBox, modeBox] = await Promise.all([resources.boundingBox(), modes.boundingBox()]);
     expect(resourceBox.height).toBeGreaterThanOrEqual(44);
-    expect(resourceBox.x).toBeGreaterThanOrEqual(modeBox.x + modeBox.width);
+    expect(resourceBox.y + resourceBox.height).toBeLessThanOrEqual(modeBox.y);
     await expect(wallet.locator('img').first()).toBeHidden();
     await resources.click();
     await expect(wallet.locator('[data-currency="coins"] strong')).toHaveText('0');
@@ -133,7 +133,8 @@ test.describe('wallet on touch screens', () => {
   for (const viewport of [{ width: 320, height: 568 }, { width: 756, height: 265 }]) {
     test(`touch opens one card at a time and dismisses it at ${viewport.width}x${viewport.height}`, async ({ page }) => {
       await page.setViewportSize(viewport);
-      await page.goto('/');
+      // isVisible() below does not wait: before Home mounts it sees no coins and taps a summary portrait hides.
+      await gotoHome(page);
       const wallet = page.locator('#intro [data-wave3-wallet]');
       const coins = wallet.getByRole('button', { name: /Demo coins/i });
       const diamonds = wallet.getByRole('button', { name: /Demo diamonds/i });
@@ -175,7 +176,9 @@ test.describe('ultra-short landscape wallet', () => {
     await entry.tap();
     await expect(wallet.locator('[data-currency="coins"] strong')).toHaveText('0');
     await expect(wallet.locator('[data-currency="diamonds"] strong')).toHaveText('0');
-    await wallet.getByRole('button', { name: /Demo coins/i }).tap();
+    const coins = wallet.getByRole('button', { name: /Demo coins/i });
+    await expect(coins).toBeInViewport({ ratio: 1 });
+    await coins.tap();
     await expect(page.getByRole('region', { name: 'Demo coins' })).toBeVisible();
   });
 });

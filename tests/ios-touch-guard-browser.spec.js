@@ -1,3 +1,4 @@
+import { openSettingsSection, toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 
 test.use({ isMobile: true, hasTouch: true, viewport: { width: 390, height: 844 } });
@@ -17,8 +18,9 @@ test('game surfaces suppress iPhone long-press loupe without canceling UI button
   // Noninteractive HUD text is safe to cancel; the scrollable intro must retain native panning.
   expect(await touchstartCancelled(page, '#speed')).toBe(true);
   expect(await touchstartCancelled(page, '#start-button')).toBe(false);
+  expect(await touchstartCancelled(page, '#settings-button')).toBe(false);
+  await toggleSettingsSection(page, 'driving');
   expect(await touchstartCancelled(page, '#controls-button')).toBe(false);
-  await page.locator('#controls-button').tap();
   await expect(page.locator('#controls-panel')).toBeVisible();
 });
 
@@ -26,7 +28,8 @@ test('scrollable settings content keeps native touch scrolling and close button 
   await page.goto('/');
   await page.locator('#settings-button').tap();
   await expect(page.locator('#settings-panel')).toBeVisible();
-  expect(await touchstartCancelled(page, '#settings-button')).toBe(false);
-  await page.locator('#settings-button').tap();
+  await openSettingsSection(page, 'display');
+  expect(await touchstartCancelled(page, '.settings-content')).toBe(false);
+  await page.locator('#settings-close').tap();
   await expect(page.locator('#settings-panel')).toBeHidden();
 });

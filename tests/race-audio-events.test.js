@@ -1,13 +1,47 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createRace } from '../src/game.js';
+import { createRace, requestRaceReset, stepRace, RACE_TRACKS } from '../src/game.js';
+import { startRoadRecovery } from '../src/road-falls.ts';
 import { createRaceAudioEvents } from '../src/race-audio-events.ts';
 import { createPresentation } from '../src/presentation.ts';
 
 const racing = () => { const race = createRace(); race.phase = 'racing'; race.player.speed = 40; return race; };
 const cues = frame => frame.sounds.filter(sound => typeof sound === 'string');
 const impulses = frame => frame.sounds.filter(sound => typeof sound !== 'string');
+
+test('incoming attacks cue impact and final recovery once, including EMP over an active Freeze', () => {
+  const events = createRaceAudioEvents(), race = racing();
+  const frame = () => cues(events.update(race, true));
+  frame();
+  race.player.freezeUntil = 2;
+  assert.deepEqual(frame(), ['freeze-hit']);
+  assert.deepEqual(frame(), []);
+  race.player.empUntil = 1.5;
+  assert.deepEqual(frame(), ['emp-hit']);
+  race.elapsed = 1.5;
+  assert.deepEqual(frame(), [], 'the remaining Freeze is already active');
+  race.elapsed = 2;
+  assert.deepEqual(frame(), ['freeze-thaw']);
+  assert.deepEqual(frame(), []);
+  race.player.empUntil = 3.5;
+  assert.deepEqual(frame(), ['emp-hit']);
+  race.elapsed = 3.5;
+  assert.deepEqual(frame(), ['emp-clear']);
+});
+
+test('muting and pausing consume old attack cues and a fresh race clears the previous hit', () => {
+  const events = createRaceAudioEvents(), race = racing();
+  events.update(race, true);
+  race.player.empUntil = 1.5;
+  assert.deepEqual(cues(events.update(race, false)), []);
+  assert.deepEqual(cues(events.update(race, true)), []);
+  race.phase = 'paused';
+  assert.equal(events.update(race, true).silence, true);
+  race.phase = 'racing';
+  assert.deepEqual(cues(events.update(race, true)), []);
+  assert.deepEqual(cues(events.update(racing(), true)), []);
+});
 
 test('cue detection has one home: the synth engine keeps no race-transition bookkeeping', () => {
   const engine = readFileSync(new URL('../src/audio.js', import.meta.url), 'utf8');
@@ -224,7 +258,7 @@ test('Perfect Line replaces only the final ring chime and keeps other rings audi
   assert.deepEqual(cues(events.update(race, true)), []);
 });
 
-test('a missed gap gives a recovery cue once, and entering a shortcut cues once per section', () => {
+test('entering a shortcut cues once per section', () => {
   const race = racing(), events = createRaceAudioEvents();
   race.sections = [{ type:'shortcut', from: 10, to: 100 }];
   race.player.distance = 20;
@@ -235,9 +269,53 @@ test('a missed gap gives a recovery cue once, and entering a shortcut cues once 
   events.update(race, true);
   race.player.inShortcut = true;
   assert.deepEqual(cues(events.update(race, true)), []);
-  race.player.fall = { from: 20, distance: 40, time: race.elapsed };
-  assert.deepEqual(cues(events.update(race, true)), ['fall-recovery']);
-  assert.deepEqual(cues(events.update(race, true)), []);
+});
+
+for (const [kind, cue] of [['gap', 'recovery-fall'], ['reset', 'recovery-reset'], ['reseated after a rejected sweep', 'recovery-rescue']]) {
+  test(`${kind} gets its own opening, one return cue and one touchdown at the physics transitions`, () => {
+    const race = createRace(kind === 'gap' ? 'canyon' : 'coast'), events = createRaceAudioEvents();
+    race.phase = 'racing';
+    race.rivals = race.traffic = race.rings = race.pickups = [];
+    Object.assign(race.player, { distance: 250, speed: 50 });
+    const read = (enabled = true) => cues(events.update(race, enabled)).filter(name => name.startsWith('recovery-'));
+    read();
+    if (kind === 'gap') {
+      race.player.distance = RACE_TRACKS.canyon.sections.find(s => s.type === 'gap').from - .1;
+      stepRace(race, {}, 1 / 60);
+    } else if (kind === 'reset') {
+      assert.equal(requestRaceReset(race), true);
+      assert.equal(requestRaceReset(race), false);
+    } else startRoadRecovery(race.player, { distance: 200 }, 250, race.elapsed, .4, 'fall', false);
+    assert.deepEqual(read(), [cue]);
+    assert.deepEqual(read(), []);
+    const sequence = [];
+    for (let i = 0; i < 120 && race.player.recovery; i++) {
+      stepRace(race, {}, 1 / 60);
+      const effects = read();
+      if (effects.length) sequence.push([effects, Boolean(race.player.recovery?.reseated), race.player.altitude]);
+    }
+    assert.equal(sequence.length, 2);
+    assert.deepEqual(sequence[0][0], ['recovery-return']);
+    assert.equal(sequence[0][1], true);
+    assert.ok(sequence[0][2] > 0);
+    assert.deepEqual(sequence[1], [['recovery-touchdown'], false, 0]);
+    assert.deepEqual(read(), []);
+  });
+}
+
+test('recovery audio honors pause and mute and never replays cues from a discarded race', () => {
+  const race = racing(), events = createRaceAudioEvents();
+  const read = (enabled = true, current = race) => cues(events.update(current, enabled)).filter(name => name.startsWith('recovery-'));
+  read();
+  requestRaceReset(race);
+  assert.deepEqual(read(false), []);
+  race.phase = 'paused';
+  assert.equal(events.update(race, true).silence, true);
+  race.phase = 'racing';
+  assert.deepEqual(read(), []);
+  while (race.player.recovery && !race.player.recovery.reseated) { stepRace(race, {}, 1 / 60); read(false); }
+  assert.deepEqual(read(), []);
+  assert.deepEqual(read(true, racing()), []);
 });
 
 test('a gap warning plays once per gap and consumes a warning while muted', () => {

@@ -5,6 +5,7 @@ import { sampleStormlineRoad } from './courses/stormline-course-graph.ts';
 import { createStormlineChunk } from './courses/stormline-scenery.ts';
 import { SHORTCUT_HALF_WIDTH, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
 import { DECK_DEPTH } from './road-falls.ts';
+import { createRoadRunout } from './road-runout.ts';
 
 // Stormline Megacity RACE scene: the map's own streamable chunks (stormline-scenery.ts) along the raced ground
 // route, built once from the same CourseGraph frame the simulation, cars and camera use, culled like Frostbite's
@@ -49,6 +50,14 @@ export function createStormlineRaceScene(scene: THREE.Scene) {
     }
     offset += length;
   }
+  // The road runs on past FINISH for the whole view (drawing only; rules/road-runout.md).
+  const end = stormlineFrame(offset), last = graph.edges.find(e => e.id === graph.groundRoute.at(-1))!;
+  const runout = createRoadRunout({ ...end, point: [end.point.x, end.point.y, end.point.z] },
+    { width: last.width, length: VIEW_RADIUS, road: { color: 0x171d35, metalness: .28, roughness: .55 },
+      rail: 0x39d6ed, mark: 0xb45beb, bed: 0x1b2541 });
+  chunks.push({ group: runout.group, x: runout.centre.x, z: runout.centre.z, radius: VIEW_RADIUS / 2 });
+  disposers.push(() => runout.dispose());
+  group.add(runout.group);
   const materials = {
     deck: new THREE.MeshStandardMaterial({ color: '#1b2541', emissive: '#2cc9ea', emissiveIntensity: .25, metalness: .42, roughness: .5 }),
     pylon: new THREE.MeshStandardMaterial({ color: '#f4d8ff', emissive: '#d13ae1', emissiveIntensity: .9 }),

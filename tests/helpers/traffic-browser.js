@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './home-lobby.js';
 import { expect } from '@playwright/test';
 import { ciTimeout } from './ci.js';
 
@@ -13,7 +14,7 @@ export async function pausedRace(page, gameplayURL, trackId, search = '') {
   await page.goto(`${gameplayURL}${search}`);
   for (let i = 0; i < 3 && await page.locator('dialog[open]').count(); i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(400); }
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-  await page.locator(`[data-track="${trackId}"], [data-upcoming-track="${trackId}"]`).click();
+  await clickLobbyOption(page, `[data-track="${trackId}"], [data-upcoming-track="${trackId}"]`);
   await expect(page.locator('#start-button')).toBeEnabled();
   await page.locator('#start-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(30000) });

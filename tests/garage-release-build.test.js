@@ -10,6 +10,7 @@ test('production defaults to coming-soon with a safe locked UI and runtime (not 
   assert.match(result.aliases['#garage-skin-palette'], /garage-skin-palette-locked\.ts$/);
   assert.match(result.aliases['#garage-void-beams'], /garage-void-beams-locked\.js$/);
   assert.match(result.aliases['#garage-launch-flare'], /garage-launch-flare-locked\.js$/);
+  assert.match(result.aliases['#garage-drift-trail'], /garage-drift-trail-locked\.js$/);
   assert.match(result.aliases['#garage-nitro-trail'], /garage-nitro-trail-locked\.js$/);
 });
 
@@ -22,6 +23,7 @@ test('development and preview can select trial; release uses a separate strategy
     assert.match(config.aliases['#garage-skin-ui'], /GarageSkinCatalog\.vue$/);
     assert.match(config.aliases['#garage-void-beams'], /garage-void-beams\.js$/);
     assert.match(config.aliases['#garage-launch-flare'], /garage-launch-flare\.js$/);
+    assert.match(config.aliases['#garage-drift-trail'], /garage-drift-trail\.js$/);
     assert.match(config.aliases['#garage-nitro-trail'], /garage-nitro-trail\.js$/);
   }
 });
@@ -154,15 +156,38 @@ test('Wave 3 demo and race modules are build-time locked out of coming-soon bund
   assert.match(trial.aliases['#wave3-demo-ui'], /Wave3DemoEntry\.vue$/);
 });
 
-test('the public released strategy must also exclude local-only demo rewards and UI', () => {
-  const aliases = selectGarageReleaseBuild('production', 'released').aliases;
+test('coming-soon race acquisitions omit the unpublished Garage skin catalog', async () => {
+  const { fileURLToPath } = await import('node:url');
+  const { build } = await import('vite');
+  const { aliases } = selectGarageReleaseBuild('production');
+  const bundle = await build({
+    configFile: false,
+    logLevel: 'silent',
+    resolve: { alias: aliases },
+    build: {
+      write: false,
+      copyPublicDir: false,
+      lib: {
+        entry: fileURLToPath(new URL('../src/acquisition-race-reveal.ts', import.meta.url)),
+        formats: ['es'],
+      },
+    },
+  });
+  const js = bundle.flatMap(result => result.output)
+    .filter(output => output.type === 'chunk').map(chunk => chunk.code).join('\n');
+  assert.ok(js.includes('presentRaceAcquisitions'), 'the race acquisition entry should be bundled');
+  assert.ok(!js.includes('thruster-ion'), 'the locked race bundle contains the unpublished skin catalog');
+});
+
+test('released builds with the Wave 3 flag off omit its rewards and UI', () => {
+  const aliases = selectGarageReleaseBuild('production', 'released', '0').aliases;
   assert.match(aliases['#wave3-demo-race'], /wave3-demo-race-locked\.ts$/);
   assert.match(aliases['#wave3-demo-ui'], /Wave3DemoLocked\.vue$/);
 });
 
 test('trial-only live mission UI and race port cannot leak into locked releases', () => {
   for (const mode of ['coming-soon', 'released']) {
-    const aliases = selectGarageReleaseBuild('production', mode).aliases;
+    const aliases = selectGarageReleaseBuild('production', mode, '0').aliases;
     assert.match(aliases['#wave3-demo-mission-ui'], /GarageMissionBoardLocked\.vue$/);
     assert.match(aliases['#wave3-demo-race'], /wave3-demo-race-locked\.ts$/);
   }
@@ -196,4 +221,43 @@ test('production audit rejects missing public Garage artwork in locked and Pages
     assert.match(result.stderr, /public Garage artwork missing: .*trophy-gold@3x\.webp/, mode);
     assert.equal(result.status, 1, mode);
   }
+});
+
+test('the build switch is strictly opt-in: only an explicit 1 selects Firestore preview storage', () => {
+  for (const [viteMode, garageMode, flag, enabled] of [
+    ['development', 'trial', undefined, false],
+    ['development', 'released', undefined, false],
+    ['development', 'released', '1', true],
+    ['production', 'trial', undefined, false],
+    ['production', 'released', undefined, false],
+    ['production', 'trial', '1', true],
+    ['production', 'released', '1', true],
+    ['production', 'trial', '0', false],
+    ['production', 'released', '0', false],
+    ['production', 'coming-soon', undefined, false],
+  ]) {
+    const build = selectGarageReleaseBuild(viteMode, garageMode, flag);
+    assert.equal(build.wave3FirestoreEnabled, enabled, `${viteMode} ${garageMode} ${flag}`);
+    assert.match(build.aliases['#wave3-preview-store'], enabled ? /wave3-preview-firestore\.ts$/ : /wave3-preview-disabled\.ts$/);
+    if (enabled) assert.match(build.aliases['#wave3-demo-race'], /wave3-race-events\.ts$/);
+  }
+});
+
+test('invalid Wave 3 settings fail the build before Firebase preview code is bundled', () => {
+  for (const flag of ['', 'true', '01']) {
+    assert.throws(() => selectGarageReleaseBuild('production', 'released', flag), /Invalid VITE_WAVE3_FIRESTORE_PREVIEW/);
+  }
+  assert.throws(() => selectGarageReleaseBuild('production', 'coming-soon', '1'), /coming-soon/);
+});
+
+test('the bundle fence marker is unique to the Firestore preview store, not the always-on cleanup', async () => {
+  const { WAVE3_PREVIEW_STORE_MARKER } = await import('../scripts/garage-release-build.mjs');
+  assert.equal(typeof WAVE3_PREVIEW_STORE_MARKER, 'string');
+  const { readFileSync, readdirSync } = await import('node:fs');
+  const dir = new URL('../src/', import.meta.url);
+  const holders = readdirSync(dir).filter(name => /\.(ts|js|vue)$/.test(name)
+    && readFileSync(new URL(name, dir), 'utf8').includes(WAVE3_PREVIEW_STORE_MARKER));
+  assert.deepEqual(holders, ['wave3-preview-firestore.ts']);
+  const vite = readFileSync(new URL('../vite.config.js', import.meta.url), 'utf8');
+  assert.match(vite, /includes\(WAVE3_PREVIEW_STORE_MARKER\)/);
 });

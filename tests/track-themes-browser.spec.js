@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { saveArtifact } from './helpers/artifact.js';
@@ -30,7 +31,7 @@ test.describe(`themed hazards ${name}`, () => {
     await page.reload();
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
     for (const c of cases) {
-      await page.locator(`[data-track="${c.track}"]`).click();
+      await clickLobbyOption(page, `[data-track="${c.track}"]`);
       await page.locator('#start-button').click();
       await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(15_000) });
       await expect(page.locator('#countdown')).toBeHidden({ timeout: ciTimeout(10_000) });

@@ -28,8 +28,8 @@ export const stage = (page, allBoost = false) => page.evaluate(async ([range, al
     rival.boosting = allBoost || i !== 1; rival.nitroTime = !allBoost && i === 1 ? 5 : 0;
   });
   for (let f = 0; f < 3; f++) await new Promise(requestAnimationFrame);
-  return window.gameScene.scene.children.filter(o => o.userData.driveCue).map(o => {
-    const { flame, trail } = o.userData.driveCue;
-    return { flame: flame.visible, scale: flame.scale.x, opacity: flame.material.opacity, trail: trail.visible };
+  return window.gameScene.rivals.slice(0, rivals.length).map(car => {
+    const { flame, trail } = car.userData.driveCue;
+    return { flame: flame.visible, scale: flame.scale.x * car.scale.x, opacity: flame.material.opacity, trail: trail.visible };
   });
 }, [RIVAL_CUE_RANGE, allBoost]);

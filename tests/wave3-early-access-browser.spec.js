@@ -1,13 +1,15 @@
 import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
+import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
+import { clickLobbyOption } from './helpers/home-lobby.js';
 
 // Exercise the real built game using the trial artifact from pretest:browser.
 const demoKey = 'skyline-rush-wave3-demo:v1:guest';
 const modeHistoryKey = 'skyline-rush-mode-history-v1';
-const openGarage = async page => {
-  await page.goto('/');
+const openGarage = async (page, url = '/') => {
+  await page.goto(url);
   await page.locator('#garage-button').click();
   await expect(page.locator('#garage-screen')).toBeVisible();
 };
@@ -32,13 +34,87 @@ test('fresh guest can open the real Garage, missions and demo entry without sign
   await expect(page.locator('#garage-screen')).not.toContainText(/purchase confirmed|server verified/i);
 });
 
+test('real Garage gives the trial store room for desktop preview and portrait browsing', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openGarage(page);
+  const store = await openStore(page);
+  await expect(store.locator('.demo-detail-art')).toBeInViewport();
+  const firstOffer = store.locator('[data-demo-offer="thruster-ion"]');
+  await expect.poll(async () => {
+    const rail = await store.getByRole('navigation', { name: 'Filter cosmetic categories' }).boundingBox();
+    const card = await firstOffer.boundingBox();
+    const preview = await store.locator('.demo-detail-art').boundingBox();
+    return rail.x + rail.width < card.x && card.x + card.width < preview.x;
+  }).toBe(true);
+  for (const viewport of [{ width: 820, height: 1180 }, { width: 390, height: 844 }, { width: 320, height: 720 }, { width: 844, height: 390 }]) {
+    await test.step(`${viewport.width}×${viewport.height}`, async () => {
+      await page.setViewportSize(viewport);
+      await expect.poll(() => store.evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+      if (viewport.width < viewport.height) await expect(firstOffer).toBeInViewport({ ratio: 0.3 });
+      if (viewport.width === 820) await expect(store.locator('.demo-detail-art')).toBeInViewport();
+    });
+  }
+});
+
+// Its page imports /src/wave3-race-events.ts, which only the Vite dev server serves (the preview serves dist/).
+gameplayTest('store and collection stay inside one pane on a foldable display', async ({ page, gameplayURL }) => {
+  await page.removeLocatorHandler(page.locator('#acquisition-reveal[open]'));
+  await page.setViewportSize({ width: 844, height: 540 });
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'viewport', { configurable: true, value: undefined });
+    Object.defineProperty(window, 'getWindowSegments', { configurable: true, value: () => [
+      { left: 0, top: 0, width: 410, height: 540 },
+      { left: 434, top: 0, width: 410, height: 540 },
+    ] });
+  });
+  await openGarage(page, gameplayURL);
+  const store = await openStore(page);
+  await expect(page.locator('body')).toHaveAttribute('data-fold-axis', 'vertical');
+  const garage = page.locator('#garage-screen');
+  const paneEdge = () => garage.evaluate(el => el.getBoundingClientRect().right);
+  await expect.poll(paneEdge).toBeLessThanOrEqual(410);
+  await page.evaluate(async () => {
+    const { createWave3RaceEventBridge, wave3DemoExperience } = await import('/src/wave3-race-events.ts');
+    const bridge = createWave3RaceEventBridge(wave3DemoExperience, () => 'foldable-showroom-coast');
+    await bridge.finish({ phase: 'finished', trackId: 'coast', mode: 'classic', elapsed: 80, length: 5000,
+      player: { driftPayout: null, longestCombo: 0 }, result: { time: 80, success: true, position: 1 } }, false);
+  });
+  await store.locator('[data-demo-offer="thruster-ion"] .demo-item-redeem').click();
+  await store.getByRole('button', { name: 'Confirm demo redeem' }).click();
+  const reveal = page.locator('#acquisition-reveal');
+  await expect(reveal.getByRole('heading', { name: 'Ion thruster' })).toBeVisible();
+  await expect.poll(() => reveal.evaluate(el => el.getBoundingClientRect().right)).toBeLessThanOrEqual(410);
+  await reveal.getByRole('button', { name: 'Continue' }).click();
+
+  await store.getByRole('button', { name: 'Demo Collection' }).click();
+  await expect(garage.getByRole('region', { name: 'Demo Collection', exact: true })).toBeVisible();
+  await expect.poll(paneEdge).toBeLessThanOrEqual(410);
+
+  await page.setViewportSize({ width: 820, height: 960 });
+  await page.evaluate(() => {
+    Object.defineProperty(window, 'getWindowSegments', { configurable: true, value: () => [
+      { left: 0, top: 0, width: 820, height: 465 },
+      { left: 0, top: 495, width: 820, height: 465 },
+    ] });
+    window.dispatchEvent(new Event('resize'));
+  });
+  await expect(page.locator('body')).toHaveAttribute('data-fold-axis', 'horizontal');
+  await expect.poll(() => garage.evaluate(el => el.getBoundingClientRect().top)).toBeGreaterThanOrEqual(495);
+  await expect.poll(() => garage.evaluate(el => el.getBoundingClientRect().bottom)).toBeLessThanOrEqual(960);
+  await garage.locator('[data-wave3-open-store]').click();
+  const filters = store.getByRole('navigation', { name: 'Filter cosmetic categories' });
+  await expect(filters.getByRole('button', { name: 'Thrusters' })).toBeInViewport({ ratio: 1 });
+  await filters.getByRole('button', { name: 'Thrusters' }).click();
+  await expect(filters.getByRole('button', { name: 'Thrusters' })).toHaveAttribute('aria-pressed', 'true');
+});
+
 test('real Garage rejects unaffordable demo redemption and keeps collection empty offline', async ({ page }) => {
   await openGarage(page);
   const store = await openStore(page);
   await expect(store.locator('.demo-wallet strong')).toHaveText('20');
   await store.locator('[data-demo-id="thruster-ion"]').click();
-  await store.getByRole('button', { name: 'Demo redeem' }).click();
-  await expect(store.locator('.demo-message')).toContainText('Not enough demo points');
+  await expect(store.getByRole('button', { name: 'Demo redeem', exact: true })).toBeDisabled();
+  await expect(store.getByRole('button', { name: 'Demo redeem', exact: true })).toHaveAccessibleDescription(/Need 5 Demo points more/);
   await expect(store.locator('.demo-wallet strong')).toHaveText('20');
 
   await page.context().setOffline(true);
@@ -99,7 +175,7 @@ test('real Garage demo uses localized keyboard navigation and tolerates missing 
 
 test('starting actual Free Drive cannot immediately credit a demo race reward', async ({ page }) => {
   await page.goto('/');
-  await page.locator('button[data-race-mode="free"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="free"]');
   await page.locator('#start-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
   await expect.poll(() => page.evaluate(key => {
@@ -124,7 +200,7 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
     }).observe(overlay, { attributes: true, attributeFilter: ['hidden', 'data-reward-reveal'], childList: true, subtree: true });
   });
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-  await page.locator('button[data-race-mode="time"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="time"]');
   await page.locator('#start-button').click();
   await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(20000) });
   await page.keyboard.down('w');
@@ -186,8 +262,8 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
   await store.locator('[data-demo-id="nitro-trail-cyan"]').click();
   await expect(store.locator('.demo-detail')).toContainText('150 Demo coins');
   await expect(store.locator('.demo-selected-balance')).toHaveText('Available 70 Demo coins');
-  await store.getByRole('button', { name: 'Demo redeem' }).click();
-  await expect(store.locator('.demo-message')).toContainText('Not enough demo coins');
+  await expect(store.getByRole('button', { name: 'Demo redeem', exact: true })).toBeDisabled();
+  await expect(store.getByRole('button', { name: 'Demo redeem', exact: true })).toHaveAccessibleDescription(/Need 80 Demo coins more/);
   await store.locator('[data-demo-id="thruster-ion"]').click();
   await store.getByRole('button', { name: 'Demo redeem' }).click();
   await store.getByRole('button', { name: 'Confirm demo redeem' }).click();
@@ -242,7 +318,7 @@ test('real Garage cannot grant paid entitlements or stale demo claims through re
   const store = await openStore(page);
   await expect(store).toHaveAttribute('data-authority', 'local-demo');
   await store.locator('[data-demo-id="thruster-ion"]').click();
-  await store.getByRole('button', { name: 'Demo redeem' }).click();
+  await expect(store.getByRole('button', { name: 'Demo redeem', exact: true })).toBeDisabled();
   await expect(store.locator('.demo-wallet strong')).toHaveText('20');
   const before = await page.evaluate(() => Object.keys(localStorage));
   await page.reload();

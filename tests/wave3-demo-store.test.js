@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { raceTrack } from '../src/race-tracks.ts';
 import { GARAGE_SKINS, findSkin } from '../src/garage-skin-catalog.ts';
 import { demoOffer } from '../src/wave3-demo-settlement.ts';
 import { createWave3LocalDemo } from '../src/wave3-local-demo.ts';
@@ -33,12 +34,80 @@ test('demo items use existing real nondefault skin IDs, unique and never grant o
   assert.equal(findDemoItem('deleted-id'), null);
 });
 
-test('existing point offers and explicit trial coin and diamond offers have a single price', () => {
-  assert.equal(findDemoItem('thruster-ion')?.demoPrice, 25);
-  assert.equal(findDemoItem('thruster-plasma')?.demoPrice, 100);
-  assert.equal(findDemoItem('airflow-vortex')?.demoPrice, null);
-  assert.deepEqual(WAVE3_DEMO_ITEMS.filter(item => item.currency === 'coins').map(item => item.demoPrice).sort((a, b) => a - b), [150, 500, 1200]);
-  assert.deepEqual(WAVE3_DEMO_ITEMS.filter(item => item.currency === 'diamonds').map(item => item.demoPrice), [15, 25]);
+test('all trial offers fit the balance tiers, with diamond prices matching weekly rewards', () => {
+  const tiers = { points: [25, 45, 80, 100], coins: [150, 220, 260, 320, 350, 380, 420, 470, 520, 590, 650],
+    diamonds: [5, 10, 15] };
+  for (const item of WAVE3_DEMO_ITEMS) {
+    assert.ok(item.currency && tiers[item.currency].includes(item.demoPrice), item.id);
+  }
+  for (const [id, currency, cost] of [
+    ['thruster-ion', 'points', 25], ['thruster-plasma', 'points', 100],
+    ['nitro-trail-cyan', 'coins', 150], ['nitro-trail-gold', 'coins', 650],
+    ['launch-flare-magenta', 'diamonds', 5], ['nitro-trail-purple', 'diamonds', 10],
+    ['thruster-void', 'diamonds', 15],
+  ]) assert.deepEqual(demoOffer(id), { currency, cost });
+});
+
+function finishRace(port, index, now, mode = 'classic', trackId = 'coast') {
+  const track = raceTrack(trackId);
+  assert.ok(track);
+  const demoRace = { legs: [{ trackId, distance: track.length }],
+    ...(mode === 'time' ? { rivalCount: 0 } : { rivalCount: 7, difficulty: 'easy', position: 8 }) };
+  assert.equal(port.settleCompletion({ ...race('guest'), mode, trackId, occurredAt: now,
+    completionId: 'balance-race-' + index, demoRace }).status, 'completed');
+}
+
+test('last-place Coast finishes unlock an entry cosmetic quickly and the coin flagship within 20 races', () => {
+  const now = 1700000000000;
+  const port = createWave3LocalDemo({ now: () => now });
+  finishRace(port, 1, now);
+  assert.equal(port.claimMission('mission-race:daily').status, 'completed');
+  assert.equal(demoRedemptionState('thruster-ion', port.getSnapshot()), 'ready');
+  finishRace(port, 2, now);
+  assert.equal(demoRedemptionState('nitro-trail-cyan', port.getSnapshot()), 'insufficient-demo-coins');
+  finishRace(port, 3, now);
+  assert.equal(port.redeemPreview('nitro-trail-cyan').status, 'completed');
+  for (let index = 4; index <= 5; index++) finishRace(port, index, now);
+  assert.equal(port.redeemPreview('thruster-plasma').status, 'completed');
+
+  const saving = createWave3LocalDemo({ now: () => now });
+  for (let index = 1; index <= 19; index++) finishRace(saving, index, now);
+  assert.equal(saving.claimMission('mission-race:daily').status, 'completed');
+  assert.equal(demoRedemptionState('nitro-trail-gold', saving.getSnapshot()), 'insufficient-demo-coins');
+  finishRace(saving, 20, now);
+  assert.equal(saving.redeemPreview('nitro-trail-gold').status, 'completed');
+});
+
+test('five distinct tracks reward variety and open a mid-tier coin offer and a weekly diamond offer', () => {
+  const now = 1700000000000;
+  const port = createWave3LocalDemo({ now: () => now });
+  for (const [index, trackId] of ['coast', 'neon', 'canyon', 'taipei', 'alpine'].entries()) {
+    finishRace(port, index + 1, now, 'classic', trackId);
+    if (index === 3) {
+      finishRace(port, 0, now, 'time');
+      assert.equal(port.claimMission('mission-race:weekly').deltaDemoDiamonds, 0);
+    }
+  }
+  assert.equal(port.claimMission('mission-race:daily').status, 'completed');
+  assert.equal(port.getSnapshot().demoEconomy.coins, 458);
+  assert.equal(port.redeemPreview('airflow-slipstream').status, 'completed');
+  assert.equal(port.claimMission('mission-race:weekly').deltaDemoDiamonds, 5);
+  assert.equal(demoRedemptionState('thruster-void', port.getSnapshot()), 'insufficient-demo-diamonds');
+  assert.equal(port.redeemPreview('launch-flare-magenta').status, 'completed');
+});
+
+test('a newly priced drift trail uses only its listed currency and can be equipped', () => {
+  const port = createWave3LocalDemo();
+  for (let index = 0; index < 7; index++) {
+    port.settleCompletion({ ...race('guest'), completionId: 'drift-store-race-' + index });
+  }
+  assert.equal(port.getSnapshot().demoEconomy.coins, 310);
+  const reward = port.redeemPreview('drift-trail-flame');
+  assert.equal(reward.status, 'completed');
+  assert.deepEqual([reward.deltaDemoPoints, reward.deltaDemoCoins, reward.deltaDemoDiamonds], [0, -260, 0]);
+  assert.equal(port.equipPreview('drift-trail-flame').status, 'completed');
+  assert.equal(port.redeemPreview('drift-trail-flame').status, 'duplicate');
+  assert.equal(port.getSnapshot().demoEconomy.coins, 50);
 });
 
 test('existing six store illustrations are for presentation, never purchasable SKUs', () => {
@@ -48,11 +117,11 @@ test('existing six store illustrations are for presentation, never purchasable S
   assert.ok(WAVE3_DEMO_STORE_ART.every(id => findDemoItem(id) === null));
 });
 
-test('guest sees distinct locked, preview-only, trial and demo-unlocked states', () => {
+test('guest sees distinct locked, trial and demo-unlocked states', () => {
   const port = createWave3LocalDemo();
   const initial = port.getSnapshot();
   assert.equal(demoItemStatus('thruster-ion', initial), 'locked');
-  assert.equal(demoItemStatus('airflow-vortex', initial), 'preview-only');
+  assert.equal(demoItemStatus('airflow-vortex', initial), 'locked');
   assert.equal(demoItemStatus('airflow-vortex', initial, { state: 'trial', canEquip: true, expiresAt: 2_000 }, 1_000), 'trial');
   assert.equal(demoItemStatus('not-a-skin', initial), 'locked');
   port.settleCompletion(race('guest'));
@@ -62,9 +131,9 @@ test('guest sees distinct locked, preview-only, trial and demo-unlocked states',
 
 test('expired/disabled trial cannot be equipped or shown as active', () => {
   const snapshot = createWave3LocalDemo().getSnapshot();
-  assert.equal(demoItemStatus('airflow-vortex', snapshot, { state: 'trial', canEquip: true, expiresAt: 2_000 }, 2_000), 'preview-only');
+  assert.equal(demoItemStatus('airflow-vortex', snapshot, { state: 'trial', canEquip: true, expiresAt: 2_000 }, 2_000), 'locked');
   assert.equal(demoItemStatus('thruster-ion', snapshot, { state: 'trial', canEquip: false }, 1_000), 'locked');
-  assert.equal(demoItemStatus('airflow-vortex', snapshot, { state: 'locked', canEquip: false }, 1_000), 'preview-only');
+  assert.equal(demoItemStatus('airflow-vortex', snapshot, { state: 'locked', canEquip: false }, 1_000), 'locked');
   assert.equal(canEquipDemoPreview('airflow-vortex', snapshot), false, 'temporary trial is not a demo entitlement');
 });
 
@@ -73,7 +142,7 @@ test('insufficient balance, unsupported and duplicate redemption leave the port 
   const before = port.getSnapshot();
   assert.equal(demoRedemptionState('thruster-ion', before), 'insufficient-demo-points');
   assert.equal(demoRedemptionState('thruster-plasma', before), 'insufficient-demo-points');
-  assert.equal(demoRedemptionState('airflow-vortex', before), 'preview-only');
+  assert.equal(demoRedemptionState('airflow-vortex', before), 'insufficient-demo-coins');
   assert.equal(demoRedemptionState('__proto__', before), 'invalid');
   assert.equal(port.redeemPreview('thruster-ion').status, 'insufficient-demo-points');
   assert.equal(port.getSnapshot().demoPoints, before.demoPoints);
@@ -129,8 +198,7 @@ test('offline guest can browse without any browser storage or network APIs', () 
       id: item.id, name: item.name.en, status: demoItemStatus(item.id, port.getSnapshot()),
     }));
     assert.ok(items.length >= 10);
-    assert.ok(items.some(item => item.status === 'preview-only'));
-    assert.ok(items.some(item => item.status === 'locked'));
+    assert.ok(items.every(item => item.status === 'locked'));
     assert.equal(port.getSnapshot().mode, 'local-demo');
   } finally { globalThis.fetch = previousFetch; }
 });
@@ -142,7 +210,7 @@ test('store/collection stay presentation-only and controls are accessible', () =
     assert.match(source, /role="status"/);
     assert.match(source, /:disabled=/);
     assert.match(source, /@click=/);
-    assert.match(source, /<style scoped>/);
+    assert.match(source, /<style scoped(?:\s|>)/);
     assert.doesNotMatch(source, /\b(?:checkout|purchase|payment|receipt|firebase|localStorage|sessionStorage)\s*\(/i);
   }
   const store = readFileSync(new URL('../src/Wave3DemoStore.vue', import.meta.url), 'utf8');

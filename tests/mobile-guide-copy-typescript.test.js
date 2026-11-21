@@ -9,5 +9,6 @@ test('mobile guide copy is a strictly typed UI catalog with bilingual key parity
   for (const locale of ['en', 'zh-TW']) {
     assert.match(MOBILE_GUIDE_COPY[locale]['guide.mobile.slide.body'], /.+/);
     assert.match(MOBILE_GUIDE_COPY[locale]['guide.mobile.nitro.body'], /.+/);
+    assert.match(MOBILE_GUIDE_COPY[locale]['guide.mobile.reset.body'], locale === 'en' ? /safe road/i : /安全路段/);
   }
 });

@@ -210,6 +210,43 @@ def build_guard_rail(name, mat):
     return mb.build(name, [mat], smooth=False, colors=False)
 
 
+def _tube(mb, path, radii, sides, tile=0.8):
+    """Round tube with one ring per path point; the steel tiles once around and every `tile` m along."""
+    loops, v = [], [0.0]
+    for i, p in enumerate(path):
+        t = (path[min(i + 1, len(path) - 1)] - path[max(i - 1, 0)]).normalized()
+        loops.append(_ring(mb, p, t, radii[i], sides))
+        if i:
+            v.append(v[-1] + (p - path[i - 1]).length / tile)
+    for i in range(len(path) - 1):
+        for j in range(sides):
+            k = (j + 1) % sides
+            mb.face((loops[i][j], loops[i][k], loops[i + 1][k], loops[i + 1][j]),
+                    ((j / sides, v[i]), ((j + 1) / sides, v[i]), ((j + 1) / sides, v[i + 1]), (j / sides, v[i + 1])))
+
+
+# Street light: a 12.25 m tapered column outside the curb, a swept arm and a luminaire housing 3.3 m toward the road.
+# The light itself stays world.js's emissive lamp head (0.85 x 0.4 m, 12.77-12.83 m up): the housing sits on it.
+LAMP_H, LAMP_REACH, LAMP_RISE, LAMP_HEAD = 12.2, 2.85, 0.7, 3.3
+
+
+def build_lamp_post(name, mat):
+    mb = MeshBuilder()
+    _tube(mb, [Vector((0, 0, 0)), Vector((0, 0, LAMP_H + 0.05))], [0.11, 0.07], 8)
+    # A quarter ellipse: leaves the column upward, arrives level at the housing. Its own tube, so the ring frame
+    # (side = tangent x up) never flips against the vertical column's.
+    arc = [math.pi / 2 * i / 8 for i in range(9)]
+    _tube(mb, [Vector((0, -LAMP_REACH * (1 - math.cos(a)), LAMP_H + LAMP_RISE * math.sin(a))) for a in arc],
+          [0.055 - 0.01 * i / 8 for i in range(9)], 6)
+    round_faces = len(mb.faces)
+    _box(mb, (-0.24, -LAMP_HEAD - 0.48, 12.835), (0.24, -LAMP_HEAD + 0.48, 12.97))   # housing over the lamp head
+    _box(mb, (-0.2, -0.2, 0), (0.2, 0.2, 0.04))                                      # base plate
+    ob = mb.build(name, [mat], smooth=True, colors=False)
+    for poly in list(ob.data.polygons)[round_faces:]:
+        poly.use_smooth = False
+    return ob
+
+
 def make_normals_consistent(ob):
     """Outward winding for the closed parts (trunk, rail section, posts, blocks); leaflets are double-sided."""
     for o in bpy.context.scene.objects:

@@ -1,0 +1,142 @@
+{
+ "licence": "CC0-1.0",
+ "site": "https://polyhaven.com",
+ "sets": [
+  {
+   "id": "concrete_panels",
+   "use": "tower shell and concrete (panel joints)",
+   "title": "Concrete Panels",
+   "authors": [
+    "Amal Kumar"
+   ],
+   "metres": 8.0,
+   "url": "https://polyhaven.com/a/concrete_panels",
+   "licence": "CC0-1.0",
+   "files": [
+    {
+     "map": "Diffuse",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_panels/concrete_panels_diff_1k.jpg",
+     "path": "concrete_panels/concrete_panels_diff_1k.jpg",
+     "bytes": 702619,
+     "sha256": "f7f9d5102b2daa199b42cae7d67d0b7a2977d98d80f45c302f93454224ebd140"
+    },
+    {
+     "map": "nor_gl",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_panels/concrete_panels_nor_gl_1k.jpg",
+     "path": "concrete_panels/concrete_panels_nor_gl_1k.jpg",
+     "bytes": 854539,
+     "sha256": "c971054512ff5e5b7c98db866d6018160161071a730bdfee11cada2d3d5fbcb5"
+    },
+    {
+     "map": "arm",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_panels/concrete_panels_arm_1k.jpg",
+     "path": "concrete_panels/concrete_panels_arm_1k.jpg",
+     "bytes": 389756,
+     "sha256": "84f2a0dbf99628526338dee313f4eedf6ecb534e95537c9d9a7cda0085b241c5"
+    }
+   ]
+  },
+  {
+   "id": "blue_metal_plate",
+   "use": "painted metal plate: struts, platforms, station, decks (hue removed, tinted)",
+   "title": "Blue Metal Plate",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "metres": 2.5,
+   "url": "https://polyhaven.com/a/blue_metal_plate",
+   "licence": "CC0-1.0",
+   "files": [
+    {
+     "map": "Diffuse",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/blue_metal_plate/blue_metal_plate_diff_1k.jpg",
+     "path": "blue_metal_plate/blue_metal_plate_diff_1k.jpg",
+     "bytes": 395923,
+     "sha256": "a0162bffce47d4a35613a12af22571b28c18412dc5805cbb69eac343554ef750"
+    },
+    {
+     "map": "nor_gl",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/blue_metal_plate/blue_metal_plate_nor_gl_1k.jpg",
+     "path": "blue_metal_plate/blue_metal_plate_nor_gl_1k.jpg",
+     "bytes": 238025,
+     "sha256": "970f0273c9e2e3b4fc8338bfd58a28c413b70ac4d1734d9dc8a136724bde56e6"
+    },
+    {
+     "map": "arm",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/blue_metal_plate/blue_metal_plate_arm_1k.jpg",
+     "path": "blue_metal_plate/blue_metal_plate_arm_1k.jpg",
+     "bytes": 419910,
+     "sha256": "9321b539fe9cf0136ea04c3405b95ae82383f31c258b9c0e37ff8a1e577b637f"
+    }
+   ]
+  },
+  {
+   "id": "snow_field_aerial",
+   "use": "snow of the peak",
+   "title": "Snow Field Aerial",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "metres": 80.0,
+   "url": "https://polyhaven.com/a/snow_field_aerial",
+   "licence": "CC0-1.0",
+   "files": [
+    {
+     "map": "Diffuse",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/snow_field_aerial/snow_field_aerial_col_1k.jpg",
+     "path": "snow_field_aerial/snow_field_aerial_col_1k.jpg",
+     "bytes": 754873,
+     "sha256": "902e1fef8f1bcc2f158fbb118239e29159978fd7b8e241d2d0f404b8dbecf718"
+    },
+    {
+     "map": "nor_gl",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/snow_field_aerial/snow_field_aerial_nor_gl_1k.jpg",
+     "path": "snow_field_aerial/snow_field_aerial_nor_gl_1k.jpg",
+     "bytes": 640692,
+     "sha256": "2037817e0166673e68039c4dd2c56fa014d6999e1d6d492e2e3e7e3cfec3862b"
+    },
+    {
+     "map": "arm",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/snow_field_aerial/snow_field_aerial_arm_1k.jpg",
+     "path": "snow_field_aerial/snow_field_aerial_arm_1k.jpg",
+     "bytes": 260092,
+     "sha256": "4a6c04f8ac1f00c961cd7876b485fea5a30f1732c8fd727f48bb81e59222aaaf"
+    }
+   ]
+  },
+  {
+   "id": "aerial_rocks_02",
+   "use": "rock of the peak",
+   "title": "Aerial Rocks 02",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "metres": 50.0,
+   "url": "https://polyhaven.com/a/aerial_rocks_02",
+   "licence": "CC0-1.0",
+   "files": [
+    {
+     "map": "Diffuse",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/aerial_rocks_02/aerial_rocks_02_diff_1k.jpg",
+     "path": "aerial_rocks_02/aerial_rocks_02_diff_1k.jpg",
+     "bytes": 785923,
+     "sha256": "708373b2af7fd07ac8de1500556006aaf904c41a99985a849cacc78874f38eac"
+    },
+    {
+     "map": "nor_gl",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/aerial_rocks_02/aerial_rocks_02_nor_gl_1k.jpg",
+     "path": "aerial_rocks_02/aerial_rocks_02_nor_gl_1k.jpg",
+     "bytes": 1177932,
+     "sha256": "6df5263ba6c30e9343ee324d87078b926024d710b0b349025083600369df8d25"
+    },
+    {
+     "map": "arm",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/aerial_rocks_02/aerial_rocks_02_arm_1k.jpg",
+     "path": "aerial_rocks_02/aerial_rocks_02_arm_1k.jpg",
+     "bytes": 211113,
+     "sha256": "de3ffa2b107d3b9144979a1f683028c74ec86823b2b8eefe16bf5bb9a655ad0c"
+    }
+   ]
+  }
+ ]
+}

@@ -10,12 +10,12 @@ const drift = time => ({ time, dir: 1, nitro: 0, grace: 0 });
 const quads = marks => marks.mesh.geometry.drawRange.count / 6;
 
 // Drives the car `metres` down -z (scene space) in 0.25 m frames while the world origin follows it, as world.js does.
-function drive(marks, car, origin, metres, state, z = { at: 0 }) {
+function drive(marks, car, origin, metres, state, z = { at: 0 }, quality = 'high') {
   for (let i = 0; i < metres * 4; i++) {
     z.at -= 0.25;
     origin.z = z.at; car.position.z = 0; // floating origin: the car stays at the scene origin
     car.updateMatrixWorld(true);
-    marks.update(state, origin);
+    marks.update(state, origin, 0, false, quality);
   }
   return z;
 }
@@ -116,4 +116,191 @@ test('marks lie on the road under a rolled car: projected onto the ground-shadow
   drive(marks, car, origin, 6, drift(1));
   const ys = absolute(marks, origin).map(v => v.y);
   assert.ok(ys.length > 0 && ys.every(y => Math.abs(y - 0.025) < 1e-3), `all at 0.025, got ${Math.min(...ys)}..${Math.max(...ys)}`);
+});
+
+
+test('an equipped drift trail adds a bounded, raised effect to both tyres and leaves the original rubber behind', () => {
+  const scene = new Scene(), car = makeCar(CAR_STYLES.roadster), origin = new Vector3();
+  const marks = createSkidMarks(scene, car);
+  assert.equal(scene.getObjectByName('Drift trail')?.visible, false, 'the classic skin has no decorative overlay');
+  marks.setSkin('drift-trail-flame');
+  const z = drive(marks, car, origin, 12, drift(1));
+  const effect = scene.getObjectByName('Drift trail');
+  assert.ok(effect.visible && effect.geometry.drawRange.count > 0);
+  const { position } = effect.geometry.attributes;
+  assert.ok(Array.from(position.array).some((v, i) => i % 3 === 1 && v > 0.16), 'ribbon rises above the rubber');
+  assert.ok(position.getX(0) < 0 && position.getX(6) > 0, 'the same layer draws both rear tyres');
+  const rubber = quads(marks);
+  marks.update(null, origin, 0);
+  assert.ok(effect.visible, 'pause does not age the trail');
+  marks.update(null, origin, 2.5);
+  assert.equal(effect.visible, false, 'the decorative effect expires');
+  assert.equal(quads(marks), rubber, 'original tyre marks persist');
+  drive(marks, car, origin, 5, drift(1), z);
+  marks.reset();
+  assert.equal(effect.visible, false, 'reset drops the prior run');
+});
+
+test('race effects render only the equipped style and honour comfort mode, airborne state and global VFX visibility', t => {
+  globalThis.devicePixelRatio = 1;
+  t.after(() => { delete globalThis.devicePixelRatio; });
+  const scene = new Scene(), car = makeCar(CAR_STYLES.roadster), race = createRace();
+  scene.add(car);
+  const effects = createEffects(scene, () => 0, { player: car });
+  assert.equal(typeof effects.setDriftTrail, 'function');
+  const trail = scene.getObjectByName('Drift trail');
+  race.phase = 'racing'; race.pickups = []; race.rings = [];
+  race.player.speed = 40; race.player.drift = drift(1);
+  const run = (reducedMotion, options = {}) => {
+    for (let i = 0; i < 24; i++) {
+      race.player.distance += 0.75;
+      effects.update(race, 1 / 60, 0, false, reducedMotion, [car], options);
+    }
+  };
+  run(false);
+  assert.equal(trail.visible, false, 'default remains rubber only');
+  for (const [index, name] of ['flame', 'rainbow', 'ice', 'arc', 'stardust'].entries()) {
+    effects.setDriftTrail(`drift-trail-${name}`);
+    run(true, { quality: 'low' });
+    assert.ok(trail.visible);
+    assert.equal(trail.material.uniforms.style.value, index + 1);
+    assert.equal(trail.material.uniforms.motion.value, 0);
+    assert.equal(trail.material.uniforms.detail.value, 0);
+  }
+  effects.reset();
+  race.player.altitude = 1;
+  run(false);
+  assert.equal(trail.visible, false, 'no emissions above the road');
+  race.player.altitude = 0;
+  run(false);
+  assert.ok(trail.visible);
+  run(false, { enabled: false });
+  assert.equal(trail.visible, false, 'global VFX switch hides the overlay');
+  effects.setDriftTrail('nitro-trail-cyan');
+  run(false);
+  assert.equal(trail.visible, false, 'other categories cannot replace drift');
+});
+
+test('each decorative skid adds distance-spaced, world-anchored detail from both tyres', () => {
+  const scene = new Scene(), car = makeCar(CAR_STYLES.roadster), origin = new Vector3();
+  const marks = createSkidMarks(scene, car);
+  const accents = scene.getObjectByName('Drift trail accents');
+  assert.ok(accents?.geometry.isInstancedBufferGeometry, 'all secondary detail has one bounded draw call');
+  drive(marks, car, origin, 8, drift(1));
+  assert.equal(accents.visible, false, 'no emission on classic rubber');
+
+  for (const [index, name] of ['flame', 'rainbow', 'ice', 'arc', 'stardust'].entries()) {
+    marks.setSkin(`drift-trail-${name}`);
+    marks.reset();
+    drive(marks, car, origin, 18, drift(1));
+    assert.equal(accents.material.uniforms.style.value, index + 1);
+    assert.ok(accents.geometry.instanceCount >= 12 && accents.geometry.instanceCount <= 36);
+    const data = accents.geometry.getAttribute('contact');
+    const centres = Array.from({ length: accents.geometry.instanceCount }, (_, i) => data.getX(i));
+    assert.ok(centres.some(x => x < -.8) && centres.some(x => x > .8));
+    assert.ok(accents.position.equals(marks.mesh.position), 'accent positions use the same floating-origin shift');
+    const before = accents.material.uniforms.time.value;
+    marks.update(null, origin, 0);
+    assert.equal(accents.material.uniforms.time.value, before);
+    marks.update(null, origin, 2.5);
+    assert.equal(accents.visible, false);
+    assert.equal(accents.geometry.instanceCount, 0);
+  }
+});
+
+test('high-speed touchdown sampling preserves tracks across slow frames without bridging a teleport', () => {
+  const scene = new Scene(), car = makeCar(CAR_STYLES.roadster), origin = new Vector3();
+  const marks = createSkidMarks(scene, car);
+  marks.setSkin('drift-trail-flame');
+  marks.update(drift(1), origin, 1 / 20);
+  origin.z -= 5;
+  marks.update(drift(1), origin, 1 / 20);
+  assert.equal(quads(marks), 2, 'a 5 m frame at 100 m/s adds one segment per tyre');
+  origin.z -= 15;
+  marks.update(drift(1), origin, 1 / 20);
+  assert.equal(quads(marks), 2, 'a discontinuity ends the trail');
+});
+
+test('accent pool stays bounded and is cleared for low quality or reduced motion', () => {
+  const scene = new Scene(), car = makeCar(CAR_STYLES.roadster), origin = new Vector3();
+  const marks = createSkidMarks(scene, car);
+  marks.setSkin('drift-trail-stardust');
+  const accents = scene.getObjectByName('Drift trail accents');
+  assert.ok(accents);
+  drive(marks, car, origin, 420, drift(1), undefined, 'ultra');
+  assert.equal(accents.geometry.instanceCount, 256);
+  marks.update(drift(1), origin, 1 / 60, false, 'low');
+  assert.equal(accents.geometry.instanceCount, 0);
+  assert.equal(accents.visible, false);
+  origin.z -= .9;
+  marks.update(drift(1), origin, 1 / 60, true);
+  assert.equal(accents.visible, false);
+  assert.equal(scene.getObjectByName('Drift trail').visible, true, 'the restrained ribbon still draws');
+  marks.dispose();
+  assert.equal(scene.getObjectByName('Drift trail accents'), undefined);
+});
+
+test('flames and ice use depth-bearing geometry in the shared accent pool', () => {
+  const scene = new Scene(), car = makeCar(CAR_STYLES.roadster), origin = new Vector3();
+  const marks = createSkidMarks(scene, car);
+  const { geometry, material } = scene.getObjectByName('Drift trail accents');
+  for (const skin of ['flame', 'ice']) {
+    marks.setSkin(`drift-trail-${skin}`);
+    drive(marks, car, origin, 8, drift(1));
+    const { start, count } = geometry.drawRange;
+    assert.ok(Number.isFinite(count) && count >= 12, 'several faces draw in 3D');
+    const depths = Array.from({ length: count }, (_, i) => geometry.attributes.position.getZ(geometry.index.getX(start + i)));
+    assert.ok(Math.min(...depths) < -.3 && Math.max(...depths) > .3, `${skin} has visible front and back depth`);
+    assert.equal(material.forceSinglePass, true);
+  }
+  marks.setSkin('drift-trail-rainbow');
+  assert.equal(geometry.drawRange.count, 6, 'spectral flakes still use the budgeted planar shape');
+});
+
+test('the installed drift effect honors all four live quality tiers and clears the old particle pool on downgrade', () => {
+  const scene = new Scene(), car = makeCar(CAR_STYLES.roadster), origin = new Vector3();
+  const marks = createSkidMarks(scene, car);
+  marks.setSkin('drift-trail-flame');
+  const accents = scene.getObjectByName('Drift trail accents');
+  const ribbon = scene.getObjectByName('Drift trail');
+  const counts = [];
+  for (const quality of ['low', 'medium', 'high', 'ultra']) {
+    marks.reset();
+    for (let i = 0; i < 35; i++) {
+      origin.z -= 1.2;
+      marks.update(drift(1), origin, 1 / 60, false, quality);
+    }
+    counts.push(accents.geometry.instanceCount);
+    assert.equal(ribbon.visible, true);
+  }
+  assert.equal(counts[0], 0);
+  assert.ok(counts[1] > 0 && counts[2] > counts[1] && counts[3] > counts[2], counts.join(', '));
+  const particles = accents.geometry.getAttribute('birthSeedPower');
+  assert.ok(Array.from({ length: counts[3] }, (_, i) => particles.getW(i)).includes(1),
+    'Ultra emits independently aged fine particles');
+  const geometry = accents.geometry, material = accents.material;
+  marks.update(null, origin, 0, false, 'medium');
+  assert.equal(accents.geometry.instanceCount, 0, 'stale Ultra particles disappear immediately');
+  assert.equal(accents.geometry, geometry);
+  assert.equal(accents.material, material);
+  marks.update(null, origin, 0, true, 'ultra');
+  assert.equal(ribbon.material.uniforms.motion.value, 0);
+  assert.equal(accents.visible, false);
+});
+
+test('particle placements follow distance with short or long valid road samples', () => {
+  function contacts(step) {
+    const scene = new Scene(), car = makeCar(CAR_STYLES.roadster), origin = new Vector3();
+    const marks = createSkidMarks(scene, car);
+    marks.setSkin('drift-trail-ice');
+    for (let i = 0; i <= Math.round(24 / step); i++) {
+      origin.z = -i * step;
+      marks.update(drift(1), origin, step / 96, false, 'high');
+    }
+    const { geometry } = scene.getObjectByName('Drift trail accents');
+    return Array.from({ length: geometry.instanceCount }, (_, i) =>
+      Number(geometry.attributes.contact.getZ(i).toFixed(2))).sort((a, b) => a - b);
+  }
+  assert.deepEqual(contacts(.8), contacts(4.8));
+  assert.ok(contacts(.8).length > 20);
 });

@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test, landed } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
@@ -51,7 +52,7 @@ test(`${LABEL} ${VIEW}: renderer baseline across Garage and all ten tracks`, asy
 
   for (const track of TRACKS) {
     await open();
-    await page.locator(`[data-track="${track}"]`).click();
+    await clickLobbyOption(page, `[data-track="${track}"]`);
     await page.locator('#start-button').click();
     await page.waitForFunction(() => document.body.dataset.phase === 'racing', null, { timeout: ciTimeout(30000) });
     await page.keyboard.down('KeyW');

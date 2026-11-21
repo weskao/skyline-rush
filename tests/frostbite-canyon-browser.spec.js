@@ -1,3 +1,4 @@
+import { toggleAirflowPreview } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
 import { mkdirSync } from 'node:fs';
@@ -89,7 +90,7 @@ test('Reduced Motion holds the Frostbite showroom still', async ({ page }) => {
 // AIRFLOW on rests the car on a real road: P02 re-anchors from the flight edge onto the raced ice-bridge deck.
 for (const viewport of VIEWPORTS) test(`P02 with AIRFLOW on stays live with the car on the bridge deck at ${viewport.width}x${viewport.height}`, async ({ page }) => {
   await openPreview(page, 'p02', viewport);
-  await page.locator('#airflow-toggle').click(); // a real click on the home tool row
+  await toggleAirflowPreview(page); // a real click on the home tool row
   await expect(page.locator('#airflow-toggle')).toHaveAttribute('aria-pressed', 'true');
   await page.waitForTimeout(1500);
   await expect(page.locator('#start-button')).toBeDisabled();

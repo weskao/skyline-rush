@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import { test, expect } from './helpers/test.js';
+import { ciTimeout } from './helpers/ci.js';
 import { recentReleases, UPCOMING } from '../src/release-notes.ts';
 
 const { version } = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
@@ -236,3 +237,29 @@ test('scrolled notes slide under the dialog top edge, never over its gradient ba
   });
   expect(hit).toBe(true);
 });
+
+// A forward-filling entry animation keeps every card on its own GPU layer for as long as the notes are open; scrolling
+// them under the sticky bar and footer then re-layers the dialog each frame, which phones show as flicker.
+test('release cards drop their entry animation once it ends, so scrolling the notes never flickers', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.locator('#whats-new-open').click();
+  const dialog = page.locator('#whats-new-screen');
+  await expect(dialog.locator('.release-entry')).not.toHaveCount(0);
+  await expect.poll(() => dialog.evaluate(el => [...el.querySelectorAll('.release-entry')]
+    .filter(card => card.getAnimations().length || getComputedStyle(card).transform !== 'none').length), { timeout: ciTimeout(5000) }).toBe(0);
+});
+
+// Landscape screens show the desktop recording of Freeze and EMP, portrait phones the mobile one.
+for (const [width, height, shape] of [[1440, 900, 'desktop'], [844, 390, 'desktop'], [390, 844, 'mobile']]) {
+  test(`Freeze and EMP announcement shows its ${shape} clip at ${width}x${height}`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await page.locator('#whats-new-open').click();
+    const entry = page.locator('.release-entry').filter({ hasText: 'Rivals fight back with Freeze and EMP' });
+    const poster = entry.locator('button.release-play img');
+    await poster.scrollIntoViewIfNeeded();
+    await expect.poll(() => poster.evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
+    await expect(poster).toHaveAttribute('src', new RegExp(`rival-items\\.${shape}\\.en\\.jpg$`));
+  });
+}

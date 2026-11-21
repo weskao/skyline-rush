@@ -102,7 +102,7 @@ export function checkReleaseNotes(raw, { notes = RELEASE_NOTES, reviews = loadRe
           problems.push(`${release.version} ${item.id}: missing ${locale} title or description`);
         }
       }
-      for (const image of [release.image, ...(release.highlights ?? []).map(item => item.image)].filter(Boolean)) {
+      for (const image of [release.image, ...(release.highlights ?? []).flatMap(item => [item.image, ...Object.values(item.responsiveImages ?? {})])].filter(Boolean)) {
         const file = releaseImage(image, locale);
         if (!file || !fs.existsSync(new URL(`../public/${file}`, import.meta.url))) {
           problems.push(`${release.version}: ${locale} image ${JSON.stringify(image[locale] ?? image)} is not a file in public/`);

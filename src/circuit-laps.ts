@@ -1,3 +1,4 @@
+import { parkFinishedRival } from './finished-rival.js';
 import { CIRCUIT_LENGTH } from './circuit-track.ts';
 
 export interface LapTime { time: number; splits: number[] }
@@ -51,18 +52,34 @@ export function stepCircuitDriver(state: CircuitDriver, car: Car, laps: number, 
   state.previousAltitude = car.altitude;
 }
 interface CircuitRace {
-  circuit?: CircuitState | null; elapsed: number; length: number;
+  circuit?: CircuitState | null; elapsed: number;
   player: Car; rivals: (Car & { name: string })[];
 }
 export function stepCircuit(race: CircuitRace, dt: number): void {
   const circuit = race.circuit;
+  if (circuit) stepCircuitDriver(circuit.player, race.player, circuit.laps, race.elapsed, dt);
+}
+
+/** A recovery is a stationary cut. Preserve earned splits and anchor the next measured sweep. */
+export function reanchorCircuitPlayer(race: CircuitRace): void {
+  const driver = race.circuit?.player;
+  if (!driver) return;
+  driver.previousDistance = race.player.distance;
+  driver.previousX = race.player.x;
+  driver.previousAltitude = 0;
+  driver.falls = race.player.falls ?? 0;
+}
+
+export function stepCircuitRivals(race: CircuitRace, dt: number): void {
+  const circuit = race.circuit;
   if (!circuit) return;
-  stepCircuitDriver(circuit.player, race.player, circuit.laps, race.elapsed, dt);
   for (const rival of race.rivals) {
     const driver = circuit.rivals[rival.name];
+    if (driver.finishTime !== null) continue;
     stepCircuitDriver(driver, rival, circuit.laps, race.elapsed, dt);
+    if (driver.finishTime === null) continue;
     rival.finishTime = driver.finishTime;
-    if (driver.finishTime !== null) { rival.distance = race.length; rival.speed = 0; }
+    parkFinishedRival(rival);
   }
 }
 

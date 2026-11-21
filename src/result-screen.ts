@@ -16,6 +16,7 @@ type FinishedRace = any;
 export interface FinishedResult {
   best: number; record: boolean; medals: string[];
   challengeMedals?: readonly ChallengeMedalId[];
+  unlockedGt?: true;
   series: SprintSeries | null; cup: CupState | null; stunt: StuntRun | null;
   /** Track the NEXT button offers, if any. */
   next: string | null;
@@ -29,6 +30,7 @@ export interface ResultView {
   standings?: ReturnType<typeof cupStandings>;
   nextStage?: string;
   nextTrack?: string;
+  unlockedGt?: true;
   style?: { aria: string; html: string };
   /** Values that count up on reveal, in stat order: time, best, style score. */
   counts: { value: number; format: CountFormat }[];
@@ -154,6 +156,7 @@ const VIEWS: [(race: FinishedRace, finished: FinishedResult) => unknown, (race: 
 ];
 export function resultView(race: FinishedRace, finished: FinishedResult): ResultView {
   const view = (VIEWS.find(([applies]) => applies(race, finished))?.[1] ?? standardView)(race, finished);
+  if (finished.unlockedGt) view.unlockedGt = true;
   if (finished.challengeMedals?.length) view.copy += t('challengeMedal.new', {
     list: finished.challengeMedals.map(id => t(`challengeMedal.${id}`)).join(t('list.separator')),
   });
@@ -173,12 +176,15 @@ const FORMATS: Record<CountFormat, (value: number) => string> = {
 };
 
 /** Writes a result view into the race overlay; returns the elements whose numbers count up on reveal. */
-export function setupResultScreen(afterRender: () => void = () => {}) {
+export function setupResultScreen(afterRender: () => void = () => {}, openGarage: () => void = () => {}) {
   const $ = <T extends Element = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   const title = $('#overlay-title'), copy = $('#overlay-copy'), stats = $('#result-stats');
   const nextStage = $('#next-stage'), nextTrack = $('#next-track'), style = $('#result-style');
   const standings = $('#result-standings');
+  const garage = $('#result-gt-garage');
+  garage.addEventListener('click', openGarage);
   return function render(view: ResultView): ResultCount[] {
+    garage.hidden = !view.unlockedGt;
     title.textContent = view.title;
     copy.textContent = view.copy;
     copy.hidden = !view.copy;
@@ -201,6 +207,7 @@ export function setupResultScreen(afterRender: () => void = () => {}) {
     for (const image of stats.querySelectorAll<HTMLImageElement>('.result-trophy-art')) {
       image.onerror = () => { image.hidden = true; };
     }
+    style.hidden = !view.style;
     if (view.style) { style.setAttribute('aria-label', view.style.aria); style.innerHTML = view.style.html; }
     afterRender();
     if (!view.counts.length) return [];

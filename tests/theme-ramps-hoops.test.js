@@ -19,7 +19,7 @@ test('themes stay opt-in: without them Canyon has no ramps and Sky Spiral keeps 
 
 test('Canyon themes place launch ramps that never become road hazards', () => {
   const race = themed('canyon');
-  assert.ok(race.ramps.length >= 3, 'precision ramps');
+  assert.equal(race.ramps.length, gaps('canyon').length, 'one precision ramp per driven gap');
   assert.ok(race.hazards.every(h => h.type !== 'ramp'), 'ramps launch; they never block or nudge');
   for (const gap of gaps('canyon')) {
     assert.ok(race.ramps.some(r => r.distance + r.halfLength < gap.from && gap.from - (r.distance + r.halfLength) <= 40),
@@ -27,8 +27,19 @@ test('Canyon themes place launch ramps that never become road hazards', () => {
   }
 });
 
-test('the risky ramp line jumps every broken bridge without FLY at any launch speed', () => {
-  for (const gap of gaps('canyon')) for (const speed of [33, 45, 60]) for (const fps of [30, 60, 120]) {
+// The enlarged Canyon chasm (060dd6da) is a real gap: a slow ramp launch falls in it.
+test('a slow ramp launch falls into the enlarged Canyon chasm', () => {
+  for (const gap of gaps('canyon')) for (const fps of [30, 60, 120]) {
+    const race = ready(themed('canyon'));
+    const ramp = race.ramps.find(r => r.distance < gap.from && gap.from - r.distance < 60);
+    Object.assign(race.player, { distance: ramp.distance, x: ramp.x, speed: 33, altitude: 0, verticalSpeed: 0, falls: 0, fuel: 0 });
+    for (let i = 0; i < fps * 12 && !race.player.falls; i++) stepRace(race, { throttle: true }, 1 / fps);
+    assert.equal(race.player.falls, 1, `${gap.from} m at 33 m/s, ${fps} FPS`);
+  }
+});
+
+test('the risky ramp line jumps every broken bridge without FLY at a committed launch speed', () => {
+  for (const gap of gaps('canyon')) for (const speed of [50, 60, 80]) for (const fps of [30, 60, 120]) {
     const race = ready(themed('canyon'));
     const ramp = race.ramps.find(r => r.distance < gap.from && gap.from - r.distance < 60);
     Object.assign(race.player, { distance: ramp.distance, x: ramp.x, speed, altitude: 0, verticalSpeed: 0, falls: 0, fuel: 0 });

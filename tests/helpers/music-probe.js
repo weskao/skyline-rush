@@ -6,12 +6,15 @@ import { ciTimeout } from './ci.js';
 // drew WebGL. Works on the minified production build, which has no test hooks.
 export async function installMusicProbe(page) {
   await page.addInitScript(() => {
-    const m = window.__music = { ctxs: [], notes: [], frames: [], rafs: 0, taps: [] };
+    const m = window.__music = { ctxs: [], notes: [], effects: [], frames: [], rafs: 0, taps: [] };
     const AC = window.AudioContext;
     window.AudioContext = class extends AC { constructor(...args) { super(...args); m.ctxs.push(this); } };
     const start = OscillatorNode.prototype.start;
     OscillatorNode.prototype.start = function (when) {
-      if (typeof when === 'number' && this.type !== 'sine') m.notes.push({ ctx: m.ctxs.indexOf(this.context), when, raf: m.rafs });
+      if (typeof when === 'number') {
+        const events = this.type === 'sine' ? m.effects : m.notes;
+        events.push({ ctx: m.ctxs.indexOf(this.context), when, raf: m.rafs });
+      }
       return start.apply(this, arguments);
     };
     let drew = false;

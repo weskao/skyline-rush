@@ -1,35 +1,40 @@
 import { advanceCountdown } from './frame-pacing.ts';
+import { stepPlayerDrift } from './player-drift.ts';
 export { startRace } from './frame-pacing.ts';
 import { classicCornerPush } from './classic-road-routes.ts';
-import { prepareEndless, streamEndless, finishEndless } from './endless-highway.ts';
+import { prepareEndless, streamEndless } from './endless-highway.ts';
 import { earnsAirChain } from './air-chain.ts';
 import { createRings, pickupRun, spreadDistances, ITEMS_PER_CAR, RING_RADIUS, RING_FUEL, RING_NITRO, SLIPSTREAM_BOOST, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX } from './ring-layout.ts';
 export { RING_RADIUS, RISK_RING_RADIUS, ITEMS_PER_CAR, RING_FUEL, SLIPSTREAM_BOOST, RISK_SCORE, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX, NITRO_PICKUPS } from './ring-layout.ts';
-import { createCircuit, stepCircuit, lapItems } from './circuit-laps.ts';
-import { attachCourse, stepCoursePlayer, stepCourseCars, carGap, progressGap, courseFinished, courseGapWarning, recycleCourseTraffic } from './course-race-step.ts'; import { finishRace } from './race-finish.js';
-import { avoidObstacles, aiImpacts, bumpCars, TRAFFIC_ACCEL } from './car-collisions.js';
+import { createCircuit, lapItems, reanchorCircuitPlayer } from './circuit-laps.ts';
+import { attachCourse, stepCoursePlayer, carGap, courseGapWarning, courseResetSeat, placeCourseRecovery } from './course-race-step.ts'; import { finishRaceFrame, finishRecoveryFrame } from './race-finish.js';
+import { stepRaceWorld } from './race-rivals.js';
 import { seededRng, RACE_STREAMS } from './rng.ts';
-import { createHazards } from './hazards.ts'; import { crossesRamp, launchImpulse, LAUNCH_MIN_SPEED } from './launch-ramps.ts';
+import { createHazards } from './hazards.ts'; import { crossesRamp, launchImpulse, LAUNCH_MIN_SPEED, SKY_GAP_LAUNCH_MIN_SPEED, SKY_GAP_RECOVERY_RUNUP } from './launch-ramps.ts';
 import { stepPlayerHazards } from './hazard-race.ts';
-import { contact, isFollowingVehicle, resolvePlayerContacts, trackPhaseExit } from './player-contacts.js';
+import { contact, isFollowingVehicle, resolvePlayerContacts, trackPhaseExit, clearRecoveryContacts } from './player-contacts.js';
 import { raceHazards, themedExtras } from './track-themes.ts'; import { mixedCourse, withHoops } from './gauntlet-course.ts';
 import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.ts';
 import { createPracticeStats, samplePractice } from './practice-stats.ts';
 import { createStuntAttack, scoreStuntAttack } from './stunt-attack.ts';
-import { createElimination, stepElimination } from './elimination.ts';
-import { bankItem, activateItem, tickItemCooldown, ringsForItemRule } from './active-items.ts';
-import { decorateBonusGates, collectBonusGate, applyEMPPulse, bonusScore } from './bonus-gates.ts';
+import { createElimination } from './elimination.ts';
+import { bankItem, mysteryEffect, tickItemCooldown, ringsForItemRule } from './active-items.ts';
+export { mysteryEffect } from './active-items.ts';
+import { itemHit, ITEM_HIT_SPEED } from './item-attacks.ts';
+export { useHeldItem, ITEM_HIT_SPEED as FREEZE_RIVAL_SPEED } from './item-attacks.ts';
+import { decorateBonusGates, collectBonusGate, bonusScore } from './bonus-gates.ts';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.ts';
 import { RACE_DRIVER_IDS, startingGrid } from './race-grid.ts';
 import { raceCompletion } from './race-objectives.ts'; import { riskRules } from './risk-lines.ts'; import { spawnCatchUp } from './catch-up-items.ts';
 import { createRaceSessionContract } from './race-session.ts';
-import { skyJumpGap } from './sky-track.ts'; import { dropCar, stepDeck, stepRivalDeck, stepSpan, SHORTCUT_HALF_WIDTH, SHORTCUT_TOLERANCE } from './road-falls.ts';
+import { skyJumpGap, SKY_JUMPS } from './sky-track.ts'; import { startRoadRecovery, advanceRoadRecovery, RESET_BACKTRACK, stepDeck, stepSpan, SHORTCUT_HALF_WIDTH, SHORTCUT_TOLERANCE } from './road-falls.ts';
+import { planGapRecovery, clearGapFallStreak } from './gap-recovery-seat.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 
 import { RACE_TRACKS, raceTrack, assertTrackMode, itemScale } from './race-tracks.ts';
 export { RACE_TRACKS } from './race-tracks.ts';
 export const RACE_LENGTH = RACE_TRACKS.coast.length;
-import { MAX_SPEED, NITRO_TIME, pressNitro, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, BOOST_DRAIN, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_LATERAL, DRIFT_FLIP_GRACE, DRIFT_REWARDS, driftCredit, driftTier, grantMiniBoost } from './drive-rules.ts';
+import { MAX_SPEED, NITRO_TIME, pressNitro, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, BOOST_DRAIN, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_LATERAL, grantMiniBoost } from './drive-rules.ts';
 export { MAX_SPEED, NITRO_TIME, NITRO_EXTEND, FLY_DRAIN, GLIDE_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_REWARDS, driftTier } from './drive-rules.ts';
 export const ROAD_LIMIT = 10.2;
 export const LANES = [-7.5, -2.5, 2.5, 7.5];
@@ -43,7 +48,6 @@ export const GAP_CLEARANCE = 1; // altitude needed to fly over a missing bridge 
 export const GAP_WARN_DISTANCE = 300; // m ahead of a broken bridge where too little charge to cross is flagged
 export const GAP_LIFT_RESERVE = 6; // charge to climb from the road to GAP_CLEARANCE (about 0.3 s of thrust)
 export const GAP_SLOWDOWN = 0.4; // speed kept after falling into a gap
-export const GAP_RESPAWN = 5; // m past the gap where the car is put back
 export const CROSSWIND_SPEED = 4; // m/s sideways push
 export const ICE_RAMP_FACTOR = 4; // steering takes this many times longer to respond on ice
 
@@ -67,13 +71,12 @@ export const shortcutPylons = section => Array.from({ length: Math.ceil((section
 }));
 
 import { takePickups } from './pickup-take.ts'; export { MAGNET_RANGE } from './pickup-take.ts';
-export const FREEZE_RIVAL_SPEED = 0.5; // rival speed multiplier while frozen
 
 import { SLIPSTREAM_CAP_BONUS, SLIPSTREAM_NITRO, SLIPSTREAM_MIN_GAP, SLIPSTREAM_MAX_GAP,
   SLIPSTREAM_LATERAL, SLIPSTREAM_ALTITUDE, stepSlipstream } from './drive-rules.ts'; // SLIPSTREAM: shared with rivals
 export { SLIPSTREAM_TIME, SLIPSTREAM_CAP_BONUS, SLIPSTREAM_NITRO, SLIPSTREAM_LATERAL, SLIPSTREAM_MIN_GAP, SLIPSTREAM_MAX_GAP, SLIPSTREAM_ALTITUDE } from './drive-rules.ts';
 
-import { RIVAL_NITRO_CHARGES, RIVAL_HOP_PERIOD, ITEM_RESPAWN, rivalCollects, rivalSeek } from './rival-items.ts'; import { driveRival } from './rival-driver.ts';
+import { RIVAL_NITRO_CHARGES, ITEM_RESPAWN } from './rival-items.ts';
 export { RIVAL_NITRO_CHARGES, RIVAL_NITRO_BONUS, RIVAL_NITRO_NOVA_FIRST, RIVAL_NITRO_NOVA_EVERY, RIVAL_NITRO_ORBIT_ALTITUDE, RIVAL_NITRO_MIN_SPEED, RIVAL_NITRO_APEX_FROM, RIVAL_HOP_PERIOD } from './rival-items.ts';
 export const RIVAL_NITRO_TIME = NITRO_TIME; // seconds one rival charge lasts
 export const RUBBER_BAND_MAX = 0.04; // a leading rival's speed multiplier drops by at most this; one behind gets nothing (user, 2026-11-07)
@@ -109,9 +112,6 @@ function createPickups(track, count, seed) {
   }
   return [...pickups, overcharge].sort((a, b) => a.distance - b.distance);
 }
-
-// The mystery effect of ring `index`: its own seed-derived stream, so it is reproducible and needs no race state.
-export const mysteryEffect = (seed, index) => MYSTERY_EFFECTS[Math.floor(seededRng(seed, `${RACE_STREAMS.mysteryPrefix}${index}`)() * MYSTERY_EFFECTS.length)];
 
 // Charges cap at NITRO_MAX; the excess becomes fuel so nothing is wasted. Banked charge also refills flight fuel.
 function addNitro(car, amount, fuelBonus = NITRO_FUEL_BONUS) {
@@ -172,8 +172,10 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
       nearMiss: null, nearMisses: 0, combo: 0, scrape: null, scrapeCooldown: 0, flyBuffer: 0,
       poweredFlightTime: 0, flightBoosted: false,
       section: null, inShortcut: false, falls: 0, fall: null, span: false,
+      gapFallStreak: /** @type {import('./gap-recovery-seat.ts').GapFallStreak | null} */ (null),
       nitro: 0, nitroTime: 0, nitroHeld: false, nitroUses: 0, nitroBurst: 0, nitroChain: 0, longestCombo: 0,
       slipstream: { time: 0, active: false, paid: false },
+      driftHold: /** @type {import('./player-drift.ts').DriftHold | null} */ (null),
       drift: null, driftPayout: null, miniBoost: 0, miniBoostEvent: null, boostTunnelClaimed: [], boostTunnelEvent: null, trick: null, trickPayout: null, flick: null, steerSign: 0,
       rings: 0, perfectLines: 0, score: 0, cleanDistance: 0, groupHits: {}, effects: { shield: 0, magnet: 0, ghost: 0, freeze: 0 },
       heldItem: null, itemCooldown: 0,
@@ -214,23 +216,50 @@ function collectRing(race, ring, index) {
   }
 }
 
-export function useHeldItem(race) {
-  if (!race?.config?.activeItems || race.phase !== 'racing') return null;
-  if (race.player.heldItem === 'emp' && (race.mode !== 'custom' || race.config.itemRules !== 'all')) race.player.heldItem = 'magnet';
-  const effect = activateItem(race.player, race.rivals.length > 0);
-  if (effect === 'emp') applyEMPPulse(race);
-  return effect;
+export { racePosition, sprintGaps } from './race-standings.ts';
+
+function safeRoadDistance(race, distance) {
+  for (let i = race.sections.length - 1; i >= 0; i--) {
+    const section = race.sections[i];
+    if (section.type !== 'gap' || distance < section.from - 4 || distance >= section.to + 4) continue;
+    const ramp = race.trackId === 'spiral' && SKY_JUMPS.find(jump => jump.gapFrom === section.from);
+    distance = ramp ? ramp.rampFrom - SKY_GAP_RECOVERY_RUNUP : section.from - 72;
+  }
+  return Math.max(0, distance);
 }
 
-export { racePosition, sprintGaps } from './race-standings.ts';
+export function requestRaceReset(race) {
+  const car = race.player;
+  if (race.phase !== 'racing' || car.recovery) return false;
+  const span = car.span && race.sections.find(section => section.span && car.distance < section.to && car.distance >= section.from);
+  const distance = Math.min(car.distance, safeRoadDistance(race, span ? span.from : car.distance - RESET_BACKTRACK));
+  const seat = race.course ? courseResetSeat(race.course) : { distance };
+  startRoadRecovery(car, seat, car.distance, race.elapsed, GAP_SLOWDOWN, 'reset');
+  return true;
+}
 
 export function stepRace(race, input, dt) {
   if (!Number.isFinite(dt) || dt <= 0 || dt > 0.1) return;
   if (race.phase === 'countdown') return advanceCountdown(race, dt);
   if (race.phase !== 'racing') return;
+  if (race.player.recovery) {
+    race.elapsed += dt;
+    const seat = advanceRoadRecovery(race.player, dt);
+    if (seat) {
+      if (seat.course) placeCourseRecovery(race, seat.course);
+      clearRecoveryContacts(race.player); reanchorCircuitPlayer(race);
+    }
+    if (race.config.activeItems || race.config.bonusGates) tickItemCooldown(race.player, dt);
+    for (const name of MYSTERY_EFFECTS) race.player.effects[name] = Math.max(0, race.player.effects[name] - dt);
+    stepRaceWorld(race, dt);
+    return finishRecoveryFrame(race, dt);
+  }
   streamEndless(race); spawnCatchUp(race);
+  const car = race.player, wasSlowed = itemHit(race, car) !== null;
+  if (car.gapFallStreak) car.gapFallStreak = clearGapFallStreak(car.gapFallStreak, car.distance);
   race.elapsed += dt;
-  const car = race.player;
+  const hitSpeed = itemHit(race, car) ? ITEM_HIT_SPEED : 1;
+  if (wasSlowed && hitSpeed === 1) car.speed /= ITEM_HIT_SPEED; // lift the penalty, preserving braking and impacts
   const previousScore = car.score;
   if (race.config.activeItems || race.config.bonusGates) tickItemCooldown(car, dt);
   const section = race.sections.find(s => car.distance >= s.from && car.distance < s.to);
@@ -252,7 +281,6 @@ export function stepRace(race, input, dt) {
   car.steerSign = steerSign;
   const boost = input.boost === true && car.fuel > 0 && !brake;
   car.boosting = boost;
-  car.braking = brake;
   // NITRO is edge-triggered: one press spends one full charge; a press during NITRO extends it, never stacks speed.
   if (input.nitro === true && !car.nitroHeld && car.nitro >= 1) {
     if (pressNitro(car)) car.nitroBurst = 0;
@@ -269,20 +297,8 @@ export function stepRace(race, input, dt) {
       Math.abs((other.altitude || 0) - car.altitude) < SLIPSTREAM_ALTITUDE;
   };
   if (stepSlipstream(slip, race.traffic.some(drafts) || race.rivals.some(drafts), dt)) addNitro(car, SLIPSTREAM_NITRO);
-  // DRIFT: brake + steer on the ground at speed slides instead of hard-braking; each tier reached pays NITRO, the release a mini boost.
-  const canDrift = brake && car.altitude === 0 && car.speed >= DRIFT_MIN_SPEED;
-  if (canDrift && steer !== 0 && car.railContactSide !== Math.sign(steer)) {
-    car.drift ??= { time: 0, dir: 0, nitro: 0, grace: 0 };
-    car.drift.dir = Math.sign(steer); car.drift.grace = 0; car.drift.time += dt; // a flip turns the drift
-    const owed = driftCredit(car.drift); if (owed > 0) addNitro(car, owed);
-  } else if (car.drift && !(canDrift && steer === 0 && (car.drift.grace += dt) <= DRIFT_FLIP_GRACE)) { // neutral mid-flip: held, unpaid
-    const reward = DRIFT_REWARDS.find(r => car.drift.time >= r.time);
-    if (reward) {
-      grantMiniBoost(car, reward.boost, race.elapsed, driftTier(car.drift.time));
-      car.driftPayout = { time: race.elapsed, nitro: car.drift.nitro };
-    }
-    car.drift = null;
-  }
+  const driftNitro = stepPlayerDrift(car, brake, steer, dt, race.elapsed);
+  if (driftNitro > 0) addNitro(car, driftNitro);
   // A one-time, on-road tunnel reward. Track it by the authored section start,
   // not a frame counter: pausing, braking or standing inside cannot farm charge.
   if (car.section === 'boost-tunnel' && !car.boostTunnelClaimed.includes(section.from) &&
@@ -293,12 +309,14 @@ export function stepRace(race, input, dt) {
     car.boostTunnelEvent = { time: race.elapsed, distance: car.distance };
   }
   const drifting = car.drift !== null;
+  const brakeDecel = brake ? 35 * (car.driftHold?.brakeBlend ?? 1) : 0;
+  car.braking = brakeDecel > 0 || drifting;
   const boosted = boost || (car.miniBoost > 0 && !brake); // the mini boost shares the boost cap but burns no fuel
-  const limit = (nitro ? MAX_SPEED + NITRO_CAP_BONUS : boosted ? MAX_SPEED + BOOST_CAP_BONUS : MAX_SPEED) + (slip.active ? SLIPSTREAM_CAP_BONUS : 0) +
-    (car.inShortcut ? SHORTCUT_CAP_BONUS : 0);
-  const drive = drifting ? -DRIFT_BLEED : (throttle ? THROTTLE_ACCEL : -4) - (brake ? 35 : 0);
-  const acceleration = car.speed > limit ? -OVER_CAP_DECEL - (brake && !drifting ? 35 : 0) : drive + (boosted ? BOOST_ACCEL : 0) + (nitro ? NITRO_ACCEL : 0);
-  car.speed = clamp(car.speed + acceleration * dt, 0, Math.max(limit, car.speed));
+  const baseLimit = nitro ? MAX_SPEED + NITRO_CAP_BONUS : boosted ? MAX_SPEED + BOOST_CAP_BONUS : MAX_SPEED;
+  const limit = hitSpeed * (baseLimit + (slip.active ? SLIPSTREAM_CAP_BONUS : 0) + (car.inShortcut ? SHORTCUT_CAP_BONUS : 0));
+  const drive = drifting ? -DRIFT_BLEED : (throttle ? THROTTLE_ACCEL : -4) - brakeDecel;
+  const acceleration = car.speed > limit ? -OVER_CAP_DECEL - brakeDecel : drive + (boosted ? BOOST_ACCEL : 0) + (nitro ? NITRO_ACCEL : 0);
+  car.speed = clamp(car.speed + acceleration * hitSpeed * dt, 0, Math.max(limit, car.speed));
   car.nitroTime = Math.max(0, car.nitroTime - dt);
   car.miniBoost = Math.max(0, car.miniBoost - dt);
   trackPhaseExit(race, dt);
@@ -345,8 +363,8 @@ export function stepRace(race, input, dt) {
   if (boost) car.fuel = Math.max(0, car.fuel - (car.thrusting ? 3 : BOOST_DRAIN) * dt);
   const previousAltitude = car.altitude;
   // Sky Spiral launch ramps impart momentum automatically; FLY can extend the jump.
-  if (car.altitude === 0 && car.speed > LAUNCH_MIN_SPEED && (race.trackId === 'spiral' && car.section === 'launch' &&
-      car.distance >= section.to - car.speed * dt - 1 || crossesRamp(race.ramps, car, car.speed * dt + 1))) {
+  if (car.altitude === 0 && ((race.trackId === 'spiral' && car.speed >= SKY_GAP_LAUNCH_MIN_SPEED && car.section === 'launch' &&
+      car.distance >= section.to - car.speed * dt - 1) || (car.speed > LAUNCH_MIN_SPEED && crossesRamp(race.ramps, car, car.speed * dt + 1)))) {
     car.altitude = 0.02; // Event Lab ramps share the Spiral impulse
     car.verticalSpeed = Math.max(car.verticalSpeed, launchImpulse(car.speed));
   }
@@ -358,68 +376,41 @@ export function stepRace(race, input, dt) {
     car.trick = null;
   }
   if (car.altitude > 0) car.drift = null; // taking off loses the drift build-up
-  if (previousAltitude > 0 && car.altitude === 0) {
-    // Reward an earned, controlled NITRO/BOOST-to-flight-to-road transition once per landing.
-    const chain = earnsAirChain(car, DRIFT_MIN_SPEED) && race.modifier !== 'no-flight';
-    car.landing = { speed: Math.abs(car.verticalSpeed), time: race.elapsed, distance: car.distance, x: car.x, chain };
-    if (chain) grantMiniBoost(car, 1.2, race.elapsed);
-    car.poweredFlightTime = 0;
-    car.flightBoosted = false;
-    if (car.trick?.done && car.section !== 'gap') { // touching down over a gap is a fall, not a landing
-      const hard = car.landing.speed >= TRICK_HARD_LANDING;
-      if (!hard) addNitro(car, TRICK_NITRO);
-      car.trickPayout = { time: race.elapsed, nitro: hard ? 0 : TRICK_NITRO, hard };
-    }
-    car.trick = null;
-  }
-  if (car.altitude === 0 || car.altitude === 12) car.verticalSpeed = 0;
-  const previousDistance = car.distance;
-  const previousContacts = car.collisions + car.falls;
+  const previousDistance = car.distance, previousContacts = car.collisions + car.falls;
   car.distance += car.speed * dt;
   const skyGap = race.trackId === 'spiral' && skyJumpGap(car.distance, !!race.endless);
-  const gapNow = race.course ? stepCoursePlayer(race, dt, contact) : race.trackId === 'spiral' ? skyGap : car.section === 'gap';
+  const gapNow = race.course ? stepCoursePlayer(race, dt, contact) :
+    skyGap || (race.trackId !== 'spiral' && race.sections.find(s => s.type === 'gap' && car.distance >= s.from && car.distance < s.to));
   if (gapNow && car.altitude < GAP_CLEARANCE && !(skyGap && car.altitude > 0 && car.verticalSpeed > 0)) {
-    dropCar(car, (skyGap ? skyGap.gapTo : section.to) + GAP_RESPAWN, skyGap ? skyGap.gapFrom : section.from, race.elapsed, GAP_SLOWDOWN);
+    const from = skyGap ? skyGap.gapFrom : gapNow.from;
+    const approach = skyGap ? skyGap.rampFrom - SKY_GAP_RECOVERY_RUNUP : from - 72;
+    const plan = planGapRecovery({ from, to: skyGap ? skyGap.gapTo : gapNow.to }, car.distance,
+      safeRoadDistance(race, approach), race.length, car.gapFallStreak);
+    car.gapFallStreak = plan.streak;
+    startRoadRecovery(car, { distance: plan.distance }, from, race.elapsed, GAP_SLOWDOWN);
+    if (car.recovery) car.recovery.assisted = plan.assisted;
   }
-  stepSpan(car, section, race.elapsed, GAP_SLOWDOWN); stepDeck(car, section, previousAltitude, CAR_HEIGHT);
-
-  for (const traffic of race.traffic) {
-    traffic.cooldown = Math.max(0, (traffic.cooldown || 0) - dt);
-    if (traffic.speed < traffic.cruise) traffic.speed = Math.min(traffic.cruise, traffic.speed + TRAFFIC_ACCEL * dt); // back up to cruise after a knock
-    const before = traffic.distance;
-    traffic.distance += traffic.speed * dt;
-    avoidObstacles(race, traffic, traffic.speed, dt);
-    aiImpacts(race, traffic, before, traffic.speed);
-    // Recycle distant traffic so the same small scene stays populated for the full sprint.
-    if (!race.endless && (race.course ? recycleCourseTraffic(race, traffic) : traffic.distance < car.distance - 60)) traffic.distance += 1400;
-  }
-  race.rivals.forEach((rival, i) => {
-    const period = RIVAL_HOP_PERIOD[rival.name] ?? 13;
-    const cycle = ((race.elapsed + i * 3) % period) * (13 / period);
-    const hopFrom = rival.altitude; rival.altitude = cycle > 6 && cycle < 11 ? Math.sin((cycle - 6) / 5 * Math.PI) * (5 + i) : 0;
-    rival.thrusting = cycle > 6 && cycle < 9;
-    rival.cooldown = Math.max(0, (rival.cooldown || 0) - dt);
-    driveRival(race, rival, i, Math.floor((race.elapsed + i * 3) / period), dt); // the player's caps, fuel and NITRO
-    const before = rival.distance;
-    // Rubber band: a rival far ahead of the player eases off by at most RUBBER_BAND_MAX; one behind is never sped up.
-    const band = clamp((progressGap(race, car, rival) - RUBBER_BAND_FREE) / RUBBER_BAND_RANGE, 0, 1);
-    const slow = (car.effects.freeze > 0 || rival.empUntil > race.elapsed ? FREEZE_RIVAL_SPEED : 1) * (1 - band * RUBBER_BAND_MAX);
-    rival.pace = rival.speed * slow;
-    rival.distance += rival.pace * dt;
-    rivalSeek(race, rival); avoidObstacles(race, rival, rival.pace, dt); stepRivalDeck(rival, race.sections, hopFrom, CAR_HEIGHT);
-    aiImpacts(race, rival, before, rival.pace); rivalCollects(race, rival, before);
-    if (!race.endless && !race.circuit && courseFinished(race, rival) && rival.finishTime === null) {
-      rival.finishTime = race.elapsed - dt + Math.max(0, race.length - before) / rival.pace;
+  if (!car.recovery) {
+    if (previousAltitude > 0 && car.altitude === 0) {
+      const chain = earnsAirChain(car, DRIFT_MIN_SPEED) && race.modifier !== 'no-flight';
+      car.landing = { speed: Math.abs(car.verticalSpeed), time: race.elapsed, distance: previousDistance, x: car.x, chain };
+      if (chain) grantMiniBoost(car, 1.2, race.elapsed);
+      car.poweredFlightTime = 0;
+      car.flightBoosted = false;
+      if (car.trick?.done && car.section !== 'gap') {
+        const hard = car.landing.speed >= TRICK_HARD_LANDING;
+        if (!hard) addNitro(car, TRICK_NITRO);
+        car.trickPayout = { time: race.elapsed, nitro: hard ? 0 : TRICK_NITRO, hard };
+      }
+      car.trick = null;
     }
-  });
-  stepCourseCars(race, dt); // H2 rivals: graph poses, gates, hazards and finish from this frame's odometers
-  const { rivals, traffic } = race;
-  for (let i = 0; i < rivals.length; i++) {
-    for (let j = i + 1; j < rivals.length; j++) bumpCars(race, rivals[i], rivals[j]);
-    for (const other of traffic) bumpCars(race, rivals[i], other);
+    if (car.altitude === 0 || car.altitude === 12) car.verticalSpeed = 0;
+    stepSpan(car, section, race.elapsed, GAP_SLOWDOWN);
+    if (!car.recovery) stepDeck(car, section, previousAltitude, CAR_HEIGHT);
   }
-  for (let i = 0; i < traffic.length; i++) for (let j = i + 1; j < traffic.length; j++) bumpCars(race, traffic[i], traffic[j]);
 
+  stepRaceWorld(race, dt);
+  if (car.recovery) return finishRecoveryFrame(race, dt);
   resolvePlayerContacts(race, previousDistance, previousX, lateralPosition, roofHit, section, nitro);
   for (const traffic of race.traffic) {
     const gap = traffic.distance - traffic.speed * dt - previousDistance;
@@ -436,11 +427,11 @@ export function stepRace(race, input, dt) {
     }
   }
   takePickups(race, car, previousDistance, addNitro);
-  let rowTaken = NaN; const fell = car.fall?.time === race.elapsed; // a respawn jump skips the rings it covers; a ring row pays once per car
+  let rowTaken = NaN; // a ring row pays once per car
   for (const ring of race.rings) { // sorted by distance
     if (ring.distance > car.distance) break;
     // shortcut: tests the car's end-of-step x/altitude, not the interpolated crossing (error < 0.7 m at dt 0.1), upgrade if risk rings feel unfair
-    if (fell || ring.hit || ring.downUntil > race.elapsed || ring.distance <= previousDistance || (ring.row && ring.distance === rowTaken) || Math.hypot(ring.x - car.x, ring.altitude - car.altitude) >= ring.radius) continue;
+    if (ring.hit || ring.downUntil > race.elapsed || ring.distance <= previousDistance || (ring.row && ring.distance === rowTaken) || Math.hypot(ring.x - car.x, ring.altitude - car.altitude) >= ring.radius) continue;
     collectRing(race, ring, race.rings.indexOf(ring)); if (ring.row) rowTaken = ring.distance;
   }
   stepPlayerHazards(race, car, previousDistance, contact);
@@ -458,24 +449,12 @@ export function stepRace(race, input, dt) {
   if (race.practice) samplePractice(race.practice, car, Math.max(0, Math.min(car.distance, race.length) - previousDistance), dt);
   if (race.styleAttack) car.score += scoreStuntAttack(race.styleAttack, car, car.score - previousScore, dt, race.elapsed);
   car.score += bonusScore(car, race.mode, car.score - previousScore);
-  if (race.elimination) {
-    const knockout = stepElimination(race.elimination,race);
-    if (knockout?.outcome) {
-      race.result = {position:knockout.outcome === 'won' ? 1 : race.rivals.length + 1, time:race.elapsed,
-        success:knockout.outcome === 'won', score:Math.round(car.score),
-        collisions:car.collisions, nearMisses:car.nearMisses, nitroUses:car.nitroUses,
-        rings:car.rings, perfectLines:car.perfectLines, stars:1};
-      race.phase='finished'; car.speed=0; car.thrusting=false; car.boosting=false;
-      return;
-    }
-  }
-  if (finishEndless(race)) return;
-  stepCircuit(race, dt);
-  finishRace(race, previousDistance, dt);
+  finishRaceFrame(race, previousDistance, dt);
 }
 
 // The next broken bridge within warning range when the charge left cannot thrust across it at the current speed.
 export function gapChargeWarning(race) {
+  if (race.player.recovery) return null;
   if (race.course) return courseGapWarning(race); if (race.trackId === 'spiral') return null; // its launch ramps throw the car across
   const car = race.player;
   const gap = race.sections.find(s => s.type === 'gap' && s.to > car.distance && s.from - car.distance <= GAP_WARN_DISTANCE);

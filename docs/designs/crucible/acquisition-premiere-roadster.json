@@ -1,0 +1,151 @@
+{
+  "format": "crucible.asset",
+  "schemaVersion": 1,
+  "assetId": "3cef191082c6183a43768b0f762134a434795a372928ada407c68b9d4d79b9ff",
+  "camera": {
+    "eye": [
+      -4.4363,
+      2.15966,
+      -5.09688
+    ],
+    "target": [
+      0,
+      0.516199084766948,
+      -0.05499649517119676
+    ],
+    "up": [
+      0,
+      1,
+      0
+    ],
+    "fov": 37,
+    "near": 0.002889317823128012,
+    "far": 28.89317823128012
+  },
+  "environment": {
+    "world": false,
+    "setup": "studio",
+    "environmentIntensity": 1,
+    "environmentRotation": 0,
+    "lightDirection": [
+      -3,
+      6,
+      4
+    ],
+    "keyColor": [
+      2.4,
+      2.3,
+      2.2
+    ],
+    "keyIntensity": 1,
+    "fillIntensity": 0,
+    "ambientIntensity": 1,
+    "daylight": 1,
+    "pointLights": [],
+    "skyTop": [
+      0.45,
+      0.45,
+      0.46
+    ],
+    "skyBottom": [
+      0.3,
+      0.3,
+      0.32
+    ],
+    "fogColor": [
+      0.35,
+      0.43,
+      0.43
+    ],
+    "fogDensity": null,
+    "volumeFog": {
+      "density": 0,
+      "minimum": [
+        -100,
+        0,
+        -100
+      ],
+      "maximum": [
+        100,
+        20,
+        100
+      ],
+      "color": [
+        0.8,
+        0.85,
+        0.9
+      ],
+      "ambient": [
+        0.03,
+        0.035,
+        0.04
+      ],
+      "drift": [
+        0.03,
+        0,
+        0
+      ],
+      "steps": 16,
+      "anisotropy": 0.3,
+      "noiseAmount": 0.5,
+      "noiseScale": 0.3,
+      "maxDistance": 100,
+      "heightFalloff": 0
+    }
+  },
+  "effects": {
+    "depthOfField": {
+      "blur": 0,
+      "focusDistance": 5
+    },
+    "motionBlur": {
+      "shutter": 0
+    },
+    "saturation": 1,
+    "contrast": 1,
+    "temperature": 0,
+    "vignette": 0,
+    "grain": 0,
+    "ambientOcclusion": 0,
+    "ambientOcclusionRadius": 0.5,
+    "bloom": {
+      "strength": 0.12,
+      "threshold": 1,
+      "radius": 1
+    },
+    "exposure": 1
+  },
+  "shadow": {
+    "target": [
+      0,
+      1,
+      0
+    ],
+    "extent": 3.5,
+    "distance": 8,
+    "near": 0.1,
+    "far": 15
+  },
+  "root": {
+    "translation": [
+      0,
+      0,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "scale": [
+      1,
+      1,
+      1
+    ]
+  },
+  "animation": null,
+  "materialOverrides": [],
+  "nodeOverrides": [],
+  "motion": null
+}

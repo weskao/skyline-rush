@@ -2,6 +2,9 @@ import { updateAudioView, type AudioChannelView } from './audio-view-state.ts';
 import { t } from './i18n.ts';
 import { AUDIO_KEYS, setVolume } from './audio-settings.ts';
 import { onUserActivation } from './user-activation.ts';
+import { watchAudioPage } from './audio-page-lifecycle.ts';
+import { showSettingToast } from './toast-view-state.ts';
+import { icons } from './icons.ts';
 
 type Channel = 'music' | 'sfx';
 type AudioSettings = Record<Channel, boolean>;
@@ -36,14 +39,14 @@ export function setupAudioUI({ audio, volume, sound }: AudioDependencies) {
     updateAudioView({
       music: channelView(audio.music, volume.music),
       sfx: channelView(audio.sfx, volume.sfx),
-      settingsIcon: on ? 'sound' : 'mute',
       muteAllText: t(on ? 'audio.muteAll' : 'audio.unmuteAll'),
     });
   }
-  /** `save` is the player's own toggle or slider; an automatic unlock shows the engine's state but never saves it. */
+  /** The switches represent the player's choices even if the browser has temporarily blocked playback. */
   function setAudio(kind: Channel, on: boolean, level: number = volume[kind], save = true): void {
     volume[kind] = level;
-    audio[kind] = kind === 'music' ? sound.setMusic(on, level) : sound.setEnabled(on, level);
+    audio[kind] = on;
+    if (kind === 'music') sound.setMusic(on, level); else sound.setEnabled(on, level);
     const key = AUDIO_KEYS[kind];
     if (save) try {
       localStorage.setItem(key, audio[kind] ? 'on' : 'off');
@@ -56,6 +59,7 @@ export function setupAudioUI({ audio, volume, sound }: AudioDependencies) {
     setAudio('music', on);
     setAudio('sfx', on);
     sound.cue('ui');
+    showSettingToast('sound', on, on ? icons.sound : icons.mute);
   }
   function unlockAudio(): void {
     if (!sound.running() && (audio.music || audio.sfx)) {
@@ -89,9 +93,10 @@ export function setupAudioUI({ audio, volume, sound }: AudioDependencies) {
   document.querySelector('#mute-all')!.addEventListener('click', toggleSound);
   // Any tap, drag, click or key starts audio, so blocked autoplay never waits on a prompt.
   onUserActivation(unlockAudio);
-  // A page can come back (bfcache, app switch) without a visibilitychange; resync the engine from the live flag.
-  for (const type of ['pageshow', 'focus']) window.addEventListener(type, () => sound.setHidden(document.hidden));
+  watchAudioPage(sound.setHidden);
   showAudio();
-  unlockAudio(); // plays at once where the browser allows autoplay
+  // Opening music can already be playing on the shared context before the lobby mounts.
+  if (sound.running()) setAudio('sfx', audio.sfx, volume.sfx, false);
+  else unlockAudio(); // plays at once where the browser allows autoplay
   return { showAudio, toggleSound };
 }

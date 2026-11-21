@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { CONTROLS_KEY, controlSettings } from '../src/control-settings.ts';
 import * as hudSettings from '../src/control-settings.ts';
 
-const defaults = { mode: 'slide', hand: 'left', fullLock: 60, size: 'M', opacity: 0.9, flyMode: 'hold', sensitivity: 1, ghost: false, layout: {}, version: 1 };
+const defaults = { mode: 'slide', hand: 'left', fullLock: 60, brakePull: 'balanced', size: 'M', opacity: 0.9, flyMode: 'hold', sensitivity: 1, ghost: false, layout: {}, version: 1 };
 
 test('non-objects and outdated versions fall back to defaults', () => {
   assert.equal(CONTROLS_KEY, 'skyline-rush-controls');
@@ -13,12 +13,18 @@ test('non-objects and outdated versions fall back to defaults', () => {
 });
 
 test('valid values round-trip and unknown keys are dropped', () => {
-  const valid = { mode: 'buttons', hand: 'right', fullLock: 80, size: 'L', opacity: 0.5, flyMode: 'toggle', sensitivity: 1, ghost: false, layout: {}, version: 1 };
+  const valid = { mode: 'buttons', hand: 'right', fullLock: 80, brakePull: 'firm', size: 'L', opacity: 0.5, flyMode: 'toggle', sensitivity: 1, ghost: false, layout: {}, version: 1 };
   assert.deepEqual(controlSettings({ ...valid, extra: true }), valid);
 });
 
 test('tilt steering survives validated preference storage without changing older defaults', () => {
   assert.equal(controlSettings({ version: 1, mode: 'tilt' }).mode, 'tilt');
+});
+
+test('older settings get balanced slide braking and invalid saved values fall back safely', () => {
+  assert.equal(controlSettings({ version: 1, hand: 'right' }).brakePull, 'balanced');
+  assert.equal(controlSettings({ version: 1, brakePull: 'invalid' }).brakePull, 'balanced');
+  assert.equal(controlSettings({ version: 1, brakePull: 'light' }).brakePull, 'light');
 });
 
 test('bad values fall back per field; opacity clamps to 0.4-1', () => {

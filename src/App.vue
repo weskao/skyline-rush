@@ -1,25 +1,34 @@
 <script setup lang="ts">
+import CollectibleIcon from './CollectibleIcon.vue';
 // Vue shell owns event-driven panels; main.js keeps the legacy racing HUD and simulation loop.
 // Static text carries data-i18n / data-i18n-title / data-i18n-aria-label keys; applyI18n() (src/i18n.js) fills them per locale.
 // Text that main.js always rewrites before it is seen (HUD readouts, statuses, route heading) stays untagged.
 import packageMeta from '../package.json' with { type: 'json' };
 import { ref, onMounted, onUnmounted } from 'vue';
 import { getLocale, onLocaleChange } from './i18n.ts';
-import { GARAGE_RELEASE_MODE } from '#garage-release-config';
 import { wave3DemoExperience } from '#wave3-demo-race';
 import Wave3CurrencyStrip from './Wave3CurrencyStrip.vue';
 import { RACE_TRACKS } from './game.js';
 import { UPCOMING_TRACKS } from './upcoming-tracks.ts';
 import { VFX_RANGES, vfxLabelKey } from './vfx-settings.ts';
 import './progress-bars.css';
+import './race-loading.css';
 import './touch-sprint-buttons.css';
+import { MODE_ART } from './lobby-art.ts';
 import './race-lobby.css';
+import './dropdown-appearance.css';
 import './foldable-viewport.css';
+import './track-chooser.css';
+import PlayerHitScreen from './PlayerHitScreen.vue';
+import './road-recovery.css';
 import { icons, ICON_ATTRS } from './icons.ts';
 import CloseButton from './CloseButton.vue';
 import GaragePanel from './GaragePanel.vue';
 import GuidePanel from './GuidePanel.vue';
 import ReleaseNotesPanel from './ReleaseNotesPanel.vue';
+import AcquisitionReveal from './AcquisitionReveal.vue';
+import GameToast from './GameToast.vue';
+import ConfirmDialog from './ConfirmDialog.vue';
 import { releaseView } from './release-view-state.ts';
 import { setupInputModality } from './input-modality.ts';
 import TutorialCoach from './TutorialCoach.vue';
@@ -37,8 +46,10 @@ import CupRecovery from './CupRecovery.vue';
 import RacePresentation from './RacePresentation.vue';
 import RaceOverlay from './RaceOverlay.vue';
 import RaceHalfway from './RaceHalfway.vue';
+import RaceSpeedometer from './RaceSpeedometer.vue';
 import ItemRules from './ItemRules.vue';
-import ItemSlot from './ItemSlot.vue';
+import RaceInfo from './RaceInfo.vue';
+import PhotoStudio from './PhotoStudio.vue';
 
 const { version } = packageMeta;
 setupInputModality();
@@ -58,6 +69,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
 </script>
 
 <template>
+  <AcquisitionReveal />
   <ReleaseNotesPanel />
   <GuidePanel />
   <EventLabPanel />
@@ -65,6 +77,12 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
   <canvas id="world" aria-label="3D coastal racing highway"></canvas>
   <div id="upcoming-scene" class="upcoming-scene" hidden><img id="upcoming-scene-image" alt="" /><span id="upcoming-scene-fallback" role="status">3D preview unavailable · concept image</span></div>
   <div class="scene-shade"></div>
+  <div id="race-recovery" role="status" hidden>
+    <span data-i18n="hud.recoveryFall">Off the track</span>
+    <span data-i18n="hud.recoveryReturn">Returning to the road</span>
+    <span data-i18n="hud.recoveryAssist">Rescue assist · safe road ahead</span>
+  </div>
+  <PlayerHitScreen />
   <div class="speed-streaks" aria-hidden="true"><i v-for="i in 18" :style="{ '--angle': `${(i - 1) * 20 + 6}deg`, '--delay': `${-(i - 1) * 0.13}s` }"></i></div>
   <div class="flight-director" aria-hidden="true"><span data-i18n="hud.flightVector">FLIGHT VECTOR</span><svg viewBox="0 0 300 100" fill="none"><path d="M5 48h75l12 12h16m84 0h16l12-12h75M150 15v13m0 48v10M135 50h30m-15-8v16"/><path class="director-level" d="M88 20h34m56 0h34M105 80h17m56 0h17"/></svg><span class="director-climb" id="climb-rate">+0.0 M/S</span></div>
   <div class="altitude-ladder" aria-hidden="true"><span>12</span><i></i><span>06</span><i></i><span>00</span><b id="height-indicator"></b><small data-i18n="hud.altLadder">ALT / M</small></div>
@@ -75,37 +93,43 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
     </a>
     <div class="route-heading"><span class="live-dot"></span> COASTAL EXPRESSWAY <span class="route-divider">/</span> <span>DUSK RUN</span></div>
     <nav class="toolbar" aria-label="Game controls" data-i18n-aria-label="nav.toolbar">
-      <button class="icon-button assist-button" id="assist-button" aria-label="Auto accelerate" data-i18n-aria-label="assist.aria" aria-pressed="false" title="Auto accelerator · F2" aria-keyshortcuts="F2"><svg v-bind="ICON_ATTRS" v-html="icons.assist"></svg><span data-i18n="assist.label">AUTO</span><kbd class="key-badge" aria-hidden="true">F2</kbd></button>
-      <SettingsPanel />
-      <ControlsPanel />
+      <button type="button" class="icon-button home-airflow-toggle" id="home-airflow-toggle" aria-pressed="false" aria-keyshortcuts="V" title="Toggle airflow · V" data-i18n-title="aero.toggleTitle"><svg v-bind="ICON_ATTRS" v-html="icons.airflow"></svg><span data-i18n="aero.airflow">AIRFLOW</span><kbd class="key-badge" aria-hidden="true">V</kbd></button>
+      <SettingsPanel>
+        <template #driving><ControlsPanel /></template>
+        <template #assist><button class="icon-button assist-button" id="assist-button" aria-label="Auto accelerate" data-i18n-aria-label="assist.aria" aria-pressed="false" title="Auto accelerator · F2" aria-keyshortcuts="F2"><svg v-bind="ICON_ATTRS" v-html="icons.assist"></svg><span data-i18n="assist.label">AUTO</span><kbd class="key-badge" aria-hidden="true">F2</kbd></button></template>
+        <template #display>
+          <button id="airflow-toggle" aria-pressed="false" aria-keyshortcuts="V" title="Toggle airflow · V" data-i18n-title="aero.toggleTitle"><svg v-bind="ICON_ATTRS" v-html="icons.airflow"></svg><span data-i18n="aero.airflow">AIRFLOW</span><kbd aria-hidden="true">V</kbd></button>
+          <div id="vfx-panel">
+            <div class="vfx-settings">
+              <div class="vfx-heading"><span data-i18n="vfx.eyebrow">AEROSPACE / VISUAL LAB</span><strong data-i18n="vfx.headline">Shape the rush.</strong><small data-i18n="vfx.subline">Visual simulation · driving physics unchanged</small></div>
+              <label><span data-i18n="vfx.enabled">Visual effects</span> <input type="checkbox" data-vfx="enabled"></label>
+              <label><span data-i18n="vfx.preset">Visual style</span> <select data-vfx="preset"><option value="realistic" data-i18n="vfx.preset.realistic">Realistic</option><option value="cinematic" data-i18n="vfx.preset.cinematic">Cinematic</option><option value="extreme" data-i18n="vfx.preset.extreme">Extreme · sci-fi</option></select></label>
+              <label><span data-i18n="vfx.fps">Target FPS</span> <select id="target-fps" aria-label="Target FPS" data-i18n-aria-label="vfx.fps"><option value="auto" data-i18n="vfx.fps.auto">Auto</option><option value="30">30 FPS</option><option value="60">60 FPS</option><option value="90">90 FPS</option><option value="120">120 FPS</option></select></label>
+               <small data-i18n="vfx.fps.note">Auto raises rendering FPS only on sustained fast displays; 90/120 may be capped by your browser. Graphics quality stays independent.</small>
+               <label><span data-i18n="vfx.quality">Quality</span> <select data-vfx="quality"><option value="low" data-i18n="vfx.quality.low">Low</option><option value="medium" data-i18n="vfx.quality.medium">Medium</option><option value="high" data-i18n="vfx.quality.high">High</option><option value="ultra" data-i18n="vfx.quality.ultra">Ultra</option></select></label>
+              <label><span data-i18n="vfx.aeroMode">Aerodynamics</span> <select data-vfx="aeroMode"><option value="drag" data-i18n="vfx.aeroMode.drag">Low drag</option><option value="downforce" data-i18n="vfx.aeroMode.downforce">High downforce</option></select></label>
+              <label><span data-i18n="vfx.view">Showcase camera</span> <select data-vfx="view"><option value="drive" data-i18n="vfx.view.drive">Driving camera</option><option value="front" data-i18n="vfx.view.front">Front</option><option value="rear" data-i18n="vfx.view.rear">Rear</option><option value="left" data-i18n="vfx.view.left">Left</option><option value="right" data-i18n="vfx.view.right">Right</option><option value="orbit" data-i18n="vfx.view.orbit">Orbit</option></select></label>
+              <label><span data-i18n="vfx.comfortable">Comfort mode</span> <input type="checkbox" data-vfx="comfortable"></label>
+              <small class="vfx-note" data-i18n="vfx.comfortNote">Comfort removes flashes, shake, afterimages and blur. System reduced-motion preferences are always respected.</small>
+              <label><span data-i18n="vfx.haptics">Haptic feedback</span> <input type="checkbox" data-vfx="haptics"></label>
+              <details class="vfx-tuning"><summary data-i18n="vfx.tuning">Fine tuning</summary><label v-for="([label, min, max, step], key) in VFX_RANGES" class="vfx-range"><span :data-i18n="vfxLabelKey(key)">{{ label }}</span><output :for="`vfx-${key}`"></output><input :id="`vfx-${key}`" :aria-label="String(label)" :data-i18n-aria-label="vfxLabelKey(key)" :data-vfx="key" type="range" :min="min" :max="max" :step="step"></label></details>
+              <HudSettings />
+              <button id="vfx-reset" data-i18n="vfx.reset">Reset visual settings</button>
+            </div>
+          </div>
+        </template>
+        <template #language>
+          <select id="locale-select" aria-label="Language" data-i18n-aria-label="locale.switch"><option value="en" lang="en">English</option><option value="zh-TW" lang="zh-TW">繁體中文</option></select>
+        </template>
+      </SettingsPanel>
       <button class="icon-button" id="camera-button" aria-label="Change camera" data-i18n-aria-label="camera.aria" aria-pressed="false" title="Camera · C" data-i18n-title="camera.title" aria-keyshortcuts="C"><svg v-bind="ICON_ATTRS" v-html="icons.camera"></svg><kbd class="key-badge" aria-hidden="true">C</kbd></button>
       <button class="icon-button" id="restart-button" aria-label="Restart race" data-i18n-aria-label="restart.aria" title="Restart · Backspace" data-i18n-title="restart.title" aria-keyshortcuts="Backspace" hidden><svg v-bind="ICON_ATTRS" v-html="icons.restart"></svg><kbd class="key-badge" aria-hidden="true">⌫</kbd></button>
+      <button type="button" class="icon-button" id="vehicle-reset-button" aria-label="Reset vehicle" data-i18n-aria-label="controls.vehicleReset" data-i18n-title="controls.vehicleResetTitle" title="Reset vehicle · R" aria-keyshortcuts="R">
+        <svg v-bind="ICON_ATTRS" v-html="icons.vehicleReset"></svg><span aria-hidden="true" data-i18n="controls.vehicleResetShort">Reset</span><kbd class="key-badge" aria-hidden="true">R</kbd>
+      </button>
       <button class="icon-button" id="pause-button" aria-label="Pause race" data-i18n-aria-label="pause.aria" title="Pause · Esc" data-i18n-title="pause.title" aria-keyshortcuts="Escape" disabled><svg v-bind="ICON_ATTRS" v-html="icons.pause"></svg><kbd class="key-badge" aria-hidden="true">Esc</kbd></button>
     </nav>
   </header>
-  <aside class="aero-tools" aria-label="Airflow and visual effects" data-i18n-aria-label="aero.tools">
-    <!-- The one global language switch, drawn by customSelect (main.js); each option names its language in that language. -->
-    <select id="locale-select" aria-label="Language" data-i18n-aria-label="locale.switch"><option value="en" lang="en">English</option><option value="zh-TW" lang="zh-TW">繁體中文</option></select>
-    <button id="airflow-toggle" aria-pressed="false" title="Toggle airflow · V" data-i18n-title="aero.toggleTitle"><kbd>V</kbd> <span data-i18n="aero.airflow">AIRFLOW</span></button>
-    <details id="vfx-panel"><summary><span data-i18n="vfx.summary">VFX</span> <span aria-hidden="true">＋</span></summary>
-      <div class="vfx-settings">
-        <div class="vfx-heading"><span data-i18n="vfx.eyebrow">AEROSPACE / VISUAL LAB</span><strong data-i18n="vfx.headline">Shape the rush.</strong><small data-i18n="vfx.subline">Visual simulation · driving physics unchanged</small></div>
-        <label><span data-i18n="vfx.enabled">Visual effects</span> <input type="checkbox" data-vfx="enabled"></label>
-        <label><span data-i18n="vfx.preset">Visual style</span> <select data-vfx="preset"><option value="realistic" data-i18n="vfx.preset.realistic">Realistic</option><option value="cinematic" data-i18n="vfx.preset.cinematic">Cinematic</option><option value="extreme" data-i18n="vfx.preset.extreme">Extreme · sci-fi</option></select></label>
-        <label><span data-i18n="vfx.fps">Target FPS</span> <select id="target-fps" aria-label="Target FPS" data-i18n-aria-label="vfx.fps"><option value="auto" data-i18n="vfx.fps.auto">Auto</option><option value="30">30 FPS</option><option value="60">60 FPS</option><option value="90">90 FPS</option><option value="120">120 FPS</option></select></label>
-         <small data-i18n="vfx.fps.note">Auto raises rendering FPS only on sustained fast displays; 90/120 may be capped by your browser. Graphics quality stays independent.</small>
-         <label><span data-i18n="vfx.quality">Quality</span> <select data-vfx="quality"><option value="low" data-i18n="vfx.quality.low">Low</option><option value="medium" data-i18n="vfx.quality.medium">Medium</option><option value="high" data-i18n="vfx.quality.high">High</option><option value="ultra" data-i18n="vfx.quality.ultra">Ultra</option></select></label>
-        <label><span data-i18n="vfx.aeroMode">Aerodynamics</span> <select data-vfx="aeroMode"><option value="drag" data-i18n="vfx.aeroMode.drag">Low drag</option><option value="downforce" data-i18n="vfx.aeroMode.downforce">High downforce</option></select></label>
-        <label><span data-i18n="vfx.view">Showcase camera</span> <select data-vfx="view"><option value="drive" data-i18n="vfx.view.drive">Driving camera</option><option value="front" data-i18n="vfx.view.front">Front</option><option value="rear" data-i18n="vfx.view.rear">Rear</option><option value="left" data-i18n="vfx.view.left">Left</option><option value="right" data-i18n="vfx.view.right">Right</option><option value="orbit" data-i18n="vfx.view.orbit">Orbit</option></select></label>
-        <label><span data-i18n="vfx.comfortable">Comfort mode</span> <input type="checkbox" data-vfx="comfortable"></label>
-        <small class="vfx-note" data-i18n="vfx.comfortNote">Comfort removes flashes, shake, afterimages and blur. System reduced-motion preferences are always respected.</small>
-        <label><span data-i18n="vfx.haptics">Haptic feedback</span> <input type="checkbox" data-vfx="haptics"></label>
-        <details class="vfx-tuning"><summary data-i18n="vfx.tuning">Fine tuning</summary><label v-for="([label, min, max, step], key) in VFX_RANGES" class="vfx-range"><span :data-i18n="vfxLabelKey(key)">{{ label }}</span><output :for="`vfx-${key}`"></output><input :id="`vfx-${key}`" :aria-label="String(label)" :data-i18n-aria-label="vfxLabelKey(key)" :data-vfx="key" type="range" :min="min" :max="max" :step="step"></label></details>
-        <HudSettings />
-        <button id="vfx-reset" data-i18n="vfx.reset">Reset visual settings</button>
-      </div>
-    </details>
-  </aside>
   <!-- Home preview swipe (main.js): the track being swiped to, the track just chosen, or the one-time gesture hint. -->
   <div class="track-swipe" id="track-swipe" role="status" data-state=""><span class="swipe-gesture" aria-hidden="true"><i></i></span><strong id="track-swipe-name"></strong><span id="track-swipe-note"></span><span class="swipe-dots" aria-hidden="true"></span></div>
   <section class="airflow-hud" id="airflow-hud" aria-label="Airflow status" data-i18n-aria-label="aero.status" aria-hidden="true">
@@ -121,42 +145,40 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       <p id="performance-notice-text"></p>
       <button type="button" id="performance-notice-dismiss">Got it</button>
     </details>
-    <section class="intro" id="intro" aria-label="Race setup" data-i18n-aria-label="lobby.title">
+    <section class="intro lobby-compact" id="intro" aria-label="Race setup" data-i18n-aria-label="lobby.title">
       <div class="home-intro-topbar">
         <div class="route-label"><span class="route-line"></span> <span id="track-length">5 KM SPRINT</span> <span>·</span> <span class="route-drivers"></span><button class="medal-chip cloud-chip" id="cloud-open" data-open-history="cloud" data-i18n="cloud.title">Cloud save</button><button class="medal-chip" id="medal-chip" data-open-history="medals" :aria-label="homeStatusView.medalLabel" :class="{ 'has-medals': homeStatusView.hasMedals }"><svg v-bind="ICON_ATTRS" v-html="icons.star"></svg><span id="medal-count">{{ homeStatusView.medalCount }}</span></button></div>
-        <Wave3CurrencyStrip v-if="GARAGE_RELEASE_MODE === 'trial'" compact
+        <Wave3CurrencyStrip v-if="wave3DemoExperience" compact
           class="home-resource-strip" :experience="wave3DemoExperience" :locale="homeWalletLocale" />
       </div>
+      <div class="lobby-setup">
       <a class="intro-wordmark" href="./" aria-label="Skyline Rush home (reload)" data-i18n-aria-label="nav.homeReload"><svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><path :d="LOGO_PATH" stroke="currentColor" stroke-width="3"/></svg><span lang="en">SKYLINE <b>RUSH</b></span></a>
-      <h1 id="intro-title"><span data-i18n="intro.title.1">The road is just </span><br><span data-i18n="intro.title.2">the </span><em data-i18n="intro.title.3">beginning.</em></h1>
-      <p class="intro-copy"><span data-i18n="intro.copy.1">Own the highway. Then leave it behind.</span><br><span data-i18n="intro.copy.2">Fire your thrusters and take the race to the sky.</span></p>
+      <div class="lobby-race-heading">
+        <img id="lobby-hero-art" alt="" decoding="async" />
+        <span class="track-route-map" id="lobby-hero-map" aria-hidden="true"></span>
+        <div class="lobby-track-copy"><h1 id="intro-title"><span id="lobby-hero-track"><span id="lobby-track-name"></span></span></h1><p id="lobby-race-distance" class="lobby-race-distance"></p></div>
+        <button type="button" id="lobby-tracks-toggle" aria-expanded="false" aria-haspopup="dialog" aria-controls="track-chooser" aria-describedby="lobby-hero-track"><span data-i18n="track.choose">Choose track</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
+        <span id="lobby-track-status" class="lobby-visually-hidden"></span>
+      </div>
       <div class="race-mode-picker" id="race-mode-picker" role="group" aria-label="Game mode" data-i18n-aria-label="mode.heading">
         <div class="race-mode-heading">
-          <button class="lobby-picker-toggle" id="lobby-modes-toggle" type="button" aria-expanded="false" aria-controls="lobby-mode-options"><span data-i18n="lobby.mode">Mode</span><strong id="lobby-mode-name"></strong></button>
+          <button class="lobby-picker-toggle" id="lobby-modes-toggle" type="button" aria-expanded="false" aria-controls="lobby-mode-options"><svg v-bind="ICON_ATTRS" v-html="icons.flag"></svg><span data-i18n="lobby.mode">Mode</span><strong id="lobby-mode-name"></strong></button>
           <small id="mode-description"></small>
         </div>
         <div class="race-mode-tabs" id="lobby-mode-options">
-          <button type="button" data-race-mode="classic" aria-pressed="true" data-i18n="mode.classic">Classic Race</button>
-          <button type="button" data-race-mode="custom" aria-pressed="false" data-i18n="mode.custom">Custom Race</button>
-          <button type="button" data-race-mode="free" aria-pressed="false" data-i18n="mode.free">Free Drive</button>
-          <button type="button" data-race-mode="time" aria-pressed="false" data-i18n="mode.time">Time Attack</button>
-          <button type="button" data-race-mode="gauntlet" aria-pressed="false" data-i18n="mode.gauntlet">Obstacle Run</button>
-          <button type="button" data-race-mode="checkpoint" aria-pressed="false" data-i18n="mode.checkpoint">Checkpoint Rush</button>
-          <button type="button" data-race-mode="cup" aria-pressed="false" data-i18n="mode.cup">Championship Cup</button>
-          <button type="button" data-race-mode="stunt" aria-pressed="false" data-i18n="mode.stunt">Stunt Attack</button>
-          <button type="button" data-race-mode="endless" aria-pressed="false" data-i18n="mode.endless">Endless Highway</button>
-          <button type="button" data-race-mode="circuit" aria-pressed="false" data-i18n="mode.circuit">Circuit Race</button>
-          <button type="button" data-race-mode="elimination" aria-pressed="false" data-i18n="mode.elimination">Elimination</button>
-          <button type="button" data-race-mode="eventlab" aria-pressed="false" data-i18n="mode.eventlab">Event Lab</button>
+          <button type="button" data-race-mode="classic" aria-pressed="true"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.classic"></svg><span data-i18n="mode.classic">Classic Race</span></button>
+          <button type="button" data-race-mode="custom" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.custom"></svg><span data-i18n="mode.custom">Custom Race</span></button>
+          <button type="button" data-race-mode="free" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.free"></svg><span data-i18n="mode.free">Free Drive</span></button>
+          <button type="button" data-race-mode="time" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.time"></svg><span data-i18n="mode.time">Time Attack</span></button>
+          <button type="button" data-race-mode="gauntlet" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.gauntlet"></svg><span data-i18n="mode.gauntlet">Obstacle Run</span></button>
+          <button type="button" data-race-mode="checkpoint" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.checkpoint"></svg><span data-i18n="mode.checkpoint">Checkpoint Rush</span></button>
+          <button type="button" data-race-mode="cup" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.cup"></svg><span data-i18n="mode.cup">Championship Cup</span></button>
+          <button type="button" data-race-mode="stunt" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.stunt"></svg><span data-i18n="mode.stunt">Stunt Attack</span></button>
+          <button type="button" data-race-mode="endless" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.endless"></svg><span data-i18n="mode.endless">Endless Highway</span></button>
+          <button type="button" data-race-mode="circuit" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.circuit"></svg><span data-i18n="mode.circuit">Circuit Race</span></button>
+          <button type="button" data-race-mode="elimination" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.elimination"></svg><span data-i18n="mode.elimination">Elimination</span></button>
+          <button type="button" data-race-mode="eventlab" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.eventlab"></svg><span data-i18n="mode.eventlab">Event Lab</span></button>
         </div>
-      </div>
-      <button class="lobby-picker-toggle" id="lobby-tracks-toggle" type="button" aria-expanded="false" aria-controls="lobby-track-options"><span data-i18n="lobby.track">Track</span><strong id="lobby-track-name"></strong><span id="lobby-track-status"></span></button>
-      <div class="track-select" id="lobby-track-options" role="group" aria-label="Choose track" data-i18n-aria-label="track.choose">
-        <button v-for="(track, id) in RACE_TRACKS" :key="id" :data-track="id" :aria-pressed="id === 'coast'">
-          <i class="track-preview upcoming-thumb" :class="`preview-${id}`" aria-hidden="true"><img :src="`${BASE_URL}track-teasers/${id}.jpg`" alt="" loading="lazy" /></i>
-          <span class="track-route-map" aria-hidden="true"></span><strong>{{ track.name }}</strong><span>{{ track.length / 1000 }} KM <small></small></span>
-        </button>
-        <button v-for="(track, id) in UPCOMING_TRACKS" :key="id" type="button" class="upcoming-track-card" :data-upcoming-track="id" aria-pressed="false"><i class="track-preview upcoming-thumb" aria-hidden="true"><img :src="`${BASE_URL}${track.image}`" alt="" loading="lazy" /></i><span class="track-route-map" aria-hidden="true"></span><strong>{{ track.names.en }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button>
       </div>
       <p id="track-note" class="track-note"></p>
       <section class="race-mode-picker race-rules-row" id="race-rules-row" aria-labelledby="race-rules-step">
@@ -227,21 +249,13 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
           <RacePresentation />
         </details>
       </section>
-      <div class="intro-actions">
-        <p id="lobby-access-note" role="status" hidden></p>
-        <div class="intro-primary"><button class="primary-button" id="start-button" aria-label="Start race" data-i18n-aria-label="start.race"><span data-i18n="start.race">Start race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
-        <button type="button" class="text-button garage-button" id="garage-button"><span data-i18n="nav.garage">Garage</span><span class="garage-new-tag" lang="en" aria-hidden="true">NEW</span></button></div>
-        <button class="text-button history-button" data-open-history data-i18n="nav.history">History</button>
-        <button class="text-button practice-button" id="practice-button" data-i18n="nav.practice">Practice</button>
-        <span class="start-hint"><span data-i18n="start.hint">or press</span> <kbd>ENTER</kbd></span>
-      </div>
       <!-- Reserve space for the camera controls in compact layouts. -->
       <nav class="showcase-camera-dock" id="showcase-camera-dock" aria-label="Showcase camera" data-i18n-aria-label="vfx.view">
         <span class="showcase-camera-heading" data-i18n="showcase.heading">CAMERA VIEW</span>
         <div class="showcase-camera-actions">
-          <button type="button" id="showcase-camera-prev" aria-label="Previous camera view" data-i18n-aria-label="showcase.previous">‹</button>
+          <button type="button" id="showcase-camera-prev" aria-label="Previous camera view" data-i18n-aria-label="showcase.previous"><span class="showcase-dock-glyph" aria-hidden="true">‹</span><CollectibleIcon name="left" /></button>
           <span id="showcase-camera-name" role="status" aria-live="polite"></span>
-          <button type="button" id="showcase-camera-next" aria-label="Next camera view" data-i18n-aria-label="showcase.next">›</button>
+          <button type="button" id="showcase-camera-next" aria-label="Next camera view" data-i18n-aria-label="showcase.next"><span class="showcase-dock-glyph" aria-hidden="true">›</span><CollectibleIcon name="right" /></button>
         </div>
         <span class="showcase-camera-dots" id="showcase-camera-dots" aria-hidden="true"></span>
       </nav>
@@ -260,18 +274,24 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
         <div><span class="keys" data-keys="fly"></span><span data-i18n="hint.fly">Hold to fly</span></div>
         <div><span class="keys" data-keys="boost"></span><span data-i18n="hint.boost">Boost</span></div>
         <div><span class="keys" data-keys="nitro"></span><span data-i18n="hint.nitro">Nitro</span></div>
+        <div data-i18n-title="hint.resetTip" title="Return to nearby safe road; race clock continues"><kbd>R</kbd><span data-i18n="hint.reset">Reset vehicle</span></div>
         <div><kbd>V</kbd><span data-i18n="hint.airflow">Airflow</span></div>
       </div>
       <p class="flight-tip"><span class="tip-full" data-i18n="intro.tip">Build speed to lift off. Release to land. Recharge on the road. AUTO holds the accelerator; you steer and brake.</span><span class="tip-short" data-i18n="intro.tipShort">Build speed to fly, release to land. AUTO holds the throttle.</span></p>
+      </div>
+      <div class="intro-actions">
+        <p id="lobby-access-note" role="status" hidden></p>
+        <div class="intro-primary"><button class="primary-button" id="start-button" aria-label="Start race" data-i18n-aria-label="start.race"><span data-i18n="start.race">Start race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
+        <button type="button" class="text-button garage-button" id="garage-button"><img class="lobby-action-art" :src="`${BASE_URL}feature-assets/race-lobby/nav-garage@3x.webp`" width="24" height="24" alt="" draggable="false"><span data-i18n="nav.garage">Garage</span><span class="garage-new-tag" lang="en" aria-hidden="true">NEW</span></button></div>
+        <button type="button" class="text-button history-button" data-open-history><img class="lobby-action-art" :src="`${BASE_URL}feature-assets/race-lobby/nav-progress@3x.webp`" width="24" height="24" alt="" draggable="false"><span data-i18n="nav.progress">Progress</span></button>
+        <button type="button" class="text-button practice-button" id="practice-button"><img class="lobby-action-art" :src="`${BASE_URL}feature-assets/race-lobby/nav-practice@3x.webp`" width="24" height="24" alt="" draggable="false"><span data-i18n="nav.practice">Practice</span></button>
+        <span class="start-hint"><span data-i18n="start.hint">or press</span> <kbd>ENTER</kbd></span>
+      </div>
     </section>
 
-    <section class="race-info" id="race-info" aria-label="Race progress" data-i18n-aria-label="race.progress" hidden>
-      <div class="position-stat"><span class="stat-label" data-i18n="race.position">POSITION</span><div><strong id="position">08</strong><span id="position-field-size">/ 08</span><span id="position-change" hidden></span></div><span class="time" id="timer">00:00.00</span><span id="style-score" class="style-score">STYLE 0</span></div>
-      <div class="race-progress"><div id="ghost-split" class="ghost-split" role="status" hidden></div><output id="circuit-hud" class="sprint-stage" role="status" hidden></output><output id="sprint-stage" class="sprint-stage" hidden></output><output id="practice-hud" class="practice-hud" aria-label="Practice statistics" data-i18n-aria-label="mode.practiceStats" hidden></output><output id="stunt-hud" class="stunt-hud" aria-label="Stunt score and countdown" data-i18n-aria-label="mode.stuntHudLabel" hidden></output><ItemSlot /><output id="elimination-hud" class="elimination-hud" hidden></output><output id="checkpoint-hud" class="checkpoint-hud" hidden></output><output id="hazard-warning" class="hazard-warning" hidden></output><output id="clean-trial-hud" class="clean-trial-hud" hidden></output></div>
-      <div class="leaderboard" id="leaderboard" aria-label="Race leaderboard" data-i18n-aria-label="race.leaderboard"></div><div id="race-route-map" class="race-route-map" role="region" aria-label="Full course map with live racer positions" data-i18n-aria-label="race.map"><div class="progress-bar"><div class="progress-labels"><span id="race-status">READY</span><span><span id="distance">0.00</span> / <span id="race-length">5.00</span><span class="unit"> KM</span></span></div></div></div>
-    </section>
+    <RaceInfo />
 
-    <div class="countdown" id="countdown" role="status" aria-live="polite" hidden><div class="start-lights" aria-hidden="true"><i></i><i></i><i></i></div><strong id="countdown-number">3</strong><span id="countdown-label">HOLD ACCELERATOR · GET READY</span></div>
+    <div class="countdown" id="countdown" role="status" aria-live="polite" hidden><div class="start-lights" aria-hidden="true"><i></i><i></i><i></i></div><strong id="countdown-number">3</strong><div class="race-loading-rail" aria-hidden="true"></div><span id="countdown-label">HOLD ACCELERATOR · GET READY</span></div>
     <div class="event-callout" id="event-callout" role="status" aria-live="polite" aria-atomic="true" hidden>
       <div id="maneuver-report" hidden></div><div id="skill-report" hidden></div><div id="action-report" hidden></div>
     </div>
@@ -286,28 +306,18 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
     <RaceOverlay />
     <div id="error-message" class="error-message" role="alert" hidden></div>
   </main>
-  <dialog id="photo-screen" class="photo-screen" aria-labelledby="photo-title">
-    <div class="photo-panel">
-      <div class="photo-tools">
-        <h2 id="photo-title" data-i18n="photo.title">PHOTO STUDIO</h2>
-        <label><span data-i18n="photo.orbit">Camera orbit</span>
-          <input id="photo-orbit" type="range" min="0" max="360" step="15" value="30"></label>
-        <details id="photo-advanced">
-          <summary data-i18n="photo.tools">Advanced tools</summary>
-          <label><span data-i18n="photo.fov">Field of view</span>
-            <input id="photo-fov" type="range" min="35" max="85" value="58"></label>
-          <label><span data-i18n="photo.sky">Photo lighting</span>
-            <select id="photo-sky"><option value="original" data-i18n="photo.original">Original</option>
-              <option value="sunset" data-i18n="photo.sunset">Sunset</option>
-              <option value="night" data-i18n="photo.night">Night</option>
-              <option value="fog" data-i18n="photo.fog">Fog</option></select></label>
-        </details>
-        <p id="photo-status" role="status" data-i18n="photo.status">This photo stays on your device.</p>
+  <dialog id="track-chooser" class="track-chooser" aria-labelledby="track-chooser-title">
+    <header class="track-chooser-heading"><h2 id="track-chooser-title" data-i18n="track.choose">Choose track</h2><CloseButton id="track-choose-close" :label="homeWalletLocale === 'zh-TW' ? '關閉賽道選擇' : 'Close track selection'" /></header>
+      <div class="track-select" id="lobby-track-options" role="group" aria-label="Choose track" data-i18n-aria-label="track.choose">
+        <button v-for="(track, id) in RACE_TRACKS" :key="id" :data-track="id" :aria-pressed="id === 'coast'">
+          <i class="track-preview upcoming-thumb" :class="`preview-${id}`" aria-hidden="true"><img :src="`${BASE_URL}track-teasers/${id}.jpg`" alt="" loading="lazy" /></i>
+          <span class="track-route-map" aria-hidden="true"></span><strong>{{ track.name }}</strong><span>{{ track.length / 1000 }} KM <small></small></span>
+        </button>
+        <button v-for="(track, id) in UPCOMING_TRACKS" :key="id" type="button" class="upcoming-track-card" :data-upcoming-track="id" aria-pressed="false"><i class="track-preview upcoming-thumb" aria-hidden="true"><img :src="`${BASE_URL}${track.image}`" alt="" loading="lazy" /></i><span class="track-route-map" aria-hidden="true"></span><strong>{{ track.names.en }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button>
       </div>
-      <div class="photo-actions"><button type="button" id="photo-close" data-i18n="photo.close">BACK</button>
-        <button type="button" id="photo-save" data-i18n="photo.save">SAVE PNG</button></div>
-    </div>
+    <footer class="track-chooser-footer"><div aria-live="polite"><span id="track-choose-map" class="track-route-map" aria-hidden="true"></span><div><strong id="track-choose-selection"></strong><small id="track-choose-state"></small></div></div><button type="button" id="track-choose-confirm"><span data-i18n="track.confirm">Confirm track</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button></footer>
   </dialog>
+  <PhotoStudio />
   <div id="race-wipe" class="race-wipe" aria-hidden="true" hidden></div>
 
   <HistoryPanel />
@@ -324,34 +334,35 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       <a class="text-button" id="leave-home" href="./" data-i18n="leave.home">Back to home</a>
     </div>
   </dialog>
+  <ConfirmDialog />
+  <GameToast />
 
   <footer class="telemetry">
-    <div class="speedometer"><div class="speed-number"><strong id="speed">0</strong><span>KM/H</span></div><div class="speed-ticks" aria-hidden="true"><svg class="speed-dial" viewBox="0 0 200 22"><path d="M4 20 Q100 -16 196 20"/><path id="speed-needle" d="M100 20V2"/></svg><i v-for="i in 24"></i></div><span class="speed-caption" id="speed-caption">READY FOR TAKEOFF</span></div>
+    <RaceSpeedometer />
     <div class="mode-indicator"><div class="mode-heading"><div class="mode-icon" id="mode-icon"><svg v-bind="ICON_ATTRS" v-html="icons.road"></svg></div><span id="flight-mode">ROAD MODE</span><span id="flight-budget">5.3s</span></div><strong id="flight-state">BUILD SPEED</strong><span class="mode-key" id="flight-instruction">REACH 65 KM/H · HOLD SPACE TO LIFT</span></div>
     <div class="flight-telemetry"><div class="altitude-stat"><span class="stat-label" data-i18n="hud.altitude">ALTITUDE</span><strong><span id="altitude">0.0</span><small>M</small></strong></div><div class="fuel-stat"><div class="fuel-heading"><span class="stat-label" data-i18n="hud.thruster">THRUSTER CHARGE</span><span><b id="fuel-value">100</b><small>%</small></span></div><div class="fuel-track" id="fuel-meter" role="meter" aria-label="Thruster charge" data-i18n-aria-label="hud.thrusterAria" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i id="fuel-fill"></i></div><span class="fuel-caption" id="fuel-caption">GROUND RECHARGE ACTIVE</span></div></div>
   </footer>
   <!-- TOUCH CONTROLS DOM/CSS CONTRACT — frozen; style.css builds from this, change both together.
    #touch-controls.touch-controls (shown by the existing media rules; [hidden] outside racing/countdown)
-     data-steer-mode="slide|buttons|tilt"  slide: .touch-pad steers (drag sideways, pull down = brake), hide .touch-steer (and its brake)
+     data-steer-mode="slide|buttons|tilt"  slide: .touch-pad steers (drag sideways, pull down = brake), hide .touch-steer and the brake button
                                       buttons: .touch-steer left/right buttons steer, hide .touch-pad
-                                      tilt: sensors steer; pad remains available for down-drag brake / drift
+                                      tilt: motion sensors steer; pad remains available for down-drag brake / drift
      data-hand="left|right"           side of the screen the steering (pad or .touch-steer) sits on; actions/pedals take the other side
      data-size="S|M|L"               chosen size; lets the live route map clear the cluster (style.css)
      style --touch-scale              0.85 (S) | 1 (M) | 1.15 (L); multiply control sizes by it
      style --touch-opacity            0.4–1; control opacity
-     children, in order (all siblings):
-       .touch-pad[aria-hidden]        slide surface (pointer events, touch-action:none) > .pad-ring + .pad-knob (positioned later by main.js)
-       .touch-steer                   button[data-control=left|right] + button[data-control=brake] (brake sits above them, off the thumb's rest row; an arrow touch slid up into it holds brake + steer = drift)
+       .touch-pad[aria-hidden]        slide surface (pointer events, touch-action:none) > .pad-ring + .pad-knob (positioned by touch-controls-ui.ts)
+       .touch-steer                   button[data-control=left|right] on the steering side
        .touch-actions                 button.touch-fly[data-control=fly], button.touch-boost[data-control=boost]
        .touch-pedals                  button.touch-gas[data-control=throttle] (gas always visible, both modes)
+       .touch-brake                   separate brake for the opposite thumb in Buttons mode
      button.is-held / [aria-pressed=true] while active (existing).
-   Toolbar Controls panel (NOT inside .settings): .controls-menu > button#controls-button.controls-button (text "Controls",
-     deliberately not .icon-button) + #controls-panel.controls-panel[hidden] — the scroll container: give it max-height + overflow:auto.
+   Settings Driving section: #controls-panel controls remain mounted so game state and keyboard bindings stay connected.
      Inside: fieldset.controls-field > legend + label.controls-choice > input[type=radio][data-controls] + span;
      label.controls-field.controls-range > output + input[type=range][data-controls=opacity]; button#controls-reset.controls-reset. -->
   <div class="touch-controls" id="touch-controls" aria-label="Touch driving controls" data-i18n-aria-label="touch.controls" hidden>
     <div class="touch-pad" aria-hidden="true"><i class="pad-ring"></i><i class="pad-knob"></i></div>
-    <div class="touch-steer"><button data-control="left" aria-label="Steer left" data-i18n-aria-label="touch.left"><svg v-bind="ICON_ATTRS" v-html="icons.left"></svg></button><button data-control="right" aria-label="Steer right" data-i18n-aria-label="touch.right"><svg v-bind="ICON_ATTRS" v-html="icons.right"></svg></button><button data-control="brake" aria-label="Brake" data-i18n-aria-label="touch.brake"><svg v-bind="ICON_ATTRS" v-html="icons.brake"></svg></button></div>
+    <div class="touch-steer"><button data-control="left" aria-label="Steer left" data-i18n-aria-label="touch.left"><svg v-bind="ICON_ATTRS" v-html="icons.left"></svg></button><button data-control="right" aria-label="Steer right" data-i18n-aria-label="touch.right"><svg v-bind="ICON_ATTRS" v-html="icons.right"></svg></button></div>
     <div class="touch-actions">
       <button class="touch-nitro" data-control="nitro" aria-label="Activate nitro" data-i18n-aria-label="touch.nitro">
         <svg viewBox="0 0 28 28" aria-hidden="true" fill="none">
@@ -373,9 +384,10 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       </button>
     </div>
     <div class="touch-pedals"><button class="touch-gas" data-control="throttle" aria-label="Accelerate" data-i18n-aria-label="touch.throttle"><svg v-bind="ICON_ATTRS" v-html="icons.pedal"></svg></button></div>
+    <button class="touch-brake" data-control="brake" aria-label="Brake" data-i18n-aria-label="touch.brake"><svg v-bind="ICON_ATTRS" v-html="icons.brake"></svg></button>
   </div>
   <div class="layout-toolbar" id="layout-toolbar" hidden><div><strong id="layout-orientation" role="status"></strong><br><span data-i18n="layout.hint">Drag buttons to fit your thumbs</span></div><button id="layout-done" data-i18n="layout.done">Done editing</button></div>
-  <div class="bottomline"><span><i></i> <span data-i18n="footer.tagline">BEYOND THE ROAD</span></span><button type="button" id="whats-new-open" class="build-version" :hidden="releaseView.openHidden" :class="{ 'has-update': releaseView.openHasUpdate }" data-i18n-aria-label="release.open" data-i18n-title="release.open" title="What's new">v{{ version }}<span class="release-unread" aria-hidden="true"></span></button><span data-i18n="footer.genre">AN ORIGINAL ARCADE FLIGHT RACER</span></div>
+  <div class="bottomline"><button type="button" id="whats-new-open" class="build-version" :hidden="releaseView.openHidden" :class="{ 'has-update': releaseView.openHasUpdate }" data-i18n-aria-label="release.open" data-i18n-title="release.open" title="What's new">v{{ version }}<span class="release-unread" aria-hidden="true"></span></button></div>
 </template>
 
 <style scoped>

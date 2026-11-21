@@ -1,3 +1,5 @@
+import { openSettingsSection } from './helpers/settings-browser.js';
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { test,expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -24,8 +26,11 @@ test('landscape language controls remain clickable while the quality notice is v
   await expect(page.locator('#performance-notice')).toBeVisible();
   await selectLocale(page, 'zh-TW');
   await expect(page.locator('#performance-notice-text')).toContainText('低');
+  await expect(page.locator('#performance-notice summary')).toBeVisible();
   await page.locator('#performance-notice summary').click();
   await page.locator('#performance-notice-dismiss').click();
+  await expect(page.locator('#performance-notice')).toBeHidden();
+  await selectLocale(page, 'en');
   await expect(page.locator('#performance-notice')).toBeHidden();
 });
 
@@ -47,8 +52,8 @@ test('first visit chooses Low for constrained device, explains it in either lang
 // any panel puts it away: the reader is already in the settings it points to.
 const panels = {
   audio: { open: page => page.locator('#settings-button').click(), control: page => page.getByRole('switch', { name: 'Sound effects' }) },
-  controls: { open: page => page.locator('#controls-button').click(), control: page => page.locator('#controls-panel button:visible').first() },
-  vfx: { open: page => page.locator('#vfx-panel > summary').click(), control: page => page.locator('.vfx-settings .custom-select button').first() },
+  controls: { open: page => openSettingsSection(page, 'driving'), control: page => page.locator('#controls-panel button:visible').first() },
+  vfx: { open: page => toggleSettingsSection(page, 'display'), control: page => page.locator('.vfx-settings .custom-select button').first() },
 };
 for (const [name, panel] of Object.entries(panels)) {
   test(`opening the ${name} panel puts the downgrade notice away so its controls stay clickable`, async ({ page }) => {
@@ -76,7 +81,7 @@ for (const [label, url] of [['plain', '/'], ['legacy', '/?3d=1&look=3d&model=roa
     const quality = page.locator('select[data-vfx="quality"]');
     await expect(quality.locator('option')).toHaveText(['Low', 'Medium', 'High', 'Ultra']);
     await expect(quality).toHaveValue('ultra');
-    await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', 'high');
+    await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', 'ultra');
   });
 }
 
@@ -87,11 +92,12 @@ test('Ultra is selectable, saved across reloads, and switching back to High clea
   await quality.selectOption('ultra', { force: true });
   await expect(quality).toHaveValue('ultra');
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-vfx')))).toMatchObject({ quality: 'high', ultra: true });
-  await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', 'high');
+  await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', 'ultra');
   await page.reload();
   await expect(page.locator('select[data-vfx="quality"]')).toHaveValue('ultra');
   await page.locator('select[data-vfx="quality"]').selectOption('high', { force: true });
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-vfx')).ultra)).toBe(false);
+  await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', 'high');
 });
 
 test('automatic graphics choice is a short disclosure with keyboard-accessible details', async ({ page }) => {
@@ -99,10 +105,8 @@ test('automatic graphics choice is a short disclosure with keyboard-accessible d
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   const notice = page.locator('#performance-notice');
   const summary = notice.locator('summary');
-  await expect(summary).toBeVisible({ timeout: ciTimeout(2500) });
-  for (const selector of ['#airflow-toggle', '#vfx-panel > summary']) {
-    await page.locator(selector).click({ trial: true, timeout: ciTimeout(3500) });
-  }
+  await expect(summary).toBeVisible();
+  await page.locator('#settings-button').click({ trial: true, timeout: ciTimeout(3500) });
   await expect(notice.locator('#performance-notice-text')).toBeHidden();
   await summary.focus();
   await page.keyboard.press('Enter');

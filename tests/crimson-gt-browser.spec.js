@@ -1,3 +1,5 @@
+import { GT_EARNED_STARS } from './helpers/gt-progress.js';
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { openGarageSection } from './helpers/garage-browser.js';
 import { test, captureHooks, glbRoots, programs, modelInstances as instances, dressedAs as dressed, watchRequests } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -6,7 +8,7 @@ import { openGarage } from './helpers/test.js';
 import { copyFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PAINTS } from '../src/appearance.ts';
-import { GARAGE_SKINS } from '../src/garage-skin-catalog.ts';
+import { GARAGE_SKINS, SKIN_CATEGORIES } from '../src/garage-skin-catalog.ts';
 import { parseGlb } from '../scripts/assets/check-glb.mjs';
 import { fitToRoadsterSize } from '../src/car-display-size.ts';
 import { chooseGarageAngle } from './helpers/garage-angle.js';
@@ -44,7 +46,8 @@ async function prepare(page, url, { quality = 'high', storage = {} } = {}) {
   return { requests, errors };
 }
 
-const GT = { 'skyline-rush-car': 'crimson-gt' };
+const OWNED_GT = { 'skyline-rush-stars': GT_EARNED_STARS };
+const GT = { ...OWNED_GT, 'skyline-rush-car': 'crimson-gt' };
 const world = page => page.locator('#world');
 const modelReady = page => expect(world(page)).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(20000) });
 const carButton = (page, id) => page.locator(`#garage-screen [data-car="${id}"]`);
@@ -70,7 +73,7 @@ const attach = async (page, name) => {
 
 test('Garage and Preview Studio keep equipped and previewed paint while switching cars', async ({ gameplayPage: page, gameplayURL }) => {
   test.setTimeout(ciTimeout(90000));
-  const { requests, errors } = await prepare(page, gameplayURL, { quality: 'low', storage: { 'skyline-rush-stars': { coast: 3 } } }); // 3 stars: Aurora is owned
+  const { requests, errors } = await prepare(page, gameplayURL, { quality: 'low', storage: OWNED_GT });
   await page.locator('#garage-button').click();
   await expect(carButton(page, 'roadster')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#garage-screen [data-paint]')).toHaveCount(7);
@@ -183,7 +186,7 @@ test('legacy graphics URL keeps the equipped Crimson GT and follows the Garage c
   await expect.poll(dressedAs).toBe('crimson-gt');
   await page.locator('#garage-close').click();
   await expect.poll(() => instances(page)).toEqual({ home: expect.any(String) });
-  await page.locator('[data-upcoming-track="dune-tempest"]').click();
+  await clickLobbyOption(page, '[data-upcoming-track="dune-tempest"]');
   await expect.poll(() => instances(page)).toEqual({ showcase: expect.any(String) });
   expect(requests).toEqual(['/models/crimson-gt/crimson-gt-low.glb', '/models/roadster2/roadster2-low.glb']);
   expect(errors).toEqual([]);
@@ -235,21 +238,35 @@ test('race: the equipped GT dresses Home and carries into the race with the rear
 
 /** Car root, chase camera and tyre contact height on the Coast grid, held in the countdown: no input, no speed, the same for every run. */
 async function gridPose(page, url, storage = {}) {
-  const { errors } = await prepare(page, url, { storage });
+  // Medium loads the same high-detail car GLB with a smaller scenery budget.
+  const { errors } = await prepare(page, url, { quality: 'medium', storage });
   await expect.poll(() => dressed(page), { timeout: ciTimeout(20000) }).toBe(storage['skyline-rush-car'] ? 'crimson-gt' : 'roadster2');
-  await page.locator('#start-button').click();
-  // Hold the countdown: the world keeps easing the car and the camera onto the grid, and GO never comes.
-  await expect.poll(() => page.evaluate(() => { const { race } = window.gameplay; if (race.phase === 'countdown') race.countdown = 1e6; return race.phase === 'countdown' && race.countdown > 1e5 && race.elapsed === 0; })).toBe(true);
-  const read = () => page.evaluate(() => {
+  const start = page.locator('#start-button');
+  // Hold the live grid in the same click as Start. A host-side poll can arrive after the wall-clock countdown.
+  await start.evaluate(button => button.addEventListener('click', () => {
+    const { race } = window.gameplay;
+    if (race.phase === 'countdown') race.countdown = 1e6;
+  }, { once: true }));
+  await start.click();
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'countdown');
+  await expect.poll(() => page.evaluate(() => {
+    const { race } = window.gameplay;
+    return race.countdown > 1e5 && race.elapsed === 0;
+  })).toBe(true);
+  const read = () => page.evaluate(async () => {
+    await new Promise(requestAnimationFrame);
     const { player, camera } = window.gameScene, round = v => Math.round(v * 1e3) / 1e3 + 0;
-    const lowest = root => { // lowest point of a wheel in the car's own space
+    player.updateWorldMatrix(true, true);
+    const carInverse = player.matrixWorld.clone().invert();
+    const meshInCar = carInverse.clone();
+    const vertex = player.position.clone();
+    const lowest = root => { // tyre surface in car space, independent of the spin of the rim's bounding box
       let y = Infinity;
-      player.updateWorldMatrix(true, true);
       root.traverse(mesh => {
         if (!mesh.isMesh) return;
-        mesh.geometry.computeBoundingBox();
-        const { min, max } = mesh.geometry.boundingBox;
-        for (const x of [min.x, max.x]) for (const h of [min.y, max.y]) for (const z of [min.z, max.z]) y = Math.min(y, player.worldToLocal(mesh.localToWorld(min.clone().set(x, h, z))).y);
+        meshInCar.multiplyMatrices(carInverse, mesh.matrixWorld);
+        const positions = mesh.geometry.getAttribute('position');
+        for (let i = 0; i < positions.count; i++) y = Math.min(y, vertex.fromBufferAttribute(positions, i).applyMatrix4(meshInCar).y);
       });
       return round(y);
     };
@@ -257,7 +274,7 @@ async function gridPose(page, url, storage = {}) {
     return {
       car: [...player.position.toArray(), ...player.quaternion.toArray()].map(round),
       camera: [...camera.position.toArray(), ...camera.quaternion.toArray(), camera.fov].map(round),
-      tyres: player.userData.wheels.map(lowest), glbTyres: glb.map(lowest),
+      wheelPivots: player.userData.wheels.map(wheel => wheel.position.toArray().map(round)), glbTyres: glb.map(lowest),
     };
   });
   let last = ''; // the car pitch and the chase camera ease onto the grid: wait until two reads half a second apart agree
@@ -266,20 +283,37 @@ async function gridPose(page, url, storage = {}) {
   return JSON.parse(last);
 }
 
-test('the GT stands on the road and under the chase camera exactly like the Roadster', async ({ gameplayPage: page, gameplayURL, browser }) => {
+test('the GT stands on the road and under the chase camera exactly like the Roadster', async ({ gameplayURL, browser, viewport, deviceScaleFactor }) => {
   test.setTimeout(ciTimeout(120000));
-  const gt = await gridPose(page, gameplayURL, GT);
-  const other = await browser.newPage();
-  await captureHooks(other);
-  const roadster = await gridPose(other, gameplayURL);
-  await other.close();
+  // Compare both cars with the same canvas size, one renderer at a time on a CPU-only runner.
+  const sample = async (storage, shot = '') => {
+    const page = await browser.newPage({ viewport, deviceScaleFactor });
+    try {
+      await captureHooks(page);
+      const pose = await gridPose(page, gameplayURL, storage);
+      if (shot) await attach(page, shot);
+      return pose;
+    } finally {
+      await page.close();
+    }
+  };
+  const gt = await sample(GT, 'gt-grid');
+  const roadster = await sample();
   expect(roadster.glbTyres).toHaveLength(4);
   expect(gt.car, 'car root: the collision box and the road frame hang on it').toEqual(roadster.car);
   gt.camera.forEach((value, index) => expect(value, `chase camera component ${index}`).toBeCloseTo(roadster.camera[index], 2));
-  expect(gt.tyres, 'the procedural wheels under the GLB').toEqual(roadster.tyres);
+  expect(gt.wheelPivots, 'the shared procedural wheel pivots').toEqual(roadster.wheelPivots);
   expect(gt.glbTyres).toHaveLength(4);
-  gt.glbTyres.forEach((y, i) => expect(y, `GT tyre ${i} touches the road where the Roadster's does`).toBeCloseTo(roadster.tyres[i], 2));
-  await attach(page, 'gt-grid');
+  // Use the shipped GLBs' ground clearance contract even when their hidden procedural rig has a different tyre profile.
+  for (const [model, tyres] of [['Roadster', roadster.glbTyres], ['GT', gt.glbTyres]]) {
+    for (const [wheel, y] of tyres.entries()) {
+      expect(y, `${model} tyre ${wheel} stays above the road plane`).toBeGreaterThanOrEqual(0);
+      expect(y, `${model} tyre ${wheel} stays within the ground contact tolerance`).toBeLessThan(0.05);
+    }
+  }
+  gt.glbTyres.forEach((y, i) => {
+    expect(Math.abs(y - roadster.glbTyres[i]), `GT tyre ${i} matches the Roadster's contact height within 1 cm`).toBeLessThanOrEqual(0.01);
+  });
 });
 
 /** GLB rig nodes next to the procedural parts they follow, in the Garage (src/garage-model-rig.ts). */
@@ -330,25 +364,27 @@ test('the GT wing rests stowed, tilts and raises with the procedural wing, and t
   expect(errors).toEqual([]);
 });
 
-test('every Garage skin previews on the Crimson GT', async ({ gameplayPage: page, gameplayURL }) => {
+// One test per category: the whole catalog in one CPU-rendered page outgrew its budget on CI (run 44736477255).
+for (const category of SKIN_CATEGORIES) test(`every Garage ${category} skin previews on the Crimson GT`, async ({ gameplayPage: page, gameplayURL }) => {
   test.setTimeout(ciTimeout(120000));
+  // A drift-trail click opens the live drift preview, a second WebGL renderer; still frames keep both off CI's CPU.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   const { errors } = await prepare(page, gameplayURL, { storage: GT });
   await page.locator('#garage-button').click();
   await modelReady(page);
-  expect(GARAGE_SKINS).toHaveLength(22);
-  for (const { id, category } of GARAGE_SKINS) {
+  for (const { id } of GARAGE_SKINS.filter(skin => skin.category === category)) {
     await openGarageSection(page, 'effects');
     await page.locator(`[data-skin="${id}"] .garage-skin-preview-hitarea`).click();
     await expect(page.locator('#garage-preview'), id).toHaveAttribute(`data-skin-preview-${category}`, id);
-    if (process.env.CRIMSON_GT_SHOTS) await attach(page, `gt-skin-${id}`); // local review sheet: all 22 on the GT
+    if (process.env.CRIMSON_GT_SHOTS) await attach(page, `gt-skin-${id}`); // local review sheet: every skin on the GT
   }
   expect(await glbRoots(page)).toBe(1); // still the GT under the last skin
-  await attach(page, 'gt-garage-skins');
+  await attach(page, `gt-garage-skins-${category}`);
   expect(errors).toEqual([]);
 });
 
 test('keyboard: Tab walks the cars in catalog order, Enter equips the focused car, and the Paints section is keyboard accessible', async ({ gameplayPage: page, gameplayURL }) => {
-  const { errors } = await prepare(page, gameplayURL);
+  const { errors } = await prepare(page, gameplayURL, { storage: OWNED_GT });
   await page.locator('#garage-button').click();
   await carButton(page, 'roadster').focus();
   await page.keyboard.press('Tab');
@@ -368,21 +404,20 @@ test('keyboard: Tab walks the cars in catalog order, Enter equips the focused ca
   expect(errors).toEqual([]);
 });
 
-test('low quality loads only the GT low LOD; a missing GLB falls back to the procedural car', async ({ gameplayPage: page, gameplayURL, browser }) => {
+test('low quality loads only the GT low LOD', async ({ gameplayPage: page, gameplayURL }) => {
   const { requests, errors } = await prepare(page, gameplayURL, { quality: 'low', storage: GT });
   await modelReady(page);
   expect(requests).toEqual(['/models/crimson-gt/crimson-gt-low.glb']);
   await expect.poll(() => page.evaluate(() => ['body', 'wheel_fl_spin', 'wing_blade', 'thruster_04'].every(n => window.gameScene.player.getObjectByName(n)))).toBe(true);
   expect(errors).toEqual([]);
+});
 
-  const other = await browser.newPage();
-  await captureHooks(other);
-  await other.route(GLB, route => route.fulfill({ status: 404, body: '' }));
-  const second = await prepare(other, gameplayURL, { storage: GT });
-  await expect(world(other)).toHaveAttribute('data-garage-model', 'fallback:missing', { timeout: ciTimeout(15000) });
-  expect(await glbRoots(other)).toBe(0);
-  expect(second.errors).toEqual([]);
-  await other.close();
+test('a missing GT GLB falls back to the procedural car', async ({ gameplayPage: page, gameplayURL }) => {
+  await page.route(GLB, route => route.fulfill({ status: 404, body: '' }));
+  const { errors } = await prepare(page, gameplayURL, { quality: 'low', storage: GT });
+  await expect(world(page)).toHaveAttribute('data-garage-model', 'fallback:missing', { timeout: ciTimeout(15000) });
+  expect(await glbRoots(page)).toBe(0);
+  expect(errors).toEqual([]);
 });
 
 test('a race started before the GLB arrives stays on the procedural car and compiles nothing; the GT dresses the car once the race is left', async ({ gameplayPage: page, gameplayURL }) => {
@@ -411,7 +446,7 @@ for (const [name, viewport] of [['phone portrait', { width: 390, height: 844 }],
   test.describe(name, () => {
     test.use({ viewport, isMobile: true, hasTouch: true, locale: 'zh-TW' });
     test('the car picker is reachable by touch, in Traditional Chinese, and equips the GT', async ({ gameplayPage: page, gameplayURL }) => {
-      const { errors } = await prepare(page, gameplayURL);
+      const { errors } = await prepare(page, gameplayURL, { storage: OWNED_GT });
       await openGarage(page, 'tap');
       const gt = carButton(page, 'crimson-gt');
       await gt.scrollIntoViewIfNeeded();
@@ -441,12 +476,12 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
       await openGarage(page);
       for (const id of ['roadster', 'crimson-gt']) {
         const button = carButton(page, id);
-        const image = button.locator('img');
+        const image = button.locator('img[src*="/car-picker/"]');
         await expect(image).toHaveAttribute('src', new RegExp(`/car-picker/${id}@3x\\.webp$`));
         await expect(image).toHaveJSProperty('naturalWidth', 432);
         await expect(image).toHaveJSProperty('naturalHeight', 198);
         const bounds = await button.evaluate(card => {
-          const img = card.querySelector('img');
+          const img = card.querySelector('img[src*="/car-picker/"]');
           const image = img.getBoundingClientRect();
           const name = card.querySelector('.garage-car-name').getBoundingClientRect();
           const { left, right, height } = card.getBoundingClientRect();
@@ -484,7 +519,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     });
 
     test('the car in use is unmistakable and the other car offers a select pill', async ({ gameplayPage: page, gameplayURL }) => {
-      await prepare(page, gameplayURL);
+      await prepare(page, gameplayURL, { storage: OWNED_GT });
       await openGarage(page);
       const look = id => carButton(page, id).evaluate(card => {
         const style = getComputedStyle(card), pill = card.querySelector('.garage-car-badge'), pillStyle = getComputedStyle(pill);
@@ -564,7 +599,7 @@ test('Garage airflow previews and equipped styles follow Crimson GT onto Coming 
   const { errors } = await prepare(page, gameplayURL, { storage: GT });
   await modelReady(page);
   await expect.poll(() => instances(page)).toEqual({ home: expect.any(String) });
-  await page.locator('[data-upcoming-track="dune-tempest"]').click();
+  await clickLobbyOption(page, '[data-upcoming-track="dune-tempest"]');
   const style = () => page.evaluate(() => {
     const { composer } = window.gameScene;
     const flow = composer.passes.find(pass => pass.scene?.isScene)?.scene.getObjectByName('Airflow showcase')?.children[0];
@@ -587,7 +622,7 @@ test('Garage airflow previews and equipped styles follow Crimson GT onto Coming 
   await page.locator('[data-skin="airflow-vortex"] .garage-skin-action').click();
   await page.locator('#garage-close').click();
   await expect.poll(style).toEqual(['crimson-gt', 2]);
-  await page.locator('[data-upcoming-track="monsoon-ruins"]').click();
+  await clickLobbyOption(page, '[data-upcoming-track="monsoon-ruins"]');
   await expect.poll(style, { timeout: ciTimeout(20000) }).toEqual(['crimson-gt', 2]);
   expect(errors).toEqual([]);
 });

@@ -1,6 +1,6 @@
 # Neon Downtown look brief (Task 5b, recorded before any look change)
 
-Target: the owner-supplied set in `concept-art/neon-downtown/` (2026-11-14; concept art, never in-game evidence).
+Target: the owner-supplied set in `track-profiles/neon-downtown/` (2026-11-14; concept art, never in-game evidence).
 Each row says how the running game reproduces a view for the spec v2 §8.1 side-by-side, and which of the seven
 §8.1 items the view actually scores. Composites and scores live in the git-ignored `audits/`; this file only fixes
 the capture recipe.

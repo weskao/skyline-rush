@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { ciTimeout } from './helpers/ci.js';
@@ -18,7 +19,7 @@ for (const [device, viewport, touch] of [
   test('START, all three fork corridors, FINISH, and topology-keyed best', async ({ gameplayPage: page }) => {
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
-    await page.locator('[data-upcoming-track="volcanic-crown"]').click();
+    await clickLobbyOption(page, '[data-upcoming-track="volcanic-crown"]');
     await expect(page.locator('#start-button')).toBeEnabled();
     await expect(page.locator('#upcoming-scene')).toBeHidden();
     const stats = await page.evaluate(() => ({

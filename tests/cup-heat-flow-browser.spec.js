@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test } from './helpers/gameplay-browser.js';
 import { openLobbyModes } from './helpers/home-lobby.js';
 import { expect } from '@playwright/test';
@@ -71,7 +72,7 @@ test('a saved Cup becomes available after Classic unlocks its last required cour
   await expect(page.locator('#cup-recovery')).toHaveCount(0);
   await openLobbyModes(page);
   await page.locator('button[data-race-mode="classic"]').click();
-  await page.locator('[data-track="neon"]').click();
+  await clickLobbyOption(page, '[data-track="neon"]');
   await page.locator('#start-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
   await page.evaluate(() => {

@@ -2,22 +2,49 @@ import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { selectLocale } from './helpers/locale-browser.js';
+import { settled } from './helpers/test.js';
 
 const SHOTS = process.env.DEMO_REWARD_SHOTS;
+
+// Measure at a controlled point in the real transition, even on a slow WebGL frame.
+const pauseDetailsTransition = panel => panel.evaluate(element => {
+  const card = element.closest('.wave3-demo-results');
+  const observer = new MutationObserver(() => {
+    observer.disconnect();
+    // Flush the style change before looking up the CSS transitions it starts.
+    getComputedStyle(element).opacity;
+    for (const animation of element.getAnimations()) {
+      animation.pause();
+      animation.currentTime = animation.effect.getComputedTiming().activeDuration / 2;
+    }
+  });
+  observer.observe(card, { attributes: true, attributeFilter: ['data-open'] });
+});
+const detailsFrame = panel => panel.evaluate(element => {
+  const style = getComputedStyle(element);
+  return { opacity: Number(style.opacity), transform: style.transform };
+});
+const finishDetailsTransition = panel => panel.evaluate(element => {
+  for (const animation of element.getAnimations()) animation.finish();
+});
+
 // Every reward line must be painted whole: no inner scrollbar, no ellipsis, no visually-hidden copy.
 const clipped = () => {
   const card = document.querySelector('.wave3-demo-results--earned');
   const misses = [];
   if (card.scrollHeight > card.clientHeight + 1) misses.push(`card scrolls ${card.scrollHeight}/${card.clientHeight}`);
-  // Short landscape opens the details as a panel above the strip; it counts as part of the card.
+  // Short landscape opens the details beside the action column; it counts as part of the card.
   const c = card.getBoundingClientRect();
   const panel = card.querySelector('.wave3-demo-results__details').getBoundingClientRect();
   const box = { left: Math.min(c.left, panel.left), right: Math.max(c.right, panel.right), bottom: Math.max(c.bottom, panel.bottom) };
   if (card.dataset.open !== undefined) {
-    const actions = document.querySelector('#race-overlay .overlay-actions').getBoundingClientRect();
+    const actions = document.querySelector('#race-overlay .overlay-actions');
     if (panel.top < 0 || panel.bottom > innerHeight) misses.push('details off screen');
-    if (panel.right > actions.left + 1 && panel.left < actions.right - 1 &&
-      panel.bottom > actions.top + 1 && panel.top < actions.bottom - 1) misses.push('details cover actions');
+    for (const control of actions.querySelectorAll('.overlay-buttons button:not([hidden])')) {
+      const r = control.getBoundingClientRect();
+      if (r.width && r.height && panel.right > r.left + 1 && panel.left < r.right - 1 &&
+        panel.bottom > r.top + 1 && panel.top < r.bottom - 1) misses.push('details cover actions');
+    }
   }
   for (const node of card.querySelectorAll('h3, p, h4, span, strong, progress')) {
     if (node.closest('[hidden]')) continue;
@@ -60,21 +87,20 @@ for (const viewport of [
 
       const geometry = () => page.evaluate(() => {
         const reward = document.querySelector('.wave3-demo-results--earned');
-        const summary = document.querySelector('#race-overlay .overlay-summary');
-        const actions = document.querySelector('#race-overlay .overlay-actions');
+        const slot = document.querySelector('#result-rewards');
         const b = reward.getBoundingClientRect();
-        const s = summary.getBoundingClientRect();
-        const a = actions.getBoundingClientRect();
+        const s = slot.getBoundingClientRect();
+        const content = document.querySelector('.overlay-content');
         return {
           // Relative only anchors the short-landscape details panel; never fixed/absolute.
-          inline: reward.parentElement === summary && ['static', 'relative'].includes(getComputedStyle(reward).position),
-          withinSummary: b.left >= s.left - 1 && b.right <= s.right + 1,
-          clearOfActions: b.right <= a.left + 1 || b.left >= a.right - 1 ||
-            b.bottom <= a.top + 1 || b.top >= a.bottom - 1,
+          inline: reward.parentElement === slot && ['static', 'relative'].includes(getComputedStyle(reward).position),
+          withinSlot: b.left >= s.left - 1 && b.right <= s.right + 1,
+          // The phone action dock stays inside the results column: a negative inline margin widened it (i18n audit `.overlay-content 366>358`).
+          columnFits: content.scrollWidth <= content.clientWidth,
         };
       });
       await expect.poll(geometry, { timeout: ciTimeout(4000) }).toEqual({
-        inline: true, withinSummary: true, clearOfActions: true,
+        inline: true, withinSlot: true, columnFits: true,
       });
       // The result entrance may slide the entire summary. The reward must retain
       // its relative position, rather than reanchoring after the transform ends.
@@ -90,6 +116,7 @@ for (const viewport of [
       expect(Math.abs(after.x - before.x)).toBeLessThan(3);
       expect(Math.abs(after.y - before.y)).toBeLessThan(3);
       const toggle = page.locator('.wave3-demo-results__toggle');
+      const panel = reward.locator('.wave3-demo-results__details');
       if (viewport.width === 360) {
         // No scrolling to see rank, time, record, both awarded resources or the primary action.
         await expect.poll(() => page.evaluate(() => {
@@ -106,9 +133,11 @@ for (const viewport of [
         })).toEqual([]);
       }
       if (viewport.height <= 500) {
-        // The strip itself is the tap target; the details rise as a panel and close again.
+        // The strip opens a details panel alongside the results actions.
+        if (SHOTS) await page.screenshot({ path: `${SHOTS}/demo-details-closed-${viewport.width}x${viewport.height}.png` });
         await reward.click({ position: { x: 20, y: 10 } });
         await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+        await settled(panel);
         await page.locator('#next-button').click({ trial: true });
         const coins = reward.locator('.wave3-demo-results__coin-credit');
         await expect(coins).toBeVisible();
@@ -136,7 +165,8 @@ for (const viewport of [
       if (viewport.height <= 500) {
         await toggle.click();
         await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-        await expect(page.locator('.wave3-demo-results__disclaimer')).toHaveCSS('clip-path', 'inset(50%)');
+        await expect(panel).toHaveCSS('pointer-events', 'none');
+        await expect(panel).toHaveCSS('opacity', '0');
       }
       if (viewport.width === 360) {
         const history = page.locator('#result-links [data-open-history]');
@@ -153,29 +183,72 @@ for (const viewport of [
   });
 }
 
+const mountDemoReward = async (page, gameplayURL, { locale, raceMode }) => {
+  await page.route('**/demo-reward-layout', route => route.fulfill({
+    contentType: 'text/html',
+    body: '<body data-phase="finished"><main style="width:min(100%, 460px);margin:220px auto 0"></main></body>',
+  }));
+  await page.goto(new URL('demo-reward-layout', gameplayURL).href);
+  await page.evaluate(async ({ locale, raceMode }) => {
+    await import('/src/wave3-demo-results.css');
+    const { mountWave3DemoResults } = await import('/src/wave3-demo-results-ui.ts');
+    const missions = {
+      [raceMode === 'time' ? 'mission-time' : 'mission-race']: { progress: 1, goal: 1, claimed: true },
+      'mission-drift': { progress: 1, goal: 2, claimed: false },
+      'mission-combo': { progress: 1, goal: 1, claimed: true },
+    };
+    mountWave3DemoResults({
+      container: document.querySelector('main'), locale, raceMode,
+      settlement: { status: 'completed', snapshot: { mode: 'local-demo', authority: 'local', syncState: 'local-only', missions } },
+    });
+  }, { locale, raceMode });
+};
+
+test.describe('short landscape reward disclosure', () => {
+  test.use({ viewport: { width: 844, height: 390 }, hasTouch: true });
+
+  test('slides and fades in both directions while remaining anchored', async ({ page, gameplayURL }) => {
+    await mountDemoReward(page, gameplayURL, { locale: 'zh-TW', raceMode: 'classic' });
+    const panel = page.locator('.wave3-demo-results__details');
+    const toggle = page.getByRole('button', { name: '詳情' });
+    const anchor = () => panel.evaluate(element => [element.offsetLeft, element.offsetTop, element.offsetWidth]);
+    const closedAnchor = await anchor();
+
+    for (const expanded of [true, false]) {
+      await pauseDetailsTransition(panel);
+      await toggle.tap();
+      await expect(toggle).toHaveAttribute('aria-expanded', String(expanded));
+      const frame = await detailsFrame(panel);
+      expect(frame.opacity).toBeGreaterThan(0);
+      expect(frame.opacity).toBeLessThan(1);
+      expect(frame.transform).not.toBe('none');
+      expect(await anchor()).toEqual(closedAnchor);
+      await expect(panel).toHaveCSS('pointer-events', expanded ? 'auto' : 'none');
+      await finishDetailsTransition(panel);
+      await expect(panel).toHaveCSS('opacity', expanded ? '1' : '0');
+    }
+    await expect(page.getByRole('progressbar').first()).toHaveAccessibleName(/1\/1.*已領取/);
+  });
+
+  test('opens immediately with reduced motion', async ({ page, gameplayURL }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await mountDemoReward(page, gameplayURL, { locale: 'en', raceMode: 'classic' });
+    const panel = page.locator('.wave3-demo-results__details');
+    const toggle = page.getByRole('button', { name: 'Details' });
+    await toggle.press('Enter');
+    expect(await detailsFrame(panel)).toEqual({ opacity: 1, transform: 'none' });
+    expect(await panel.evaluate(node => node.getAnimations().length)).toBe(0);
+    await toggle.press('Enter');
+    await expect(panel).toHaveCSS('opacity', '0');
+  });
+});
+
 for (const [locale, raceMode] of [['zh-TW', 'classic'], ['en', 'classic'], ['en', 'time']]) {
   test.describe(`demo mission progress layout (${locale}, ${raceMode})`, () => {
     test.use({ viewport: { width: 360, height: 740 }, hasTouch: true, reducedMotion: 'reduce' });
 
     test('claimed progress fits on one line with bars at the bottom of the reward details', async ({ page, gameplayURL }) => {
-      await page.route('**/demo-reward-layout', route => route.fulfill({
-        contentType: 'text/html',
-        body: '<body data-phase="finished"><main style="width:min(100%, 460px);margin:220px auto 0"></main></body>',
-      }));
-      await page.goto(new URL('demo-reward-layout', gameplayURL).href);
-      await page.evaluate(async ({ locale, raceMode }) => {
-        await import('/src/wave3-demo-results.css');
-        const { mountWave3DemoResults } = await import('/src/wave3-demo-results-ui.ts');
-        const missions = {
-          [raceMode === 'time' ? 'mission-time' : 'mission-race']: { progress: 1, goal: 1, claimed: true },
-          'mission-drift': { progress: 1, goal: 2, claimed: false },
-          'mission-combo': { progress: 1, goal: 1, claimed: true },
-        };
-        mountWave3DemoResults({
-          container: document.querySelector('main'), locale, raceMode,
-          settlement: { status: 'completed', snapshot: { mode: 'local-demo', authority: 'local', syncState: 'local-only', missions } },
-        });
-      }, { locale, raceMode });
+      await mountDemoReward(page, gameplayURL, { locale, raceMode });
       const reward = page.locator('.wave3-demo-results--earned');
       const progress = reward.getByRole('progressbar');
       await expect(progress.first()).toHaveAccessibleName(locale === 'zh-TW' ? /1\/1.*已領取/ : /1\/1.*claimed/i);

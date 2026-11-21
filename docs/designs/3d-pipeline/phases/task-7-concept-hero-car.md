@@ -4,7 +4,7 @@ Part of [../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md](../.
 
 **Starts after:** Phase 2d (Roadster close-out, default-on). May run in parallel with Task 5 on its own branch.
 **Look target:** the studio 2×2 panels of
-[concept-art/skyline-rush-3d-target-concept-board.jpeg](../concept-art/skyline-rush-3d-target-concept-board.jpeg):
+[track-profiles/skyline-rush-3d-target-concept-board.jpeg](../track-profiles/skyline-rush-3d-target-concept-board.jpeg):
 - front 3/4 view: light blade
 - side view: low wedge, cab-forward canopy
 - rear 3/4 view: swan-neck wing deployed
@@ -29,18 +29,18 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
 - [x] The car's display name and stable ID (the working ID `concept-gt` is a placeholder).
   - **Decided 2026-11-09 (owner):** display name **Crimson GT**, stable ID **`crimson-gt`**. Replaces the `concept-gt`
     placeholder; the ID is final and must not change after release.
-- [ ] The unlock rule: stars threshold, trial, or free; and the default paint.
-  - **Owner, 2026-11-14:** both cars are temporarily free for everyone; the owner decides the plan later. Trial +
-    stars is not built and no threshold is recorded.
-  - **Decided 2026-11-09 (owner): trial + stars.** The car follows the paint model's locked/trial/owned/equipped
-    states: equippable during an account-scoped trial, owned permanently once the stars threshold is reached. A
-    preview never grants the car.
-  - **Still open:** the stars threshold value and the default paint.
-  - **Decided 2026-11-12 (owner), for the first build:** both cars are open to everyone (no lock, trial or stars
-    threshold is implemented), and the default paint is the car's own factory colour (`factory`, deep red `#9a1424`
-    on the GT; the Roadster keeps Pearl). The trial + stars rule above is not built, so this gate stays open.
-  - **Decided 2026-11-13 (owner):** the 2026-11-09 rule stands (trial + stars). The stars threshold value is still
-    not decided, so the locked/trial/owned states are not built and this gate stays open.
+- [x] Vantaire GT unlock and factory finish (2026-11-19): **Vantaire GT** (夜鋒 GT, stable ID `crimson-gt`) becomes permanently
+  available at **18 Career stars**. Classic Career counts each track's best 1–3 stars once. Six perfect tracks are the
+  earliest possible unlock and other combinations can reach it across more tracks. No currency is spent.
+  - Locked cars can be previewed in 3D. The optional, one-time **24-hour test drive** starts from the explicit Garage
+    action and permits regular races. Reaching 18 stars while driving the GT keeps it equipped. The results screen
+    uses the shared acquisition dialog when a Career finish crosses the threshold. The GT opens the race reward batch,
+    then the results page offers the Garage after the dialog closes.
+  - The trial uses the earliest saved start on Google Cloud Save and browser storage for guests. An expired trial
+    allows the current race to finish and falls back to Stratosway R2 for the following race, unless the player has
+    reached 18 stars. A car selection from the previously free build does not grant access. The GT finish stays saved.
+  - Deep Crimson (`crimson`, `#9a1424`) is the GT's factory finish. The initial free build was approved November 12
+    and reconfirmed November 14 while the star threshold was open.
 - [x] The concept board's generator and terms of use, recorded in [../concept-art/README.md](../concept-art/README.md).
   This is a release gate.
   - **Closed 2026-11-14 by the owner after discussion;** the README entry itself was not written in this pass.
@@ -65,8 +65,12 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
     the chase camera exactly like the Roadster" (car root, chase camera, procedural tyres equal; GLB tyres touch the
     road within 0.005). These are guards: the product already behaved this way, so there was no product RED.
   - the equipped car persists across Cloud Save: see the Cloud Save box below.
-- [ ] A preview never grants the car: not written, nothing to grant while both cars are open to everyone (waits for
-  the unlock rule).
+- [x] A locked preview keeps the saved car and trial untouched. The renderer requests the preview model only while
+  the Garage is open. `tests/car-catalog.test.js` failed on the pre-feature renderer and passed on the feature branch.
+- [x] The focused GitHub branch gate passed on `0dead842`: unit-tests, Cloud Save, and quality-gate.
+  [Run 44359580440](https://github.com/weskao/skyline-rush/actions/runs/44359580440).
+- [ ] Verify the GT unlock flow on a physical phone in portrait and landscape.
+- [ ] Publish the Firestore rules with the website and verify test-drive restoration with a real Google account.
 - [x] Blockout from the four studio panels (image-to-3D allowed only as a blockout). Then author the car in Blender
   around the shared collision envelope and ports. Do **not** move the ports to match the image.
   - 2026-11-12: `assets-src/crimson-gt/` (`build.py`, `bake.py`, `crimson-gt.blend`), authored in bpy, no
@@ -116,7 +120,7 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
   - keyboard (Enter on a native button), touch on phone portrait 390x844 and landscape 844x390, and car names in
     every supported language (`tests/i18n.test.js`)
   - each car remembers its own paint and both use the same collection
-  - 2026-11-13 fix: on a dev server started with `3d=1` (`?model=roadster&look=3d`) the Roadster GLB covered the
+  - 2026-11-13 fix: on a dev server started with `3d=1` (`?model=roadster&look=3d`; historical; gate removed) the Roadster GLB covered the
     equipped GT. The equipped car's own model now wins (`carModel() ?? forced` in `src/garage-model.ts`); the flag
     dresses only the Roadster. RED (`Expected "crimson-gt", Received "roadster2"`) → GREEN in
     `tests/crimson-gt-browser.spec.js`; rule 13 in `.claude/rules/3d-asset-pipeline.md`.
@@ -126,8 +130,8 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
   painted collection's close-up composition and is available for all cars. The full-car render now appears in the car
   picker beside the Roadster. Browser coverage checks the art, labels and responsive bounds at 390×844,
   844×390 and 1440×900. See the [artwork notes](../../../../public/feature-assets/garage-public/paint-cards/README.md).
-- [ ] Car picker locked/trial/owned states: not built, both cars are temporarily open (waits for the unlock rule,
-  which the owner decides later, 2026-11-14).
+- [x] The car picker shows the locked preview, trial activation and expiry, and owned selection in both locales.
+  The save and race start also enforce the same 18-star or active-trial requirement.
 - [x] Local save for the equipped car (`skyline-rush-car`) and each car's paint (`skyline-rush-car-paints`), with a
   backward-compatible load: no entry means the Roadster, whose paint stays in `skyline-rush-paint`. No change to
   existing paint or skin entitlements.
@@ -140,7 +144,7 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
 - [x] The Low tier requests only `crimson-gt-low.glb`; rival cars stay procedural (one GLB root in a race); a
   missing GLB falls back to the procedural car with no page error. The car never swaps during a race.
 - [x] Preload and compile the equipped car before GO (2026-11-13): `tests/shader-warmup-browser.spec.js` runs with
-  the GT equipped (boost, afterimages, top speed), with and without `?look=3d`: 2/2, no program compiles mid-race.
+  the GT equipped (boost, afterimages, top speed), with and without `?look=3d` (historical; gate removed): 2/2, no program compiles mid-race.
   A race started before the GLB arrives stays on the procedural car and compiles nothing; the GT dresses the car
   once the race is left (`tests/crimson-gt-browser.spec.js`).
 - [x] `npm test`, `npm run typecheck`, `npm run build` and `node --test tests/module-size.test.js` (2026-11-13).

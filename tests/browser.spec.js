@@ -1,4 +1,5 @@
-import { test, expect, chromium } from './helpers/test.js';
+import { toggleSettingsSection, toggleAirflowPreview } from './helpers/settings-browser.js';
+import { test, expect, chromium, gotoHome } from './helpers/test.js';
 import { saveArtifact } from './helpers/artifact.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { slow, ciTimeout } from './helpers/ci.js';
@@ -19,18 +20,19 @@ const dismissMusicPrompt = async page => {
 
 // The VFX panel's dropdowns; Home's race setup has its own "Showcase camera" picker.
 const pick = async (page, name, option) => {
-  await page.getByRole('complementary', { name: 'Airflow and visual effects' }).getByRole('combobox', { name, exact: true }).click();
+  await page.locator('#settings-display').getByRole('combobox', { name, exact: true }).click();
   await page.getByRole('option', { name: option, exact: true }).click();
 };
 
 // Touch players default to slide steering; legacy button tests pin Buttons mode (and any other prefs) before the page loads.
 const useControls = (page, prefs) => page.addInitScript(prefs => localStorage.setItem('skyline-rush-controls', JSON.stringify({ version: 1, ...prefs })), prefs);
 
-const measureAudio = () => {
+const measureAudio = (retainCueLevel = false) => {
   const connect = AudioNode.prototype.connect;
   AudioNode.prototype.connect = function(destination, ...args) {
     if (destination instanceof AudioDestinationNode) {
       const analyser = this.context.createAnalyser();
+      analyser.fftSize = 32768; // Retain short UI cues across a slow browser automation round trip.
       connect.call(this, analyser);
       window.audioState = () => this.context.state;
       window.audioLevel = () => {
@@ -38,6 +40,36 @@ const measureAudio = () => {
         analyser.getFloatTimeDomainData(data);
         return Math.sqrt(data.reduce((sum, value) => sum + value * value, 0) / data.length);
       };
+      if (retainCueLevel) {
+        // Measure rendered samples on the audio thread, which keeps running through a stalled WebGL frame.
+        const moduleUrl = URL.createObjectURL(new Blob([`
+          registerProcessor('cue-peak-meter', class extends AudioWorkletProcessor {
+            peak = 0;
+            process(inputs) {
+              const samples = inputs[0][0];
+              if (samples?.length) {
+                const rms = Math.sqrt(samples.reduce((sum, value) => sum + value * value, 0) / samples.length);
+                if (rms > this.peak) {
+                  this.peak = rms;
+                  this.port.postMessage(rms);
+                }
+              }
+              return true;
+            }
+          });
+        `], { type: 'text/javascript' }));
+        const ready = this.context.audioWorklet.addModule(moduleUrl).finally(() => URL.revokeObjectURL(moduleUrl));
+        let tap;
+        window.armAudioCueMeter = async () => {
+          await ready;
+          if (tap) { this.disconnect(tap); tap.port.close(); }
+          tap = new AudioWorkletNode(this.context, 'cue-peak-meter', { numberOfOutputs: 0 });
+          let peakRms = 0;
+          tap.port.onmessage = ({ data }) => { peakRms = data; };
+          window.audioCueLevel = () => peakRms;
+          connect.call(this, tap);
+        };
+      }
     }
     return connect.call(this, destination, ...args);
   };
@@ -72,12 +104,12 @@ test('airflow showcase, presets, views and boost coexist without shader errors',
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
-  await page.goto('/');
+  await gotoHome(page);
   await page.keyboard.press('v');
   await expect(page.locator('#airflow-toggle')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'false');
   await expect(page.locator('#speed')).toHaveText('0');
-  await page.locator('#vfx-panel > summary').click();
+  await toggleSettingsSection(page, 'display');
   await pick(page, 'Aerodynamics', 'High downforce');
   await expect(page.locator('#aero-mode')).toHaveText('HIGH DOWNFORCE');
   for (const preset of ['Realistic', 'Extreme · sci-fi', 'Cinematic']) await pick(page, 'Visual style', preset);
@@ -86,7 +118,7 @@ test('airflow showcase, presets, views and boost coexist without shader errors',
     await pick(page, 'Showcase camera', view);
     await page.waitForTimeout(250);
   }
-  await page.locator('#vfx-panel > summary').click();
+  await toggleSettingsSection(page, 'display');
   await page.waitForTimeout(600);
   await saveArtifact(page, { path: 'artifacts/aero-downforce.jpeg', quality: 70 });
   await expect(page.locator('#track-note')).toBeHidden();
@@ -107,60 +139,60 @@ test('airflow showcase, presets, views and boost coexist without shader errors',
   await expect(page.locator('#boost-status')).toHaveText('RECHARGING');
   await page.keyboard.press('Escape');
   await expect(page.locator('#race-status')).toHaveText('PAUSED');
+  // Capture the restart HUD in the countdown frame, before AUTO launches the car at GO.
+  await page.evaluate(() => {
+    const observer = new MutationObserver(() => {
+      if (document.body.dataset.phase !== 'countdown') return;
+      window.__airflowRestartHud = {
+        fuel: document.getElementById('fuel-value').textContent,
+        speed: document.getElementById('speed').textContent,
+      };
+      observer.disconnect();
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-phase'] });
+  });
   await page.keyboard.press('Backspace');
-  await expect(page.locator('#fuel-value')).toHaveText('100');
-  await expect(page.locator('#speed')).toHaveText('0');
+  await expect.poll(() => page.evaluate(() => window.__airflowRestartHud)).toEqual({ fuel: '100', speed: '0' });
   expect(errors).toEqual([]);
 });
 
 test('starting with a VFX control focused hands the keyboard back to driving', async ({ page }) => {
   await page.goto('/');
   await dismissMusicPrompt(page);
-  await page.locator('#vfx-panel > summary').click();
+  await toggleSettingsSection(page, 'display');
   await page.getByRole('combobox', { name: 'Visual style', exact: true }).focus();
-  // Safari and Firefox on macOS do not move focus to a clicked button.
-  await page.locator('#start-button').evaluate(button => button.click());
+  await page.locator('#settings-close').click();
+  await expect(page.locator('#settings-button')).toBeFocused();
+  await page.locator('#start-button').click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
-  await expect(page.locator('#vfx-panel')).not.toHaveAttribute('open');
+  await expect(page.locator('#settings-display')).toBeHidden();
   await page.keyboard.down('w');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(20);
   await page.keyboard.down('d');
   await expect.poll(async () => parseFloat(await page.evaluate(() => document.body.style.getPropertyValue('--flight-bank')))).toBeLessThan(-2);
 });
 
-for (const [name, viewport] of [['desktop', { width: 1440, height: 900 }], ['mobile', { width: 390, height: 844 }]]) test(`${name} dropdowns close on an outside press or another button, one open at a time`, async ({ page }) => {
+for (const [name, viewport] of [['desktop', { width: 1440, height: 900 }], ['mobile', { width: 390, height: 844 }]]) test(`${name} settings keeps its controls in one dialog`, async ({ page }) => {
   await page.setViewportSize(viewport);
   await page.goto('/');
   await dismissMusicPrompt(page);
-  const vfx = page.locator('#vfx-panel'), quality = page.getByRole('combobox', { name: 'Quality', exact: true });
-  await vfx.locator('> summary').click();
+  await toggleSettingsSection(page, 'display');
+  const quality = page.getByRole('combobox', { name: 'Quality', exact: true });
   await quality.click();
   await expect(quality).toHaveAttribute('aria-expanded', 'true');
-  // A press inside the VFX panel closes only the drawn select.
-  await page.locator('.vfx-settings').click({ position: { x: 8, y: 8 } });
-  await expect(quality).toHaveAttribute('aria-expanded', 'false');
-  await expect(vfx).toHaveAttribute('open');
-  // Left edge, mid-height: page background on both layouts, clear of every panel.
-  const outside = () => page.mouse.click(4, viewport.height / 2);
-  await outside();
-  await expect(vfx).not.toHaveAttribute('open');
-  // Another dropdown's button swaps them instead of stacking.
-  await vfx.locator('> summary').click();
-  await page.locator('#settings-button').click();
-  await expect(page.locator('#settings-panel')).toBeVisible();
-  await expect(vfx).not.toHaveAttribute('open');
   await page.locator('#controls-button').click();
   await expect(page.locator('#controls-panel')).toBeVisible();
+  await expect(quality).toBeHidden();
+  await page.locator('#settings-close').click();
   await expect(page.locator('#settings-panel')).toBeHidden();
-  await outside();
-  await expect(page.locator('#controls-panel')).toBeHidden();
+  await expect(page.locator('#settings-button')).toBeFocused();
 });
 
-// The transparent topbar overlaps the .aero-tools row: 14px of it on desktop, all of it on a landscape phone.
 for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) test(`${viewport.width}x${viewport.height} language button opens from its top border`, async ({ page }) => {
   await page.setViewportSize(viewport);
   await page.goto('/');
   await dismissMusicPrompt(page);
+  await toggleSettingsSection(page, 'language');
   const language = page.getByRole('combobox', { name: 'Language', exact: true });
   const box = await language.boundingBox();
   await page.mouse.click(box.x + box.width / 2, box.y + 1);
@@ -172,25 +204,28 @@ test('mobile VFX controls fit, persist and respect reduced motion', async ({ pag
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await dismissMusicPrompt(page);
-  await page.locator('#airflow-toggle').click();
-  await page.locator('#vfx-panel > summary').click();
+  await toggleAirflowPreview(page);
+  await toggleSettingsSection(page, 'display');
   await page.locator('[data-vfx="comfortable"]').check();
   await pick(page, 'Quality', 'Low');
   const panel = await page.locator('.vfx-settings').boundingBox();
   expect(panel.x).toBeGreaterThanOrEqual(0);
   expect(panel.x + panel.width).toBeLessThanOrEqual(360);
-  expect(panel.y + panel.height).toBeLessThanOrEqual(780);
+  expect((await page.locator('#settings-panel').boundingBox()).y).toBeGreaterThanOrEqual(0);
   await saveArtifact(page, { path: 'artifacts/aero-settings-mobile.jpeg', quality: 70 });
   await page.reload();
   await dismissMusicPrompt(page);
-  await page.locator('#vfx-panel > summary').click();
+  await toggleSettingsSection(page, 'display');
   await expect(page.locator('[data-vfx="comfortable"]')).toBeChecked();
   await expect(page.getByRole('combobox', { name: 'Quality', exact: true })).toHaveText('Low');
   await expect(page.locator('.speed-streaks')).toBeHidden();
-  await page.locator('[data-vfx="enabled"]').uncheck();
+  // The first switch-off asks in game (tests/toggle-feedback-browser.spec.js covers Cancel).
+  await page.locator('[data-vfx="enabled"]').click();
+  await page.locator('#confirm-accept').click();
+  await expect(page.locator('[data-vfx="enabled"]')).not.toBeChecked();
   await expect(page.locator('#airflow-toggle')).toBeDisabled();
   await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'true');
-  await page.locator('#vfx-panel > summary').click();
+  await toggleSettingsSection(page, 'display');
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
 });
@@ -211,7 +246,7 @@ test('music and sound effects start on and each remember an off choice in localS
   await page.locator('#settings-button').click();
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
-  await page.locator('#intro-title').click();
+  await page.locator('#settings-close').click();
   await expect(page.locator('#settings-panel')).toBeHidden();
 });
 
@@ -301,7 +336,10 @@ test('the audio panel scrolls instead of running off a short landscape phone scr
   await dismissMusicPrompt(page);
   await page.locator('#settings-button').click();
   const panel = page.locator('#settings-panel');
-  const layout = await panel.evaluate(el => ({ bottom: el.getBoundingClientRect().bottom, overflow: getComputedStyle(el).overflowY, scrolls: el.scrollHeight > el.clientHeight }));
+  const layout = await panel.evaluate(el => {
+    const content = el.querySelector('.settings-content');
+    return { bottom: el.getBoundingClientRect().bottom, overflow: getComputedStyle(content).overflowY, scrolls: content.scrollHeight > content.clientHeight };
+  });
   expect(layout.bottom).toBeLessThanOrEqual(240);
   expect(layout.overflow).toBe('auto');
   expect(layout.scrolls).toBe(true);
@@ -318,6 +356,7 @@ test('intro music plays after the first interaction and race music replaces it',
   await audioSwitch(page, 'Music').click();
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
   await audioSwitch(page, 'Music').click();
+  await page.locator('#settings-close').click();
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await expect.poll(() => page.evaluate(() => window.audioLevel()), { intervals: [50] }).toBeGreaterThan(0.001);
@@ -379,7 +418,7 @@ test('a saved music-off choice stays silent after the first gesture and keeps so
   await page.addInitScript(blockAutoplay);
   await page.addInitScript(measureAudio);
   await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
-  await page.goto('/');
+  await gotoHome(page);
   await page.keyboard.press('Shift');
   await page.waitForTimeout(500);
   expect(await level(page)).toBeLessThan(0.0001);
@@ -428,22 +467,37 @@ test('countdown lights, automatic accelerator and brake work without holding the
 });
 
 test('real audio output includes UI and countdown cues, then mutes and pauses cleanly', async ({ page }) => {
-  await page.addInitScript(measureAudio);
+  await page.addInitScript(measureAudio, true);
   await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
   await page.goto('/');
+  await page.locator('#settings-button').click();
+  await page.locator('#settings-close').click();
+  await expect.poll(() => page.evaluate(() => window.audioState?.())).toBe('running');
+  await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
+  await page.evaluate(() => window.armAudioCueMeter());
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
-  await expect.poll(() => page.evaluate(() => window.audioLevel?.() ?? 0), { intervals: [20] }).toBeGreaterThan(0.001);
+  await expect.poll(() => page.evaluate(() => window.audioCueLevel())).toBeGreaterThan(0.001);
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.keyboard.down('w');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(90);
   await page.keyboard.press('m');
+  await page.locator('#pause-button').click();
   await page.locator('#settings-button').click();
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
+  await page.evaluate(() => window.armAudioCueMeter());
+  await audioSwitch(page, 'Sound effects').evaluate(button => {
+    button.addEventListener('click', () => {
+      // Simulate a slow WebGL frame after the real settings handler schedules the short cue.
+      const until = performance.now() + 350;
+      while (performance.now() < until) { /* block the main thread, leaving audio rendering active */ }
+    }, { once: true });
+  });
   await audioSwitch(page, 'Sound effects').click();
-  await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeGreaterThan(0.001);
-  await page.keyboard.press('p');
+  await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'true');
+  await expect.poll(() => page.evaluate(() => window.audioCueLevel())).toBeGreaterThan(0.001);
+  await page.locator('#settings-close').click();
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
   await page.locator('#settings-button').click();
   await audioSwitch(page, 'Sound effects').click();
@@ -462,12 +516,18 @@ test('audio initialization failure leaves the silent game playable and retryable
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.keyboard.down('w');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(30);
+  await page.locator('#pause-button').click();
   await page.locator('#settings-button').click();
-  await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
-  await audioSwitch(page, 'Sound effects').click();
-  await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
-  await audioSwitch(page, 'Music').click();
-  await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
+  // A failed engine never turns the player's (default on) choices off; they stay togglable and persist for a later retry.
+  for (const [name, key] of [['Sound effects', 'skyline-rush-sound'], ['Music', 'skyline-rush-music']]) {
+    await expect(audioSwitch(page, name)).toHaveAttribute('aria-checked', 'true');
+    await audioSwitch(page, name).click();
+    await expect(audioSwitch(page, name)).toHaveAttribute('aria-checked', 'false');
+    await expect.poll(() => stored(page, key)).toBe('off');
+    await audioSwitch(page, name).click();
+    await expect(audioSwitch(page, name)).toHaveAttribute('aria-checked', 'true');
+    await expect.poll(() => stored(page, key)).toBe('on');
+  }
   expect(errors).toEqual([]);
 });
 
@@ -475,12 +535,14 @@ test('desktop: start, drive, steer, fly, land, pause and restart through real co
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'The road is just the beginning.' })).toBeVisible();
+  await expect(page.locator('#lobby-hero-track')).toBeVisible();
   await expect(page.locator('canvas#world')).toBeVisible();
   await expect(page.locator('#settings-button')).toBeVisible();
-  await page.getByRole('button', { name: 'Change camera' }).click();
-  await expect(page.getByRole('button', { name: 'Change camera' })).toHaveAttribute('aria-pressed', 'true');
-  await page.getByRole('button', { name: 'Change camera' }).click();
+  const dock = page.locator('#showcase-camera-dock');
+  await page.locator('#showcase-camera-next').click();
+  await expect(dock).toHaveAttribute('data-view', 'front');
+  await page.locator('#showcase-camera-prev').click();
+  await expect(dock).toHaveAttribute('data-view', 'drive');
   await page.locator('#intro').evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
   await saveArtifact(page, { path: 'artifacts/desktop-ready.jpeg', quality: 70 });
   await page.getByRole('button', { name: 'Start race' }).click();
@@ -508,7 +570,8 @@ test('desktop: start, drive, steer, fly, land, pause and restart through real co
   await page.evaluate(() => window.dispatchEvent(new Event('blur')));
   await expect(page.locator('#race-status')).toHaveText('PAUSED');
   await page.getByRole('region', { name: 'Take a breather.' }).getByRole('button', { name: 'Resume race' }).click();
-  await page.getByRole('button', { name: 'Restart race' }).click();
+  await page.locator('#pause-button').click();
+  await page.locator('#again-button').click();
   await expect(page.locator('#speed')).toHaveText('0');
   await expect(page.locator('#fuel-value')).toHaveText('100');
   await expect(page.locator('#race-status')).toHaveText('COUNTDOWN');
@@ -612,7 +675,7 @@ gameplayTest('a complete 5 km sprint reaches results, saves a best time and can 
   const saved = await page.evaluate(id => ({ ghost: JSON.parse(localStorage.getItem('skyline-rush-ghosts'))[id], stars: JSON.parse(localStorage.getItem('skyline-rush-stars')).coast }), coastRecord);
   expect(saved.ghost.time).toBe(history[0].time);
   expect(saved.stars).toBeGreaterThanOrEqual(1);
-  await page.getByRole('button', { name: 'History', exact: true }).click();
+  await page.getByRole('button', { name: 'Progress', exact: true }).click();
   await expect(page.locator('.history-run')).toHaveCount(1);
   await expect(page.locator('.history-run')).toContainText('BEST');
   await page.getByRole('button', { name: 'Close history' }).click();
@@ -699,11 +762,15 @@ test.describe('narrow touch screen', () => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Start race' }).click();
     await expect(page.locator('#race-status')).toHaveText('RACING');
-    const bounds = await page.locator('#touch-controls button, .toolbar .icon-button').evaluateAll(buttons => buttons.map(button => {
+    const touchButtons = page.locator('#touch-controls button[data-control]');
+    const raceTools = page.locator('.toolbar :is(#camera-button, #pause-button)');
+    await expect(touchButtons).toHaveCount(7);
+    await expect(raceTools).toHaveCount(2);
+    const bounds = await touchButtons.or(raceTools).evaluateAll(buttons => buttons.map(button => {
       const { left, right, width, height } = button.getBoundingClientRect();
       return { left, right, width, height };
     }));
-    expect(bounds).toHaveLength(12);
+    expect(bounds).toHaveLength(9);
     for (const bound of bounds) {
       expect(bound.left).toBeGreaterThanOrEqual(0);
       expect(bound.right).toBeLessThanOrEqual(320);
@@ -718,8 +785,10 @@ test.describe('phone game gestures', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   test('long press and simultaneous touches stay in the game and release cleanly', async ({ page, context }) => {
     await useControls(page, { mode: 'buttons' });
-    await page.goto('/');
-    const title = page.locator('h1');
+    // The gesture listeners attach when main.js runs, after page.goto resolves.
+    await gotoHome(page);
+    // Home's title; the startup screen keeps its own h1 (#startup-title) in the DOM.
+    const title = page.locator('#intro-title');
     await expect(title).toHaveCSS('user-select', 'none');
     // The page root too: a long press outside #app must not start a selection or the Copy/Select All menu.
     await expect(page.locator('html')).toHaveCSS('user-select', 'none');
@@ -731,19 +800,15 @@ test.describe('phone game gestures', () => {
       expect(await page.locator(selector).evaluate(element => element.dispatchEvent(new TouchEvent('touchstart', { bubbles: true, cancelable: true })))).toBe(false);
     }
     // Touch starts with AUTO on, which shows the gas as held; turn it off so the gas button reflects only the finger.
+    await toggleSettingsSection(page, 'driving');
     const assist = page.locator('#assist-button');
     const onBorder = await assist.evaluate((element) => getComputedStyle(element).borderColor);
     await assist.tap();
     await expect(assist).toHaveAttribute('aria-pressed', 'false');
     // A tap leaves :hover stuck on touch screens; it must not paint OFF with the ON border.
     expect(await assist.evaluate((element) => getComputedStyle(element).borderColor)).not.toBe(onBorder);
-    const controlsButton = page.locator('#controls-button');
-    const closedBorder = await controlsButton.evaluate((element) => getComputedStyle(element).borderColor);
-    await controlsButton.tap();
-    await expect(controlsButton).toHaveAttribute('aria-expanded', 'true');
-    await controlsButton.tap();
-    await expect(controlsButton).toHaveAttribute('aria-expanded', 'false');
-    expect(await controlsButton.evaluate((element) => getComputedStyle(element).borderColor)).toBe(closedBorder);
+    await page.locator('#settings-close').tap();
+    await expect(page.locator('#settings-panel')).toBeHidden();
     await page.getByRole('button', { name: 'Start race' }).tap();
     await expect(page.locator('#race-status')).toHaveText('RACING');
     const gas = page.locator('[data-control="throttle"]');
@@ -811,7 +876,7 @@ const dragBank = async (page, send) => {
 };
 const chooseInPanel = async (page, key, value) => {
   await dismissMusicPrompt(page);
-  await page.locator('#controls-button').tap();
+  await toggleSettingsSection(page, 'driving');
   await page.locator(`[data-controls="${key}"][value="${value}"]`).check();
   await page.keyboard.press('Escape');
   await expect(page.locator('#controls-panel')).toBeHidden();
@@ -835,12 +900,15 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
       const scale = () => control.evaluate(element => element.style.getPropertyValue('--touch-scale'));
       await page.goto('/');
       await dismissMusicPrompt(page);
-      await page.locator('#controls-button').tap();
+      await toggleSettingsSection(page, 'driving');
       await expect(page.locator('#controls-panel')).toBeVisible();
       await expect(control).toHaveAttribute('data-steer-mode', 'slide');
       await expect(control).toHaveAttribute('data-hand', 'left');
       expect(await scale()).toBe('1');
+      await expect(page.locator('[data-controls="brakePull"][value="balanced"]')).toBeChecked();
+      await choose('brakePull', 'firm');
       await choose('mode', 'buttons');
+      await expect(page.locator('[data-controls="brakePull"][value="firm"]')).toBeHidden();
       await expect(control).toHaveAttribute('data-steer-mode', 'buttons');
       await choose('hand', 'right');
       await expect(control).toHaveAttribute('data-hand', 'right');
@@ -848,18 +916,18 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
       expect(await scale()).toBe('1.15');
       await page.locator('[data-controls="opacity"]').fill('0.6');
       await expect.poll(() => control.evaluate(element => element.style.getPropertyValue('--touch-opacity'))).toBe('0.6');
-      expect(await stored()).toMatchObject({ mode: 'buttons', hand: 'right', size: 'L', opacity: 0.6, version: 1 });
+      expect(await stored()).toMatchObject({ mode: 'buttons', hand: 'right', size: 'L', opacity: 0.6, brakePull: 'firm', version: 1 });
       await page.reload();
       await expect(control).toHaveAttribute('data-steer-mode', 'buttons');
       await expect(control).toHaveAttribute('data-hand', 'right');
       expect(await scale()).toBe('1.15');
       await dismissMusicPrompt(page);
-      await page.locator('#controls-button').tap();
+      await toggleSettingsSection(page, 'driving');
       await expect(page.locator('[data-controls="mode"][value="buttons"]')).toBeChecked();
       await page.locator('#controls-reset').tap();
       await expect(control).toHaveAttribute('data-steer-mode', 'slide');
       await expect(control).toHaveAttribute('data-hand', 'left');
-      expect(await stored()).toMatchObject({ mode: 'slide', hand: 'left', size: 'M', opacity: 0.9 });
+      expect(await stored()).toMatchObject({ mode: 'slide', hand: 'left', size: 'M', opacity: 0.9, brakePull: 'balanced' });
       await choose('mode', 'buttons');
       await page.keyboard.press('Escape');
       await expect(page.locator('#controls-panel')).toBeHidden();
@@ -925,6 +993,9 @@ for (const sizes of [[[390, 844], [320, 740]], [[844, 390]]]) {
         await expect.poll(async () => Math.abs(await bank(page)), { message: size }).toBeLessThan(0.5);
         await expect(control, size).not.toHaveAttribute('data-pad-brake');
         await expect.poll(() => speedOf(page), { message: size }).toBeGreaterThan(60);
+        await slideFrom(send, start, 65, 53);
+        await expect(control, size).not.toHaveAttribute('data-pad-brake');
+        await send('touchEnd');
         const before = await speedOf(page);
         await slideFrom(send, start, 0, 60);
         await expect(control, size).toHaveAttribute('data-pad-brake', 'true');
@@ -1006,49 +1077,69 @@ for (const sizes of [[[390, 844], [320, 740]], [[844, 390]]]) {
           await expect(page.locator('.touch-pad'), size).toBeHidden();
           const steer = hand === 'right' ? (x => x > width / 2) : (x => x < width / 2);
           const actions = hand === 'right' ? (x => x < width / 2) : (x => x > width / 2);
-          for (const name of ['Steer left', 'Steer right', 'Brake']) expect(steer(await centerX(name)), `${size} ${hand} ${name}`).toBe(true);
-          // Landscape centers the FLY/BOOST cluster between steering and pedals (it straddles the midline), so only portrait puts it wholly opposite the steering.
-          for (const name of ['Accelerate', ...height > width ? ['Hold to fly', 'Hold to boost', 'Nitro button'] : []]) expect(actions(await centerX(name)), `${size} ${hand} ${name}`).toBe(true);
+          for (const name of ['Steer left', 'Steer right']) expect(steer(await centerX(name)), `${size} ${hand} ${name}`).toBe(true);
+          // BRAKE belongs to the opposite thumb, beside the pedals (60dfff91).
+          for (const name of ['Accelerate', 'Brake']) expect(actions(await centerX(name)), `${size} ${hand} ${name}`).toBe(true);
+          // FLY/BOOST/NITRO sit between steering and pedals and may straddle the midline (landscape centers them; BRAKE now
+          // takes the outer column in portrait): they must clear the steering cluster.
+          const pad = await page.locator('.touch-steer').boundingBox();
+          const clear = hand === 'right' ? (x => x < pad.x) : (x => x > pad.x + pad.width);
+          for (const name of ['Hold to fly', 'Hold to boost', 'Nitro button']) expect(clear(await centerX(name)), `${size} ${hand} ${name}`).toBe(true);
         });
       }
     });
 
-    test('one thumb drifts: an arrow slid up into BRAKE holds steer + brake, the gap and the way back only steer', async ({ page, context }) => {
+    test('one thumb glides between arrows while the other thumb brakes', async ({ page, context }) => {
       const send = await touchDriver(page, context);
       await useControls(page, { mode: 'buttons' });
       await startTouchRace(page);
-      const [left, brake] = ['Steer left', 'Brake'].map(name => page.getByRole('button', { name, exact: true }));
-      const pressed = async () => [await left.getAttribute('aria-pressed'), await brake.getAttribute('aria-pressed')];
+      const [left, right, brake] = ['Steer left', 'Steer right', 'Brake'].map(name => page.getByRole('button', { name, exact: true }));
+      const pressed = () => Promise.all([left, right, brake].map(key => key.getAttribute('aria-pressed')));
       await eachSize(page, async (width, height, size) => {
-        const [arrow, top] = await Promise.all([centerOf(left), brake.boundingBox()]);
-        await send('touchStart', { id: 1, ...arrow });
-        await expect.poll(pressed, { message: size }).toEqual(['true', 'false']);
-        // Halfway up the gap between the arrow and BRAKE: a resting or slipping thumb never brakes.
-        await send('touchMove', { id: 1, x: arrow.x, y: (top.y + top.height + (arrow.y - (await left.boundingBox()).height / 2)) / 2 });
-        await expect.poll(pressed, { message: size }).toEqual(['true', 'false']);
-        await send('touchMove', { id: 1, x: arrow.x, y: top.y + top.height / 2 });
-        await expect.poll(pressed, { message: size }).toEqual(['true', 'true']);
-        await send('touchMove', { id: 1, ...arrow });
-        await expect.poll(pressed, { message: size }).toEqual(['true', 'false']);
-        await send('touchEnd');
-        await expect.poll(pressed, { message: size }).toEqual(['false', 'false']);
+        const [l, r, b] = await Promise.all([left, right, brake].map(key => centerOf(key)));
+        const steer = { id: 1, ...l }, pedal = { id: 2, ...b };
+        await send('touchStart', steer);
+        await expect.poll(pressed, { message: size }).toEqual(['true', 'false', 'false']);
+        await send('touchMove', { ...steer, x: (l.x + r.x) / 2 });
+        await expect.poll(pressed, { message: size }).toEqual(['false', 'false', 'false']);
+        await send('touchMove', { ...steer, ...r });
+        await expect.poll(pressed, { message: size }).toEqual(['false', 'true', 'false']);
+        await send('touchStart', { ...steer, ...r }, pedal);
+        await expect.poll(pressed, { message: size }).toEqual(['false', 'true', 'true']);
+        await send('touchMove', { ...steer, ...l }, pedal);
+        await expect.poll(pressed, { message: size }).toEqual(['true', 'false', 'true']);
+        await send('touchCancel');
+        await expect.poll(pressed, { message: size }).toEqual(['false', 'false', 'false']);
       });
     });
 
-    test('thumb controls stay off the corner and BRAKE sits above the steering row', async ({ page }) => {
+    test('BRAKE is opposite both arrows and follows the steering hand setting', async ({ page }) => {
       await useControls(page, { mode: 'buttons' });
       await startTouchRace(page);
       const box = name => page.getByRole('button', { name, exact: true }).boundingBox();
-      await eachSize(page, async (width, height, size) => {
+      const check = async (width, height, size, hand) => {
         const [left, right, brake, fly] = await Promise.all(['Steer left', 'Steer right', 'Brake', 'Hold to fly'].map(box));
-        // The thumb pivots on the side edge: the outermost buttons keep a 24px margin instead of hugging the corner.
-        expect(width - (fly.x + fly.width), `${size} FLY margin`).toBeGreaterThanOrEqual(24);
-        expect(left.x, `${size} left margin`).toBeGreaterThanOrEqual(24);
-        // Rarely used BRAKE: above the row the thumb rests on, behind a gap, and slimmer than the steering buttons.
-        for (const steer of [left, right]) expect(steer.y - (brake.y + brake.height), `${size} BRAKE gap`).toBeGreaterThanOrEqual(12);
-        expect(brake.height, `${size} BRAKE slimmer`).toBeLessThan(left.height);
-        expect(brake.height, `${size} BRAKE target`).toBeGreaterThanOrEqual(44);
-      });
+        const steerEdge = hand === 'left' ? left.x : width - (right.x + right.width);
+        const flyEdge = hand === 'left' ? width - (fly.x + fly.width) : fly.x;
+        expect(steerEdge, `${size} steering margin`).toBeGreaterThanOrEqual(24);
+        expect(flyEdge, `${size} action margin`).toBeGreaterThanOrEqual(24);
+        for (const steer of [left, right]) {
+          const gap = hand === 'left' ? brake.x - (steer.x + steer.width) : steer.x - (brake.x + brake.width);
+          expect(gap, `${size} BRAKE separation`).toBeGreaterThanOrEqual(6);
+        }
+        expect(hand === 'left' ? brake.x + brake.width / 2 : width - (brake.x + brake.width / 2), size).toBeGreaterThan(width / 2);
+        const brakeEdge = hand === 'left' ? width - (brake.x + brake.width) : brake.x;
+        expect(brakeEdge, `${size} brake margin`).toBeGreaterThanOrEqual(24);
+        expect(brakeEdge, `${size} brake closer to the thumb than FLY`).toBeLessThan(flyEdge);
+        expect(brake.width, size).toBeGreaterThanOrEqual(44);
+        expect(brake.height, size).toBeGreaterThanOrEqual(44);
+      };
+      await eachSize(page, (width, height, size) => check(width, height, size, 'left'));
+      await page.locator('#pause-button').tap();
+      await chooseInPanel(page, 'hand', 'right');
+      await page.locator('#resume-button').tap();
+      await expect(page.locator('#race-status')).toHaveText('RACING');
+      await eachSize(page, (width, height, size) => check(width, height, size, 'right'));
     });
 
     test('slide pad covers the bottom 45% of the steering half, clear of the edge-swipe zone', async ({ page }) => {

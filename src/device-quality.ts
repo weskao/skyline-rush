@@ -54,6 +54,20 @@ export function initialDeviceVisuals(
       motionBlur:quality==='low'?0:.12});
   return {settings,downgraded:quality!=='high',automatic:true};
 }
+/** Read the same saved settings and device hints before either startup or 3D has mounted. */
+export function readInitialDeviceVisuals(): InitialDeviceVisuals {
+  let storedSettings: unknown = null;
+  try {
+    const raw = localStorage.getItem(QUALITY_STORAGE_KEY);
+    if (raw) storedSettings = JSON.parse(raw);
+  } catch { /* Storage is optional. */ }
+  const navigator = globalThis.navigator as (Navigator & { deviceMemory?: number }) | undefined;
+  return initialDeviceVisuals({
+    storedSettings,
+    device: { cores: navigator?.hardwareConcurrency, memoryGiB: navigator?.deviceMemory,
+      width: globalThis.innerWidth, height: globalThis.innerHeight, pixelRatio: globalThis.devicePixelRatio },
+  });
+}
 export function noticeMessage(locale: string,quality: string): {title: string; body: string; dismiss: string} {
   const messages = locale === 'zh-TW' ? DEVICE_MESSAGES['zh-TW'] : DEVICE_MESSAGES.en;
   const level = messages.level as Record<string, string>;

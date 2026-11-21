@@ -2,7 +2,7 @@ import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { settled } from './helpers/test.js';
 
-// Teleports the running race over the line; rivalsFirst finishes all three rivals ahead (P4).
+// Teleports the running race over the line; rivalsFirst finishes every rival ahead (last place).
 async function finishRace(page, { rivalsFirst = false, racing = 'RACING' } = {}) {
   await page.locator('#start-button').click();
   await expect(page.locator('#race-status')).toHaveText(racing);
@@ -92,7 +92,10 @@ for (const [name, viewport, hasTouch] of [
   // The hidden-NEXT DOM binding is identical in every viewport; landscape also asserts the stacked results.
   if (name === 'phone landscape') test('NEXT stays hidden when the next track is still locked', async ({ gameplayPage: page }) => {
     await finishRace(page, { rivalsFirst: true });
-    await expect(page.locator('#result-stats')).toContainText('4');
+    // Last place of the default grid (eight racers since 43241657); a bare '4' also matched the race time.
+    const last = await page.evaluate(() => window.gameplay.race.rivals.length + 1); // settled: the grid is fixed at the start
+    expect(last).toBeGreaterThan(3);
+    await expect(page.locator('#result-stats')).toContainText(`POSITION${last} / ${last}`);
     await expect(page.locator('#result-stats .result-trophy-art')).toHaveCount(0);
     await expect(page.locator('#next-button')).toBeHidden();
   });

@@ -8,6 +8,7 @@ import { plumeLook, thrusterGlow } from './board-effects.ts';
 import { createThrusterGlow } from './thruster-glow.ts';
 import { createAeroWakeMeshes } from './aero-wake-meshes.js';
 import { createSprintPlume, SHOWROOM, showroomPulse } from './sprint-plume.ts';
+import { sprintTier } from './sprint-tier.ts';
 import { SKIN_MOTION, airflowFrame, measureAirflowProfile, streamGeometry } from './airflow-geometry.ts';
 
 export const REAR_PORTS = [-0.62, -0.22, 0.22, 0.62].map(x => ({ position: [x, 0.64, 2.39], direction: [0, 0, 1], size: 0.065 }));
@@ -29,7 +30,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
   vehicle.add(local);
   const flow = new THREE.Mesh(streamGeometry(proceduralProfile), new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-    uniforms: { ...Object.fromEntries(['time', 'power', 'speed', 'density', 'length', 'suction', 'turbulence', 'downforce', 'nitroMix'].map(key => [key, { value: 0 }])), wakeRange: { value: new THREE.Vector2() }, rippleScale: { value: new THREE.Vector2() }, skinTint: { value: new THREE.Vector3(1, 1, 1) }, skinPattern: { value: 0 }, trailAccent: { value: new THREE.Vector4(1, 1, 1, 0) } },
+    uniforms: { ...Object.fromEntries(['time', 'power', 'speed', 'density', 'length', 'suction', 'turbulence', 'downforce', 'nitroMix', 'edgeDetail'].map(key => [key, { value: 0 }])), wakeRange: { value: new THREE.Vector2() }, rippleScale: { value: new THREE.Vector2() }, skinTint: { value: new THREE.Vector3(1, 1, 1) }, skinPattern: { value: 0 }, trailAccent: { value: new THREE.Vector4(1, 1, 1, 0) } },
     vertexShader: `attribute float flowType; attribute float lane; attribute vec2 flowOutward; varying vec2 vUv; varying float vType; varying float vLane;
       uniform float time; uniform float turbulence; uniform float downforce;uniform float skinPattern; uniform vec2 wakeRange, rippleScale;
       void main(){vUv=uv;vType=flowType;vLane=lane;vec3 p=position;
@@ -47,20 +48,28 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
         }
         gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
     fragmentShader: `varying vec2 vUv; varying float vType; varying float vLane;
-      uniform float time,power,speed,density,length,suction,downforce,nitroMix,skinPattern;uniform vec3 skinTint;uniform vec4 trailAccent;
+      uniform float time,power,speed,density,length,suction,downforce,nitroMix,skinPattern,edgeDetail;uniform vec3 skinTint;uniform vec4 trailAccent;
       void main(){if(vLane>density)discard;
         float t=fract(vUv.x*2.-time*speed+vLane*3.);
-        float pulse=smoothstep(1.-length,1.-length+.06,t)*(1.-smoothstep(.91,1.,t));
-        float point=pow(max(0.,1.-abs(t-.88)*22.),3.);
+        float pulse=smoothstep(1.-length,1.-length+.10,t)*(1.-smoothstep(.84,1.,t));
+        float point=pow(max(0.,1.-abs(t-.83)*14.),3.);
         float ends=smoothstep(0.,.09,vUv.x)*(1.-smoothstep(.85,1.,vUv.x));
         float strength=vType>.5&&vType<1.5?suction*(.55+downforce*.45):vType>1.5?.35+downforce*.55:1.;
         vec3 color=mix(vec3(.18,.65,1.),vec3(.7,.95,1.),pulse*.6+point*.4)*skinTint;
         color=mix(color,mix(vec3(1.,.82,.4),trailAccent.rgb,trailAccent.a),clamp(nitroMix,0.,1.)*.85); // NITRO gold = the --nitro CSS token; an equipped trail skin replaces it
         float pattern=1.;
         if(skinPattern>.5) pattern=.6+.4*sin(vUv.y*11.+time*(2.+skinPattern));
-        if(skinPattern>1.5) pattern=.35+.65*abs(sin(vUv.y*(12.+skinPattern*4.)+time*4.+vLane*8.));
-        if(skinPattern>2.5) pattern=step(.4,fract(vUv.y*9.+vLane*4.+time));
-        gl_FragColor=vec4(color*(1.+point),ends*power*(.08+pulse*.7+point*.2)*strength*pattern);}`,
+        if(skinPattern>1.5) pattern=(.60+.40*abs(sin(vUv.y*20.+time*4.+vLane*8.)))*mix(1.,.68,smoothstep(.20,.95,vLane));
+        if(skinPattern>2.5){
+          float phase=fract(vUv.y*9.+vLane*4.+time*.75);
+          float segment=smoothstep(.08,.31,phase)*(1.-smoothstep(.66,.94,phase));
+          pattern=.28+.55*segment;
+        }
+        if(edgeDetail>0.&&skinPattern>.5){
+          float seam=.5+.5*cos(vUv.x*31.-time*3.+vLane*6.);
+          pattern*=mix(1.,.78+.22*seam,edgeDetail);
+        }
+        gl_FragColor=vec4(color*(1.+point*.62),ends*power*(.08+pulse*.7+point*.2)*strength*pattern);}`,
   }));
   local.add(flow);
   const pressure = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.ShaderMaterial({
@@ -89,7 +98,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
   const rear = new THREE.Group(); rear.name = 'Rear ports'; local.add(rear); // garage-model.ts moves it onto a dressed GLB's nozzles
   const plume = createSprintPlume(rear, REAR_PORTS, vehicle, ground); // the four jets (src/sprint-plume.ts)
   const voidBeams = createVoidPulseBeams(rear, REAR_PORTS);
-  const nitroTrail = createNitroTrail(rear, REAR_PORTS);
+  const nitroTrail = createNitroTrail(rear, REAR_PORTS, vehicle, ground);
   const glow = createThrusterGlow(rear, REAR_PORTS);
 
   const particles = Array.from({ length: MAX_PARTICLES }, () => ({ life: 0, roll: false, pos: new THREE.Vector3(), velocity: new THREE.Vector3() }));
@@ -117,13 +126,13 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
   const previousRotation = new THREE.Quaternion(), sampleRotation = new THREE.Quaternion();
   const shockColor = new THREE.Color('#bdeeff'), nitroShockColor = new THREE.Color('#ffd166'); // --nitro (style.css)
   let hadPosition = false, wasBoosting = false, wasNitro = false, time = 0, reveal = 0, strength = 0, rollStrength = 0, wakeStrength = 0, shockAge = 1, cursor = 0, ghostCursor = 0, emission = 0, ghostDistance = 0, lastImpact = null;
-  const plumeFrame = { time: 0, power: 0, nitroMix: 0, reach: 0, brightness: 1, diamonds: 0, extreme: 0, tail: 0, quality: 1, enabled: false, calm: false, voidPulse: false, racing: false, grounded: true }; // reused: no object per frame
+  const plumeFrame = { time: 0, power: 0, nitroMix: 0, reach: 0, brightness: 1, diamonds: 0, extreme: 0, tail: 0, quality: 1, enabled: false, calm: false, voidPulse: false, racing: false, grounded: true, showroom: false, tier: 'idle', chain: 0 }; // reused: no object per frame
   let quality = 1, settings, delta, launchSkinActive = false, launchPattern = 0, voidPulse = false, lastPhase = 'ready', demoPulseClock = 2.2;
   function emitAt(t) {
     sample.lerpVectors(previous, current, t);
     sampleRotation.slerpQuaternions(previousRotation, vehicle.quaternion, t);
     for (const port of REAR_PORTS) {
-      const p = particles[cursor]; cursor = (cursor + 1) % Math.round(MAX_PARTICLES * quality);
+      const p = particles[cursor]; cursor = (cursor + 1) % particleGeo.drawRange.count;
       p.pos.fromArray(port.position).add(rear.position).applyQuaternion(sampleRotation).add(sample);
       p.roll = rollStrength * .7 > strength;
       // shortcut: still-air frozen-convection markers; use a validated flow solver for pressure or swirl predictions.
@@ -166,6 +175,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       flow.material.uniforms.skinPattern.value = patterns.airflow;
       glow.tint.fromArray(palette.thruster);
       vapor.material.uniforms.skinTint.value.fromArray(palette['nitro-trail']);
+      vapor.material.uniforms.thrusterTint.value.fromArray(palette.thruster);
       ribbon.material.uniforms.skinTint.value.fromArray(palette['nitro-trail']);
       ribbon.material.uniforms.skinPattern.value = patterns['nitro-trail'];
       shock.userData.skinPattern = launchPattern;
@@ -203,10 +213,21 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       const boost = active && (car.boosting || car.nitroTime > 0 || car.miniBoost > 0) && enabled;
       const nitroActive = boost && car.nitroTime > 0;
       const sprintPower = sprintFrame ? sprintFrame.power : boost ? 1 : 0;
+      const lightPower = sprintFrame?.lightPower ?? sprintPower;
+      const chainMotion = Math.max(0, sprintPower - lightPower);
       const nitroMix = sprintFrame ? sprintFrame.nitroMix : nitroActive ? 1 : 0;
       const calm = reducedMotion || settings.comfortable;
       quality = settings.quality === 'low' ? 0.25 : settings.quality === 'medium' ? 0.5 : 1;
       if (calm) quality = Math.min(quality, 0.5);
+      const detail = enabled && !calm && settings.quality === 'high' ? settings.ultra ? 1 : .55 : 0;
+      const wakeCount = Math.round(MAX_PARTICLES * quality);
+      if (particleGeo.drawRange.count !== wakeCount) {
+        for (let i = wakeCount; i < MAX_PARTICLES; i++) particles[i].life = 0;
+        particleGeo.setDrawRange(0, wakeCount); cursor %= wakeCount;
+      }
+      vapor.visible = enabled;
+      vapor.material.uniforms.sparkShare.value = detail > 0 && (boost || studioDemo && preview) ? settings.ultra ? .32 : .18 : 0;
+      vapor.material.uniforms.nitroMix.value = nitroMix;
       if (!calm) time += dt; // Reduced Motion/Comfortable: shader clocks and the showroom emission sweep hold still
       const rollEnabled = enabled && !calm && settings.quality !== 'low' && settings.airflowDensity > 0 && settings.airflowOpacity > 0;
       const rolling = active && car.altitude > 0 && car.trick && !car.trick.done && car.trick.time < TRICK_ROLL_TIME;
@@ -215,7 +236,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       const show = settings.airflow && enabled; // V/AIRFLOW alone owns the streamlines; sprint keeps jets, ribbon and screen streaks
       reveal = enabled ? THREE.MathUtils.damp(reveal, show ? 1 : 0, show ? 3 : 6, dt) : 0;
       const demonstration = show && preview ? 0.32 * THREE.MathUtils.smoothstep(reveal, 0.85, 0.99) : 0;
-      strength = enabled ? THREE.MathUtils.damp(strength, boost ? sprintPower : demonstration, boost ? 55 : 7, dt) : 0;
+      strength = enabled ? THREE.MathUtils.damp(strength, boost ? lightPower : demonstration, boost ? 55 : 7, dt) : 0;
       // A selected showroom skin must be visible without requiring racing or NITRO input.
       // This presentation-only floor never changes race physics or Reduced Motion.
       if (studioDemo && preview && enabled && !calm) strength = Math.max(strength, 0.32);
@@ -232,11 +253,10 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       if (!hadPosition || car.impact !== lastImpact || !enabled) {
         previous.copy(current); previousRotation.copy(vehicle.quaternion); hadPosition = true;
       }
-      const countingDown = launchSkinActive && race.phase === 'countdown'; // the flare plays through 3-2-1, then bursts at GO
+      const countingDown = launchSkinActive && race.phase === 'countdown';
       flare.hold(countingDown);
-      if (countingDown && !flare.active) flare.trigger(current, vehicle.quaternion, 1.4);
       const launching = launchSkinActive && active && (lastPhase === 'ready' || lastPhase === 'countdown');
-      const flared = launching && flare.trigger(current, vehicle.quaternion, 1.1);
+      const flared = launching && flare.trigger(current, vehicle.quaternion, .78);
       if (!flared && ((boost && !wasBoosting) || (nitroActive && !wasNitro) || launching)) {
         shockAge = 0; shockPosition.copy(current); shock.quaternion.copy(vehicle.quaternion);
       }
@@ -244,10 +264,11 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       shock.material.color.copy(nitroActive && !studioDemo ? nitroShockColor : shockColor);
       shockAge += dt;
       const fu = flow.material.uniforms;
-      fu.time.value = time; fu.speed.value = settings.airflowSpeed * (0.45 + car.speed / 90 + strength * 0.6);
-      fu.nitroMix.value = nitroMix;
-      fu.power.value = calm ? reveal * settings.airflowOpacity * 0.15 : Math.max(reveal * settings.airflowOpacity * (1 + strength * 0.35), sprintPower * settings.speedLines * 0.65);
-      fu.density.value = Math.max(settings.airflowDensity * (0.5 + quality * 0.5), sprintPower * settings.speedLines * (0.5 + quality * 0.5));
+      const lines = Math.max(strength, sprintFrame?.lines ?? sprintPower); // the sprint ladder's speed lines: travel and density, never light
+      fu.time.value = time; fu.speed.value = settings.airflowSpeed * (0.45 + car.speed / 90 + lines * 0.6);
+      fu.nitroMix.value = nitroMix; fu.edgeDetail.value = detail;
+      fu.power.value = calm ? reveal * settings.airflowOpacity * 0.15 : Math.max(reveal * settings.airflowOpacity * (1 + strength * 0.35), lightPower * settings.speedLines * 0.65);
+      fu.density.value = Math.max(settings.airflowDensity * (0.5 + quality * 0.5), lines * settings.speedLines * (0.5 + quality * 0.5));
       fu.length.value = Math.min(0.85, settings.streamlineLength + car.speed / 600);
       fu.suction.value = settings.suction / (1 + Math.max(0, vehicle.position.y) * 2);
       fu.turbulence.value = settings.turbulence * (calm ? 0.3 : 1);
@@ -257,18 +278,22 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       pressure.material.uniforms.power.value = reveal * fu.suction.value * (settings.aeroMode === 'downforce' ? 1 : 0.35);
       pressure.material.uniforms.time.value = time;
       voidBeams.update(time, strength, quality, enabled && !calm);
-      nitroTrail.update(time, studioDemo && preview ? 0.85 : strength * nitroMix, quality, enabled && !calm); // Studio previews the trail without NITRO
+      const showroom = studioDemo && preview, grounded = car.altitude <= 0;
+      nitroTrail.update(time, showroom ? 0.85 : strength * nitroMix, quality, enabled && !calm,
+        showroom ? Infinity : car.speed, grounded, chainMotion); // Studio previews the trail without NITRO, fully stretched
       ribbon.material.uniforms.time.value = time;
       const look = plumeLook(settings.quality), jet = plumeFrame;
       glow.update(enabled && !voidPulse ? thrusterGlow(settings.quality, active, car.altitude > 0, strength) : 0);
       const pulse = studioDemo && enabled && !calm ? showroomPulse(demoPulseClock) : -1; // showrooms loop the plume with the ignition
-      jet.time = time; jet.nitroMix = nitroMix; jet.tail = look.tail; jet.enabled = enabled; jet.voidPulse = voidPulse;
+      jet.time = time; jet.nitroMix = showroom && flow.material.uniforms.trailAccent.value.w > 0 ? 1 : nitroMix; jet.tail = look.tail; jet.enabled = enabled; jet.voidPulse = voidPulse;
       jet.power = pulse < 0 ? strength : THREE.MathUtils.lerp(SHOWROOM.idlePower, 1, pulse);
-      jet.reach = settings.exhaustLength * look.stretch * (pulse < 0 ? strength * (0.65 + car.speed / 200)
+      jet.reach = settings.exhaustLength * look.stretch * (pulse < 0 ? (strength + (calm ? 0 : chainMotion)) * (0.65 + car.speed / 200)
         : THREE.MathUtils.lerp(SHOWROOM.idle, 1, pulse) * (0.65 + SHOWROOM.speed / 200));
-      jet.brightness = Math.min(settings.coreBrightness, calm ? 0.9 : 3);
+      jet.brightness = Math.min(settings.coreBrightness, calm ? (jet.nitroMix > 0 ? 0.65 : 0.9) : 3) * (nitroTrail.streaks.visible ? 1 - 0.8 * Math.min(1, jet.nitroMix) : 1); // under a trail skin's flame the cone stays faint: its flat fill hid the tongues
       jet.diamonds = settings.machDiamonds; jet.extreme = settings.preset === 'extreme' ? 1 : 0;
-      jet.quality = quality; jet.calm = calm; jet.racing = active; jet.grounded = car.altitude <= 0;
+      jet.quality = quality; jet.calm = calm; jet.showroom = studioDemo; jet.racing = active; jet.grounded = grounded;
+      const boostHeld = boost && (car.boosting || car.miniBoost > 0); // a parked showroom burns as BOOST, or as NITRO when it previews a trail skin; one that drives a racing car reads the driver
+      jet.tier = sprintTier(pulse < 0 || active ? nitroActive : jet.nitroMix > 0, pulse < 0 || active ? boostHeld : jet.nitroMix <= 0); jet.chain = calm ? 0 : chainMotion;
       plume.update(jet);
       delta = car.speed;
       if (wakeStrength > 0.01 && enabled && dt > 0) {
@@ -323,7 +348,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       }
       ribbonGeo.attributes.position.needsUpdate = ribbonGeo.attributes.alpha.needsUpdate = true;
       if (ribbonKindDirty) ribbonGeo.attributes.rollWake.needsUpdate = true;
-      for (let i = 0; i < MAX_PARTICLES; i++) {
+      for (let i = 0; i < wakeCount; i++) {
         const p = particles[i]; p.life = p.roll && !rollEnabled ? 0 : Math.max(0, p.life - dt);
         alphas[i] = 0;
         if (p.life === 0) continue;
@@ -336,7 +361,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
         sizes[i] = p.roll ? p.size : p.size + age * 2;
         alphas[i] = p.opacity * Math.min(1, age * 25) * (p.life / p.maxLife) ** 1.5;
       }
-      for (const attribute of Object.values(particleGeo.attributes)) attribute.needsUpdate = true;
+      particleGeo.attributes.position.needsUpdate = particleGeo.attributes.alpha.needsUpdate = particleGeo.attributes.size.needsUpdate = true;
       for (let i = 0; i < ghosts.length; i++) {
         const g = ghosts[i]; g.life = Math.max(0, g.life - dt);
         g.mesh.visible = enabled && !calm && g.life > 0 && i < settings.afterimages;
@@ -348,8 +373,8 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       shock.position.copy(shockPosition).sub(origin);
       shock.scale.setScalar(studioDemo ? 0.7 + shockAge * 4.5 : 0.5 + shockAge * 20);
       shock.material.opacity = Math.max(0, 1 - shockAge / shockDuration) ** 2
-        * settings.shockwave * (studioDemo ? 0.95 : 0.45);
-      flare.update(dt, time, origin, enabled && !calm, quality, Math.min(1, settings.shockwave * (studioDemo ? 2 : 1.4))); // default 0.5 → full in Studio, 0.7 racing
+        * settings.shockwave * (studioDemo ? 0.95 : nitroActive ? 0.3 : 0.45);
+      flare.update(dt, time, origin, enabled && !calm, quality, Math.min(1, settings.shockwave * (studioDemo ? 2 : 1.4)), detail); // default 0.5 → full in Studio, 0.7 racing
       previous.copy(current); previousRotation.copy(vehicle.quaternion);
       direction.set(0, 0.64, 3).applyMatrix4(vehicle.matrixWorld);
       return { strength, ignition: boost ? Math.max(0, 1 - shockAge / 0.25) : 0, nozzle: direction, reveal };

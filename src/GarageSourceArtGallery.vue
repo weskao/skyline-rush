@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import CollectibleIcon from './CollectibleIcon.vue';
+import { collectibleIconUrl } from './collectible-icons.ts';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import GarageArtworkTile from './GarageArtworkTile.vue';
+import StoreActionButton from './StoreActionButton.vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import { storeReadiness, storeReadinessText } from './garage-store-readiness.ts';
 import { getLocale, onLocaleChange } from './i18n.ts';
@@ -31,6 +34,9 @@ const storeStatusLabel = (id: string): string => {
 };
 const image = (id: string) =>
   `${import.meta.env.BASE_URL}feature-assets/${props.category}/raster/${id}@3x.webp`;
+const sourceFilterIcon: Record<Wave3PreviewGroup, string> = {
+  all: 'collection', mission: 'mission', trophy: 'medal', store: 'cart', collection: 'collection',
+};
 function setFilter(group: Wave3PreviewGroup): void {
   filter.value = group;
   selected.value = filterWave3PreviewItems(props.category, group)[0]?.id ?? '';
@@ -46,11 +52,11 @@ onUnmounted(() => stopListening?.());
       <span data-wave3-entry-icon class="garage-source-entry-icon"
         :class="{ 'garage-source-entry-icon--store': category === 'garage-store-readiness' }">
         <GarageArtworkImage v-if="category === 'garage-store-readiness'"
-          :src="image('store-collection')"
+          :src="collectibleIconUrl('collection-panel')"
           :size="72" image-id="store-collection-summary"
           :alt="locale === 'zh-TW' ? '商店收藏概念圖示' : 'Store collection concept artwork'"
           :fallback-text="locale === 'zh-TW' ? '收藏圖示' : 'Collection art'" loading="eager" />
-        <GarageArtworkImage v-else :src="image('mission-race')"
+        <GarageArtworkImage v-else :src="collectibleIconUrl('mission-panel')"
           :size="40" :alt="''" :fallback-text="copy(config.heading)" loading="eager" />
       </span>
       <span class="garage-source-summary-label">{{ copy(config.heading) }}
@@ -74,7 +80,7 @@ onUnmounted(() => stopListening?.());
     </section>
     <div class="garage-source-filters" role="group" :aria-label="locale === 'zh-TW' ? '篩選收藏類型' : 'Filter catalog category'">
       <button v-for="item in config.filters" :key="item.id" type="button" :data-wave3-filter="item.id"
-        :aria-pressed="filter === item.id" @click="setFilter(item.id)">{{ copy(item.name) }}</button>
+        :aria-pressed="filter === item.id" @click="setFilter(item.id)"><CollectibleIcon :name="sourceFilterIcon[item.id]" />{{ copy(item.name) }}</button>
     </div>
     <div class="garage-source-grid">
       <button v-for="item in visible" :key="item.id" type="button" class="garage-source-choice"
@@ -112,9 +118,9 @@ onUnmounted(() => stopListening?.());
       </div>
       <div v-if="category === 'garage-store-readiness'" class="garage-store-detail-footer">
         <span role="status">{{ storeStatusLabel(current.id) }} · {{ locale === 'zh-TW' ? '純展示' : 'Display only' }}</span>
-        <button type="button" disabled aria-disabled="true" data-store-purchase-disabled>
+        <StoreActionButton kind="purchase" :locale="locale" disabled aria-disabled="true" data-store-purchase-disabled>
           {{ locale === 'zh-TW' ? '尚未開放' : 'Unavailable' }}
-        </button>
+        </StoreActionButton>
       </div>
     </section>
   </details>
@@ -192,9 +198,6 @@ onUnmounted(() => stopListening?.());
 .garage-store-detail-footer { margin-top: 12px; display: flex; flex-wrap: wrap;
   align-items: center; justify-content: space-between; gap: 10px; }
 .garage-store-detail-footer span { color: #e6c4f7; font-size: 12px; }
-.garage-store-detail-footer button { min-height: 44px; padding: 9px 16px;
-  border: 1px solid #715672; border-radius: 10px; color: #bcb0c8;
-  background: #272639; cursor: not-allowed; opacity: .85; }
 @media (hover: hover) and (pointer: fine) {
   .garage-source-choice:hover { transform: translateY(-3px); box-shadow: 0 0 17px #3ec0f355; }
   .garage-source-filters button:hover { border-color: #7adcf7; }

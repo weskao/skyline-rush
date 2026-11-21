@@ -15,12 +15,43 @@ npm run build
 
 `test:cloud` starts local Firebase Auth and Firestore emulators. Its Google account form uses mock identities and does not touch production data. The browser tests cover map recovery after clearing site data, account switching, export and delete, reconnect, and concurrent devices. Firestore rules tests cover owner-only reads, writes and deletion.
 
+## Wave 3 Firestore preview
+
+`VITE_WAVE3_FIRESTORE_PREVIEW` is a strictly opt-in build-time switch: only `=1` enables Firestore preview storage, in every Vite mode. Set it where Vite runs and rebuild when changing it. The preview uses the existing Google sign-in and Firebase project. Enable it only for a project whose deployed Rules already allow `wave3PreviewEconomy`.
+
+| Garage mode | Setting omitted | `=1` | `=0` |
+| --- | --- | --- | --- |
+| `trial` | Same as `=0` | Wave 3 with Firestore | Wave 3 with guest storage and signed-in in-page state |
+| `released` | Same as `=0` | Wave 3 with Firestore | Wave 3 excluded |
+| `coming-soon` | Wave 3 excluded | Configuration error | Wave 3 excluded |
+
+GitHub Pages and Netlify production builds set only `GARAGE_VFX_RELEASE_MODE=trial`, so they ship without Firestore preview storage. A deployment that needs it must set `VITE_WAVE3_FIRESTORE_PREVIEW=1` in its build environment after the Firebase Rules and indexes are deployed; those are deployed separately.
+
+```sh
+VITE_WAVE3_FIRESTORE_PREVIEW=1 make dev
+npm run test:cloud
+GARAGE_VFX_RELEASE_MODE=released VITE_WAVE3_FIRESTORE_PREVIEW=1 npm run build
+GARAGE_VFX_RELEASE_MODE=released VITE_WAVE3_FIRESTORE_PREVIEW=0 npm run build
+```
+
+### Storage and maintenance
+
+- A signed-out player uses the guest device key `skyline-rush-wave3-demo:v1:guest`. Google sign-in switches to the Firebase UID's preview document when the flag is on. Signing out restores the guest save. Previous local UID checkpoints are ignored, and guest balances are never uploaded. A failed authenticated write keeps the last confirmed snapshot and reports the operation as unavailable.
+- Firestore uses one owner-only document at `wave3PreviewEconomy/{uid}`. The envelope is `{ version: 1, checkpoint: string }`. The application validates the decoded checkpoint, including the UID, schema version, size, currency balances, mission state, inventory and recent replay IDs. The payload is capped at 64 KiB and exempt from Firestore indexing. Update the codec, rules, adapter and regression fixtures together if the format changes.
+- The Firestore adapter stages gameplay mutations inside a transaction using the server document and publishes the new state after commit. Keeping the balances, rewards and replay IDs together allows a retry to recognize a previously recorded completion. The client ignores checkpoints after seven days without a saved operation. Firestore retains the physical document until deletion.
+- When a signed-in browser comes back online, the trial wallet reads the latest confirmed checkpoint. A failed read keeps the last confirmed balance and collection. Redemption retries use the current server balance and inventory inside the transaction. A cosmetic already unlocked in another tab costs nothing on retry.
+- The cloud-save delete action removes the preview document in every build, including builds with the preview off, so data written by an earlier preview build does not survive. It first commits the `saves`, `modeBests` and `accounts` batch, then deletes `wave3PreviewEconomy/{uid}` on its own (`src/cloud-delete.ts`). A `permission-denied` result there is ignored because a project without the preview rule cannot hold that document; any other error is reported. For a full cleanup, turn off the flag and remove the preview write rule, then delete `wave3PreviewEconomy` in the intended project. The ordinary `saves`, `modeBests` and `accounts` collections do not hold Wave 3 balances. Keep the preview data out of the formal Go economy when that launches.
+
 ## Account data and safe progress restore
 
 - Google login caches only `displayName` and `email` in `accounts/{uid}`, reading existing fields to avoid duplicate writes. Empty/invalid Google values do not wipe previously saved valid values. This uses the existing Spark database.
 - Permanent mode records are synced separately from the last 50 `modeHistory` items. Private `modeBests/{uid}` contains versioned `bests` and `stunts` maps (maximum 200 entries each); device-specific Ghost traces remain local.
 - The race results panel shows one cloud line for the finished race (not on pause, not in Free Drive, which saves nothing): syncing, then "saved to the cloud" only after Firestore acknowledges the write, or "not synced yet, saved on this device" when it fails or is offline. Signed out, it explains backup and offers the same sign-in button; the outcome (signed in and synced, sync failed, sign-in failed, or a neutral "cancelled" when the popup is closed) appears inline. "Connected" means signed in with any provider, so another provider would need no results-UI change (`src/result-cloud-status.ts`).
 - The Cloud save dialog shows the current Google name, email and avatar with a fallback. The Sync now action reuses the normal transaction path; only acknowledged Firestore writes update the successful sync time.
+- The one-time Vantaire GT test drive stores the start as optional `gtTrialStartedAt` in the race save. For participating
+  clients, sync keeps the earliest start across devices, including expired starts. Guest test drives use browser storage.
+  Permanent GT access derives from the 18-star Career threshold, and the saved car preference is checked against access
+  before a race. Older saves without a trial start remain readable.
 - Switching Google identities keeps per-account local snapshots, including unsynced permanent results. Deleting cloud progress uses a single Firestore batch to delete `saves/{uid}`, `modeBests/{uid}` and `accounts/{uid}`; a local deletion marker blocks any accidental re-upload until browser cleanup has succeeded.
 - Export generates a versioned JSON save with permanent records but without Google account metadata or Ghosts. Import accepts at most 1 MiB and validates the schema before merging. Neither operation upgrades the Firebase plan.
 - **Production deployment is separate**: merging this branch or building the site does not deploy changed Firestore Rules. Do not test live private documents until both the published site and its rules are updated. Verify Spark quotas in Firebase Console and test with real Google accounts on Chrome and Safari.

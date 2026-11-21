@@ -5,9 +5,10 @@ import { chooseCourseNextEdge } from './course-ai-standings.ts';
 import { routeLength, sampleRoute } from './course-route-frame.ts';
 import { COURSE_RUNTIMES, isCourseRuntime } from './course-runtimes.ts';
 import { chooseBranchByLateral, courseCarGap, courseNoRoadAt, courseRemaining, createCourseRuntime, placeCourseCar,
-  rankCourseRuntime, recoverCourseCar, setCourseContact, stepCourseCar, type CourseHazard, type CourseRuntime, type CourseStepEvent } from './course-race.ts';
-import { dropCar, type FallingCar } from './road-falls.ts';
+  moveFinishedCourseCar, rankCourseRuntime, recoverCourseCar, setCourseContact, stepCourseCar, type CourseHazard, type CourseRuntime, type CourseStepEvent } from './course-race.ts';
+import { RESET_BACKTRACK, startRoadRecovery, type FallingCar, type RecoverySeat } from './road-falls.ts';
 import { knock } from './car-collisions.js';
+import { isParkedRival, parkFinishedRival } from './finished-rival.js';
 import { attachCourseItems, groundAt, groundOffset, projectCourseItems, type CourseItem } from './course-items.ts';
 import { placeSectionBurst } from './shortcut-rewards.ts';
 import { raceTrack } from './race-tracks.ts';
@@ -23,7 +24,7 @@ interface CourseRef { course?: CourseRuntime; player: object }
 interface CourseHost extends CourseRef {
   trackId: string; seed: number; elapsed: number; length: number; player: Player; rivals: Rival[]; result: { time: number } | null;
   rings: CourseItem[]; pickups: CourseItem[]; traffic: (RaceCar & { speed: number })[]; hazards: unknown[]; sections: unknown[];
-  mode: string; endless?: object; config: { difficulty?: string };
+  mode: string; endless?: object; config: { difficulty?: string; itemRules?: string };
 }
 type Contact = (race: CourseHost, kind: 'barrier', obstacleX: number, intensity: number, retention: number) => void;
 
@@ -38,7 +39,9 @@ const travelOf = (rt: CourseRuntime, id: string) => {
 };
 
 export function syncCourseContact(race: CourseRef, car: RaceCar): void {
-  setCourseContact(race.course!, idOf(race, car), car.x, car.distance);
+  const id = idOf(race, car);
+  if (isParkedRival(car)) moveFinishedCourseCar(race.course!, id, car);
+  else setCourseContact(race.course!, id, car.x, car.distance);
 }
 
 /** H1: graph courses get a runtime; rings, pickups and traffic move onto its edges (Q3 follow-up), hazards and sections
@@ -93,7 +96,7 @@ function recover(rt: CourseRuntime, id: string): { edgeId: string; localS: numbe
 
 /**
  * H2 + H6 for the player, called right after its odometer integration (game.js `gapNow`): measured step; over a flight
- * gap below GAP_CLEARANCE, or on a rejected sweep, a `dropCar` fall re-seated by `recoverCourseCar` — that frame sweeps
+ * gap below GAP_CLEARANCE, or on a rejected sweep, start recovery using `recoverCourseCar` — that frame sweeps
  * no gate, hazard or score; else the hazard sweep. Returns false: the legacy 1D gap drop never runs on a course.
  */
 export function stepCoursePlayer(race: CourseHost, dt: number, contact: Contact): false {
@@ -103,9 +106,8 @@ export function stepCoursePlayer(race: CourseHost, dt: number, contact: Contact)
     () => chooseBranchByLateral(rt.spec.graph, prevEdge, player.x, BRANCH_DEADBAND));
   if (event === 'rejected' || (courseNoRoadAt(rt, PLAYER_ID) && player.altitude < GAP_CLEARANCE)) {
     const seat = recover(rt, PLAYER_ID);
-    dropCar(player, seat.odometer, player.distance, race.elapsed, GAP_SLOWDOWN); // fall.from: the odometer where it fell
-    placeCourseCar(rt, PLAYER_ID, seat.edgeId, seat.localS, player);
-    projectCourseItems(race);
+    if (event === 'rejected') player.distance = rt.cars.get(PLAYER_ID)!.last.distance;
+    startRoadRecovery(player, { distance: seat.odometer, course: seat }, player.distance, race.elapsed, GAP_SLOWDOWN, 'fall', event !== 'rejected');
     return false;
   }
   if (event === 'crossed') projectCourseItems(race, prevEdge, edgeStart); // before game.js's ring/pickup loops
@@ -117,6 +119,21 @@ export function stepCoursePlayer(race: CourseHost, dt: number, contact: Contact)
     syncCourseContact(race, player);
   }
   return false;
+}
+
+export function courseResetSeat(rt: CourseRuntime): RecoverySeat {
+  const car = rt.cars.get(PLAYER_ID)!, { currentEdgeId, localS } = car.travel;
+  if (rt.spec.recoveryEdge[currentEdgeId]) {
+    const seat = recover(rt, PLAYER_ID);
+    return { distance: seat.odometer, course: seat };
+  }
+  const s = Math.max(0, localS - RESET_BACKTRACK);
+  return { distance: car.edgeStart + s, course: { edgeId: currentEdgeId, localS: s } };
+}
+
+export function placeCourseRecovery(race: CourseHost, seat: NonNullable<RecoverySeat['course']>): void {
+  placeCourseCar(race.course!, PLAYER_ID, seat.edgeId, seat.localS, { ...race.player, altitude: 0 });
+  projectCourseItems(race);
 }
 
 /** H2 for rivals, after this frame's distance integration: poses, gates, hazards, branch choice, finish times, standings. */
@@ -137,7 +154,11 @@ export function stepCourseCars(race: CourseHost, dt: number): void {
       if (hazard) knock(race, rival, Math.sign(rival.x - hazard.lateral) || -1, 0.7, 0.6); // aiImpacts' block response
     }
     if (event !== 'rejected' && event !== 'finished') rivalSweepsItems(race, rt, id, rival, prevEdge, prevS);
-    if (event === 'finished' && rival.finishTime === null) rival.finishTime = race.elapsed - dt + dt * rt.cars.get(id)!.finishFraction!;
+    if (event === 'finished' && rival.finishTime === null) {
+      rival.finishTime = race.elapsed - dt + dt * rt.cars.get(id)!.finishFraction!;
+      parkFinishedRival(rival);
+      syncCourseContact(race, rival);
+    }
     if (rival.finishTime != null) finishTimes[id] = rival.finishTime;
   });
   for (const car of race.traffic) { // ground route only; the bound is this frame's odometer move (no 1D respawns)
@@ -221,12 +242,13 @@ export function courseGapWarning(race: CourseHost): { from: number; need: number
   return here !== undefined ? here : gapWarning(race, next, routeLength(graph, travel.currentEdgeId), travel.localS) ?? null;
 }
 
-/** H3: signed metres from `a` to `b`; null = no interaction (another branch, or a car already past FINISH). */
-export function carGap(race: CourseRef & { trackId: string }, a: Car, b: Car): number | null {
+/** H3: signed metres from `a` to `b`; null = no interaction (another branch, or traffic that has left at FINISH). */
+export function carGap(race: CourseRef & { trackId: string }, a: Car & { finishTime?: number | null }, b: Car & { finishTime?: number | null }): number | null {
   const rt = race.course;
   if (!rt) return physicalGap(race.trackId, a.distance, b.distance);
   const from = idOf(race, a), to = idOf(race, b);
-  if (travelOf(rt, from).finished || travelOf(rt, to).finished) return null;
+  if (travelOf(rt, from).finished && !isParkedRival(a) && !(a === race.player && isParkedRival(b))) return null;
+  if (travelOf(rt, to).finished && !isParkedRival(b) && !(b === race.player && isParkedRival(a))) return null;
   return courseCarGap(rt, from, to);
 }
 

@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { expect } from '@playwright/test';
 import { captureHooks, test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -18,7 +19,7 @@ for (const id of [...CLASSIC_IDS, ...Object.keys(COURSE_TRACKS)]) {
     }, CLASSIC_IDS);
     await page.goto(gameplayURL, { waitUntil: 'domcontentloaded' });
     for (let i = 0; i < 3 && await page.locator('dialog[open]').count(); i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(400); }
-    await page.locator(`[data-track="${id}"], [data-upcoming-track="${id}"]`).click();
+    await clickLobbyOption(page, `[data-track="${id}"], [data-upcoming-track="${id}"]`);
     await expect(page.locator('#start-button')).toBeEnabled();
     await page.locator('#start-button').click();
     await page.evaluate(() => { window.gameplay.race.countdown = .01; });
@@ -34,14 +35,16 @@ for (const id of [...CLASSIC_IDS, ...Object.keys(COURSE_TRACKS)]) {
         placeCourseCar(race.course, 'YOU', edgeId, localS, race.player);
       }
     });
-    const card = page.locator('#race-halfway-card');
-    await expect(card).toBeVisible({ timeout: ciTimeout(10_000) });
-    await expect(card).toContainText('賽事過半');
-    const fit = await card.evaluate(node => {
-      const scene = document.querySelector('#world').getBoundingClientRect(), box = node.getBoundingClientRect();
-      return { dx: box.x + box.width / 2 - scene.x - scene.width / 2, height: box.height / scene.height,
+    // The card lives 2.15 s of race time: find, read and measure it in one tick, or a slow runner measures it gone
+    // (monsoon-ruins dx 480 = a zero rect, CI 44395376200).
+    const fit = await (await page.waitForFunction(() => {
+      const node = document.querySelector('#race-halfway-card'), box = node?.getBoundingClientRect();
+      if (!box?.width || !box.height) return null;
+      const scene = document.querySelector('#world').getBoundingClientRect(), anchor = node.parentElement.getBoundingClientRect();
+      return { text: node.textContent, dx: anchor.x + anchor.width / 2 - scene.x - scene.width / 2, height: box.height / scene.height,
         area: box.width * box.height / (scene.width * scene.height) };
-    });
+    }, null, { timeout: ciTimeout(10_000) })).jsonValue();
+    expect(fit.text).toContain('賽事過半');
     expect(Math.abs(fit.dx)).toBeLessThan(2);
     expect(fit.height).toBeLessThan(.1);
     expect(fit.area).toBeLessThan(.04);

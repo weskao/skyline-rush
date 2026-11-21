@@ -6,7 +6,7 @@ const app = readFileSync(new URL('../src/App.vue', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8');
 
 test('Garage takes Practice’s pinned Start position while Practice stays available after History', () => {
-  const actions = app.match(/<div class="intro-actions">([\s\S]*?)<!-- Reserve space/)?.[1] ?? '';
+  const actions = app.match(/<div class="intro-actions">([\s\S]*?)<\/section>/)?.[1] ?? '';
   const primary = actions.match(/<div class="intro-primary">([\s\S]*?)<\/div>/)?.[1] ?? '';
   assert.match(primary, /id="start-button"/);
   assert.match(primary, /id="garage-button"/);

@@ -179,3 +179,17 @@ test('a failed load keeps the procedural sky and says so', async () => {
     assert.equal(r.loads.length, 1, 'no retry storm per frame');
   } finally { console.warn = warn; }
 });
+
+test('switching back to a ready sky stops waiting for the abandoned Ultra texture', async () => {
+  const { coastSky, land, dataset } = rig();
+  coastSky.update('coast', 'day', 'high', false);
+  await land();
+  coastSky.update('coast', 'day', 'high', false);
+  coastSky.update('coast', 'day', 'high', true);
+  assert.equal(coastSky.pending, true);
+  coastSky.update('coast', 'day', 'high', false);
+  assert.equal(coastSky.pending, false);
+  assert.equal(dataset.coastSky, 'day:4096');
+  await land();
+  coastSky.dispose();
+});

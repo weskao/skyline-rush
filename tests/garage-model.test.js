@@ -265,14 +265,14 @@ test('a dressed GLB reflects the host car\'s softened map, set before compiling 
   glb.add(new THREE.Mesh(new THREE.BoxGeometry(), paint), new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial()));
   const cache = { async load(id) { await tick(); return { kind: 'model', id, instance: () => glb.clone(true), release() {} }; } };
   const seen = [];
-  const model = createGarageModel({ id: 'roadster2', cache, dataset: {}, compile: async () => { seen.push([paint.envMap, paint.envMapIntensity]); } });
+  const model = createGarageModel({ id: 'roadster2', cache, dataset: {}, compile: async ({ children: [body] }) => { seen.push([body.material.envMap, body.material.envMapIntensity]); } });
   const home = host();
   home.body.material = new THREE.MeshStandardMaterial();
   applyCarReflections(home.car, carMap);
   model.sync(true, 'high', home, 'drive');
   await settle();
   assert.deepEqual(seen, [[carMap, CAR_REFLECTION.intensity]], 'compiled with the car map, never with the scene HDRI');
-  assert.equal(paint.envMap, carMap);
+  assert.equal(paint.envMap, null, 'the cached GLB keeps its authored environment');
 
   const bare = new THREE.MeshPhysicalMaterial(), plain = new THREE.Group();
   plain.add(new THREE.Mesh(new THREE.BoxGeometry(), bare));
@@ -281,4 +281,54 @@ test('a dressed GLB reflects the host car\'s softened map, set before compiling 
   other.sync(true, 'high', host(), 'drive');
   await settle();
   assert.equal(bare.envMap, null, 'a host car without its own map leaves the GLB as authored');
+});
+
+
+test('the race GLB gets softer glass and clear coat without altering the Studio instance', async () => {
+  const home = host(), studio = host('studio');
+  const paint = new THREE.MeshPhysicalMaterial({ name: 'car_paint', roughness: 0.17, clearcoat: 0.9, clearcoatRoughness: 0.06 });
+  const glass = new THREE.MeshPhysicalMaterial({ name: 'car_glass', roughness: 0.07, clearcoat: 0.95, clearcoatRoughness: 0.06 });
+  const source = new THREE.Group();
+  const glassMaterials = [glass, new THREE.MeshBasicMaterial()];
+  for (const [name, material] of [['roof', paint], ['glass', glassMaterials]]) {
+    source.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(), material), { name }));
+  }
+  const map = new THREE.Texture();
+  for (const target of [home, studio]) {
+    target.body.material = new THREE.MeshPhysicalMaterial({ envMap: map, roughness: 0.24 });
+    target.car.userData.body = target.body;
+  }
+  const cache = { load: async () => ({ kind: 'model', instance: () => source.clone(true), release() {} }) };
+  const model = createGarageModel({ id: 'roadster2', cache, dataset: {}, compile: async () => {} });
+  model.sync(true, 'high', home);
+  await settle();
+  model.sync(true, 'high', studio);
+  await settle();
+  const finishOf = (target, name) => [target.car.getObjectByName(name).material].flat()[0];
+  for (const name of ['roof', 'glass']) {
+    const raceFinish = finishOf(home, name);
+    const studioFinish = finishOf(studio, name);
+    assert.ok(raceFinish.clearcoatRoughness > 0.15, `${name}: clear-coat lobe is broader in the race`);
+    assert.equal(studioFinish.clearcoatRoughness, 0.06);
+    assert.equal(raceFinish.clearcoat, studioFinish.clearcoat);
+  }
+  assert.ok(finishOf(home, 'glass').roughness > 0.15);
+  assert.equal(glass.roughness, 0.07, 'the source model keeps its authored finish');
+  model.dispose();
+});
+
+test('the selected car stays pending through compilation and settles on a failed compile', async () => {
+  let rejectCompile;
+  const compile = async () => new Promise((_, reject) => { rejectCompile = reject; });
+  const model = createGarageModel({ id: 'pipeline-probe', cache: fakeCache(), compile, dataset: {} });
+  const home = host();
+  assert.equal(model.sync(true, 'high', home, 'drive'), true, 'the model request is pending');
+  await settle();
+  assert.equal(model.sync(true, 'high', home, 'drive'), true, 'a decoded GLB is still pending during shader compilation');
+  rejectCompile(new Error('unsupported material'));
+  await settle();
+  assert.equal(model.sync(true, 'high', home, 'drive'), false, 'a failed compile settles to the procedural model');
+  assert.equal(drawn(home.body), true);
+  assert.equal(home.car.getObjectByName('wheel_fl'), undefined);
+  model.dispose();
 });

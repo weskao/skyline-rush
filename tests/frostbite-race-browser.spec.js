@@ -1,3 +1,5 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
@@ -24,7 +26,7 @@ for (const [name, viewport, hasTouch] of [
   test('the Coming Soon card enters a real 13.8 km race that renders the course, finishes once and saves topology-keyed results', async ({ gameplayPage: page }) => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.locator('[data-upcoming-track="frostbite-canyon"]').click();
+    await clickLobbyOption(page, '[data-upcoming-track="frostbite-canyon"]');
     await expect(page.locator('#start-button')).toBeEnabled();
     await expect(page.locator('#track-length')).toHaveText('13.8 KM SPRINT');
     await expect(page.locator('.route-heading')).toHaveText('FROSTBITE CANYON');
@@ -67,7 +69,7 @@ for (const [name, viewport, hasTouch] of [
     }), span);
     await expect.poll(() => page.evaluate(() => window.gameplay.race.player.falls), { timeout: ciTimeout(8_000) }).toBe(1);
     expect(await page.evaluate(() => window.gameplay.race.player.fall.distance), 'never ahead').toBe(span.from);
-    await page.waitForTimeout(500);
+    await expect.poll(() => page.evaluate(() => !!window.gameplay.race.player.recovery), { timeout: ciTimeout(12_000) }).toBe(false);
     expect(await page.evaluate(() => Math.abs(window.gameScene.player.position.y)), 'back on the lower road').toBeLessThan(3);
     await capture(page, `${name}-rift-recovered`);
     expect(await page.evaluate(() => window.gameScene.renderer.info.programs.length), 'no shader compiles mid-race').toBe(programs);
@@ -96,11 +98,11 @@ test.describe('Frostbite Ghost', () => {
       const mid = 6480, length = 13799, samples = Array.from({ length: 3001 }, (_, i) => i < 600 ? [mid, 7.5, 6] : [mid + (length - mid) * (i - 600) / 2400, 0, 0]);
       localStorage.setItem('skyline-rush-ghosts', JSON.stringify({ 'frostbite-canyon@t1l1': { time: 300, samples } }));
     });
-    await page.locator('[data-upcoming-track="frostbite-canyon"]').click();
+    await clickLobbyOption(page, '[data-upcoming-track="frostbite-canyon"]');
     await expect(page.locator('#ghost-status')).toContainText('5:00');
-    await page.locator('#controls-button').click(); // Ghost display is opt-in, in the Controls panel (real clicks)
+    await toggleSettingsSection(page, 'driving'); // Ghost display is opt-in, in the Controls panel (real clicks)
     await page.locator('#ghost-enabled').check();
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15_000) });
     const span = await page.evaluate(() => window.gameplay.race.sections.find(s => s.span));

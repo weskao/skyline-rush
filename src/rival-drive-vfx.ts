@@ -66,9 +66,16 @@ export function attachRivalDriveVfx(car: THREE.Object3D): void {
       rivalDriveCue(state, visual.quality, visual.enabled, reducedMotion, time, phase, cue, Math.abs((state.distance ?? Infinity) - playerDistance));
       flame.visible = cue.flame > 0;
       flame.material = (state.nitroTime ?? 0) > 0 ? flameMaterial : boostFlame; // one sprite, a swap: no extra draw call
-      if (flame.visible) flame.scale.set(FLAME.width * cue.flame, FLAME.height * cue.flame, 1);
+      // Keep the cue itself at its authored world size after collision-envelope fitting.
+      if (flame.visible) {
+        flame.position.z = rear + .2 / car.scale.z;
+        flame.scale.set(FLAME.width * cue.flame / car.scale.x, FLAME.height * cue.flame, 1);
+      }
       trail.visible = cue.trail > 0;
-      if (trail.visible) trail.scale.set(TRAIL.width, 1, TRAIL.length * cue.trail);
+      if (trail.visible) {
+        trail.position.z = rear + TRAIL.length * .42 / car.scale.z;
+        trail.scale.set(TRAIL.width / car.scale.x, 1, TRAIL.length * cue.trail / car.scale.z);
+      }
       return cue.light;
     },
   };

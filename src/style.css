@@ -28,7 +28,8 @@ svg { width: 22px; height: 22px; flex-shrink: 0; }
 #world { width: 100%; height: 100%; display: block; position: fixed; inset: 0; touch-action: none; }
 .scene-shade { position: fixed; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgb(9 21 34 / .88) 0%, rgb(9 21 34 / .69) 25%, rgb(9 21 34 / .1) 58%, transparent 80%), linear-gradient(0deg, rgb(6 17 28 / .91), transparent 30%, transparent 78%, rgb(9 21 34 / .26)); transition: opacity .5s; }
 body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, rgb(6 17 28 / .86), transparent 28%, transparent 76%, rgb(9 21 34 / .6)); }
-.topbar { position: fixed; z-index: 7; inset: 0 0 auto; height: 112px; padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+:root { --toolbar-height: 112px; --toolbar-button-size: 44px; }
+.topbar { position: fixed; z-index: 7; inset: 0 0 auto; height: var(--toolbar-height); padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
 /* The bar's empty gradient lets taps through to the .aero-tools row it overlaps; only its own controls catch them. */
 .topbar { pointer-events: none; }
 .topbar > * { pointer-events: auto; }
@@ -138,7 +139,7 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
 #position-change[data-direction="lost"], #position[data-direction="lost"] { color: #ff9b93; }
 .vfx-comfort #speed-needle { transition: none; }
 @media (prefers-reduced-motion: reduce) { #speed-needle { transition: none !important; } }
-.time { display: block; margin-top: 17px; font-size: 13px; letter-spacing: 1px; font-variant-numeric: tabular-nums; }
+
 .race-progress { width: 300px; padding-top: 4px; position: absolute; left: 50%; transform: translateX(-50%); }
 .progress-labels { display: flex; justify-content: space-between; color: #e4e4e0; font-size: 8px; letter-spacing: 1.3px; }
 .leaderboard { width: 175px; }
@@ -212,7 +213,8 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
   .topbar { padding: 24px 28px; }
 }
 @media (max-width: 760px) {
-  .topbar { height: 82px; padding: 17px 20px; gap: 12px; }
+  :root { --toolbar-height: 82px; }
+  .topbar { padding: 17px 20px; gap: 12px; }
   .brand { gap: 6px; }
   .brand > svg { width: 29px; height: 29px; }
   .brand > span { font-size: 23px; letter-spacing: 1.2px; gap: 4px; }
@@ -258,7 +260,7 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
   .position-stat strong { font-size: 47px; }
   .position-stat > div { gap: 5px; }
   .position-stat > div > span { font-size: 11px; }
-  .time { font-size: 10px; margin-top: 12px; }
+  
   .race-progress { top: 103px; width: 100%; }
   .progress-labels { font-size: 7px; letter-spacing: .9px; }
   .leaderboard { width: 103px; }
@@ -279,7 +281,7 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
 /* iOS only: its home indicator is a thin bar 8-13px off the bottom, so non-interactive text may sit in the rest of the inset.
    Android's 48px inset can be a button bar, so other platforms keep clearing the whole inset. */
 @supports (-webkit-touch-callout: none) {
-  .bottomline, body[data-phase="ready"] .bottomline { bottom: 21px; }
+  .bottomline, body[data-phase="ready"] .bottomline { --home-footer-bottom: 21px; bottom: var(--home-footer-bottom); }
 }
 @media (max-height: 650px) and (max-width: 760px) {
   .intro { top: 95px; }
@@ -295,7 +297,8 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
   body:not([data-phase="ready"]) .touch-controls { display: grid; }
   body:not([data-phase="ready"]) .telemetry { bottom: 112px; }
   .touch-controls { bottom: max(18px, env(safe-area-inset-bottom)); }
-  .topbar { height: 70px; padding: 12px 24px; }
+  :root { --toolbar-height: 70px; }
+  .topbar { padding: 12px 24px; }
   .intro { top: 82px; }
   h1 { font-size: 48px; }
   .route-label { margin-bottom: 12px; }
@@ -308,7 +311,7 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
   .leaderboard { width: 125px; }
   .racer { height: 23px; font-size: 8px; }
   .race-progress { width: 250px; }
-  .time { font-size: 10px; margin-top: 10px; }
+  
   .countdown { top: 30%; font-size: 85px; }
   .race-overlay { inset: 70px 0 0; }
   .overlay-content h2 { font-size: 48px; margin-top: 12px; }
@@ -460,7 +463,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
   .leaderboard { position: fixed; left: 150px; top: 82px; width: clamp(96px, calc(50vw - 284px), 130px); padding: 4px 6px; }
   .racer { gap: 5px; }
   /* POSITION ended flush on the speed readout, so a home-indicator inset (it lifts the gauges) made them overlap */
-  .time, .style-score { margin-top: 5px; }
+  .style-score { margin-top: 5px; }
 }
 /* Landscape Safari with its toolbar showing leaves ~340px: lift the race info and drop secondary lines so blocks stay apart. */
 @media (pointer: coarse) and (max-height: 380px) and (orientation: landscape) {
@@ -476,7 +479,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
   .speed-number > strong { font-size: 36px; }
   /* sits between the AIRFLOW/VFX bar and the NITRO button */
   body:not([data-phase="ready"]) .telemetry .flight-telemetry { transform: translateY(-36px); }
-  .time, .style-score { margin-top: 3px; }
+  .style-score { margin-top: 3px; }
   .racer { height: 21px; }
 }
 @media (pointer: coarse) and (min-width: 761px) and (max-height: 380px) {
@@ -513,7 +516,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 }
 
 /* Start lights and reward cues use the same cyan/amber language as the instruments. */
-.icon-button { width: 44px; height: 44px; flex-shrink: 0; }
+.icon-button { width: var(--toolbar-button-size); height: var(--toolbar-button-size); flex-shrink: 0; }
 .assist-button { display: flex; flex-direction: column; gap: 1px; border-radius: 12px; }
 .assist-button svg { width: 18px; height: 18px; }
 .assist-button span { font-size: 8px; letter-spacing: .6px; }
@@ -567,8 +570,6 @@ summary:focus-visible, input:focus-visible, .custom-select > button:focus-visibl
 .custom-select { position: relative; display: inline-block; min-width: 0; max-width: 100%; }
 .custom-select > button { display: block; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap; background: #1b3044 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2396e3ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 16px center; }
 .custom-select > button[aria-expanded="true"] { border-color: var(--blue); }
-.custom-select.opens-up > [role="listbox"] { top: auto; bottom: calc(100% + 4px); }
-.custom-select > [role="listbox"] { position: absolute; z-index: 6; top: calc(100% + 4px); right: 0; min-width: 100%; max-height: min(240px, var(--list-room, 240px)); overflow-y: auto; overscroll-behavior: contain; margin: 0; padding: 4px; list-style: none; background: #0b1c2bf8; border: 1px solid #5c8796; border-radius: 6px; box-shadow: 0 12px 32px #0009; }
 .custom-select [role="option"] { min-height: 40px; display: flex; align-items: center; padding: 8px 12px; border-radius: 4px; white-space: nowrap; cursor: pointer; }
 .custom-select [role="option"]:hover, .custom-select [role="option"].is-active { background: #204858; }
 .custom-select [role="option"][aria-selected="true"] { color: #91e0f2; font-weight: 700; }
@@ -1243,7 +1244,8 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 .route-spiral-direction { stroke:#fff6d9; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; vector-effect:non-scaling-stroke; }
 .route-start { fill:#78dfa0; }
 .route-finish { fill:#fff; stroke:#16233d; stroke-width:1; }
-.race-route-map { position:fixed; top:140px; right:40px; width:116px; height:126px; flex-shrink:0; border:1px solid rgb(120 196 238 / .25); border-radius:6px; background: rgb(5 16 37 / .7); pointer-events:none; }
+/* The centered toolbar ends halfway through its height plus half a button. Safe-area offset is shared. */
+.race-route-map { position:fixed; top:calc((var(--toolbar-height) + var(--toolbar-button-size)) / 2 + 8px); right:40px; width:116px; height:126px; flex-shrink:0; border:1px solid rgb(120 196 238 / .25); border-radius:6px; background: rgb(5 16 37 / .7); pointer-events:none; }
 .race-route-map svg { width:100%; height:100%; overflow:visible; }
 .route-driver { stroke:#09172b; stroke-width:1.35; fill:#f7c34d; }
 .route-driver-you { fill:#fff; stroke:#09e5ff; stroke-width:2.1; }
@@ -1265,10 +1267,7 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 }
 /* Live map: top-right corner on every layout, 8px under the toolbar row (and AIRFLOW/VFX where they share it), right-aligned
    with the toolbar; the leaderboard sits beside POSITION on the left instead. Guard: tests/race-map-corner-browser.spec.js. */
-@media (max-width:760px){ .race-route-map {top:272px;right:23px;width:77px;height:94px;} .track-route-map {height:48px;} }
-@media (max-width:400px){ .race-route-map {width:63px;height:83px;} }
-/* Short screens: telemetry and touch buttons fill the sides, so the map moves to the bottom row (see the short-screen blocks below). */
-/* The compact in-race route map remains visible on small viewports. */
+@media (max-width:760px){ .track-route-map {height:48px;} }
 /* Short landscape has ~9px of intro slack: draw the route over the sky strip. */
 @media (max-height: 500px) and (min-width: 761px) {
   .track-route-map { position:absolute; top:8px; left:8px; right:8px; height:26px; margin:0; background:none; }
@@ -1338,13 +1337,13 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 }
 @media(max-width:760px) {
  .track-select button > span.track-route-map { height:54px; }
- .race-route-map { width:75px;height:88px;right:max(12px, var(--safe-right));top:108px; } /* AIRFLOW/VFX end at 100px */
+ .race-route-map { width:75px;height:88px;right:max(12px, var(--safe-right)); }
 }
 @media(max-width:400px) {
  .race-route-map {width:59px;height:72px;}
 }
 @media(max-height:500px) and (min-width:761px) {
- .race-route-map {width:67px;height:73px;top:128px;} /* AIRFLOW/VFX end at 120px */
+ .race-route-map {width:67px;height:73px;}
  .track-select button > span.track-route-map {
    position:absolute;top:8px;left:8px;right:8px;width:auto;height:28px;
  }
@@ -1484,6 +1483,10 @@ body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="diff
  .flight-tip .tip-short { display: inline; }
  .race-mode-heading { margin-bottom: 2px; }
  .intro-controls > div { gap: 4px; white-space: nowrap; }
+}
+@media (min-width: 1001px) and (min-height: 501px) and (max-height: 700px) {
+ /* Six hints overran the 620px intro at 1804x504; R stays on the HUD Reset button. */
+ .intro-controls > [data-i18n-title="hint.resetTip"] { display: none; }
 }
 /* Phones and short landscape: 10A put the mode tabs and rules row above Start, and a 191px-tall landscape panel cannot
    hold mode + track cards + Start at full size. The tabs swipe in one row like the track strip, and Start + Garage
@@ -1732,7 +1735,8 @@ body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
 .release-kind { display: inline-block; margin-bottom: 6px; padding: 3px 8px; border-radius: 999px; color: var(--kind); background: rgb(255 255 255 / .07); font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
 .release-entry strong { display: block; font-size: 15px; line-height: 1.45; color: #eefbff; }
 .release-entry p { margin: 5px 0 0; font-size: 13px; line-height: 1.6; color: #bfd0dc; overflow-wrap: anywhere; }
-.release-screen[open] .release-entry { animation: release-card-in var(--dur-slow) var(--ease-out) both; }
+/* backwards, never both: a forward fill keeps each card a GPU layer while open, and scrolling them under the sticky bar/footer flickers. */
+.release-screen[open] .release-entry { animation: release-card-in var(--dur-slow) var(--ease-out) backwards; }
 .release-screen[open] .release-entry:nth-child(2) { animation-delay: 50ms; }
 .release-screen[open] .release-entry:nth-child(3) { animation-delay: 100ms; }
 .release-screen[open] .release-entry:nth-child(n+4) { animation-delay: 150ms; }
@@ -1801,6 +1805,24 @@ body[data-race-mode="endless"] #race-route-map:not([data-streaming]) > .progress
 .touch-controls .touch-nitro[data-nitro-state="active"] { color: #fff4d6; border-color: #fff1bd; background: #735b40; }
 .touch-controls .touch-nitro[data-nitro-state="disabled"] { color: #a1aab3; border-color: #697783; opacity: .7; }
 
+/* The sprint ladder (src/sprint-tier.ts): one rule per tier id, written on body by src/sprint-tier-hud.ts. Each step
+   burns taller (--tier-lift), loops faster (--tier-loop) and glows wider (--tier-glow); --tier-core and --tier-rim
+   colour the flame, the button glow and every line that names the tier. A new tier is one rule here plus its
+   hud.tier.<id> caption. Guard: tests/sprint-tier-hud.test.js. */
+body[data-sprint-tier="boost"] { --tier-lift: .62; --tier-loop: .9s; --tier-glow: 7px; --tier-core: var(--boost-text); --tier-rim: var(--boost); }
+body[data-sprint-tier="nitro"] { --tier-lift: .8; --tier-loop: .66s; --tier-glow: 11px; --tier-core: var(--nitro-text); --tier-rim: var(--nitro); }
+/* Both together is one look, not two stacked: NITRO's gold at the core, BOOST's red-orange at the rim. */
+body[data-sprint-tier="nitro-boost"] { --tier-lift: .92; --tier-loop: .5s; --tier-glow: 15px; --tier-core: var(--nitro); --tier-rim: var(--boost); }
+/* A NITRO chain steps up again on whichever tier is running. */
+body[data-sprint-chain="2"] { --chain-lift: 1.06; --chain-pace: .86; --chain-glow: 4px; }
+body[data-sprint-chain="3"] { --chain-lift: 1.12; --chain-pace: .72; --chain-glow: 8px; }
+/* The lines that name the tier, the speed read-out and its ticks wear it. Static: it is also the ladder with motion off. */
+body[data-sprint-tier] :is(.speed-caption, .speed-number > strong),
+body[data-sprint-tier].nitro-active :is(#flight-state, #nitro-status) { color: var(--tier-core); }
+/* Only the big number glows: a wide glow smears 8px captions. The dark layer is .speedometer's own legibility shadow. */
+body[data-sprint-tier] .speed-number > strong { text-shadow: 0 0 calc(var(--tier-glow) + var(--chain-glow, 0px)) var(--tier-rim), 0 3px 15px #081629; }
+body[data-sprint-tier] .speed-ticks > i.active { background: linear-gradient(var(--tier-core), var(--tier-rim)); }
+
 /* Foldable viewport segments: available only when the browser exposes two real panels.
    No API = the existing responsive phone/tablet rules above remain the entire fallback. */
 #touch-controls[data-fold-axis="vertical"] .touch-pad {
@@ -1847,9 +1869,9 @@ body[data-fold-axis="vertical"] .impact-report { left: auto; right: calc(100vw -
 /* CJK NITRO availability remains legible during countdown, pause and racing. */
 html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 
-/* Touch tablets: the live map sits 8px under the toolbar (13-57px); AIRFLOW/VFX drop below POSITION here. The callout drops 8px under the centred mode panel instead of the desktop 206px slot inside it. */
+/* Touch tablets: align the map with the safe-area inset; the callout clears the centred mode panel. */
 @media (hover: none) and (pointer: coarse) and (min-width: 761px) and (min-height: 501px) {
-  .race-route-map { top: 65px; right: max(12px, var(--safe-right)); }
+  .race-route-map { right: max(12px, var(--safe-right)); }
   .event-callout { top: calc(max(144px, calc(var(--race-progress-bottom, 0px) + 8px)) + 70px); }
 }
 
@@ -2175,12 +2197,6 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
 .result-cloud[data-state="syncing"] p::before { background: #7cc8ff; }
 .result-cloud[data-state="synced"] p::before { background: #5be39a; }
 .result-cloud[data-state="failed"] p::before { background: #ffb44d; }
-@media (max-height: 500px) and (orientation: landscape) {
-  body:not([data-tutorial]) .overlay-actions:has(> .result-cloud:not([hidden])) { gap: 6px; } /* pays for the cloud line at 360px tall */
-  body:not([data-tutorial]) .result-cloud { justify-items: stretch; gap: 4px; margin-top: 0; }
-  body:not([data-tutorial]) .result-cloud p { font-size: 10.5px; line-height: 1.3; }
-  body:not([data-tutorial]) .result-cloud .sign-in-button { min-height: 44px; padding-block: 6px; font-size: 13px; }
-}
 /* Results gain a third action (cloud backup); split summary/actions on desktop instead of
    clipping Sign in behind #app. Preserve the existing one-column layout on portrait phones. */
 @media (min-width: 761px) and (min-height: 501px) {
@@ -2195,24 +2211,6 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
   }
   body[data-phase="finished"]:not([data-tutorial]) .overlay-actions { min-width: 0; }
   body[data-phase="finished"]:not([data-tutorial]) #next-button { min-width: 0; width: 100%; }
-}
-/* On short landscape screens all actions remain at least 44px tall; two rows of
-   controls plus an inline cloud sign-in replace the overflowing vertical stack. */
-@media (max-height: 500px) and (orientation: landscape) {
-  body[data-phase="finished"]:not([data-tutorial]) .overlay-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: center;
-    gap: 6px;
-  }
-  body[data-phase="finished"]:not([data-tutorial]) .overlay-actions > #next-button,
-  body[data-phase="finished"]:not([data-tutorial]) .overlay-actions > .result-cloud { grid-column: 1 / -1; }
-  body[data-phase="finished"]:not([data-tutorial]) .result-links { min-width: 0; gap: 4px; }
-  body[data-phase="finished"]:not([data-tutorial]) .result-links .text-button { min-width: 0; padding: 4px; font-size: 11px; }
-  body[data-phase="finished"]:not([data-tutorial]) .result-cloud {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: center;
-  }
 }
 /* Compact the non-interactive podium summary only on very short landscape screens.
    Keep the header/tool clearance and every 44px action target unchanged.
@@ -2325,7 +2323,7 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
 }
 /* The compact wallet shares the short landscape panel's height budget with the track carousel. */
 @media (max-height: 500px) and (orientation: landscape) {
-  .intro .home-intro-topbar { margin: 0; }
+  .intro .home-intro-topbar { margin: 0 0 6px; }
   .intro .home-intro-topbar .route-label { display: flex; flex: 0 1 auto; gap: 8px; }
   .intro .home-intro-topbar .route-label > span { display: none; }
   .intro .home-intro-topbar .medal-chip { margin: 0; }
@@ -2344,10 +2342,11 @@ body[data-race-mode="endless"] #race-route-map[data-streaming] { display: block;
 .impact-report[data-contact="recovery"], .impact-report[data-contact="shielded"] { border-color: #8cd5ef; color: #d8f6ff; }
 .impact-icon[hidden], #impact-detail[hidden] { display: none; }
 
-/* Player pickup (pickup-fuel-cue.ts): the fuel bar flashes and "+N" rides right of the reading, clear of the label.
+/* Player pickup (pickup-fuel-cue.ts): the fuel bar flashes and "+N" rides above the reading, clear of the label.
+   The reading sits flush with the telemetry's right edge, so a cue beside it widened the HUD panel (rules/panel-edge-overflow.md).
    Appended after the byte-locked main CSS contract. Reduced Motion keeps a still highlight and a still "+N", with no sweep or pop. */
 .fuel-heading > span { position: relative; }
-.fuel-gain { position: absolute; left: calc(100% + 3px); top: -2px; color: #fff4d6; font: 700 12px/1 'Barlow Condensed', sans-serif; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 0 6px rgb(255 214 130 / .85); pointer-events: none; }
+.fuel-gain { position: absolute; right: 0; bottom: calc(100% + 1px); color: #fff4d6; font: 700 12px/1 'Barlow Condensed', sans-serif; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 0 6px rgb(255 214 130 / .85); pointer-events: none; }
 .fuel-gain[hidden] { display: none; }
 .fuel-track[data-refilling="pickup"] > i { filter: brightness(1.6); box-shadow: 0 0 8px rgb(255 228 160 / .85); }
 .fuel-track[data-refilling="pickup"]::after { opacity: .9; animation: fuel-refill .45s ease-out; }
@@ -2357,6 +2356,7 @@ body[data-race-mode="endless"] #race-route-map[data-streaming] { display: block;
 }
 
 /* Race navigation: the current primary action stays distinct from the secondary controls. */
+.overlay-buttons { display: contents; }
 .race-overlay [data-primary-action].text-button {
   min-height: 48px; padding-inline: 12px;
   color: #142333; background: var(--accent); border: 1px solid transparent; border-radius: 4px;
@@ -2391,6 +2391,72 @@ body[data-phase="finished"] .overlay-actions:has(#choose-track[data-primary-acti
 .result-standings strong { white-space: nowrap; }
 .result-standings:focus-visible { outline: 2px solid #95e2f6; outline-offset: 2px; }
 
+/* Share the same primary/secondary order in both phone orientations. */
+@media (max-width: 760px) and (orientation: portrait), (max-height: 500px) and (orientation: landscape) {
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-buttons:has(.next-button:not([hidden])) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-buttons :is(.primary-button, .text-button) {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    margin: 0;
+  }
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-buttons .text-button {
+    gap: 6px;
+    padding: 5px 4px;
+    border-radius: 6px;
+    line-height: 1.2;
+    word-break: keep-all;
+    text-wrap: balance;
+  }
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-buttons .text-button:not([data-primary-action]) {
+    border: 1px solid rgb(208 228 245 / .22);
+    background: rgb(14 29 48 / .76);
+  }
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-buttons svg { flex-shrink: 0; }
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-buttons [data-primary-action] {
+    grid-column: 1 / -1;
+    min-height: 48px;
+  }
+  body[data-phase="finished"]:not([data-tutorial]) .result-links {
+    display: grid;
+    grid-column: span 2;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: inherit;
+  }
+  body[data-phase="finished"]:not([data-tutorial]) .result-links:has(> [data-primary-action]) { display: contents; }
+  body[data-phase="finished"]:not([data-tutorial]) #choose-track[data-primary-action] { order: -1; }
+
+  body[data-phase="finished"]:not([data-tutorial]) .result-cloud {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: stretch;
+    gap: 5px;
+    margin: 0;
+  }
+  body[data-phase="finished"]:not([data-tutorial]) .result-cloud p {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: baseline;
+    justify-self: center;
+    column-gap: 6px;
+    font: 12px/1.3 system-ui, sans-serif;
+    text-align: start;
+    text-wrap: pretty;
+  }
+  body[data-phase="finished"]:not([data-tutorial]) .result-cloud p::before { margin: 0; }
+  body[data-phase="finished"]:not([data-tutorial]) .result-cloud .sign-in-button {
+    margin: 0;
+    padding: 6px 10px;
+    font: 600 13px/1.25 system-ui, sans-serif;
+    text-wrap: balance;
+  }
+}
 @media (max-width: 760px) and (orientation: portrait) {
   body[data-phase="finished"] .race-overlay { align-items: safe center; padding-block: 10px max(12px, var(--safe-bottom)); }
   body[data-phase="finished"] .overlay-content { width: calc(100% - 32px); }
@@ -2400,16 +2466,34 @@ body[data-phase="finished"] .overlay-actions:has(#choose-track[data-primary-acti
   body[data-phase="finished"] .result-stats { margin: 8px 0; gap: 4px 16px; }
   body[data-phase="finished"] .result-stats > div { gap: 2px; }
   body[data-phase="finished"] .result-style { margin: 4px 0; gap: 2px; }
-  body[data-phase="finished"] .overlay-actions { display: flex; flex-direction: column; gap: 6px; }
-  body[data-phase="finished"] .overlay-actions > :is(.primary-button, .text-button) { width: 100%; min-width: 0; margin: 0; }
-  body[data-phase="finished"] .result-cloud { margin-top: 4px; }
+
+  /* Keep the dock in the results scroller, with the summary and receipt free to move above it. */
+  body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .race-overlay {
+    bottom: max(8px, var(--safe-bottom));
+    overflow-anchor: none;
+    overscroll-behavior-y: contain;
+    scroll-padding-bottom: 114px;
+  }
+  body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .overlay-actions { display: contents; }
+  body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .overlay-buttons {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    margin: 8px 0 0;
+    padding: 8px;
+    border: 1px solid rgb(158 195 225 / .23);
+    border-radius: 12px;
+    background: #0c192b;
+    box-shadow: 0 -8px 20px rgb(5 12 24 / .38);
+  }
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-buttons .next-button { height: 48px; }
+  body[data-phase="finished"]:not([data-tutorial]) .result-cloud { margin-top: 8px; }
 }
 @media (max-width: 380px) and (orientation: portrait) {
   /* Reserve the bottom inset for navigation; the paused and wider podium layouts keep their existing space. */
   body[data-phase="finished"] .race-overlay { bottom: max(8px, var(--safe-bottom)); }
   body[data-phase="finished"] .overlay-route { display: none; }
   body[data-phase="finished"] .overlay-summary > p { margin-block: 4px; }
-  body[data-phase="finished"] .overlay-actions > .next-button { height: 48px; }
   body[data-phase="finished"] .style-stars svg { width: 24px; height: 24px; }
   body[data-phase="finished"] .result-trophy-art { max-width: 48px; max-height: 48px; }
   body[data-phase="finished"] .result-style {
@@ -2420,8 +2504,9 @@ body[data-phase="finished"] .overlay-actions:has(#choose-track[data-primary-acti
 
 @media (max-height: 500px) and (orientation: landscape) {
   body[data-phase="paused"]:not([data-tutorial]) .overlay-actions { align-self: center; }
-  body[data-phase="finished"]:not([data-tutorial]) .overlay-actions > #next-stage,
-  body[data-phase="finished"]:not([data-tutorial]) .overlay-actions > #again-button[data-primary-action] { grid-column: 1 / -1; }
+  body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .overlay-content {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 36%);
+  }
   body:not([data-tutorial]) .overlay-summary > .result-standings { flex-basis: 100%; min-width: 0; margin: 4px auto; }
   .result-standings { max-height: 124px; overflow-y: auto; font-size: 11px; }
   .result-standings li { padding: 3px 8px; }
@@ -2432,3 +2517,72 @@ body[data-phase="finished"] .overlay-actions:has(#choose-track[data-primary-acti
 #photo-advanced > summary { display: flex; align-items: center; justify-content: space-between; }
 #photo-advanced > summary::after { content: '＋'; color: var(--blue); }
 #photo-advanced[open] > summary::after { content: '−'; }
+
+/* Thumb positions in Buttons mode: steer on one side and brake on the outer edge of the action cluster. */
+#touch-controls[data-steer-mode="buttons"] { grid-template-columns: 1fr auto auto auto; }
+#touch-controls:not([data-steer-mode="buttons"]) .touch-brake { display: none; }
+#touch-controls .touch-steer :is([data-control="left"], [data-control="right"]) { grid-row: auto; }
+#touch-controls .touch-steer button:active:not(.is-held) { background: rgb(25 44 60 / .7); filter: none; }
+#touch-controls .touch-brake {
+  grid-column: 4;
+  grid-row: 1 / 3;
+  align-self: center;
+  width: calc(var(--touch-cell) * var(--touch-scale, 1));
+  background: #532a30;
+  border-color: #e88777;
+  color: #ffd5ca;
+}
+#touch-controls .touch-brake.is-held { background: #a84842; border-color: #ffd5ca; }
+@media (max-width: 430px) {
+  #touch-controls[data-steer-mode="buttons"] {
+    --compact-key-width: max(44px, calc((100vw - max(var(--thumb-edge), env(safe-area-inset-left)) - max(var(--thumb-edge), env(safe-area-inset-right)) - 36px) / 5));
+  }
+  #touch-controls[data-steer-mode="buttons"] button:not(.is-positioned) { max-width: var(--compact-key-width); }
+}
+#touch-controls[data-pad-brake] .pad-ring { border-color: #ff907d; }
+#touch-controls[data-pad-brake] .pad-knob { background: #ff907d; }
+
+/* Race chronograph: the single simulation timer; no extra RAF, listeners or clock intervals. */
+.position-stat > .race-clock {
+  --clock-accent: #6bdbf6;
+  display: inline-flex; align-items: center; gap: 8px; width: max-content; min-width: 171px;
+  margin-top: 13px; padding: 7px 11px 7px 7px;
+  background: linear-gradient(115deg, rgb(10 33 59 / .95), rgb(7 17 38 / .87));
+  border: 1px solid rgb(117 188 234 / .38); border-left: 3px solid var(--clock-accent);
+  border-radius: 10px 5px 10px 5px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .13), 0 7px 23px rgb(0 7 24 / .35);
+  backdrop-filter: blur(7px); text-shadow: none;
+}
+.race-clock-icon { width: 34px; height: 34px; flex: none; object-fit: contain; filter: drop-shadow(0 2px 4px rgb(0 6 18 / .35)); }
+.race-clock-content { display: grid; gap: 2px; min-width: 0; }
+.race-clock-state { color: var(--clock-accent); font: 700 8px/1.2 'Avenir Next', sans-serif; letter-spacing: 1.5px; white-space: nowrap; }
+.race-clock-readout { color: #f8fbff; font: 700 22px/1 'Barlow Condensed', sans-serif; font-variant-numeric: tabular-nums; letter-spacing: .6px; white-space: nowrap; }
+.race-clock[data-state="paused"] { --clock-accent: #ffd078; border-color: rgb(255 199 114 / .5); }
+.race-clock[data-state="paused"] .race-clock-readout { color: #ffe2b5; }
+.race-clock[data-state="finished"] { --clock-accent: #a5efb1; border-color: rgb(145 237 183 / .44); }
+.race-clock[data-state="ready"] { --clock-accent: #aec6df; }
+@media (max-width: 760px) {
+  .position-stat > .race-clock { min-width: 0; gap: 5px; margin-top: 9px; padding: 5px 7px 5px 4px; border-left-width: 2px; border-radius: 7px 4px 7px 4px; }
+  .race-clock-icon { width: 25px; height: 25px; }
+  .race-clock-state { font-size: 7px; letter-spacing: .8px; }
+  .race-clock-readout { font-size: 17px; letter-spacing: .3px; }
+}
+@media (pointer: coarse) and (max-height: 500px) {
+  .position-stat > .race-clock { margin-top: 5px; padding: 3px 6px 3px 3px; gap: 4px; }
+  .race-clock-icon { width: 22px; height: 22px; }
+  .race-clock-state { font-size: 6px; letter-spacing: .65px; }
+  .race-clock-readout { font-size: 16px; }
+}
+@media (max-width: 370px) {
+  .position-stat > .race-clock { gap: 3px; padding-right: 5px; }
+  .race-clock-icon { width: 22px; height: 22px; }
+  .race-clock-readout { font-size: 16px; }
+}
+@media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
+  /* The leaderboard begins at x=150px: keep the clock inside the left POSITION gutter.
+     Flat icon + readout: the boxed panel pushed STYLE into the speedometer at 844x390. */
+  .position-stat > .race-clock { display: flex; min-width: 0; margin-top: 2px; padding: 0; gap: 3px; background: none; border: 0; box-shadow: none; backdrop-filter: none; }
+  .race-clock-state { display: none; }
+  .race-clock-icon { width: 14px; height: 14px; }
+  .race-clock-readout { font-size: 14px; letter-spacing: 0; }
+}

@@ -1,7 +1,11 @@
 ---
 paths:
   - "src/style.css"
+  - "src/race-lobby.css"
+  - "src/home-arrival.ts"
+  - "src/track-chooser.css"
   - "src/wave3-demo-results.css"
+  - "src/ReleaseNotesPanel.vue"
   - "src/App.vue"
   - "tests/responsive-browser.spec.js"
   - "tests/*layout*"
@@ -23,7 +27,8 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
   the Rules row scrolls clear).
 - **No ancestor of the rail animates.** A running `opacity`/`transform` animation or transition
   makes the ancestor a stacking context for its duration, and the rail is painted into that
-  clipped layer. Landscape has no arrival fade for this reason.
+  clipped layer. Apply Home arrival motion to the race controls and cards themselves. Keep the
+  scrolling `.intro` and the action-row wrappers out of the arrival animation.
 - **Both orientations, every time.** A change to a landscape media query
   (`(orientation: landscape)`, `max-height: 500px` / `380px`), to `.intro`, the pinned row, or
   anything `fixed`/`sticky` on the home is checked in portrait and landscape, and a new
@@ -65,14 +70,49 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
 
 - **A split viewport has two coordinate spaces.** Use the normalized Viewport Segments source
   in `foldable-layout.ts` and its published variables for fixed rails and native dialogs.
-  The race camera belongs to one segment; feedback reserves the road inside that segment.
+  The Home and race scene spans the whole viewport. Keep feedback and controls within visible
+  segments, with no tap targets across the hinge.
   Release steering, throttle and native pointer capture when rotating or changing segments.
   Custom layouts stay viewport-relative and keep their independent portrait and landscape keys.
   Guards: `tests/foldable-layout-browser.spec.js` and `tests/foldable-layout.test.js`.
 
-- **Short-landscape track cards keep the portrait anatomy.** A fixed 58 px stacked card drew the route over a 22 px
-  sky strip, cut the KM / status row and shrank Coming Soon teaser art to an unreadable strip (2026-11-16). In
-  `max-height: 500px` landscape the card is a 2-row grid: a square route map beside name and KM + status, with the
-  sky / teaser art backing the whole card. Its height (~50 px) is budgeted against the pinned Garage row under the
-  iPhone Chrome toolbar (667×375, 1 px slack); a taller card needs a smaller gap elsewhere, never an overlap.
-  Guard: *landscape track cards show the whole card* and the toolbar test in `tests/responsive-browser.spec.js`.
+- **Track selection uses the Home hero card and a dedicated dialog.** The hero keeps its route silhouette, teaser
+  art, and race distance while the setup is docked clear of the car. The chooser fills narrow or short viewports
+  and stays within a single usable segment on a foldable. Its list scrolls independently of the fixed confirmation
+  row. Distinguish the applied track (`aria-current`) from the preview (`aria-pressed`). Confirm commits the
+  preview and refreshes Home. Closing the chooser preserves the previous selection. Honor reduced motion
+  and comfort mode for both the chooser and its backdrop.
+  Guards: `tests/lobby-polish-browser.spec.js` and the short-landscape checks in `tests/responsive-browser.spec.js`.
+
+- **Keep the Home hierarchy consistent across sizes.** Present the full game wordmark and wallet balances
+  above the scene on phone portrait. Keep the compact setup and its primary actions below the showcased car.
+  Anchor the desktop setup near the upper left, below the toolbar. Keep the release footer clear of the
+  setup on desktop and portrait. Reserve a separate cell for the hero route icon so short-landscape
+  thumbnail positioning cannot overlay the track name or distance.
+  Check 852×393, 390×844, and 1920×975 in `tests/lobby-polish-browser.spec.js`.
+
+- **Center the version button along the bottom of short single-screen landscapes.** Keep its 44 px
+  target above the safe area and any browser toolbar. The Home action rails reserve the center gap.
+  Keep the existing release-notes dialog wired to that same button. Guard both placement and taps
+  in the Home version and landscape toolbar tests in `tests/responsive-browser.spec.js`.
+
+- **Keep release hero spacing on the notes panel.** A bottom margin on the version/date row alone
+  leaves the inline video flush against the first highlight. Use the panel's row gap between its
+  visible children, including the compact landscape preview. Guard the gaps in `tests/release-video-browser.spec.js`.
+
+- **Dock the live minimap relative to the race toolbar.** Keep the shared toolbar height and button size as the source of the gap. Short touch landscape keeps the map beside the toolbar and folds use their pane rules. Guard: `tests/race-map-corner-browser.spec.js`.
+
+- **The short-landscape Resources list expands in the lobby's scroll flow.** A list positioned below the whole lobby can fall under the pinned Progress button. Keep the currency buttons reachable after opening. Guard: the ultra-short landscape test in `tests/wave3-currency-browser.spec.js`.
+
+- **Short-landscape Home keeps the wallet row distinct from the selected-track hero.** Preserve at least 6 px between
+  `.home-intro-topbar` and `.lobby-race-heading` when the compact resource strip is shown; do not zero the
+  topbar's bottom margin. Guard 345×206, 667×375, 743×340 and 852×393 in `tests/lobby-polish-browser.spec.js`.
+
+- **Home displays the track at its original brightness.** Keep the viewport-wide shade out of the ready phase,
+  including the concept-image fallback. Any contrast treatment belongs to the controls that need it.
+  Animate the Start highlight inside the button's own bounds so moving to or from the landscape rail cannot
+  move the highlight outside the button. Both behaviors are covered in `tests/lobby-polish-browser.spec.js`.
+- **A block above the Wave 3 store catalog joins the ≤360 px portrait compaction.** At narrow portrait the
+  checkout sits above the catalog; `25ba5f90`'s `.demo-action-reason` box pushed the first offer below the fold
+  (ratio 0.20 at 320×720). Hide it with `.demo-detail-copy` in that block. Guard:
+  `tests/wave3-early-access-browser.spec.js` (first offer in view at 320×720).

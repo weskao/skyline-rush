@@ -26,7 +26,9 @@ export function createContactShadow(scene: THREE.Scene) {
   scene.add(shadow);
   return {
     shadow,
-    update(lift: number, quality: VfxQuality): void {
+    update(lift: number, quality: VfxQuality, visible = true): void {
+      shadow.visible = visible;
+      if (!visible) return;
       const low = quality === 'low', style = low ? LIGHTWEIGHT : DETAILED, scale = 1 + lift * 0.04;
       shadow.material.map = low ? lightweightMap : detailedMap;
       shadow.material.opacity = style.opacity / (1 + lift * 0.2);

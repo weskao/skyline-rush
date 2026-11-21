@@ -1,20 +1,26 @@
 import { createWave3LocalDemo } from './wave3-local-demo.ts';
+import { garagePlaytestStorage } from '#garage-playtest-storage';
 import type { Wave3DemoCheckpoint } from './wave3-local-demo.ts';
-import { createWave3DemoStorage, WAVE3_DEMO_STORAGE_PREFIX } from './wave3-demo-storage.ts';
+import { createWave3DemoStorage, encodeWave3DemoCheckpoint, readWave3DemoCheckpoint, WAVE3_DEMO_STORAGE_PREFIX } from './wave3-demo-storage.ts';
+import type { Wave3PreviewTransact } from './wave3-preview-firestore.ts';
 import type { ExperienceResult, ExperienceSnapshot, Wave3ExperiencePort } from './wave3-experience-contract.ts';
 import { DEMO_RETENTION_MS, sameDemoScope } from './wave3-experience-contract.ts';
 import { equipWave3DemoSkin, onWave3DemoSkinOverride, resetWave3DemoSkin } from '#garage-skin-runtime';
 
+declare const __WAVE3_FIRESTORE_PREVIEW__: boolean;
+
+type DemoState = ReturnType<typeof createWave3LocalDemo>;
 type ProfileLock = Pick<LockManager, 'request'>;
 type Options = {
   now?: () => number;
   cache?: ReturnType<typeof createWave3DemoStorage>;
   locks?: ProfileLock | null;
+  firestore?: Wave3PreviewTransact;
   applyEquipment?: (itemId: string, accountId: string) => boolean;
   clearEquipment?: () => void;
 };
 
-/** All writable tabs use the same profile lock and re-read disk before mutation. */
+/** Guest tabs use a shared browser lock. Authenticated preview writes are serialized by Firestore. */
 export function createWave3BrowserExperience(options: Options = {}) {
   const cache = options.cache ?? createWave3DemoStorage({ now: options.now });
   const locks = options.locks === undefined ? globalThis.navigator?.locks : options.locks;
@@ -27,9 +33,17 @@ export function createWave3BrowserExperience(options: Options = {}) {
   let savedAt: number | null = null;
   const now = options.now ?? Date.now;
   let equipped: string | null = null;
+  const { firestore } = options;
+  let pendingFirestore: Promise<unknown> = Promise.resolve();
+  let restoring: Promise<void> | null = null;
+  // Accounts whose cloud data was deleted in this tab: queued and later writes become no-ops.
+  const forgotten = new Set<string>();
+  const usesFirestore = (accountId: string) => !!firestore && accountId !== 'guest';
   const getSnapshot = (): ExperienceSnapshot => {
     const snapshot = state.getSnapshot();
-    return !locks || volatile.has(snapshot.accountId) ? { ...snapshot, persistence: 'memory-only' } : snapshot;
+    if (usesFirestore(snapshot.accountId)) return { ...snapshot, persistence: 'firestore' };
+    const maySaveOnDevice = snapshot.accountId === 'guest' && locks && !volatile.has(snapshot.accountId);
+    return maySaveOnDevice ? snapshot : { ...snapshot, persistence: 'memory-only' };
   };
   const syncEquipment = () => {
     const { equippedPreview, accountId } = state.getSnapshot();
@@ -85,23 +99,26 @@ export function createWave3BrowserExperience(options: Options = {}) {
   };
   const currentScope = () => {
     const scope = state.getOperationScope();
-    if (savedAt !== null && now() - savedAt > DEMO_RETENTION_MS && syncDisk(scope.accountId)) publish();
+    if (!usesFirestore(scope.accountId) && savedAt !== null && now() - savedAt > DEMO_RETENTION_MS &&
+      syncDisk(scope.accountId)) publish();
     return state.getOperationScope();
   };
-  const transact = async <T>(action: (accountId: string, writable: boolean, changed: boolean) => T, stale: () => T): Promise<T> => {
+  const transact = async <T>(
+    action: (accountId: string, writable: boolean, changed: boolean) => T, stale: () => T, sync = true,
+  ): Promise<T> => {
     const scope = currentScope();
     const run = (writable: boolean): T => {
       const before = state.getOperationScope();
       // Tab switches invalidate queued work even when the user switches away and back.
-      if (!sameDemoScope(scope, before)) return stale();
-      const changed = writable && syncDisk(scope.accountId);
+      if (forgotten.has(scope.accountId) || !sameDemoScope(scope, before)) return stale();
+      const changed = writable && sync && syncDisk(scope.accountId);
       if (!sameDemoScope(scope, state.getOperationScope())) {
         if (changed) publish();
         return stale();
       }
       return action(scope.accountId, writable && !volatile.has(scope.accountId), changed);
     };
-    if (!locks || volatile.has(scope.accountId)) return run(false);
+    if (scope.accountId !== 'guest' || !locks || volatile.has(scope.accountId)) return run(false);
     let acquired = false;
     try {
       return await locks.request(WAVE3_DEMO_STORAGE_PREFIX + scope.accountId, () => {
@@ -116,17 +133,67 @@ export function createWave3BrowserExperience(options: Options = {}) {
       return run(false);
     }
   };
-  const expired = (): ExperienceResult => ({
-    status: 'expired', snapshot: getSnapshot(), deltaDemoPoints: 0, deltaDemoCoins: 0, deltaDemoDiamonds: 0,
+  // Firestore may rerun the callback after a concurrent commit. The staged state has no display or equipment side effects.
+  // `overwrite` (reset) replaces the stored document without reading it, so a corrupted one cannot block it.
+  const transactFirestore = <T>(action?: (draft: DemoState) => { value: T; save: boolean }, overwrite = false) => {
+    const scope = state.getOperationScope();
+    const stillCurrent = () => !forgotten.has(scope.accountId) && sameDemoScope(scope, state.getOperationScope());
+    const operation = pendingFirestore.then(async () => {
+      if (!firestore || !stillCurrent()) return null;
+      const result = await firestore(scope.accountId, raw => {
+        if (!stillCurrent()) return { result: null };
+        const time = now();
+        const draft = createWave3LocalDemo({ now, initialScope: { ...scope, generation: 'legacy' } });
+        const saved = overwrite ? null : readWave3DemoCheckpoint(raw, scope.accountId, time);
+        if (saved?.expiredGeneration) draft.expireCheckpoint(saved.expiredGeneration);
+        else if (saved && raw !== null && (!saved.checkpoint || !draft.restoreCheckpoint(saved.checkpoint))) {
+          throw new Error('Invalid Wave 3 preview checkpoint');
+        }
+        const update = overwrite || sameDemoScope(scope, draft.getOperationScope()) ? action?.(draft) : undefined;
+        const checkpoint = draft.getCheckpoint();
+        return {
+          result: { value: update?.value, checkpoint, savedAt: update?.save ? time : saved?.savedAt ?? null },
+          ...(update?.save ? { write: encodeWave3DemoCheckpoint(checkpoint, time) } : {}),
+        };
+      });
+      if (!result || !stillCurrent()) return null;
+      savedAt = result.savedAt;
+      state.restoreCheckpoint(result.checkpoint);
+      return { value: result.value, snapshot: publish() };
+    });
+    pendingFirestore = operation.catch(() => {});
+    return operation;
+  };
+  const restore = () => {
+    savedAt = null; // a failed refresh must not retry on every race start
+    const pending: Promise<void> = transactFirestore().then(() => {}, () => {})
+      .then(() => { if (restoring === pending) restoring = null; });
+    return restoring = pending;
+  };
+  const failed = (status: 'expired' | 'unavailable'): ExperienceResult => ({
+    status, snapshot: getSnapshot(), deltaDemoPoints: 0, deltaDemoCoins: 0, deltaDemoDiamonds: 0,
   });
-  const mutate = (action: () => ExperienceResult) => transact((accountId, writable, changed) => {
-    const result = action();
+  const expired = () => failed('expired');
+  const mutateLocal = (action: (target: DemoState) => ExperienceResult) => transact((accountId, writable, changed) => {
+    const result = action(state);
     if (result.status === 'completed') {
       save(accountId, writable);
       return { ...result, snapshot: publish() };
     }
     return { ...result, snapshot: changed ? publish() : getSnapshot() };
   }, expired);
+  const mutate = async (action: (target: DemoState) => ExperienceResult): Promise<ExperienceResult> => {
+    if (!usesFirestore(state.getOperationScope().accountId)) return mutateLocal(action);
+    try {
+      const result = await transactFirestore(draft => {
+        const value = action(draft);
+        return { value, save: value.status === 'completed' };
+      });
+      return result?.value ? { ...result.value, snapshot: result.snapshot } : expired();
+    } catch {
+      return failed('unavailable');
+    }
+  };
 
   syncDisk('guest', true);
   syncEquipment();
@@ -145,42 +212,78 @@ export function createWave3BrowserExperience(options: Options = {}) {
       options.clearEquipment?.();
       diskRaw = undefined;
       savedAt = null;
-      const checkpoint = volatile.get(accountId);
-      if (checkpoint) state.restoreCheckpoint(checkpoint);
-      else syncDisk(accountId, true);
+      if (usesFirestore(accountId)) void restore();
+      else {
+        const checkpoint = volatile.get(accountId);
+        if (checkpoint) state.restoreCheckpoint(checkpoint);
+        else if (accountId === 'guest') syncDisk(accountId, true);
+      }
       return publish();
     },
-    resetDemo: () => transact((accountId, writable) => {
+    async resetDemo() {
+      const { accountId } = state.getOperationScope();
+      if (usesFirestore(accountId)) {
+        const result = await transactFirestore(draft => ({ value: draft.resetDemo(), save: true }), true);
+        if (!result?.value) throw new Error('Wave 3 preview reset expired');
+        return result.snapshot;
+      }
+      // Reset overwrites the stored save unread, so a corrupted or future-dated one cannot pin the tab to memory.
+      volatile.delete(accountId);
+      return transact((accountId, writable) => {
+        state.resetDemo();
+        // Persist the new generation atomically, including when the wallet is empty.
+        save(accountId, writable);
+        return publish();
+      }, getSnapshot, false);
+    },
+    /** Race start waits for this: the signed-in wallet restore and the 7-day expiry. Null when nothing is pending. */
+    ready(): Promise<void> | null {
+      const { accountId } = currentScope(); // applies the guest expiry synchronously
+      if (usesFirestore(accountId) && !restoring && savedAt !== null && now() - savedAt > DEMO_RETENTION_MS) restore();
+      return restoring;
+    },
+    /** Cloud deletion: queued and later trial writes for the account become no-ops in this tab. */
+    forgetAccount(accountId: string) {
+      forgotten.add(accountId);
+      volatile.delete(accountId);
+      if (state.getOperationScope().accountId !== accountId) return;
       state.resetDemo();
-      // Persist the new generation atomically, including when the wallet is empty.
-      save(accountId, writable);
-      return publish();
-    }, getSnapshot),
+      publish();
+    },
     recordGameEvent: (...args: Parameters<Wave3ExperiencePort['recordGameEvent']>) =>
-      mutate(() => state.recordGameEvent(...args)),
+      mutate(target => target.recordGameEvent(...args)),
     settleCompletion: (...args: Parameters<Wave3ExperiencePort['settleCompletion']>) =>
-      mutate(() => state.settleCompletion(...args)),
+      mutate(target => target.settleCompletion(...args)),
     claimMission: (...args: Parameters<Wave3ExperiencePort['claimMission']>) =>
-      mutate(() => state.claimMission(...args)),
+      mutate(target => target.claimMission(...args)),
     redeemPreview: (...args: Parameters<Wave3ExperiencePort['redeemPreview']>) =>
-      mutate(() => state.redeemPreview(...args)),
-    equipPreview: (itemId: string, scope?: ReturnType<typeof state.getOperationScope>) => mutate(() => {
-      const result = state.equipPreview(itemId, scope);
-      if (result.status === 'completed' || result.status === 'duplicate') equipped = itemId;
+      mutate(target => target.redeemPreview(...args)),
+    equipPreview: (itemId: string, scope?: ReturnType<typeof state.getOperationScope>) => mutate(target => {
+      const result = target.equipPreview(itemId, scope);
+      if (target === state && (result.status === 'completed' || result.status === 'duplicate')) equipped = itemId;
       return result;
     }),
-    clearEquippedPreview: (itemId: string, accountId: string) => mutate(() => {
-      if (state.getOperationScope().accountId !== accountId) return expired();
-      return state.clearEquippedPreview(itemId);
+    clearEquippedPreview: (itemId: string, accountId: string) => mutate(target => {
+      if (target.getOperationScope().accountId !== accountId) return expired();
+      return target.clearEquippedPreview(itemId);
     }),
     refresh(accountId: string) {
-      if (accountId === state.getOperationScope().accountId && syncDisk(accountId)) publish();
+      if (state.getOperationScope().accountId !== accountId) return;
+      if (usesFirestore(accountId)) return transactFirestore().then(() => {}, () => {});
+      if (accountId === 'guest' && syncDisk(accountId)) publish();
     },
   } satisfies Wave3ExperiencePort & Record<string, unknown>;
   return port;
 }
 
 export const wave3DemoExperience = createWave3BrowserExperience({
+  cache: garagePlaytestStorage ? createWave3DemoStorage({ storage: null }) : undefined,
+  firestore: typeof __WAVE3_FIRESTORE_PREVIEW__ !== 'undefined' && __WAVE3_FIRESTORE_PREVIEW__
+    ? async (uid, update) => {
+      const { transactWave3Preview } = await import('./cloud-save.ts');
+      if (!transactWave3Preview) throw new Error('Wave 3 Firestore preview is unavailable');
+      return transactWave3Preview(uid, update);
+    } : undefined,
   applyEquipment: typeof window === 'undefined' ? undefined : equipWave3DemoSkin,
   clearEquipment: typeof window === 'undefined' ? undefined : resetWave3DemoSkin,
 });
@@ -190,9 +293,9 @@ if (typeof window !== 'undefined') {
     void wave3DemoExperience.clearEquippedPreview(itemId, accountId);
   });
   window.addEventListener('storage', event => {
-    if (event.key === null) wave3DemoExperience.refresh(wave3DemoExperience.getOperationScope().accountId);
-    else if (event.key.startsWith(WAVE3_DEMO_STORAGE_PREFIX)) {
-      wave3DemoExperience.refresh(event.key.slice(WAVE3_DEMO_STORAGE_PREFIX.length));
-    }
+    if (event.key === null || event.key === WAVE3_DEMO_STORAGE_PREFIX + 'guest') wave3DemoExperience.refresh('guest');
+  });
+  window.addEventListener('online', () => {
+    void wave3DemoExperience.refresh(wave3DemoExperience.getOperationScope().accountId);
   });
 }

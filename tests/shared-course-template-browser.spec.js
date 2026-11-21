@@ -1,3 +1,5 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
+import { toggleAirflowPreview } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
 
@@ -19,7 +21,7 @@ test.beforeEach(async ({ page }) => {
 
 test('the shared home carousel reaches all six new 3D environments without unlocking them', async ({ page }) => {
   test.setTimeout(ciTimeout(180_000));
-  await page.locator('[data-track="cosmic"]').click();
+  await clickLobbyOption(page, '[data-track="cosmic"]');
   await expect(page.locator('[data-track="cosmic"]')).toHaveAttribute('aria-pressed', 'true');
 
   for (const id of previews) {
@@ -44,12 +46,12 @@ test('each new map shares the same AIRFLOW switch and Garage-to-Studio car pose 
   test.setTimeout(ciTimeout(180_000));
   const airflow = page.locator('#airflow-toggle');
   for (const id of previews) {
-    await page.locator(`[data-upcoming-track="${id}"]`).click();
+    await clickLobbyOption(page, `[data-upcoming-track="${id}"]`);
     await expect(page.locator('#world')).toBeVisible();
     const previous = await airflow.getAttribute('aria-pressed');
-    await airflow.click();
+    await toggleAirflowPreview(page);
     await expect(airflow).toHaveAttribute('aria-pressed', previous === 'true' ? 'false' : 'true');
-    await airflow.click();
+    await toggleAirflowPreview(page);
     await expect(airflow).toHaveAttribute('aria-pressed', previous);
 
     await page.locator('#garage-button').click();

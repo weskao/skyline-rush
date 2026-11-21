@@ -11,12 +11,30 @@ export const CI_DEVICE = Object.freeze({ cores: 4, memoryGiB: 8 });
 // (saved, so no downgrade notice); a spec about the look pins its tier, one about the automatic choice sets lowGraphics: false.
 const LOW_VISUALS = initialDeviceVisuals({ device: { cores: 2 } }).settings;
 
+// Lobby tests start in a tab that has already acknowledged the startup screen.
+export const markStartupSeen = target => target.addInitScript(() => {
+  if (location.protocol === 'http:' || location.protocol === 'https:') {
+    sessionStorage.setItem('skyline-rush-startup-skip', '1');
+  }
+});
+
 export const test = base.extend({
+  startupSeen: [true, { option: true }],
   guideSeen: [true, { option: true }],
+  keepAcquisitionOpen: [false, { option: true }],
+  page: async ({ page, keepAcquisitionOpen }, use) => {
+    // Existing flows exercise the real results/Garage controls after accepting any earned rewards.
+    // The acquisition suite opts out to assert the modal's behavior and focus directly.
+    if (!keepAcquisitionOpen) await page.addLocatorHandler(page.locator('#acquisition-reveal[open]'), async reveal => {
+      await reveal.locator('.acquisition-continue').click();
+    });
+    await use(page);
+  },
   // A player with no What's New record gets the notes on load; mark them read so other specs start clean.
   whatsNewSeen: ['999.0.0', { option: true }],
   lowGraphics: [true, { option: true }],
-  context: async ({ context, guideSeen, whatsNewSeen, lowGraphics }, use) => {
+  context: async ({ context, startupSeen, guideSeen, whatsNewSeen, lowGraphics }, use) => {
+    if (startupSeen) await markStartupSeen(context);
     if (guideSeen) await context.addInitScript(() => localStorage.setItem('skyline-rush-guide-seen', '1'));
     if (whatsNewSeen) await context.addInitScript(seen => localStorage.setItem('skyline-rush-whats-new-seen-v1', seen), whatsNewSeen);
     // Only when unset: a reload keeps a tier the spec chose in Settings, and page scripts that seed one run after this.
@@ -28,13 +46,42 @@ export const test = base.extend({
       Object.defineProperty(navigator, 'deviceMemory', { configurable: true, get: () => memoryGiB });
     }, CI_DEVICE);
     await use(context);
+    // A test that ends mid-navigation leaves a route.fetch() in flight; closing the context disposes its response.
+    for (const page of context.pages()) await page.unrouteAll({ behavior: 'ignoreErrors' });
+    await context.unrouteAll({ behavior: 'ignoreErrors' });
   },
 });
+
+// page.goto resolves before the dynamic main.js import attaches the key listener, so a key pressed at once is lost.
+// vfx-ui stamps data-vfx-quality on body while main.js evaluates, after createControls has subscribed; data-phase=ready
+// marks Home's scene and controls. Wait for both before reading or sending input.
+export const waitForHome = async page => {
+  await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', /./);
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
+};
+
+export const gotoHome = async (page, url = '/') => {
+  await page.goto(url);
+  await waitForHome(page);
+};
 
 // Overlays enter with a transform (Garage/history `history-in` translateX 22px; pause and results `.overlay-content`
 // translateY 12px / translateX 48px). A rect read mid-entry is shifted and goes through float32 transform math: a 144 px
 // thumbnail measured 144.00001526 and a 44 px button 43.99998474. Resolves once the element is visible and every finite
 // animation on it and its ancestors has finished; measure anything inside an overlay only after this.
+// Reloads as a locked-down browser that throws on every storage call from the first script on. sessionStorage is
+// blocked too, so the tab's startup-skip flag is unreadable and the player passes the startup screen by hand.
+export const reloadWithBlockedStorage = async page => {
+  await page.addInitScript(() => {
+    for (const method of ['getItem', 'setItem', 'removeItem'])
+      Storage.prototype[method] = () => { throw new DOMException('blocked', 'SecurityError'); };
+  });
+  await page.reload();
+  await page.locator('#startup-enter').click();
+  await waitForHome(page);
+  if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+};
+
 export const settled = async locator => {
   await expect(locator).toBeVisible();
   await locator.evaluate(el => Promise.all(document.getAnimations().filter(animation => {

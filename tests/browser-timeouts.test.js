@@ -1,8 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { delimiter, join } from 'node:path';
 import config from '../playwright.config.js';
 import { ciTimeout, slow } from './helpers/ci.js';
 
@@ -76,7 +78,7 @@ test('the pre-push layout gate runs both Playwright halves on 2 workers', () => 
 
 test('the pre-push layout gate runs on a free port, not the default one a stray server may hold', async () => {
   const hook = readFileSync(new URL('../.githooks/pre-push', import.meta.url), 'utf8');
-  const pick = hook.match(/^PLAYWRIGHT_PORT=\$\((.+)\)$/m);
+  const pick = hook.match(/^PLAYWRIGHT_PORT=\$\((.+)\)(?: \|\| exit 1)?$/m);
   assert.ok(pick, 'pre-push must assign PLAYWRIGHT_PORT');
   assert.match(hook, /^export PLAYWRIGHT_PORT$/m);
   assert.ok(hook.indexOf('export PLAYWRIGHT_PORT') < hook.indexOf('npm run test:layout >&2'), 'export before the gate runs');
@@ -87,6 +89,36 @@ test('the pre-push layout gate runs on a free port, not the default one a stray 
     assert.match(port, /^\d{1,5}$/);
     assert.notEqual(port, '5178');
   } finally { held.close(); }
+});
+
+test('make verify bypasses a busy default port and honors an override for both browser stages', async () => {
+  const bin = mkdtempSync(join(tmpdir(), 'verify-port-'));
+  const held = net.createServer();
+  try {
+    await new Promise((resolve, reject) => {
+      held.once('error', error => error.code === 'EADDRINUSE' ? resolve() : reject(error));
+      held.listen(5178, '127.0.0.1', resolve);
+    });
+    writeFileSync(join(bin, 'npm'), '#!/bin/sh\nprintf "%s|%s\\n" "$*" "$PLAYWRIGHT_PORT"\n', { mode: 0o755 });
+    symlinkSync('npm', join(bin, 'npx'));
+    for (const override of [undefined, '5198']) {
+      const env = { ...process.env, PATH: bin + delimiter + process.env.PATH };
+      if (override) env.PLAYWRIGHT_PORT = override;
+      else delete env.PLAYWRIGHT_PORT;
+      const result = spawnSync('make', ['-o', 'node_modules', 'verify'], {
+        cwd: new URL('..', import.meta.url), env, encoding: 'utf8',
+      });
+      assert.equal(result.status, 0, result.stderr);
+      const port = result.stdout.match(/^run test:browser\|(\d{1,5})$/m)?.[1];
+      assert.ok(port && Number(port) > 0 && Number(port) <= 65535, 'browser tests need a valid port');
+      assert.ok(result.stdout.split('\n').includes(`playwright test --config=playwright.world-tour.config.js|${port}`));
+      if (override) assert.equal(port, override);
+      else assert.notEqual(port, '5178');
+    }
+  } finally {
+    held.close();
+    rmSync(bin, { recursive: true, force: true });
+  }
 });
 
 test('browser specs never set a wall-clock budget that skips the CI factor', () => {
@@ -108,6 +140,53 @@ test('browser specs poll page state after a UI action instead of reading it once
     .flatMap((line, i, lines) => ONE_SHOT_READ.test(line) && UI_ACTION.test(lines[i - 1] ?? '') && !line.includes('// settled:')
       ? [`tests/${file}:${i + 1}: ${line.trim()}`] : []));
   assert.deepEqual(offenders, [], 'Use await expect.poll(() => page.evaluate(...)) (see .claude/rules/browser-test-stability.md)');
+});
+
+// index.html boots src/startup-entry.ts, which imports main.js dynamically: 'domcontentloaded' fires before Home is
+// rendered, so a short first wait races the bundle load (lobby summaries: 8 DRIVERS empty at 2.5 s, 1 run in 3).
+test('the first wait after a page load keeps the default expect budget', () => {
+  const offenders = FILES.flatMap(file => {
+    const lines = readFileSync(new URL(file, import.meta.url), 'utf8').split('\n');
+    return lines.flatMap((line, i) => {
+      if (!/\bpage\.goto\(/.test(line)) return [];
+      const j = lines.findIndex((next, k) => k > i && k <= i + 4 && /\bexpect\(/.test(next));
+      const ms = Number(lines[j]?.match(/timeout: ciTimeout\(([\d_]+)\)/)?.[1].replaceAll('_', ''));
+      return j > 0 && ms < config.expect.timeout / slow ? [`tests/${file}:${j + 1}: ${lines[j].trim()}`] : [];
+    });
+  });
+  assert.deepEqual(offenders, [], 'Drop the short timeout: Home renders after the dynamic main.js import (.claude/rules/browser-test-stability.md)');
+});
+
+test('a key press after a page load waits for the game to listen', () => {
+  const offenders = FILES.flatMap(file => {
+    const lines = readFileSync(new URL(file, import.meta.url), 'utf8').split('\n');
+    return lines.flatMap((line, i) => {
+      if (!/\bpage\.goto\(/.test(line)) return [];
+      // Blank lines, comments, the font wait, a fixed sleep and an isVisible() check (which answers at once) do not wait
+      // for main.js: bootAirflowRace slept 700 ms, dismissed no music prompt and lost its `v` (toggle-feedback, 2026-11-20).
+      let j = i + 1;
+      while (j < lines.length && /^\s*(\/\/.*)?$|document\.fonts\.ready|waitForTimeout\(|\.isVisible\(\)/.test(lines[j])) j++;
+      return /^\s*await page\.keyboard\./.test(lines[j] ?? '') ? [`tests/${file}:${j + 1}: ${lines[j].trim()}`] : [];
+    });
+  });
+  assert.deepEqual(offenders, [], 'Load with gotoHome(page): main.js attaches the key listener after page.goto resolves (.claude/rules/browser-test-stability.md)');
+});
+
+// Same race, other shapes (develop CI 44674764907): a dispatched contextmenu found no listener yet, and
+// `if (!await coins.isVisible())` saw no Home and tapped the wallet summary portrait hides, until the timeout.
+test('a gesture or an absence branch after a page load waits for Home', () => {
+  // Lines that neither wait for main.js nor act: blanks, comments, declarations, absence/CSS checks, loop heads.
+  const INERT = /^\s*(\/\/.*)?$|^(?!.*\bawait\b)|toBeHidden\(|toHaveCSS\(|^\s*for \(/;
+  const offenders = FILES.flatMap(file => {
+    const lines = readFileSync(new URL(file, import.meta.url), 'utf8').split('\n');
+    return lines.flatMap((line, i) => {
+      if (!/\bpage\.goto\(/.test(line)) return [];
+      let j = i + 1;
+      while (j < lines.length && INERT.test(lines[j]) && !/^\s*\}\);/.test(lines[j])) j++;
+      return /!\s*await [^;]*\.isVisible\(\)|dispatchEvent\(/.test(lines[j] ?? '') ? [`tests/${file}:${j + 1}: ${lines[j].trim()}`] : [];
+    });
+  });
+  assert.deepEqual(offenders, [], 'Load with gotoHome(page): isVisible() does not wait and main.js listens after page.goto resolves (.claude/rules/browser-test-stability.md)');
 });
 
 test('CI retries a failed browser test once and still reports it; local runs never retry', () => {
@@ -239,12 +318,53 @@ test('a spec counting Web Audio notes by pitch leaves out notes scheduled during
 // Trap (2026-11-17): the gameplayPage fixture has already loaded the game once (no saved car, so the Roadster) and
 // that page keeps fetching lazily. A spec that started counting requests and then navigated again also counted the
 // old page's late roadster2.glb (crimson-gt-browser: five tests red). watchRequests leaves that page first.
+// The preview serves dist/, so a page-side import('/src/…') there fails with "Failed to fetch dynamically imported module"
+// (wave3-early-access foldable test, CI 44674764907). Only gameplay-browser.js's Vite dev server serves /src.
+test('a test that imports /src in the page runs on the gameplay dev server', () => {
+  const ignored = new Set(config.testIgnore.map(glob => glob.replace('**/', '')));
+  const offenders = FILES.filter(file => file.endsWith('browser.spec.js') && !ignored.has(file)).flatMap(file => {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    const names = from => [...source.matchAll(new RegExp(`import \\{([^}]*)\\} from '\\./helpers/${from}'`, 'g'))]
+      .flatMap(([, list]) => list.split(',').map(name => name.trim().match(/^test(?: as (\w+))?$/)).filter(Boolean)
+        .map(([, alias]) => alias ?? 'test'));
+    const dev = new Set(names('gameplay-browser\\.js')), all = [...dev, ...names('test\\.js')];
+    let current = null;
+    return source.split('\n').flatMap((line, i) => {
+      const block = line.match(/^\s*(\w+)(?:\.\w+)?\(/)?.[1];
+      if (all.includes(block)) current = block;
+      const devServer = current ? dev.has(current) : dev.size > 0;
+      return line.includes("import('/src/") && !devServer ? [`tests/${file}:${i + 1}`] : [];
+    });
+  });
+  assert.deepEqual(offenders, [], "Run it with `test` from tests/helpers/gameplay-browser.js and load gameplayURL or gameplayPage");
+});
+
 test('a spec counting requests on the gameplay page leaves the fixture page first (watchRequests)', () => {
   const offenders = FILES.filter(file => file !== 'helpers/gameplay-browser.js').filter(file => {
     const source = readFileSync(new URL(file, import.meta.url), 'utf8');
     return source.includes('gameplayPage') && /\.on\(\s*['"]request['"]/.test(source);
   });
   assert.deepEqual(offenders, [], 'Count requests with watchRequests(page, pattern) from tests/helpers/gameplay-browser.js (see .claude/rules/browser-test-stability.md)');
+});
+
+// Two live renderers starve a CPU-only runner: crimson-gt's second raw page never booted while the fixture page kept
+// drawing the GT, even at Low and the CI canvas size (develop 44691631919, 44716140443).
+test('a test on the gameplay page never opens a second browser page beside it', () => {
+  const offenders = FILES.filter(file => file.endsWith('browser.spec.js')).flatMap(file =>
+    readFileSync(new URL(file, import.meta.url), 'utf8').split('\n').flatMap((line, i) =>
+      /async \(\{[^}]*\bgameplayPage\b[^}]*\}/.test(line) && /async \(\{[^}]*\bbrowser\b[^}]*\}/.test(line) ? [`tests/${file}:${i + 1}`] : []));
+  assert.deepEqual(offenders, [], 'Split the second page into its own test, or open each page in turn and close it (see .claude/rules/browser-test-stability.md)');
+});
+
+// Previewing a drift trail opens GarageDriftPreview, a second live WebGL renderer: one test clicking the whole catalog
+// with motion on outgrew its 360 s CI budget (crimson-gt, CI 44736477255).
+test('a sweep of the whole Garage skin catalog runs one category per test, with reduced motion or a stated reason', () => {
+  const offenders = FILES.flatMap(file => {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    if (/reducedMotion: 'reduce'/.test(source)) return [];
+    return source.split('\n').flatMap((line, i) => /of GARAGE_SKINS\)/.test(line) && !/\/\/ motion: \S/.test(line) ? [`tests/${file}:${i + 1}`] : []);
+  });
+  assert.deepEqual(offenders, [], "Split the sweep per SKIN_CATEGORIES and emulate reducedMotion: 'reduce', or end the loop line with // motion: <why it must animate> (see .claude/rules/browser-test-stability.md)");
 });
 
 // Specs start at Low (tests/helpers/test.js), which turns off the Garage GIF artwork (GarageArtworkImage.vue vfxAllowed),
@@ -255,7 +375,8 @@ const TIER_CHOSEN = /lowGraphics: false|skyline-rush-vfx/;
 test('a spec that observes an effect Low turns off chooses a heavier tier', () => {
   const offenders = FILES.filter(file => {
     const source = readFileSync(new URL(file, import.meta.url), 'utf8');
-    return LOW_GATED.test(source) && !TIER_CHOSEN.test(source);
+    // An isolated-fixture spec on plain @playwright/test never gets the Low default of tests/helpers/test.js.
+    return LOW_GATED.test(source) && !TIER_CHOSEN.test(source) && /helpers\/test\.js/.test(source);
   });
   assert.deepEqual(offenders, [], 'Set test.use({ lowGraphics: false }) around those tests (see .claude/rules/browser-test-stability.md)');
 });
@@ -282,4 +403,53 @@ test('a spec never asserts absence between its countdown wait and its racing wai
     });
   });
   assert.deepEqual(offenders, [], 'Record the countdown frames in the page and assert after GO (.claude/rules/browser-test-stability.md)');
+});
+
+// A page-wide wait on document.getAnimations() also sees a toast that unmounts mid-wait: cancel rejects `finished` with
+// AbortError (airflow showcase, 7 of 7 viewports red once pressing `v` raised the toast). Scope to a node or catch.
+test('a page-wide animation wait tolerates a cancelled animation (finished.catch)', () => {
+  const offenders = FILES.flatMap(file => readFileSync(new URL(file, import.meta.url), 'utf8').split('\n')
+    .flatMap((line, i) => /document\.getAnimations\(/.test(line) && /\.finished(?!\.catch)/.test(line) ? [`tests/${file}:${i + 1}: ${line.trim()}`] : []));
+  assert.deepEqual(offenders, [], 'Use `animation.finished.catch(() => {})` or scope getAnimations() to one element (.claude/rules/browser-test-stability.md)');
+});
+
+// The rival fleet pools one car per chassis and deals each race a shuffled lineup, so scene order is not race
+// order: the drive-cue helper judged rival 1's flame on another car (trail false, CI 44395376200).
+test('a spec pairs a rival with its scene car through gameScene.rivals, not scene order', () => {
+  const offenders = FILES.flatMap(file => readFileSync(new URL(file, import.meta.url), 'utf8').split('\n')
+    .flatMap((line, i) => /scene\.children\b.*\b(driveCue|rival)/i.test(line) ? [`tests/${file}:${i + 1}: ${line.trim()}`] : []));
+  assert.deepEqual(offenders, [], 'Read `window.gameScene.rivals[i]` (tests/helpers/gameplay-browser.js) (.claude/rules/browser-test-stability.md)');
+});
+
+// The halfway card lives 2.15 s of race time. toBeVisible, then a text check, then a measure outlived it on CI (a detached
+// node in 44269822759; a zero rect, dx 480, in 44395376200). Read it in one page tick (page.waitForFunction); a locator
+// may only wait for it to go. The setting toast pill unmounts TOAST_MS (1.8 s) after it shows: three locator reads
+// outlived it and the next one found no pill (toggle-feedback, 3 tests red on both attempts, CI 44674764907).
+test('a spec reads a self-expiring element (halfway card, setting toast) in one page tick', () => {
+  const offenders = FILES.flatMap(file => {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    return ['#race-halfway-card', '#game-toast .game-toast-pill'].flatMap(selector => {
+      const locator = String.raw`page\.locator\(['"]${selector.replaceAll('.', '\\.')}['"]\)`;
+      const names = [...source.matchAll(new RegExp(String.raw`(\w+)\s*=\s*(?:page\s*=>\s*)?${locator}`, 'g'))].map(([, name]) => name);
+      const reads = [new RegExp(String.raw`${locator}\s*\.(?!.*toBeHidden)`), ...names.map(name => new RegExp(
+        String.raw`expect\(${name}(?:\(page\))?\)\.(?!toBeHidden|toHaveCount\(0\b)|\b${name}(?:\(page\))?\.(?:evaluate|boundingBox|textContent|innerText|locator)\(`))];
+      return source.split('\n').flatMap((line, i) => reads.some(read => read.test(line)) ? [`tests/${file}:${i + 1}`] : []);
+    });
+  });
+  assert.deepEqual(offenders, [], 'find, read and measure it inside one page.waitForFunction (.claude/rules/browser-test-stability.md)');
+});
+
+// Trap (2026-11-20, CI 44674764907): hazard-captures and track-themes end on page.reload(), so the test ended while
+// captureHooks' route.fetch() for the reload was still in flight; closing the context disposed the response and
+// `apiResponse.text: Response has been disposed` failed a passing test. Teardown unroutes with ignoreErrors first.
+test('a route handler that fetches cannot outlive its test (unrouteAll ignoreErrors)', () => {
+  const shared = readFileSync(new URL('helpers/test.js', import.meta.url), 'utf8');
+  const unroute = /await use\(context\);[^}]*\bunrouteAll\(\{ behavior: 'ignoreErrors' \}\)/;
+  assert.match(shared, unroute, 'the shared context fixture unroutes every page and the context after use');
+  const offenders = FILES.filter(file => file.endsWith('browser.spec.js')).filter(file => {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    return source.includes('route.fetch()') && !/import \{[^}]*\btest\b[^}]*\} from '\.\/helpers\//.test(source)
+      && !source.includes("unrouteAll({ behavior: 'ignoreErrors' })");
+  }).map(file => `tests/${file}`);
+  assert.deepEqual(offenders, [], "Take `test` from tests/helpers/test.js, or unrouteAll({ behavior: 'ignoreErrors' }) after each test");
 });

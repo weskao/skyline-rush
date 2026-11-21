@@ -1,3 +1,5 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
+import { toggleAirflowPreview } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { RACE_TRACKS } from '../src/game.js';
 import { PORTRAIT_CAR_TOP } from './showcase-car-zone.js';
@@ -15,7 +17,7 @@ test('ready screen offers a discoverable camera dock across all tracks',async({p
   await page.goto('/');
   await expect(page.locator('#showcase-camera-dock')).toBeVisible();
   for(const id of Object.keys(RACE_TRACKS)){
-    await page.locator(`[data-track="${id}"]`).click();
+    await clickLobbyOption(page, `[data-track="${id}"]`);
     await expect(page.locator('#showcase-camera-dock')).toBeVisible();
     await page.locator('#showcase-camera-next').click();
     await expect(page.locator('#showcase-camera-dock')).toHaveAttribute('data-view',/front|rear|left|right|orbit|drive/);
@@ -59,7 +61,9 @@ for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:32
     await expect(page.locator('#showcase-camera-next')).toBeVisible();
     for (const locale of ['en', 'zh-TW']) {
       await page.locator('#locale-select').selectOption(locale, { force: true });
-      const camera = await page.locator('#showcase-camera-dock').boundingBox();
+      const dock = page.locator('#showcase-camera-dock');
+      await dock.scrollIntoViewIfNeeded();
+      const camera = await dock.boundingBox();
       for (const selector of ['#start-button', '#practice-button', '.history-button', '#garage-button', '#daily-card-start']) {
         const control = await page.locator(selector).boundingBox();
         const overlaps = camera.x < control.x + control.width && control.x < camera.x + camera.width &&
@@ -84,9 +88,9 @@ for(const [viewport,maps] of [[{width:1440,height:900},worldTourMaps.slice(0,3)]
     });
     await page.goto('/');
     for(const id of maps) await test.step(id,async()=>{
-      await page.locator(`[data-track="${id}"]`).click();
+      await clickLobbyOption(page, `[data-track="${id}"]`);
       const airflow=page.locator('#airflow-toggle');
-      await airflow.click(); // never force-click past an overlay
+      await toggleAirflowPreview(page); // never force-click past an overlay
       await expect(airflow,`${id}: AIRFLOW on`).toHaveAttribute('aria-pressed','true');
       const dock=page.locator('#showcase-camera-dock');
       await expect(dock).toBeVisible();
@@ -95,7 +99,7 @@ for(const [viewport,maps] of [[{width:1440,height:900},worldTourMaps.slice(0,3)]
         await expect(dock,`${id}: next camera is ${mode}`).toHaveAttribute('data-view',mode);
       }
       await page.screenshot({path:info.outputPath(`${id}-airflow-${viewport.width}.png`),animations:'disabled'});
-      await airflow.click();
+      await toggleAirflowPreview(page);
       await expect(airflow,`${id}: AIRFLOW off`).toHaveAttribute('aria-pressed','false');
     });
   });
@@ -109,7 +113,7 @@ for (const [width, height] of [[320, 568], [390, 844], [760, 501], [768, 1024], 
     await page.setViewportSize({ width, height });
     await page.goto('/');
     await page.evaluate(() => document.fonts.ready);
-    await page.locator('#airflow-toggle').click();
+    await toggleAirflowPreview(page);
     await expect(page.locator('#airflow-toggle')).toHaveAttribute('aria-pressed', 'true');
 
     for (const locale of ['en', 'zh-TW']) {
@@ -140,7 +144,7 @@ test('AIRFLOW telemetry card stays above the showcase car at every portrait phon
   await page.setViewportSize({ width: cases[0][0], height: cases[0][1] });
   await page.goto('/');
   await page.evaluate(() => document.fonts.ready);
-  await page.locator('#airflow-toggle').click();
+  await toggleAirflowPreview(page);
   await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'false');
   const overlaps = (a, b) => !(a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y);
   for (const [width, height, top] of cases) await test.step(`${width}x${height}, top inset ${top}`, async () => {
@@ -165,7 +169,7 @@ test('AIRFLOW telemetry card stays above the showcase car at every portrait phon
 test('language switches relabel live AIRFLOW values before the next HUD tick', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await page.locator('#airflow-toggle').click();
+  await toggleAirflowPreview(page);
   await expect(page.locator('#aero-flow')).toHaveText('BODY STREAMLINES');
   for (const [locale, expected] of [
     ['zh-TW', ['車身流線', '低風阻', '展示中']],
@@ -197,16 +201,23 @@ for (const [width, height] of [[1440, 900], [390, 844], [320, 568], [760, 501], 
       if (locale !== 'en') await selectLocale(page, locale);
       for (const view of ['drive', 'front', 'rear', 'left', 'right', 'orbit']) {
         await expect(dock).toHaveAttribute('data-view', view);
-        const cut = await name.evaluate(el => el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight);
-        expect(cut, `${locale} ${view}: camera label is cut`).toBe(false);
-        // A label may wrap between words ("Driving / camera") but never inside one ("Drivin / g").
-        const { lines, words } = await name.evaluate(el => {
+        // Read the whole layout in one frame so software WebGL does not run between each measurement.
+        const { cut, lines, words, prev, label, next } = await name.evaluate(el => {
           const range = document.createRange();
           range.selectNodeContents(el);
-          return { lines: new Set([...range.getClientRects()].map(rect => Math.round(rect.top))).size, words: el.textContent.trim().split(/\s+/).length };
+          const dock = el.closest('#showcase-camera-dock');
+          return {
+            cut: el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight,
+            lines: new Set([...range.getClientRects()].map(rect => Math.round(rect.top))).size,
+            words: el.textContent.trim().split(/\s+/).length,
+            prev: dock.querySelector('#showcase-camera-prev').getBoundingClientRect().toJSON(),
+            label: el.getBoundingClientRect().toJSON(),
+            next: dock.querySelector('#showcase-camera-next').getBoundingClientRect().toJSON(),
+          };
         });
+        expect(cut, `${locale} ${view}: camera label is cut`).toBe(false);
+        // A label may wrap between words ("Driving / camera") but never inside one ("Drivin / g").
         expect(lines, `${locale} ${view}: camera label breaks inside a word`).toBeLessThanOrEqual(words);
-        const [prev, label, next] = await Promise.all(['#showcase-camera-prev', '#showcase-camera-name', '#showcase-camera-next'].map(s => page.locator(s).boundingBox()));
         expect(prev.width >= 44 && prev.height >= 44 && next.width >= 44 && next.height >= 44, `${locale}: arrows keep 44px targets`).toBe(true);
         expect(prev.x + prev.width <= label.x + 1 && label.x + label.width <= next.x + 1, `${locale} ${view}: name sits between the arrows`).toBe(true);
         expect(Math.abs((prev.x + next.x + next.width) / 2 - (label.x + label.width / 2)) <= 1, `${locale} ${view}: name is centred`).toBe(true);

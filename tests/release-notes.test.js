@@ -328,3 +328,18 @@ test('notes are drafted only from changes players can notice', () => {
     'feat: add a night track', 'fix(audio)!: keep music on after a call'
   ]);
 });
+
+// Freeze and EMP are shown in real game footage, recorded for landscape screens and portrait phones.
+test('Freeze and EMP announcement bundles a real-game clip for every device shape and locale', () => {
+  const entry = RELEASE_NOTES.find(release => release.highlights.some(item => item.id === 'rival-items'))
+    ?.highlights.find(item => item.id === 'rival-items');
+  assert.ok(entry?.video, 'rival-items ships a clip');
+  assert.equal(entry.responsiveImages, undefined, 'no illustration beside the clip');
+  for (const locale of ['en', 'zh-TW']) for (const shape of ['desktop', 'mobile']) {
+    for (const kind of ['src', 'poster']) {
+      const path = entry.video[shape][kind][locale];
+      assert.ok(path?.startsWith(`whats-new/rival-items/rival-items.${shape}.`), path);
+      assert.ok(fs.existsSync(new URL('../public/' + path, import.meta.url)), path);
+    }
+  }
+});

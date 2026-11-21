@@ -1,0 +1,33 @@
+// Toasts for settings that are easy to change by accident, and the in-game confirmations (toggle feedback).
+export const SETTINGS_FEEDBACK_COPY = {
+  en: {
+    'toast.sound': 'Sound',
+    'toast.airflow': 'Airflow',
+    'toast.assist': 'Auto accelerate',
+    'toast.vfx': 'Visual effects',
+    'toast.on': 'ON',
+    'toast.off': 'OFF',
+    'vfxOff.title': 'Turn off visual effects?',
+    'vfxOff.hidden': 'Airflow and other visual effects are hidden.',
+    'vfxOff.same': 'Driving, speed and scores stay the same.',
+    'vfxOff.later': 'Turn them back on any time in Game settings › Display & HUD.',
+    'vfxOff.keep': 'Keep effects on',
+    'vfxOff.confirm': 'Turn effects off',
+    'confirm.cancel': 'Cancel',
+  },
+  'zh-TW': {
+    'toast.sound': '音效',
+    'toast.airflow': '氣流',
+    'toast.assist': '自動加速',
+    'toast.vfx': '視覺特效',
+    'toast.on': '開啟',
+    'toast.off': '關閉',
+    'vfxOff.title': '要關閉視覺特效嗎？',
+    'vfxOff.hidden': '氣流與其他視覺特效會隱藏。',
+    'vfxOff.same': '駕駛、速度與成績不受影響。',
+    'vfxOff.later': '隨時可在「遊戲設定 › 畫面與 HUD」重新開啟。',
+    'vfxOff.keep': '保持開啟',
+    'vfxOff.confirm': '關閉特效',
+    'confirm.cancel': '取消',
+  },
+} as const;

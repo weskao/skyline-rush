@@ -1,0 +1,92 @@
+/* Shared chrome for the comboboxes created from the game's native select fields. */
+.custom-select {
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2396e3ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --select-globe: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2396e3ff' stroke-width='1.8'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18'/%3E%3C/svg%3E");
+  --select-weather: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2396e3ff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 17h14a3 3 0 0 0 0-6h-1a5 5 0 0 0-10-1 3.5 3.5 0 1 0-3 7Z'/%3E%3C/svg%3E");
+  --select-icon: none;
+  --select-icon-padding: 12px;
+}
+:root .custom-select > button[role="combobox"] {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-height: 44px;
+  padding: 6px 34px 6px var(--select-icon-padding);
+  border: 1px solid #6e9baa;
+  border-radius: 5px;
+  background: var(--select-icon) left 10px center / 16px no-repeat,
+    var(--select-chevron) right 10px center / 16px no-repeat #102432;
+  color: #dcf4ff;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: .02em;
+  line-height: 1.2;
+  cursor: pointer;
+}
+:root .custom-select > button[role="combobox"]:is(:hover, [aria-expanded="true"]) {
+  border-color: #96e3ff;
+  background-color: #1b3a4e;
+}
+#locale-select + .custom-select {
+  --select-icon: var(--select-globe);
+  --select-icon-padding: 36px;
+  min-width: min(160px, 100%);
+}
+:is(#race-visual-preset, #photo-sky) + .custom-select {
+  --select-icon: var(--select-weather);
+  --select-icon-padding: 36px;
+}
+.history-filter .custom-select { width: min(240px, 100%); }
+.vfx-settings .custom-select { width: min(155px, 100%); }
+.race-mode-rule-grid .custom-select { width: 100%; }
+.custom-select > [role="listbox"] {
+  box-sizing: border-box;
+  position: relative;
+  width: 100%;
+  max-height: min(280px, 65dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin: 4px 0 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid #6e9baa;
+  border-radius: 6px;
+  background: #102432;
+  color: #dcf4ff;
+  box-shadow: 0 12px 28px #0009;
+  font: 600 13px/1.3 system-ui, sans-serif;
+}
+.custom-select > [popover] {
+  position: fixed;
+  inset: 0 auto auto 0;
+  margin: 0;
+  width: max-content;
+  min-width: var(--select-min-width, 152px);
+  max-width: var(--select-width, 350px);
+}
+.custom-select > [popover]:popover-open.is-two-column {
+  display: grid;
+  width: var(--select-width);
+  grid-auto-flow: column;
+  grid-template: repeat(var(--select-rows), auto) / repeat(2, minmax(0, 1fr));
+  column-gap: 4px;
+}
+:root .custom-select [role="option"] { min-height: 44px; gap: 8px; white-space: normal; overflow-wrap: anywhere; }
+.custom-select [role="option"][aria-selected="true"]::after {
+  content: '';
+  flex: none;
+  width: 8px;
+  height: 5px;
+  margin-inline-start: auto;
+  border: solid currentColor;
+  border-width: 0 0 2px 2px;
+  transform: translateX(-2px) rotate(-45deg);
+}
+@media (prefers-reduced-motion: no-preference) {
+  body:not(.vfx-comfort) .custom-select > [role="listbox"]:not([hidden]) {
+    animation: overlay-in var(--dur-fast) var(--ease-out);
+  }
+  body:not(.vfx-comfort) .custom-select > button[role="combobox"] {
+    transition: border-color var(--dur-fast), background-color var(--dur-fast), filter var(--dur-base) var(--ease-spring);
+  }
+}

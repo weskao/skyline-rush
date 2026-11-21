@@ -1,3 +1,4 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 
 const KEYBOARD_ONLY = ['.keymap-field', '#keymap-status', '#keymap-reset'];
@@ -5,7 +6,7 @@ const openControls = async page => {
   await page.goto('/');
   await page.waitForTimeout(700);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   await expect(page.locator('#layout-edit')).toBeVisible();
 };
 
@@ -29,7 +30,7 @@ test.describe('touch device', () => {
     await page.reload();
     await page.waitForTimeout(700);
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     for (const selector of KEYBOARD_ONLY) await expect(page.locator(selector)).toBeVisible();
   });
 });

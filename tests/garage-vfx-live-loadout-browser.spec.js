@@ -3,7 +3,7 @@ import { openGarageSection } from './helpers/garage-browser.js';
 import { selectLocale } from './helpers/locale-browser.js';
 
 for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
-  test('Garage shows four live 3x VFX artwork slots at ' + viewport.width + 'x' + viewport.height, async ({ page }) => {
+  test('Garage shows five live 3x VFX artwork slots at ' + viewport.width + 'x' + viewport.height, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
     await openGarage(page);
@@ -12,7 +12,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     const loadout = page.locator('#garage-vfx-live-loadout');
     await loadout.scrollIntoViewIfNeeded();
     await expect(loadout).toBeVisible();
-    await expect(loadout.locator('[data-loadout-category]')).toHaveCount(4);
+    await expect(loadout.locator('[data-loadout-category]')).toHaveCount(5);
     const thruster = loadout.locator('[data-loadout-category="thruster"]');
     await expect(thruster).toHaveAttribute('data-equipped-skin', 'thruster-basic');
     await expect(thruster.locator('.artwork-img')).toHaveAttribute('src', /raster\/thruster-basic@3x\.webp$/);

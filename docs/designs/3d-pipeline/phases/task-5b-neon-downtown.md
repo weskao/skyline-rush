@@ -4,17 +4,17 @@ Part of `docs/superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md` · **Pro
 Phase 3 covers Coast and Phase 4 the six course maps; Neon Downtown (classic track `neon`, the second map in
 `src/race-tracks.ts`) has no phase and no concept-board panel. Scope tags: `README.md`. Planning only: no code yet.
 
-**Look and route target:** the owner-supplied nine-image set in `../concept-art/neon-downtown/` (N1 and N7,
+**Look and route target:** the owner-supplied nine-image set in `../track-profiles/neon-downtown/` (N1 and N7,
 2026-11-14); capture recipe in `../neon-look-brief.md`. The board itself has no Neon panel.
 **Files (expected):** new `src/neon-*.ts` modules (`src/world.js` is at its legacy line ceiling), `assets-src/neon-*/`,
 `public/models/neon-*/`, `public/materials/`, `public/environments/`, the model and material manifests, new tests.
-**Produces:** Neon Downtown under `?look=3d` on Medium+ with a Blender-built city, a wet PBR night road with neon
+**Produces:** Neon Downtown on Medium and above with a Blender-built city, a wet PBR night road with neon
 reflections and a matching night sky. The route itself changes once, for every look and tier (N7): a closed
 clockwise loop through the set's six sectors. Lanes, the collision rules and the VFX ports stay as they are.
 
 **Carried over from Task 5 (owner, 2026-11-08 / 2026-11-09):** realistic material quality first; licensed sources
 recorded per asset in the manifests; editable `.blend` masters at `assets-src/<asset>/<asset>.blend`; the whole look
-is opt-in behind `?look=3d` (`src/look-gate.ts`); Low tier and load failure keep today's procedural scene.
+was opt-in behind `?look=3d` (`src/look-gate.ts`; historical; gate removed, the quality tier decides now); Low tier and load failure keep today's procedural scene.
 
 ## Neon today (code read at `6e4abd33`, not verified at runtime)
 
@@ -57,14 +57,14 @@ is opt-in behind `?look=3d` (`src/look-gate.ts`); Low tier and load failure keep
   new GLB). This replaces "as long as the track does not get much longer" above and the 4000 m limit of step 1b.
   `09-closed-loop-schematic.png` still shows the six-sector lap and is out of date. Work: step 11.
 
-N3 and N4 apply to the `?look=3d` look on Medium+; without the gate, and on Low, Neon keeps its sea and towers, as
-Coast does for D1 and D2. The N7 route is not gated: a road cannot differ by look, so every player gets it.
+N3 and N4 apply to the detailed look on Medium and above; on Low, Neon keeps its sea and towers, as
+Coast does for D1 and D2. The N7 route does not depend on the tier: a road cannot differ by look, so every player gets it.
 
 ## By project (committed once)
 
 Already in place from Tasks 3–5 and usable by Neon as is:
 - [x] Blender → GLB / KTX2 asset pipeline with manifests and budget checks (`scripts/assets/`, Task 3).
-- [x] `?look=3d` gate (`src/look-gate.ts`, `tests/look-gate.test.js`).
+- [x] `?look=3d` gate (`src/look-gate.ts`, `tests/look-gate.test.js`) (historical; gate removed).
 - [x] Ultra tier renders on Neon: all ten selectable maps raced on High and Ultra (Task 5, `ultra-maps-capture`).
 - [x] Board effects on Neon: magenta plume tail, thruster glow and contact shadow are track-agnostic; rain wheel
   spray lists `neon` (`src/board-effects.ts`, `src/contact-shadow.ts`).
@@ -74,7 +74,7 @@ Already in place from Tasks 3–5 and usable by Neon as is:
 - [x] Neon element inventory (table above).
 
 To do, in order:
-- [x] **0 Concept set (N1, N7).** Nine owner-supplied images in `../concept-art/neon-downtown/` (two overviews, six
+- [x] **0 Concept set (N1, N7).** Nine owner-supplied images in `../track-profiles/neon-downtown/` (two overviews, six
   sector frames, one route schematic), listed in that folder's `README.md` with the panel row. They replace the two
   generated views, which were deleted before being committed. Never in-game evidence.
   - [x] Generator and redistribution licence of the set: generated with ChatGPT; the owner confirms the set is
@@ -108,7 +108,7 @@ To do, in order:
     `tests/neon-look-browser.spec.js` stay green; `npm test` and `npm run build` pass.
 - [x] **2a Per-track look config.** The `trackId === 'coast'` checks in the lighting plan (`src/coast-lighting.ts`,
   `src/coast-look.ts`) and the asset host (`src/coast-assets.ts`) read a per-track entry (environment, road set,
-  scenery layer) from `src/track-look.ts`. RED → GREEN: `tests/track-look.test.js` (Neon without `?look=3d`, Neon on
+  scenery layer) from `src/track-look.ts`. RED → GREEN: `tests/track-look.test.js` (Neon without `?look=3d` (historical; gate removed), Neon on
   Low and Coast under `?look=3d` plan as before; a track without an entry loads nothing; a borrowed sun returns only
   to its own track). Coast unchanged in the browser: `tests/coast-scenery-browser.spec.js` and
   `tests/coast-visual-browser.spec.js`, 13 of 13.
@@ -153,7 +153,7 @@ To do, in order:
     scripts), six KTX2 files in `public/materials/neon-asphalt/`, 2.03 MB at 1K and 8.71 MB at 2K. Commit
     `c1972971`; `tests/neon-asphalt-material.test.js`. Lane paint stays the instanced `laneLines` geometry, as on
     Coast.
-  - [x] Runtime: Neon on Medium+ under the gate wears the set, soaked on `track` and `rain`, dry on `night`; a failed
+  - [x] Runtime: Neon on Medium+ under the gate (historical; gate removed) wears the set, soaked on `track` and `rain`, dry on `night`; a failed
     load keeps the procedural road. `tests/track-look.test.js` and `tests/neon-look-browser.spec.js` (*wears its own
     KTX2 asphalt*, *falls back to the procedural road*), desktop and phone.
   - [x] Signs, billboards, shop and tower windows, lamps, the parapet lights, the canal arch and the sculpture in the
@@ -190,8 +190,8 @@ To do, in order:
     `tests/neon-scenery.test.js` (*the land takes the pavement set*), `tests/neon-look-browser.spec.js` (*asphalt and
     pavement*, *falls back*), RED first.
   - [x] Owner art approval of the kit. Accepted by eye on 2026-11-16 (Step 22).
-  - [ ] Open after the approval: the cherry tree is still opaque puffs (the kit has no alpha
-    material; one would cost a draw call); the spire is limited by its 32 m footprint slot; the emissive values (1.7
+  - [ ] Open after the approval: the cherry tree's opaque puffs are cut out in Step 23 (no draw added), but the
+    result is not yet seen in a WebGL capture; the spire is limited by its 32 m footprint slot; the emissive values (1.7
     city, 1.5 landmarks) were set before the darker dome and are not yet judged against it; the wet mirror on the
     pavement is a fill-rate cost not yet measured on a phone.
 - [x] **6 Rail underpass** (N5, N7): one Blender underpass GLB (rail bridge deck, abutments, amber lamps) on the
@@ -219,7 +219,7 @@ To do, in order:
   gameplay-prop positions pinned at layout 6, before any Neon asset: `tests/neon-parity.test.js` (4 tests).
   Step 1b re-pins them once, at layout 7; after that no art step may move them.
 - [x] **8b Fallback and develop-look guards on today's scene.** `tests/neon-look-browser.spec.js`: Neon on Low under
-  `?look=3d` and Neon on High without the gate keep sea, towers, skyline, RoomEnvironment and an identity grade, and
+  `?look=3d` and Neon on High without the gate (historical; gate removed) keep sea, towers, skyline, RoomEnvironment and an identity grade, and
   fetch no HDRI, KTX2 or Coast/Neon model; Neon on High under the gate compiles nothing after GO and draws no Coast
   scenery. 24 of 24 under CI timing (`--repeat-each=8 --workers=4 --retries=0`).
 - [x] **8c N6 draw-call cap** on High (home 540, race 380).
@@ -259,7 +259,7 @@ To do, in order:
 
 ## Step 10: one gameplay highlight per sector (owner brief, 2026-11-15)
 
-Gameplay data, not art: it applies with and without `?look=3d` and on every tier. Only mechanics the game already
+Gameplay data, not art: it applies on every tier. Only mechanics the game already
 has. Road, length, sections, pickups, gameplay props, collision and the record id (`neon@7`, never shipped) stay.
 
 ### Lap plan (written before any ring was placed)
@@ -336,8 +336,8 @@ Open for the owner:
 
 ## Step 11: the 10 km lap, eight sectors (N7 amended, 2026-11-15)
 
-The route and the rings change for everyone, on every tier and with or without `?look=3d`; the art stays behind the
-gate. The record id stays `neon@7` (never shipped). Steps 1b and 10 above record the 4000 m lap as it was built;
+The route and the rings change for everyone, on every tier; the art follows the quality tier (Medium and above).
+The record id stays `neon@7` (never shipped). Steps 1b and 10 above record the 4000 m lap as it was built;
 where their lap metres differ from this step, this step holds.
 
 ### Sectors (`src/neon-scenery-plan.ts`, `NEON_SECTORS`; legs in `src/classic-road-routes.ts`)
@@ -380,7 +380,7 @@ Rules, on top of step 10's:
 - No stretch of more than 600 m without a ring line, a section, a gameplay prop or a landmark.
 - Rings: at least 22 per km on the default seed. Pickups keep the classic density per km.
 
-### Scenery under `?look=3d` (`src/neon-scenery-plan.ts`)
+### Scenery on Medium and above (`src/neon-scenery-plan.ts`)
 
 - The six approved sectors keep their kit and landmarks at their new lap metres: portals 698 and 902, rail segments
   from 711.875, expressway piers and parapet from 2857, arch 6500, sculpture 9400, footbridges 150 and 330.
@@ -439,14 +439,14 @@ Measured 2026-11-15 on one desktop machine; per-device numbers and captures are 
 - [x] Reachable: the bot laps in 87.0 s (36.1 s) and takes every line whole on the default seed and on the 12 seeds.
 - [x] `node --test tests/module-size.test.js`, `npm run typecheck`, `npm test`, `npm run build`.
 - [x] Real WebGL, `--retries=0`: 231 tests pass in the 32 browser specs that name Neon (4 capture-only tests skip
-  by design), among them `tests/neon-look-browser.spec.js` (12, with the procedural city without `?look=3d` and on
+  by design), among them `tests/neon-look-browser.spec.js` (12, with the procedural city without `?look=3d` (historical; gate removed) and on
   Low), `tests/ring-sfx-browser.spec.js` and `tests/phase5-world-tour-browser.spec.js`; `npm run test:layout`, 59 of
   59. Two locks were stale and are re-pinned: the bend metre in `tests/classic-corners-browser.spec.js` (52300 →
   50580) and the HUD race length in `tests/depth-browser.spec.js` (4.00 → 10.00). Not run: `make verify`, the cloud
   emulator spec.
-- [x] High draw calls in a race under `?look=3d`, cap 380 (`tests/neon-look-browser.spec.js`): grid 330, boulevard
+- [x] High draw calls in a race under `?look=3d` (historical; gate removed), cap 380 (`tests/neon-look-browser.spec.js`): grid 330, boulevard
   191, underpass 178, market 173, expressway 164, harbour 179, harbour mole 167, canal 175, oldtown 177, plaza 203.
-- [x] Captures looked at: one per sector, the home showcase and the minimap, High, `?look=3d`. Not approved; what
+- [x] Captures looked at: one per sector, the home showcase and the minimap, High, `?look=3d` (historical; gate removed). Not approved; what
   looks wrong is under *Open for the owner*.
 - [x] Owner art approval of the harbour and oldtown (both provisional). Accepted by eye on 2026-11-16 (Step 22).
 - [ ] Owner playtest of the 10 km lap.
@@ -474,7 +474,7 @@ Open for the owner:
 Branch `feature/neon-landmark-placement`. Replaces step 11's provisional harbour: the quay on the right, the mole
 stand-in and the harbour row of the reserved-footprint table. Oldtown (its gate, lantern span and clock tower, and
 its reserved footprint) moved to `feature/neon-oldtown-dressing`. The near-black containers, hull and brick, and any
-rebuild of `neon-landmarks.glb`, moved to `feature/neon-landmark-light`. Nothing here changes without `?look=3d`, on
+rebuild of `neon-landmarks.glb`, moved to `feature/neon-landmark-light`. Nothing here changes without `?look=3d` (historical; gate removed), on
 Low or on another track.
 
 ### As placed (`src/neon-scenery-plan.ts`, `src/neon-scenery.ts`)
@@ -511,7 +511,7 @@ Measured 2026-11-15 on one desktop machine; per-device numbers and captures are 
 - [x] `tests/neon-parity.test.js` hashes unchanged.
 - [x] `node --test tests/module-size.test.js`, `npm run typecheck`, `npm test` (3127 pass, 0 fail) and
   `npm run build`.
-- [x] High draw calls in a race under `?look=3d`, cap 380 (`tests/neon-look-browser.spec.js`, 12 of 12 pass). The
+- [x] High draw calls in a race under `?look=3d` (historical; gate removed), cap 380 (`tests/neon-look-browser.spec.js`, 12 of 12 pass). The
   harbour probes moved to the yard and the pieces:
 
   | Probe | Calls |
@@ -558,7 +558,7 @@ Still wrong:
 
 Branch `feature/neon-oldtown-dressing`. Replaces step 11's provisional oldtown and the oldtown row of the
 reserved-footprint table: with step 12 every landmark piece is placed, so `NEON_LANDMARKS_NOT_PLACED` is empty and
-`NEON_RESERVED` is gone (the square's footprint is `NEON_SQUARE`). Nothing here changes without `?look=3d`, on Low or
+`NEON_RESERVED` is gone (the square's footprint is `NEON_SQUARE`). Nothing here changes without `?look=3d` (historical; gate removed), on Low or
 on another track.
 
 ### As placed (`src/neon-scenery-plan.ts`)
@@ -593,7 +593,7 @@ Measured 2026-11-16 on one desktop machine; per-device numbers and captures are 
   `tests/neon-highlights.test.js` (the unplaced list; empty once merged with step 12).
 - [x] `tests/neon-parity.test.js` hashes unchanged.
 - [x] `node --test tests/module-size.test.js`, `npm run typecheck`, `npm test` and `npm run build`.
-- [x] High draw calls in a race under `?look=3d`, cap 380, read by a capture probe with the car held at each point:
+- [x] High draw calls in a race under `?look=3d` (historical; gate removed), cap 380, read by a capture probe with the car held at each point:
   grid 332 at most, underpass straight 192, oldtown 171 to 201 (181 to 195 before), plaza court 208; home 254 (cap
   540).
 - [x] Captures looked at against step 11's: the gate approach, the lantern bends, the square and tower, the sign,
@@ -640,14 +640,14 @@ Measured 2026-11-16 on one desktop machine; captures and per-probe numbers in th
   light is not the floodlit wall*), `tests/neon-lighting.test.js` (dome pins and the key direction follow the
   manifest).
 - [x] `node --test tests/module-size.test.js`, `npm run typecheck`, `npm test` and `npm run build`.
-- [x] Before and after captures compared by region at High under `?look=3d`, rain night: harbour road ahead mean
+- [x] Before and after captures compared by region at High under `?look=3d` (historical; gate removed), rain night: harbour road ahead mean
   luma 210 with 1.3% clipped to 104 with none; car 162 with 5.1% clipped to 72; the other sectors within capture
   noise. Not approved; see below.
 - [x] Draw calls: measured in Step 20. The change replaces four textures and two light parameters and adds no
   mesh, material, light or pass.
 - [ ] `tests/neon-look-browser.spec.js` and every other browser spec: not run, on the owner's instruction of
   2026-11-16.
-- [ ] No capture of Coast, of Neon without `?look=3d`, of Ultra (8K dome) or of a phone.
+- [ ] No capture of Coast, of Neon on Low (was: without `?look=3d`; historical; gate removed), of Ultra (8K dome) or of a phone.
 - [x] Owner art approval of the harbour sky. Accepted by eye on 2026-11-16 (Step 22).
 
 Still wrong:
@@ -723,7 +723,7 @@ Measured 2026-11-16 on one desktop machine; captures and per-probe numbers in th
   aprons, the pavement strings, the sculpture, the underpass fronts, the boulevard roofline, the skyline's depth).
 - [x] `tests/neon-parity.test.js` hashes unchanged.
 - [x] `node --test tests/module-size.test.js`, `npm run typecheck`, `npm test` and `npm run build`.
-- [x] High draw calls under `?look=3d`, read by a capture probe: race 332 at most (rain, underpass), cap 380; home
+- [x] High draw calls under `?look=3d` (historical; gate removed), read by a capture probe: race 332 at most (rain, underpass), cap 380; home
   255, cap 540.
 - [x] Before and after captures looked at, night and rain night, 19 probes. Not approved; see below.
 - [ ] `tests/neon-look-browser.spec.js` and every other browser spec: not run, on the owner's instruction of
@@ -761,7 +761,7 @@ Measured 2026-11-16 on one desktop machine; captures and per-probe numbers in th
   *keeps the download's horizontal irradiance*, *only LED facades are softened*), `tests/coast-sea.test.js`
   (*mirrors the skyline sharper*), and the dome, 1k and lighting pins.
 - [x] `node --test tests/module-size.test.js`, `npm run typecheck`, `npm test` and `npm run build`.
-- [x] Captures compared by region at High under `?look=3d`: rain harbour road 128/105/82 to 80/77/86; dry-night
+- [x] Captures compared by region at High under `?look=3d` (historical; gate removed): rain harbour road 128/105/82 to 80/77/86; dry-night
   harbour road-ahead luma 36 to 44; nothing clipped. Race draw calls 316 at most. Not approved; see below.
 - [ ] `tests/neon-look-browser.spec.js` and every other browser spec: not run, on the owner's instruction of
   2026-11-16.
@@ -876,7 +876,7 @@ Still wrong:
 ## Step 20: closing audit (2026-11-16)
 
 Every "Still wrong" entry of steps 12 to 19 and every open item that is not the owner's, checked against fresh
-WebGL captures of the lap under `?look=3d` (High, 1280x720, night and rain night, 30 probes each from the grid to
+WebGL captures of the lap under `?look=3d` (historical; gate removed) (High, 1280x720, night and rain night, 30 probes each from the grid to
 the plaza court). One state per entry:
 
 - **(a)** fixed in this step, RED test first, capture before and after;
@@ -928,7 +928,7 @@ Captures are observations, not approval. Captures, logs and numbers: ignored `..
 | 22 | Canal: warm-gold embankment on the dome, not the concept's violet sky (12, parity sheet) | b | Choice: kit skyline in front of the dome, not a tinted dome. A tint is a sky rebuild (every pin moves, the 1k map and the key with it) for one sector; the towers carry the concept's teal and magenta, add no texture and leave Coast alone. `08`, `08b`, `08c`: towers frame both sides |
 | 22b | A small warm patch of dome still shows through the arch (found here) | c | The same choice: closing it is the sky rebuild above, or a tower on the road's own line, where the route and its rings run |
 | 23 | Across-the-water skyline stands in the sea (12) | c | The canal is over water (N3, N7) and the land is one mesh; the far towers are sunk 6 to 66 m and turned so they read as a far waterfront (`08b`). A bank under them is a second ground mesh |
-| 24 | Cherry tree reads as opaque puffs (18) | c | The city kit is one opaque material; cut-out blossom is a second material and alpha overdraw on up to 8 trees a chunk. Seen at `02b`, `03c` |
+| 24 | Cherry tree reads as opaque puffs (18) | step 23, capture pending | Cut-out blossom on the tree's own pools: alpha test, no blending, no draw added, one program added. Seen at `02b`, `03c`; the after captures are not taken yet |
 | 25 | Emissive 1.7 city, 1.5 landmarks not judged against the darker dome (18) | b | Judged in this step's captures: tubes, blade signs and parapet bands keep their colour in every probe looked at. The two pieces that did not are entries 1 and 4 |
 | 26 | Ship's stern and funnel dark, deckhouse bright (15) | a, step 21 | `a5f06b60`; funnel 0.023 to 0.366 (deckhouse 0.464), stern 0.0444 to 0.0888; the two thin guards now hold by 0.004 (relief 0.954 of 0.95) and 0.013 (hull 0.068 of 0.055); `07e`, `07h`, `07j` before and after |
 | 27 | Stack's white boxes flat pale grey (15) | c, step 21 | Lifted, not fixed: white relief 0.972 to 0.980 of the colour map's 1.0. More light costs relief (0.908 at +20% power, guard 0.95) and less light nears the lit floor (0.989 at lit 0.0561, floor 0.05); `07g` reads about the same before and after |
@@ -961,18 +961,19 @@ Owner items:
 - Art approval of the look (every step's art approval box, and the scored parity sheet).
 - Playtest of the 10 km lap.
 - Phone, portrait and landscape (`make phone-diag`).
-- Approval to merge; until then the look stays opt-in behind `?look=3d`.
+- Approval to merge; until then the look stays opt-in behind `?look=3d` (historical; gate removed).
 - The owner's instruction of 2026-11-16 keeps every browser spec not run.
 
 Accepted limits (entries marked c above), by what would lift them:
 
 - A landmark kit budget decision: entry 29. Entries 2 and 26 were fixed in step 21 inside the budget; entry 27
   is held between two guards (step 21).
-- A city kit rebuild with a second material: entry 24. Entry 6 was fixed in step 21.
+- A city kit rebuild with a second material: none left. Entry 24 was cut out in step 23 without one; entry 6 was
+  fixed in step 21.
 - A new panorama or sky rebuild: entries 9 to 12, 14 and 22b.
 - A shader or lighting change: entries 13, 28 and 32.
 - A second ground mesh or mirror draw against the draw-call caps: entries 16 and 23.
-- Not captured in this audit: Medium, Ultra (8K dome), Coast, and Neon without `?look=3d`. The two fixes touch
+- Not captured in this audit: Medium, Ultra (8K dome), Coast, and Neon without `?look=3d` (historical; gate removed). The two fixes touch
   only the kit layer, which draws nothing outside the look.
 
 ## Step 21: landmark re-light and a second podium (2026-11-16)
@@ -1030,7 +1031,7 @@ logs and numbers: ignored `../audits/neon-landmark-relight/` (`before-*` at `0cf
 
 ## Step 22: owner decisions at close (2026-11-16)
 
-- [x] Merge into `develop`: approved by the owner on 2026-11-16. The look stays opt-in behind `?look=3d`.
+- [x] Merge into `develop`: approved by the owner on 2026-11-16. The look stays opt-in behind `?look=3d` (historical; gate removed).
 - [x] Owner art approval: the owner accepted Neon Downtown's look by eye on 2026-11-16. Every step's art approval
   box is ticked on that basis. The scored parity sheet's sign-off (spec v2 §8.1) is separate and stays open.
 - [ ] Owner playtest of the 10 km lap, and the phone measurement in portrait and landscape (`make phone-diag`):
@@ -1039,6 +1040,47 @@ logs and numbers: ignored `../audits/neon-landmark-relight/` (`before-*` at `0cf
   GO: not measured, on the owner's instruction (no browser runs). Not verified.
 - Accepted limits carried forward unchanged: Steps 20 and 21.
 
+## Step 23: cut-out blossom on the cherry tree (2026-11-19)
+
+Owner decision 2026-11-19: build it now, before the phone measurement, and record the desktop numbers before and
+after.
+
+- [x] The premise in entry 24 was wrong. A second material does not cost a draw. Every piece is already its own
+  pooled `InstancedMesh`, one draw per band. The cherry tree (`prop`) has a near pool and no far pool.
+- [x] `src/neon-blossom.ts`: the cherry tree's pool wears its own copy of the city kit material.
+  - The copy uses `alphaTest` 0.5, with `transparent` false and `depthWrite` on. The kit's front-face culling stays.
+  - Florets are cut out only inside the blossom cell of the atlas (`NEON_BLOSSOM_CELL`). The bark lies outside
+    that cell.
+  - A puff that turns away from the camera loses more florets, so its outline goes ragged.
+  - Where a floret shrinks below a pixel, the cut fades out. That stops the far trees from shimmering.
+  - Low draws no kit, so Low is unchanged.
+- [x] Guards, RED first:
+  - `tests/neon-scenery.test.js` (*cut-out blossom copy*): the cut sits between the colour map and the alpha
+    test, no pool is added, other pieces stay opaque, and dispose frees the copy but never the GLB's material.
+  - `tests/neon-city-glb.test.js` (*the blossom fills the cell*): on every LOD, the crown is inside the cell and
+    the trunk is outside it.
+- [x] Before numbers: desktop, headless Chrome, rain-night race at 1440 × 900.
+  - Columns: probe, peak draw calls, p50 / p95 ms, triangles.
+  - High has 115 programs and Medium has 111.
+
+  | Probe | High | Medium |
+  | --- | --- | --- |
+  | grid | 321, 20.3 / 24.8, 244,243 | 284, 11.3 / 13.8, 167,318 |
+  | boulevard 200 m | 337, 16.5 / 22.8, 205,452 | 307, 11.8 / 13.6, 163,070 |
+  | underpass straight 1050 m | 206, 17.4 / 26.6, 236,663 | 302, 11.3 / 13.6, 180,485 |
+  | market 1500 m | 191, 13.5 / 16.1, 246,368 | 296, 11.1 / 13.5, 188,999 |
+  | oldtown 7600 m | 191, 15.3 / 20.5, 252,398 | 177, 10.5 / 12.5, 177,988 |
+  | plaza approach 9200 m | 227, 13.7 / 18.1, 312,668 | 203, 10.3 / 11.3, 230,636 |
+  | plaza 9350 m | 213, 14.2 / 17.8, 296,615 | 196, 10.1 / 11.1, 228,321 |
+
+- [ ] After numbers and captures (boulevard and plaza against concept frames `02b`, `03c`): not taken.
+  - The owner told us on 2026-11-19 not to run any browser test.
+  - Draw calls and triangles are unchanged by construction. The unit test shows no pool is added, and the
+    geometry is untouched. So the High race peak stays 337 of 380, but only by reasoning, not by measurement.
+  - The extra cost is one shader program and fragment work on the crown. That cost is not measured.
+  - `tests/neon-look-browser.spec.js` was not run either.
+- [ ] Phone (`make phone-diag`), portrait and landscape: p50 / p95 with the cut-out. Still pending.
+
 ## By device (repeat per machine; evidence in ignored `../audits/`)
 
 - [x] Desktop Apple silicon baseline for Neon's current look: every selectable map on High and Ultra with p50/p95,
@@ -1046,7 +1088,7 @@ logs and numbers: ignored `../audits/neon-landmark-relight/` (`before-*` at `0cf
 - [x] Re-verify the Blender / MCP live scene query on the machine that builds the kit (Phase 0 passes are never
   reused across devices). One Mac, 2026-11-14: addon status and a live scene read both answered; report in
   `../audits/`.
-- [x] Desktop p50/p95, draw calls and triangles for the new Neon look, per tier, with and without `?look=3d`, home
+- [x] Desktop p50/p95, draw calls and triangles for the new Neon look, per tier, with and without `?look=3d` (historical; gate removed), home
   and race (one real-GPU Mac, 2026-11-15, `d2a76328`; table in `../audits/`). High with the look stays under both
   N6 caps; triangles rise by about 80k to 110k on High and Ultra.
 - [ ] Phone (`make phone-diag`), portrait and landscape: p50/p95 and a sustained run. Needs the owner's hardware.

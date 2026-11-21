@@ -29,7 +29,11 @@ function viewerClosed(time: number | null) {
   if (fromHero && time !== null) inline.currentTime = time;
   if (resumeHero && !releaseView.compact && document.querySelector('#whats-new-screen[open]')) inline.play().catch(() => { /* autoplay refused: the poster stays */ });
 }
-const zoomImage = (src: string, label: string, event: Event) => enlarge({ kind: 'image', src, label }, event.currentTarget as HTMLElement);
+const zoomImage = (src: string, label: string, event: Event) => {
+  const trigger = event.currentTarget as HTMLElement;
+  // Zoom the file the browser actually chose for this device and orientation.
+  enlarge({ kind: 'image', src: trigger.querySelector('img')?.currentSrc || src, label }, trigger);
+};
 const clipMedia = (clip: ReleaseClipView, label: string): ZoomedMedia => ({ kind: 'video', src: clip.src || clip.source, poster: clip.poster, source: clip.source, label });
 // A highlight's poster opens its clip enlarged; the hero (playing inline) opens from its corner button, or from a tap on the clip itself.
 const playClip = (clip: ReleaseClipView, label: string, event: Event) => enlarge(clipMedia(clip, label), event.currentTarget as HTMLElement);
@@ -82,7 +86,14 @@ function zoomHero() {
             <ReleasePlayBadge />
           </button>
           <button v-else-if="entry.image" type="button" class="release-zoom" :aria-label="entry.zoomLabel" @click="zoomImage(entry.image, entry.title, $event)">
-            <img :src="entry.image" alt="" loading="lazy" @error="hideBrokenThumbnail(index)">
+            <picture>
+              <source v-if="entry.responsiveImages?.tabletPortrait" media="(orientation: portrait) and (min-width: 650px)" :srcset="entry.responsiveImages.tabletPortrait">
+              <source v-if="entry.responsiveImages?.portrait" media="(orientation: portrait)" :srcset="entry.responsiveImages.portrait">
+              <source v-if="entry.responsiveImages?.landscape" media="(orientation: landscape) and (max-width: 960px)" :srcset="entry.responsiveImages.landscape">
+              <source v-if="entry.responsiveImages?.tablet" media="(max-width: 1399px)" :srcset="entry.responsiveImages.tablet">
+              <source v-if="entry.responsiveImages?.desktop" media="(min-width: 1400px)" :srcset="entry.responsiveImages.desktop">
+              <img :src="entry.image" alt="" loading="lazy" @error="hideBrokenThumbnail(index)">
+            </picture>
           </button>
           <div><span class="release-kind">{{ entry.kindLabel }}</span><strong>{{ entry.title }}</strong><p>{{ entry.description }}</p></div>
         </article>
@@ -95,8 +106,14 @@ function zoomHero() {
   </dialog>
 </template>
 <style scoped>
+.release-panel { display: grid; grid-template-columns: minmax(0, 1fr); row-gap: 12px; }
+.release-meta { margin: 0; }
+@media (max-height: 420px) and (orientation: landscape) {
+  .release-panel { row-gap: 8px; }
+}
 .release-zoom { display: block; width: 100%; padding: 0; border: 0; border-radius: 8px; background: none; cursor: zoom-in; }
 .release-zoom[hidden] { display: none; }
+.release-zoom picture { display: block; width: 100%; }
 /* Tapping a picture or clip, or getting focus back when its enlarged view closes, never flashes a focus ring. */
 .release-zoom, .release-zoom-corner, .release-hero-frame video, .release-play { -webkit-tap-highlight-color: transparent; }
 /* Hugs the centered clip so the enlarge button sits on its corner: 480 px wide landscape, height-sized portrait. */
@@ -108,7 +125,7 @@ function zoomHero() {
 /* A highlight's poster is a play action, not a zoom. */
 .release-play { position: relative; display: block; width: 100%; padding: 0; border: 0; border-radius: 8px; background: none; cursor: pointer; }
 .release-play :deep(.release-play-badge) { --badge: 36px; }
-.release-preview { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; margin-bottom: 10px; padding: 4px 12px 4px 4px; border: 1px solid #5c7488; border-radius: 8px; background: #1b3044; color: #eefbff; font: inherit; cursor: pointer; }
+.release-preview { display: flex; justify-self: start; align-items: center; gap: 10px; min-height: 44px; padding: 4px 12px 4px 4px; border: 1px solid #5c7488; border-radius: 8px; background: #1b3044; color: #eefbff; font: inherit; cursor: pointer; }
 .release-preview img { width: 72px; height: 44px; object-fit: cover; border-radius: 4px; }
 .release-preview:focus-visible, .release-zoom:focus-visible, .release-zoom-corner:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .release-zoom[data-focus-returned], .release-zoom-corner[data-focus-returned] { outline: none; } /* set by ReleaseMediaViewer until blur */

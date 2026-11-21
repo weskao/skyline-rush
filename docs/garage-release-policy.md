@@ -8,7 +8,7 @@ The Garage contains two distinct state machines. **Release mode** decides which 
 | --- | --- | --- | --- |
 | `coming-soon` | Localized “即將推出 / Coming soon” placeholder | Disabled; preserves PAINTS | Only locked component and neutral palette; no trial controller, selected artwork or private assets |
 | `trial` | Live VFX catalog and safe Preview/Try actions | Temporary access is session-only and account-scoped; the last pick is remembered (not ownership); no permanent ownership grants | **Approved for a public free-trial milestone**, after release gates pass |
-| `released` | Live VFX catalog | Only already-owned or default cosmetics can equip; no free trial | Intended only after genuine backend entitlement checking and separate release approval |
+| `released` | Live VFX catalog | Catalog equip requires ownership. The Wave 3 preview switch can enable a separate temporary VFX selection through trial redemption. | Formal ownership remains gated on server verification and separate release approval |
 
 ## Architecture (Strategy, Adapter, SOLID)
 
@@ -17,6 +17,13 @@ The Garage contains two distinct state machines. **Release mode** decides which 
 - **Single responsibility:** the UI displays availability, the trial/session controller manages temporary selections, the palette supplies shader-only presentation, and the build selector decides what is distributed.
 - **Open/closed:** new release phases can be added by a new strategy module and explicit allowlist entry, rather than rewriting race physics. No factory hierarchy or new dependency.
 - **Interface segregation:** the disabled strategy provides only no-op account/selection callbacks and neutral skin IDs. It has no purchasing, grants or storage writes.
+
+
+## Wave 3 preview storage switch
+
+The release selector in `scripts/garage-release-build.mjs` selects the Wave 3 UI and race aliases together with `#wave3-preview-store`. Vite supplies the same selection to the browser and checks the emitted bundle for the chosen storage strategy. `Wave3ExperiencePort` continues to own settlement and UI operations. Guests use the existing device adapter, and signed-in preview users use the Firestore adapter.
+
+The preview is strictly opt-in: only `VITE_WAVE3_FIRESTORE_PREVIEW=1` enables it, in any Vite mode. Omitting the switch or setting `=0` turns off Firestore and removes Wave 3 from a `released` build. The bundle fence keys on `WAVE3_PREVIEW_STORE_MARKER`, a string only the Firestore preview store contains, because the always-on account cleanup names the preview collection in every bundle. In that mode the regular VFX catalog remains available. With the switch on, a redeemed Wave 3 cosmetic may render as a temporary override in `released`. The regular catalog continues to enforce its ownership check. See [cloud-save.md](cloud-save.md#wave-3-firestore-preview) for build commands and database cleanup.
 
 ## Quick local checks
 
@@ -36,7 +43,7 @@ Unknown/empty mode strings fail Vite configuration. **Do not use query strings, 
 
 The approved release direction is **free cosmetic try-on**, not purchase, checkout, permanent unlock or a payment trial. `.github/workflows/ci.yml` now explicitly pins `deploy.env.GARAGE_VFX_RELEASE_MODE: trial` **on this feature branch**, ready to be merged only after verification. Default `npm run build` stays `coming-soon` for fail-closed unit/locked-artifact testing; an explicit `GARAGE_VFX_RELEASE_MODE=trial npm run build` builds the release candidate and the artifact audit checks that the catalog and trial artwork exist. This is a reviewed *build-time* deployment strategy, not a query-string or localStorage unlock.
 
-**User-facing terms:** All 22 cosmetic selections may be previewed; non-default unowned effects can be temporarily equipped with **Try free / 免費試用**. A trial remains active in this **current app page session** (not a 24-hour or seven-day offer). The Garage **remembers the last pick, which is not ownership**: after a reload the remembered pick is re-applied only while the trial is active (see *Remembered picks* below); an account switch restores that account's own picks, never another account's. It never writes an owned grant, wallet amount, purchase, payment, trial entitlement or automatic persistent upgrade to Cloud Save. Regular star-unlocked PAINTS remain unchanged. A user may open the Garage and try again during a new visit; no pricing, deadline or scarcity is implied.
+**User-facing terms:** All 28 cosmetic selections may be previewed; non-default unowned effects can be temporarily equipped with **Try free / 免費試用**. A trial remains active in this **current app page session** (not a 24-hour or seven-day offer). The Garage **remembers the last pick, which is not ownership**: after a reload the remembered pick is re-applied only while the trial is active (see *Remembered picks* below); an account switch restores that account's own picks, never another account's. It never writes an owned grant, wallet amount, purchase, payment, trial entitlement or automatic persistent upgrade to Cloud Save. Regular star-unlocked PAINTS remain unchanged. A user may open the Garage and try again during a new visit; no pricing, deadline or scarcity is implied.
 
 **Release gates still required:** Full exact-HEAD CI on the feature branch, true 3D WebGL and phone UI sign-off, nontransactional session/account/reload tests, approval of the final feature integration into `develop`, full `develop` and `main` CI, then a separate explicit public release/deploy action. Editing the mode here does **not** publish the live website. No purchase/checkout/payment SDK is enabled. Do not publish the current test/staging bundle. Returning `deploy.env.GARAGE_VFX_RELEASE_MODE` to `coming-soon` is a rollback for a **future newly built** artifact; it cannot erase files that were already downloaded or cached.
 

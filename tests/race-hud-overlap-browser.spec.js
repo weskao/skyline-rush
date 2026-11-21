@@ -1,8 +1,10 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { ciTimeout } from './helpers/ci.js';
 import { resizeTo } from './helpers/viewport.js';
 import { settled } from './helpers/test.js';
+import { clickLobbyOption } from './helpers/home-lobby.js';
 // CI speed: the four touch sizes without a fold share one booted page per (locale, HUD) pair and are resized in place; each size is
 // also freshly booted in one pair. Desktop and the two fold layouts keep their own boot (touch/fold are fixed per browser context).
 
@@ -131,14 +133,23 @@ async function bootRace(page, locale, hud, segments) {
 async function measureHud(page, viewport, locale, hud, failures) {
   const label = `${viewport.width}x${viewport.height}/${locale}/${hud}`;
   // A NITRO activation raises the event callout, the transient overlay most likely to land on other blocks.
-  await page.evaluate(() => Object.assign(window.gameplay.race.player, { x: 0, speed: 80, nitroTime: 4 }));
-  // Polled every frame: a callout lives ~0.85s of race time, shorter than the default poll interval on a slow runner.
-  await page.waitForFunction(() => !document.querySelector('#event-callout').hidden, null, { polling: 'raf', timeout: ciTimeout(5_000) });
+  const showCallout = await page.evaluate(async () => {
+    const { race } = window.gameplay;
+    const callout = document.querySelector('#event-callout');
+    Object.assign(race.player, { x: 0, speed: 80, nitroTime: 4 });
+    // Observe the real HUD on its own frames. A slow renderer can spend more than 15 wall-clock seconds before GO clears.
+    const deadline = race.elapsed + 2;
+    while (callout.hidden && race.phase === 'racing' && race.elapsed < deadline) await new Promise(requestAnimationFrame);
+    return !callout.hidden;
+  });
+  expect(showCallout, 'NITRO callout appears in the same race').toBe(true);
   const args = { hud: HUD, pausePanel: PAUSE_PANEL, pauseClearOf: PAUSE_CLEAR_OF, minGap: MIN_GAP };
-  // The callout stays off the road view: the same centre rectangle pickPeripheralSlot (src/race-feedback-placement.ts) avoids.
-  const scene = await page.locator('#world').boundingBox();
-  const road = { left: scene.x + scene.width * 0.325, right: scene.x + scene.width * 0.675,
-    top: scene.y + scene.height * 0.2, bottom: scene.y + scene.height * 0.72 };
+  // The canvas spans the hinge, but the road is framed on the right pane of a vertical fold and the upper pane of a horizontal fold.
+  const scene = viewport.segments
+    ? viewport.segments[viewport.segments[0].top === viewport.segments[1].top ? 1 : 0]
+    : { left: 0, top: 0, width: viewport.width, height: viewport.height };
+  const road = { left: scene.left + scene.width * 0.325, right: scene.left + scene.width * 0.675,
+    top: scene.top + scene.height * 0.2, bottom: scene.top + scene.height * 0.72 };
   // The progress bar (.progress-bar; mode rows stay in .race-progress) and ROAD/FLIGHT mode chip dock at the edges too (persistent blocks must never sit on the road view).
   // Phones show only the three nearby leaderboard rows, docked beside POSITION off the road view; desktop and tablet keep all eight.
   const phone = viewport.touch && (viewport.width <= 760 || viewport.height <= 500);
@@ -272,7 +283,7 @@ for (const { width, height, hud } of [{ width: 844, height: 390, hud: 'hybrid' }
       const target = await page.locator('.leaderboard').boundingBox();
       await page.locator('#pause-button').click();
       await settled(page.locator('.overlay-content'));
-      await page.locator('#controls-button').click();
+      await toggleSettingsSection(page, 'driving');
       await page.locator('[data-controls="mode"][value="buttons"]').check();
       await page.locator('[data-controls="hand"][value="right"]').check();
       await page.locator('[data-controls="size"][value="L"]').check();
@@ -320,7 +331,7 @@ for (const [track, selector] of [
   ['volcanic-crown', '[data-upcoming-track="volcanic-crown"]'],
 ]) {
   foldHudTest(`${track} retains legible controls and telemetry on a stacked fold`, async ({ gameplayPage: page }) => {
-    await page.locator(selector).click();
+    await clickLobbyOption(page, selector);
     await page.locator('#start-button').click();
     await page.evaluate(() => { window.gameplay.race.countdown = .01; });
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');

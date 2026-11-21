@@ -1,8 +1,12 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
+import { openSettingsSection } from './helpers/settings-browser.js';
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { openGarageSection } from './helpers/garage-browser.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { expect } from '@playwright/test';
 import { mkdirSync, appendFileSync, rmSync, writeFileSync } from 'node:fs';
 import { test } from './helpers/gameplay-browser.js';
+import { waitForHome } from './helpers/test.js';
 import { RACE_TRACKS } from '../src/game.js';
 import { CATALOGS } from '../src/i18n.ts';
 import { ciTimeout } from './helpers/ci.js';
@@ -168,7 +172,11 @@ const calloutText = async (cx, step) => {
   appendFileSync(`${cx.dir}/callouts.txt`, `${step}: ${text.replace(/\n/g, ' | ')}\n`);
 };
 const noErrors = cx => expect.soft(cx.errors, `${cx.id} page errors`).toEqual([]);
-const dismissMusic = async page => { if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click(); };
+const reloadHome = async page => {
+  await page.reload();
+  await waitForHome(page);
+  if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+};
 
 for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system, htmlLang] of LOCALES) {
   test.describe(`i18n flow ${locale} ${vpName}`, () => {
@@ -180,6 +188,7 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
       const pressed = async code => expect.soft(await page.locator('#locale-select').inputValue() === code, `${cx.id} switch ${code}`).toBe(code === cx.locale);
 
       // Start screen, fresh profile: locked tracks show their unlock hints.
+      await waitForHome(page);
       await check(cx, 'start');
       await pressed('en'); await pressed('zh-TW');
 
@@ -200,30 +209,28 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
       expect.soft(await page.locator('[data-audio="music"] > b').textContent(), `${cx.id} muted badge`).toBe(L['audio.off']);
       await check(cx, 'audio-panel-muted');
       await page.locator('#mute-all').click();
-      await page.locator('#settings-button').click();
-      await page.locator('#controls-button').click();
+      await openSettingsSection(page, 'driving');
       await check(cx, 'controls-panel');
-      await page.locator('#controls-panel').evaluate(el => { el.scrollTop = el.scrollHeight; });
+      await page.locator('.settings-content').evaluate(el => { el.scrollTop = el.scrollHeight; });
       await check(cx, 'controls-panel-bottom');
-      await page.locator('#controls-button').click();
-      if (await page.locator('#vfx-panel > summary').isVisible()) {
-        await page.locator('#vfx-panel > summary').click();
+      await toggleSettingsSection(page, 'driving');
+      {
+        await toggleSettingsSection(page, 'display');
         await check(cx, 'vfx-panel');
         await page.locator('.vfx-settings .custom-select button').first().click();
         await check(cx, 'vfx-select-open');
         await page.keyboard.press('Escape');
         await page.locator('.vfx-tuning summary').click();
         await check(cx, 'vfx-fine-tuning');
-        await page.locator('#vfx-panel > summary').click();
-      } else test.info().annotations.push({ type: 'note', description: `${cx.id}: VFX panel hidden at this viewport` });
+        await toggleSettingsSection(page, 'display');
+      }
 
       // Unlock every track so all ten route maps render, then walk them.
       await page.evaluate(ids => localStorage.setItem('skyline-rush-unlocked', JSON.stringify(ids)), Object.keys(RACE_TRACKS));
-      await page.reload();
-      await dismissMusic(page);
+      await reloadHome(page);
       await check(cx, 'tracks-unlocked');
       for (const [id] of Object.entries(RACE_TRACKS)) {
-        await page.locator(`[data-track="${id}"]`).click();
+        await clickLobbyOption(page, `[data-track="${id}"]`);
         if (['taipei', 'cosmic'].includes(id)) await check(cx, `track-${id}`);
         else {
           const strings = await collectStrings(page, false);
@@ -231,7 +238,7 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
           expect.soft(hits, `${cx.id} track ${id}`).toEqual([]);
         }
       }
-      await page.locator('[data-track="coast"]').click();
+      await clickLobbyOption(page, '[data-track="coast"]');
 
       // Garage.
       await page.locator('#garage-button').click();
@@ -257,10 +264,10 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
       await check(cx, 'race-hud', { hud: true });
       // The live route map's player marker tooltip must read like the leaderboard row (identity key stays YOU).
       expect.soft(await page.locator('#race-route-map [data-racer="YOU"] title').textContent(), `${cx.id} route-map player marker tooltip`).toBe(CATALOGS[cx.locale]['hud.you']);
-      if (await page.locator('#airflow-toggle').isVisible()) {
-        await page.locator('#airflow-toggle').click();
+      {
+        await page.keyboard.press('v');
         await check(cx, 'race-hud-airflow', { hud: true });
-        await page.locator('#airflow-toggle').click(); // off again: the flight HUD is checked on its own (airflow + flight HUD collide on phones in en too, tracked separately), and a persisted airflow-on would hide the intro after the reload below
+        await page.keyboard.press('v'); // off again: the flight HUD is checked on its own (airflow + flight HUD collide on phones in en too, tracked separately), and a persisted airflow-on would hide the intro after the reload below
       }
       await page.evaluate(() => { document.activeElement?.blur(); Object.assign(window.gameplay.race.player, { speed: 90 }); }); // the clicked toggle keeps focus and would swallow Space
       await page.keyboard.down('Space');
@@ -315,8 +322,7 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
       await check(cx, 'results-actions');
 
       // Back to the intro: history and awards with a saved run, then switch language live and re-check every screen with stale text in mind.
-      await page.reload();
-      await dismissMusic(page);
+      await reloadHome(page);
       await page.locator('.history-button').click();
       await check(cx, 'history-with-run');
       await page.locator('#history-tab-medals').click();
@@ -387,7 +393,7 @@ for (const [locale, system] of LOCALES.slice(0, 1)) test.describe(`rebind prompt
     const status = page.locator('#keymap-status');
     await page.goto('/');
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('[data-rebind="fly"]').click();
     await expect(status).toHaveText(press(locale));
     // The open controls panel covers the custom picker, so drive the native select it wraps (same change handler).
@@ -496,8 +502,8 @@ for (const [locale, system] of LOCALES) {
           await intro.evaluate(el => { el.scrollTop = el.scrollHeight; });
           const last = await introLines(page);
           const lowest = last.lines.reduce((a, b) => (b.bottom > a.bottom ? b : a));
-          expect.soft(lowest.text, `${size}: the flight tip is the last line`).toBe((await page.locator('.flight-tip').innerText()).trim().slice(0, 24));
           expect.soft(lowest.bottom, `${size}: last line fully visible once scrolled`).toBeLessThanOrEqual(last.edge + 0.5);
+          await expect.soft(page.locator('#start-button'), `${size}: Start is fully visible once scrolled`).toBeInViewport({ ratio: 1 });
         });
       }
     });

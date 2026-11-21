@@ -1,0 +1,61 @@
+#vehicle-reset-button {
+  display: none;
+  flex: 0 0 44px;
+  min-width: 44px;
+  min-height: 44px;
+  color: #d6f1ff;
+  border-color: #71b3d397;
+  background: #122c42d9;
+  touch-action: manipulation;
+}
+body[data-phase="racing"]:not([data-tutorial], .layout-editing) #vehicle-reset-button {
+  display: grid;
+  grid-template-rows: 18px 12px;
+  place-content: center;
+  place-items: center;
+  gap: 2px;
+}
+#vehicle-reset-button svg { width: 18px; height: 18px; }
+#vehicle-reset-button > span { font-size: 12px; font-weight: 700; line-height: 1; }
+@media (any-pointer: coarse) { #vehicle-reset-button .key-badge { display: none; } }
+
+#race-recovery {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+#race-recovery::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #071421;
+  opacity: var(--recovery-fade, 0);
+}
+
+#race-recovery > span {
+  position: absolute;
+  inset-block-start: max(94px, 22%);
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  width: max-content;
+  max-width: calc(100vw - 28px);
+  padding: 7px 14px;
+  border: 1px solid #80cbe475;
+  border-radius: 4px;
+  background: #091b2ae8;
+  color: #e6f7ff;
+  font: 700 clamp(15px, 2vw, 21px)/1.15 'Barlow Condensed', 'Segoe UI', sans-serif;
+  letter-spacing: .06em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+#race-recovery[data-stage="fall"] > span:first-child {
+  border-color: #ffb27a85;
+  color: #ffe0bd;
+}
+#race-recovery[data-stage="fall"] > span:not(:first-child),
+#race-recovery[data-stage="return"] > span:not(:nth-child(2)),
+#race-recovery[data-stage="assist"] > span:not(:nth-child(3)) { display: none; }

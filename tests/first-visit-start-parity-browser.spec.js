@@ -1,6 +1,13 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test, expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
 import { openLobbyModes } from './helpers/home-lobby.js';
+
+async function chooseNeonTimeAttack(page) {
+  await clickLobbyOption(page, '[data-track="neon"]');
+  await openLobbyModes(page);
+  await page.locator('button[data-race-mode="time"]').click();
+}
 
 test.use({ guideSeen: false });
 
@@ -10,9 +17,7 @@ for (const [width, height, touch] of [[1440, 900, false], [390, 844, true], [844
     test('first Start offers a choice and directly races the selected mode and track', async ({ page }, testInfo) => {
       await page.addInitScript(() => localStorage.setItem('skyline-rush-unlocked', '["coast","neon"]'));
       await page.goto('/', { waitUntil: 'domcontentloaded' });
-      await page.locator('[data-track="neon"]').click();
-      await openLobbyModes(page); // short landscape folds the Mode buttons away
-      await page.locator('button[data-race-mode="time"]').click();
+      await chooseNeonTimeAttack(page);
       await page.locator('#start-button').click();
       const guide = page.locator('#guide-screen');
       await expect(guide).toBeVisible();
@@ -20,6 +25,7 @@ for (const [width, height, touch] of [[1440, 900, false], [390, 844, true], [844
       const firstScreen = guide.locator('#guide-quick');
       await expect(firstScreen).toBeInViewport({ ratio: 1 });
       await expect(firstScreen.locator('li')).toHaveCount(4);
+      await expect(guide.locator('.guide-manual')).toBeHidden();
       await expect(guide.locator('#guide-practice')).toHaveText('Practice first');
       await expect(guide.locator('#guide-start-race')).toBeInViewport({ ratio: 1 });
       await page.screenshot({ path: testInfo.outputPath('first-start.png'), scale: 'css' });
@@ -36,8 +42,7 @@ for (const [width, height, touch] of [[1440, 900, false], [390, 844, true], [844
 test('closing the first choice and returning from practice keep the selected race ready', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('skyline-rush-unlocked', '["coast","neon"]'));
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.locator('[data-track="neon"]').click();
-  await page.locator('button[data-race-mode="time"]').click();
+  await chooseNeonTimeAttack(page);
   await page.locator('#start-button').click();
   await page.keyboard.press('Escape');
   await expect(page.locator('#start-button')).toBeFocused();
@@ -65,6 +70,7 @@ test('old guide and completed-practice records both bypass first-start choice', 
         localStorage.setItem('skyline-rush-whats-new-seen-v1', '999.0.0');
       }, key);
       await page.goto('/', { waitUntil: 'domcontentloaded' });
+      await page.locator('#startup-enter').click();
       await page.locator('#start-button').click();
       await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
       await expect(page.locator('#guide-screen')).toBeHidden();

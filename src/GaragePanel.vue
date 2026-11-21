@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import CollectibleIcon from './CollectibleIcon.vue';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { getLocale, onLocaleChange, t } from './i18n.ts';
 import { garageStudioView, garageView } from './garage-view-state.ts';
 import { GARAGE_ANGLES } from './garage-camera.ts';
-import { icons } from './icons.ts';
+import { collectibleIconUrl } from './collectible-icons.ts';
 import { PAINTS } from './appearance.ts';
 import GarageCarPicker from './GarageCarPicker.vue';
 import CloseButton from './CloseButton.vue';
@@ -17,16 +18,18 @@ import GarageLightingToggle from './GarageLightingToggle.vue';
 import GarageEffectsToggle from './GarageEffectsToggle.vue';
 import GarageSkinCatalog from '#garage-skin-ui';
 import { GARAGE_RELEASE_MODE } from '#garage-release-config';
+const wave3DemoEnabled = wave3DemoExperience !== null;
 const locale = ref(getLocale());
 const storeCatalog = ref<{ openStore: () => void } | null>(null);
 const demo = ref<{ navigate: (page: 'home' | 'store' | 'collection', interactive?: boolean) => void } | null>(null);
 const sections = ['cars', 'paints', 'effects', 'missions', 'store', 'collection'] as const;
+const sectionIcon = { cars: 'car', paints: 'paint', effects: 'effects', missions: 'mission', store: 'cart', collection: 'collection' };
 const section = ref<(typeof sections)[number]>('cars');
 const catalog = ref<HTMLElement>();
 const claimable = ref(0);
 function selectSection(next: typeof section.value): void {
   section.value = next;
-  if (next === 'store' && GARAGE_RELEASE_MODE === 'trial') demo.value?.navigate('store');
+  if (next === 'store' && wave3DemoEnabled) demo.value?.navigate('store');
   if (next === 'collection') demo.value?.navigate('collection');
   if (catalog.value) catalog.value.scrollTop = 0;
 }
@@ -35,34 +38,33 @@ function resetGarage(): void {
   demo.value?.navigate('home', false);
 }
 
-const storeIcon = `${import.meta.env.BASE_URL}feature-assets/garage-store-readiness/raster/store-cart@3x.webp`;
+const storeIcon = collectibleIconUrl('cart-panel');
 let unsubscribe: (() => void) | undefined;
 onMounted(() => {
   unsubscribe = onLocaleChange(value => { locale.value = value; });
 });
 onUnmounted(() => unsubscribe?.());
 const copy = computed(() => locale.value === 'zh-TW' ? {
-  showroom: '3D 車輛展示間', title: '預覽工作室', open: '開啟全螢幕預覽', back: '返回車庫',
+  showroom: '3D 車輛展示間', title: '車庫', open: '檢視模式', back: '結束檢視',
   hint: '拖曳旋轉，雙指或滾輪縮放', angles: ['車頭', '車尾', '側面', '俯視', '斜後方'], free: '自由視角', angle: '鏡頭角度', prevAngle: '上一個角度', nextAngle: '下一個角度',
   left: '向左旋轉', right: '向右旋轉', zoomIn: '放大', zoomOut: '縮小',
-  auto: '環繞', reset: '重設鏡頭', resetShort: '重設', undo: '復原車漆', takeoff: '起飛', land: '降落', wing: '尾翼', collection: '車漆收藏',
+  auto: '環繞', reset: '重設鏡頭', undo: '復原車漆', ground: '平地', flight: '飛行', wing: '尾翼', collection: '車漆收藏',
   coming: GARAGE_RELEASE_MODE === 'coming-soon' ? '外觀特效即將推出' : GARAGE_RELEASE_MODE === 'trial' ? '外觀特效免費試用中：重新載入後記住此帳號最後的選擇；不代表永久擁有' : '外觀特效已開放，裝備須具備擁有權', equipped: '已裝備', owned: '已擁有', locked: '未解鎖',
   cosmetic: '外觀不影響車輛性能', restore: '恢復預設車漆',
   preview: '試看', previewing: '試看中', cars: '車款', paints: '車漆', effects: '特效', missions: '任務',
-  store: GARAGE_RELEASE_MODE === 'trial' ? '試玩商城' : '商店展示', collectionTab: '試玩收藏', ready: '項可領取',
+  store: wave3DemoEnabled ? '試玩商城' : '商店展示', collectionTab: '試玩收藏', ready: '項可領取',
 } : {
-  showroom: '3D vehicle showroom', title: 'PREVIEW STUDIO', open: 'Open full-screen Studio', back: 'Back to Garage',
+  showroom: '3D vehicle showroom', title: 'Garage', open: 'Inspect', back: 'Done',
   hint: 'Drag to rotate. Pinch or scroll to zoom.', angles: ['Front', 'Rear', 'Side', 'Top', '3/4 view'], free: 'Free view', angle: 'Camera angle', prevAngle: 'Previous angle', nextAngle: 'Next angle',
   left: 'Rotate left', right: 'Rotate right', zoomIn: 'Zoom in', zoomOut: 'Zoom out',
-  auto: 'Orbit', reset: 'Reset camera', resetShort: 'Reset', undo: 'Undo paint', takeoff: 'Take off', land: 'Land', wing: 'Wing', collection: 'Paint collection',
+  auto: 'Orbit', reset: 'Reset camera', undo: 'Undo paint', ground: 'Ground', flight: 'Flight', wing: 'Wing', collection: 'Paint collection',
   coming: GARAGE_RELEASE_MODE === 'coming-soon' ? 'Cosmetic VFX coming soon' : GARAGE_RELEASE_MODE === 'trial' ? 'Try VFX for free. Your last pick is remembered on reload for this account; no permanent ownership.' : 'Cosmetic VFX is available; equip requires ownership', equipped: 'Equipped', owned: 'Owned', locked: 'Locked',
   cosmetic: 'Appearance does not change performance', restore: 'Restore default paint',
   preview: 'Preview', previewing: 'Previewing', cars: 'Cars', paints: 'Paints', effects: 'Effects', missions: 'Missions',
-  store: GARAGE_RELEASE_MODE === 'trial' ? 'Demo Store' : 'Store Preview', collectionTab: 'Collection', ready: 'ready to claim',
+  store: wave3DemoEnabled ? 'Demo Store' : 'Store Preview', collectionTab: 'Collection', ready: 'ready to claim',
 });
 const angleName = computed(() => copy.value.angles[GARAGE_ANGLES.indexOf(garageStudioView.angle as typeof GARAGE_ANGLES[number])] ?? copy.value.free);
 const nextPose = computed(() => garageStudioView.mode === 'flight' ? 'ground' : 'flight');
-const poseAction = computed(() => nextPose.value === 'flight' ? copy.value.takeoff : copy.value.land);
 const sectionLabel = (id: typeof section.value) => id === 'collection' ? copy.value.collectionTab : copy.value[id];
 const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equipped'
   : garageStudioView.ownedPaints.includes(id) ? 'owned' : 'locked';
@@ -74,11 +76,13 @@ const isPreviewingPaint = (id: string): boolean =>
 <template>
   <dialog id="garage-screen" @close="resetGarage" class="history-screen garage-screen" :data-page="garageStudioView.page" aria-labelledby="garage-title">
     <header class="garage-heading">
-      <button v-show="garageStudioView.page === 'studio'" id="garage-studio-back" type="button" :aria-label="copy.back">‹ {{ copy.back }}</button>
-      <h2 id="garage-title">{{ garageStudioView.page === 'studio' ? copy.title : (locale === 'zh-TW' ? '車庫' : 'Garage') }}</h2>
-      <button id="garage-studio-open" v-show="garageStudioView.page === 'home'" type="button" class="garage-entry">{{ copy.open }} ↗</button>
-      <CloseButton id="garage-close" label="Close garage" data-i18n-aria-label="garage.close" /></header>
-    <div class="garage-layout">
+      <h2 id="garage-title">{{ copy.title }}</h2>
+      <!-- Inspect mode is a state of the one Garage, not a second page: both buttons sit in the same spot. -->
+      <button id="garage-studio-open" v-show="garageStudioView.page === 'home'" type="button" class="garage-entry garage-inspect-toggle"><CollectibleIcon name="inspect" /><span>{{ copy.open }}</span></button>
+      <button v-show="garageStudioView.page === 'studio'" id="garage-studio-back" type="button" class="garage-inspect-toggle" :aria-label="copy.back"><CollectibleIcon name="inspect" /><span>{{ copy.back }}</span></button>
+      <CloseButton id="garage-close" label="Close garage" data-i18n-aria-label="garage.close"><CollectibleIcon name="close" /></CloseButton></header>
+    <div class="garage-layout" :data-demo-store="wave3DemoEnabled && section === 'store' ? '' : undefined"
+      :data-demo-catalog="wave3DemoEnabled && (section === 'store' || section === 'collection') ? '' : undefined">
       <section class="garage-visual" :aria-label="copy.showroom">
         <div id="garage-preview" class="garage-preview" tabindex="0" role="group" :aria-label="copy.hint" aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown + -">
           <p v-show="garageStudioView.page === 'studio'" class="garage-hint">{{ copy.hint }}</p>
@@ -86,43 +90,46 @@ const isPreviewingPaint = (id: string): boolean =>
         <GarageEffectsToggle :locale="locale" />
         <div class="garage-preview-controls">
           <div class="garage-mode-controls">
-            <button id="garage-pose-action" type="button" :data-garage-mode="nextPose">
-              <svg viewBox="0 0 24 24" aria-hidden="true" v-html="icons.fly"></svg>
-              {{ poseAction }}
+            <button id="garage-pose-action" type="button" role="switch" :aria-label="copy.flight"
+              :aria-checked="garageStudioView.mode === 'flight'" :data-garage-mode="nextPose">
+              <span v-for="pose in (['ground', 'flight'] as const)" :key="pose" :data-active="pose === garageStudioView.mode" aria-hidden="true">
+                <CollectibleIcon :name="pose" />
+                {{ copy[pose] }}
+              </span>
             </button>
             <button type="button" id="garage-wing" role="switch" :aria-checked="garageStudioView.wing">
-              {{ copy.wing }}<span class="garage-switch-track" aria-hidden="true"></span>
+              <CollectibleIcon name="wing" />{{ copy.wing }}<span class="garage-switch-track" aria-hidden="true"></span>
             </button>
             <GarageLightingToggle :locale="locale" />
           </div>
         </div>
         <nav v-show="garageStudioView.page === 'studio'" class="garage-camera-controls" :aria-label="locale === 'zh-TW' ? '鏡頭控制' : 'Camera controls'">
           <div class="garage-camera-actions">
-            <button type="button" id="garage-auto-rotate" :aria-pressed="garageStudioView.autoRotate">{{ copy.auto }}</button>
-            <button type="button" id="garage-zoom-out" :aria-label="copy.zoomOut" :title="copy.zoomOut">−</button>
-            <button type="button" id="garage-zoom-in" :aria-label="copy.zoomIn" :title="copy.zoomIn">＋</button>
-            <button type="button" id="garage-reset" :aria-label="copy.reset" :title="copy.reset">{{ copy.resetShort }}</button>
+            <button type="button" id="garage-auto-rotate" :aria-pressed="garageStudioView.autoRotate" :aria-label="copy.auto" :title="copy.auto"><CollectibleIcon name="orbit" /></button>
+            <button type="button" id="garage-zoom-out" :aria-label="copy.zoomOut" :title="copy.zoomOut"><CollectibleIcon name="zoom-out" /></button>
+            <button type="button" id="garage-zoom-in" :aria-label="copy.zoomIn" :title="copy.zoomIn"><CollectibleIcon name="zoom-in" /></button>
+            <button type="button" id="garage-reset" :aria-label="copy.reset" :title="copy.reset"><CollectibleIcon name="reset" /></button>
           </div>
           <div class="garage-camera-angles">
             <span class="garage-angle-stepper" role="group" :aria-label="copy.angle">
-              <button type="button" id="garage-angle-prev" :aria-label="copy.prevAngle">‹</button>
+              <button type="button" id="garage-angle-prev" :aria-label="copy.prevAngle"><CollectibleIcon name="left" /></button>
               <span id="garage-angle-name" :data-angle="garageStudioView.angle || undefined" role="status" aria-live="polite">{{ angleName }}</span>
-              <button type="button" id="garage-angle-next" :aria-label="copy.nextAngle">›</button>
+              <button type="button" id="garage-angle-next" :aria-label="copy.nextAngle"><CollectibleIcon name="right" /></button>
             </span>
-            <button type="button" id="garage-rotate-left" :aria-label="copy.left" :title="copy.left">↶</button>
-            <button type="button" id="garage-rotate-right" :aria-label="copy.right" :title="copy.right">↷</button>
+            <button type="button" id="garage-rotate-left" :aria-label="copy.left" :title="copy.left"><CollectibleIcon name="undo" /></button>
+            <button type="button" id="garage-rotate-right" :aria-label="copy.right" :title="copy.right"><CollectibleIcon name="redo" /></button>
           </div>
         </nav>
       </section>
       <aside class="garage-collection">
         <nav class="garage-section-nav" :aria-label="locale === 'zh-TW' ? '車庫分類' : 'Garage sections'">
-          <button v-for="id in sections" v-show="id !== 'collection' || GARAGE_RELEASE_MODE === 'trial'"
+          <button v-for="id in sections" v-show="id !== 'collection' || wave3DemoEnabled"
             :key="id" type="button" :data-garage-section="id" :aria-pressed="section === id"
-            :data-wave3-open-store="id === 'store' && GARAGE_RELEASE_MODE === 'trial' ? '' : undefined"
-            :data-wave3-open-collection="id === 'collection' && GARAGE_RELEASE_MODE === 'trial' ? '' : undefined"
+            :data-wave3-open-store="id === 'store' && wave3DemoEnabled ? '' : undefined"
+            :data-wave3-open-collection="id === 'collection' && wave3DemoEnabled ? '' : undefined"
             aria-controls="garage-catalog-scroll" :aria-label="sectionLabel(id)"
             :aria-describedby="id === 'missions' && claimable ? 'garage-claim-count' : undefined" @click="selectSection(id)">
-            <span>{{ sectionLabel(id) }}</span>
+            <CollectibleIcon :name="sectionIcon[id]" /><span>{{ sectionLabel(id) }}</span>
             <small v-if="id === 'missions' && claimable" id="garage-claim-count" class="garage-claim-count" role="status">{{ claimable }} {{ copy.ready }}</small>
           </button>
         </nav>
@@ -138,23 +145,24 @@ const isPreviewingPaint = (id: string): boolean =>
                 <span v-if="isPreviewingPaint(id)" class="garage-preview-badge" aria-hidden="true">{{ copy.previewing }}</span>
                 <span class="garage-paint-meta">
                   <span class="garage-paint-name" :data-i18n="`paint.${id}`">{{ t('paint.' + id, undefined, locale) }}</span>
-                  <span class="garage-paint-badge">{{ copy[paintState(id)] }}</span>
+                  <span class="garage-paint-badge"><CollectibleIcon :name="paintState(id) === 'equipped' ? 'check' : paintState(id) === 'owned' ? 'unlocked' : 'locked'" />{{ copy[paintState(id)] }}</span>
                 </span>
               </button>
             </div>
           </section>
           <section v-show="section === 'effects'">
             <p class="garage-coming">{{ copy.coming }}</p>
-            <GarageSkinCatalog :locale="locale" />
+            <GarageSkinCatalog :locale="locale" :active="section === 'effects'" />
             <p class="garage-cosmetic">{{ copy.cosmetic }}</p>
           </section>
           <section v-show="section === 'missions'">
-            <GarageMissionBoard :experience="GARAGE_RELEASE_MODE === 'trial' ? wave3DemoExperience : null"
+            <GarageMissionBoard :experience="wave3DemoExperience"
               @claimable="claimable = $event" />
             <GarageSourceArtGallery category="garage-rewards-and-missions" />
           </section>
-          <Wave3DemoEntry v-if="GARAGE_RELEASE_MODE === 'trial'" v-show="section === 'store' || section === 'collection'"
-            ref="demo" :locale="locale" embedded @navigate="page => { if (page !== 'home') section = page; }" />
+          <Wave3DemoEntry v-if="wave3DemoEnabled" v-show="section === 'store' || section === 'collection'"
+            ref="demo" :locale="locale" :active="section === 'store'" embedded
+            @navigate="page => { if (page !== 'home') section = page; }" />
           <section v-show="section === 'store'" class="garage-store-concepts">
             <section class="garage-store-entry" data-garage-store-entry
               :aria-label="locale === 'zh-TW' ? '車庫商店' : 'Garage Store concepts'">
@@ -165,7 +173,7 @@ const isPreviewingPaint = (id: string): boolean =>
                 <span>{{ locale === 'zh-TW' ? '瀏覽未來的外觀、組合與收藏。' : 'Preview future cosmetics, bundles and collections.' }}</span>
               </div>
               <button type="button" data-garage-store-open @click="storeCatalog?.openStore()">
-                {{ locale === 'zh-TW' ? '瀏覽商店概念' : 'Browse Store' }}
+                <CollectibleIcon name="cart" />{{ locale === 'zh-TW' ? '瀏覽商店概念' : 'Browse Store' }}
               </button>
             </section>
             <GarageSourceArtGallery ref="storeCatalog" category="garage-store-readiness" />
@@ -174,10 +182,10 @@ const isPreviewingPaint = (id: string): boolean =>
         <footer v-show="section === 'paints'" class="garage-paint-actions">
           <p id="garage-status" class="collection-note" role="status">{{ garageView.status }}</p>
           <button id="garage-equip" type="button" class="controls-reset" :disabled="garageView.equipDisabled"
-            aria-label="Equip finish" data-i18n-aria-label="garage.equip">{{ garageView.equipLabel }}</button>
-          <button v-show="garageView.canUndo" id="garage-paint-undo" type="button" class="garage-restore">{{ copy.undo }}</button>
+            aria-label="Equip finish" data-i18n-aria-label="garage.equip"><CollectibleIcon name="paint" />{{ garageView.equipLabel }}</button>
+          <button v-show="garageView.canUndo" id="garage-paint-undo" type="button" class="garage-restore"><CollectibleIcon name="undo" />{{ copy.undo }}</button>
           <button v-show="garageStudioView.page === 'studio' && !garageView.canUndo" id="garage-restore-default" type="button"
-            class="garage-restore">{{ copy.restore }}</button>
+            class="garage-restore"><CollectibleIcon name="reset" />{{ copy.restore }}</button>
         </footer>
       </aside>
     </div>
@@ -195,6 +203,7 @@ const isPreviewingPaint = (id: string): boolean =>
 #garage-screen .garage-heading { display: flex; align-items: center; gap: 6px; flex: none; min-height: 44px; }
 #garage-screen .garage-heading h2 { margin: 0; flex: 1; min-width: 0; font-size: clamp(18px, 2.4vw, 26px); }
 #garage-screen .garage-heading > button:not(.close-button), #garage-screen .garage-camera-controls button, #garage-screen .garage-entry { min-height: 44px; border: 1px solid #698297; border-radius: 6px; background: #1b3044; padding: 8px 12px; }
+#garage-screen .garage-inspect-toggle { display: inline-flex; align-items: center; gap: 6px; }
 #garage-screen .garage-entry { flex: 0 1 auto; align-self: center; max-width: min(49vw, 240px); border-color: var(--accent); font-weight: 700; line-height: 1.15; font-size: clamp(11px, 1.5vw, 13px); padding-inline: 9px; }
 /* Preserve both 96px artwork columns after the catalog's padding and scrollbar. */
 #garage-screen .garage-layout { min-height: 0; flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) clamp(272px, 27vw, 400px); gap: 8px; }
@@ -238,7 +247,6 @@ const isPreviewingPaint = (id: string): boolean =>
 /* Actual 3D car and studio lighting are rendered by Three.js; CSS owns controls only. */
 #garage-screen.garage-screen { color: #e8f3fb; background: radial-gradient(ellipse at 32% 22%, #193549 0, #0a1624 56%, #060e1b 100%); }
 #garage-screen[data-page="studio"] .garage-heading { border-bottom: 1px solid #28475b; padding-bottom: 3px; }
-#garage-screen[data-page="studio"] .garage-heading h2 { margin-left: 5px; font-style: italic; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
 #garage-screen .garage-kicker { margin: 0; color: #71c8dd; letter-spacing: .2em; font-size: 10px; }
 #garage-screen[data-page="studio"] .garage-visual { background: #091827; border: 1px solid #294858; border-radius: 10px; padding: 4px; }
 #garage-screen[data-page="studio"] .garage-preview { border-color: #31576c; background: #08121f; box-shadow: inset 0 0 50px #06101b; }

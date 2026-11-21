@@ -107,6 +107,7 @@ export function createCoastSea({ sea, seaLines, dome, origin, load, dataset = {}
   water.visible = false;
   sea.add(water);
   let waves: THREE.Texture | 'loading' | 'failed' | null = null, lit: CoastEnvName | null = null, disposed = false;
+  let wanted = false;
   function show(on: boolean, state: string): void {
     water.visible = on; sea.material.visible = seaLines.material.visible = !on;
     if (dataset.coastSea !== state) dataset.coastSea = state;
@@ -114,9 +115,11 @@ export function createCoastSea({ sea, seaLines, dome, origin, load, dataset = {}
   return {
     /** The scenery layer writes its sea-level footprints here (coast-scenery-glb.ts). */
     shore: mask as ShoreSink,
+    get pending(): boolean { return wanted && waves === 'loading'; },
     /** Per frame, after the sky's update: a few assignments unless the track, preset or tier changed. */
     update(trackId: string, preset: string, quality: VfxQuality): void {
       const plan = coastEnvPlan(trackId, preset, quality);
+      wanted = plan.kind !== 'room';
       if (plan.kind === 'room') return show(false, 'procedural');
       if (!waves) {
         waves = 'loading';

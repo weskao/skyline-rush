@@ -77,7 +77,8 @@ for (const viewport of screens) for (const locale of ['en', 'zh-TW']) {
     await expect(board).toBeVisible();
     await expect(board).toContainText(locale === 'en' ? 'Mission center' : '任務中心');
     await expect(board).toHaveAttribute('data-rewards-authority', 'local-demo');
-    await expect(board).toContainText(locale === 'en' ? 'unverified and never server-backed' : '未經伺服器驗證');
+    await expect(board.locator('.garage-mission-notice:not(.garage-period-reset)')).toHaveText(locale === 'en'
+      ? 'Demo progress and trophies are local, disposable and resettable.' : '試玩進度與獎盃僅儲存在本機，可重設。');
     for (const id of missionIds) {
       const card = board.locator('[data-mission-id="' + id + '"]');
       await expect(card).toBeVisible();
@@ -240,7 +241,9 @@ for (const viewport of screens) {
     await page.locator('#garage-button').click();
     await page.locator('[data-wave3-open-store]').click();
     const store = page.locator('[data-wave3-demo-store]');
-    await checkImage(store.locator('[data-wave3-demo-art="demo-points"] img'), 216, 72);
+    // The store wallet row (2a98ebde) shows each balance beside a 26 px icon, 21 px at 600 px wide or less
+    // (wave3-demo-store.css); the square box proves the icon is not squashed (it drew 21x26 on phones).
+    await checkImage(store.locator('[data-wave3-demo-art="demo-points"] img'), 216, viewport.width <= 600 ? 21 : 26);
     await expect(store.locator('.demo-wallet strong')).toHaveText('20');
     await test.info().attach('wave3-a03-wallet-' + viewport.width + 'x' + viewport.height + '.png', {
       body: await store.screenshot(), contentType: 'image/png',

@@ -1,9 +1,10 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { expect } from '@playwright/test';
 import { captureHooks, test, programs } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 
-// Task 5: Coast Medium+ draws the coast-scenery.glb scans (cliffs, rocks, palms, sea arch, rails) instead of the
-// procedural rocks/trees. The GLB attaches before GO and its programs are built by the warmup, never mid-race.
+// Task 5: Coast Medium+ draws the coast-scenery.glb scans (cliffs, rocks, palms, sea arch, rails, lamp posts) instead
+// of the procedural rocks/trees and box lamp posts. The GLB attaches before GO and its programs are built by the warmup, never mid-race.
 // CPU-only CI draws a High frame in ~0.5 s; the 3 s countdown (~70 clamped frames) outlasts the 30 s default.
 const racing = page => expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(30000) });
 const status = page => page.locator('#world').getAttribute('data-coast-scenery');
@@ -62,12 +63,13 @@ test('Coast High stays under the draw-call cap on the home showcase and in a rac
   await withQuality(page, 'high');
   await expect.poll(() => status(page), { timeout: ciTimeout(40000) }).toBe('attached');
   await expect.poll(() => page.locator('#world').getAttribute('data-coast-sea'), { timeout: ciTimeout(40000) }).toBe('water');
-  const far = await page.evaluate(() => { // the far coast: scan cliffs at headland size in the close pools, cones off
-    const { scene } = window.gameScene, sizes = [], m = new window.gameScene.scene.matrix.constructor();
-    for (const name of ['cliff_a', 'cliff_b']) { const mesh = scene.getObjectByName(name); for (let i = 0; i < mesh.count; i++) { mesh.getMatrixAt(i, m); sizes.push(m.getMaxScaleOnAxis()); } }
-    return { headlands: sizes.filter(size => size >= 5).length, cones: scene.children.find(o => o.isInstancedMesh && o.geometry.type === 'ConeGeometry').material.visible };
+  const far = await page.evaluate(() => { // the far coast: headlands in the decimated far pools, none in the 11k close pools, cones off
+    const { scene } = window.gameScene, drawn = names => names.reduce((sum, name) => sum + scene.getObjectByName(name).count, 0);
+    return { headlands: drawn(['cliff_a_far', 'cliff_b_far']), fullScans: drawn(['cliff_a', 'cliff_b']),
+      cones: scene.children.find(o => o.isInstancedMesh && o.geometry.type === 'ConeGeometry').material.visible };
   });
   expect(far.headlands).toBeGreaterThanOrEqual(6);
+  expect(far.fullScans).toBeLessThanOrEqual(8); // one close cliff per 120 m chunk, eight chunks on High; the headlands were 8 more
   expect(far.cones).toBe(false);
   expect(await skyline(page)).toEqual({ city: false, towers: [false, false, false] }); // D1, D2
   expect(await calls()).toBeLessThanOrEqual(DRAW_CALL_CAP.home);
@@ -76,6 +78,41 @@ test('Coast High stays under the draw-call cap on the home showcase and in a rac
   let peak = 0;
   for (let i = 0; i < 6; i++) { await page.waitForTimeout(ciTimeout(300)); peak = Math.max(peak, await calls()); }
   expect(peak).toBeLessThanOrEqual(DRAW_CALL_CAP.race);
+});
+
+/** The GLB lamp posts' luminaires (top of the housing, at its road end: the instance origin is not the pivot, the
+ *  node carries its dequantization offset), world.js's emissive lamp heads (24 boxes) and whether its box posts
+ *  (48 boxes) still draw. */
+const lighting = page => page.evaluate(() => {
+  const { scene } = window.gameScene, m = new scene.matrix.constructor(), v = scene.position.clone();
+  const spots = (mesh, local = [0, 0, 0]) => Array.from({ length: mesh.count }, (_, i) => { mesh.getMatrixAt(i, m); return v.fromArray(local).applyMatrix4(m.premultiply(mesh.matrixWorld)).toArray(); });
+  const boxes = (count, kind) => scene.children.find(o => o.isInstancedMesh && o.geometry.type === 'BoxGeometry' && o.instanceMatrix.count === count && o.material[kind]);
+  const posts = scene.getObjectByName('lamp_post');
+  posts?.geometry.computeBoundingBox();
+  const { min, max } = posts?.geometry.boundingBox ?? {};
+  return { posts: posts ? spots(posts, [(min.x + max.x) / 2, max.y, max.z]) : [], heads: spots(boxes(24, 'isMeshBasicMaterial')), boxPosts: boxes(48, 'isMeshStandardMaterial').material.visible };
+});
+/** GLB posts whose luminaire has no lamp head in it (the head sits .48 m in from the housing's end, .17 m under its
+ *  top; a post on the wrong side or facing away is metres off). Up to two always are: the chunk window starts as far
+ *  as 240 m behind the car, the lamp heads 120 m. */
+const unlit = ({ posts, heads }) => posts.filter(([x, y, z]) => !heads.some(([hx, hy, hz]) => Math.hypot(hx - x, hz - z) < .7 && Math.abs(hy - y) < .3)).length;
+
+test('Coast High stands a modelled lamp post under every lamp head, on the grid and after driving, and drops the box posts', async ({ gameplayPage: page }) => {
+  test.setTimeout(ciTimeout(90000));
+  await withQuality(page, 'high');
+  await expect.poll(() => status(page), { timeout: ciTimeout(40000) }).toBe('attached');
+  await expect.poll(async () => (await lighting(page)).posts.length).toBe(16); // two per 120 m chunk, eight chunks on High
+  await expect.poll(async () => (await lighting(page)).boxPosts).toBe(false);
+  expect(unlit(await lighting(page))).toBeLessThanOrEqual(2);
+  await page.locator('#start-button').click();
+  await racing(page);
+  // Every 60 m the lamp heads used to change sides (a head's side came from its slot in the moving window), so on
+  // every other 60 m stretch all the posts stood opposite their lamps. One sample each 20 m over 160 m, never
+  // retried: a retry would wait for the car to drive into the next, matching stretch.
+  for (let step = 1; step <= 8; step++) {
+    await page.evaluate(() => new Promise(drawn => { window.gameplay.race.player.distance += 20; requestAnimationFrame(() => requestAnimationFrame(drawn)); }));
+    expect(unlit(await lighting(page)), `${step * 20} m on`).toBeLessThanOrEqual(2);
+  }
 });
 
 test('Coast Low never fetches the scenery GLB and keeps the procedural rocks and trees', async ({ gameplayPage: page }) => {
@@ -87,6 +124,7 @@ test('Coast Low never fetches the scenery GLB and keeps the procedural rocks and
   expect(pieces['Coast shoreline rocks'].visible).toBe(true);
   expect(Object.keys(pieces).some(name => /^(cliff_|sailboat_|motorboat)/.test(name))).toBe(false);
   expect(await skyline(page)).toEqual({ city: true, towers: [true, true, true] }); // owner decision 2026-11-14: Low keeps them
+  expect(await lighting(page)).toMatchObject({ posts: [], boxPosts: true }); // Low keeps the box lamp posts
   // This document's own fetches; the fixture's first (default-tier) page may have requested it before the reload.
   const requests = await page.evaluate(() => performance.getEntriesByType('resource').map(e => e.name).filter(n => /coast-(scenery|boats|greenery)\.glb/.test(n)));
   expect(requests).toEqual([]);
@@ -156,7 +194,7 @@ for (const [label, search] of [['plain', ''], ['legacy', '?3d=1&look=3d&model=ro
     const path = test.info().outputPath(`coast-high-${label}.png`);
     await page.screenshot({ path });
     await test.info().attach(`coast-high-${label}`, { path, contentType: 'image/png' });
-    await page.locator('#vfx-panel > summary').click();
+    await toggleSettingsSection(page, 'display');
     await page.locator('select[data-vfx="quality"]').selectOption('low', { force: true });
     await expect(world).toHaveAttribute('data-coast-road', 'procedural');
     await expect(world).toHaveAttribute('data-coast-sky', 'procedural');

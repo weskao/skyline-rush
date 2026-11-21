@@ -80,3 +80,11 @@ export function garageFramedDistance(
   const fit = Math.max(width / (vTan * safeAspect), height / vTan);
   return Math.max(4, depth + fit * (1.12 + (Math.min(safeZoom, 1.6) - .75) * .45));
 }
+
+const SECTION_ANGLES: Readonly<Record<string, string>> = { paints: 'side', effects: 'rear' };
+/** Inspect-mode camera for a Garage section: Effects faces the exhaust, Paints the flank, Cars orbits; others keep it. */
+export function garageSectionCamera(section: string, camera: GarageCamera): { camera: GarageCamera; angle: string } | null {
+  const angle = SECTION_ANGLES[section];
+  const base = section === 'cars' ? defaultGarageCamera() : angle ? garagePreset(angle) : null;
+  return base && { camera: { ...base, zoom: camera.zoom, mode: camera.mode, wing: camera.wing }, angle: angle ?? '' };
+}

@@ -1,13 +1,15 @@
-import { test as base } from './test.js';
+import { seedGtCareer } from './gt-progress.js';
+import { test as base, markStartupSeen } from './test.js';
 import { createServer } from 'vite';
 import { fileURLToPath } from 'node:url';
 import { CARS } from '../../src/car-catalog.ts';
 
 // Inspect the real scene and seed distant scenarios without shipping test hooks in the app.
 export async function captureHooks(page) {
+  await markStartupSeen(page);
   for (const [file, anchor, replacement] of [
     ['main.js', 'let race = createRace();', 'let race = createRace(); window.gameplay = { get race() { return race; } };'],
-    ['world.js', 'scene.add(player);', 'scene.add(player); window.gameScene = { scene, player, renderer, camera, composer };'],
+    ['world.js', 'scene.add(player);', 'scene.add(player); window.gameScene = { scene, player, renderer, camera, composer, get rivals() { return rivals; } };'],
   ]) await page.route(url => url.pathname === `/src/${file}`, async route => {
     const response = await route.fetch();
     const source = await response.text();
@@ -48,6 +50,7 @@ export const test = base.extend({
     await captureHooks(page);
     await seedHeroCar(page);
     await page.goto(`${gameplayURL}${gameplaySearch}`);
+    await page.locator('#start-button').waitFor({ state: 'attached' });
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
     await use(page);
   },
@@ -55,6 +58,7 @@ export const test = base.extend({
 
 // HERO_CAR=crimson-gt reruns the track and equipment matrices with that car equipped.
 export const seedHeroCar = async page => {
+  if (process.env.HERO_CAR === 'crimson-gt') await seedGtCareer(page);
   if (process.env.HERO_CAR) await page.addInitScript(car => localStorage.setItem('skyline-rush-car', JSON.stringify(car)), process.env.HERO_CAR);
 };
 /** MODEL_MANIFEST id those matrices must see on the car: the equipped car's GLB. */

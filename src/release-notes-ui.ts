@@ -42,12 +42,21 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
   const mediaCache = createReleaseMediaCache(clipSources, {
     caches: globalThis.caches, fetch: url => fetch(url), createObjectURL: blob => URL.createObjectURL(blob),
   });
-  // Clips download ahead only while the notes are open, so the hero and any enlarged clip start at once; highlight clips
-  // draw only their poster and play button. A reader who moved on meanwhile keeps their view (the stale view just updates unseen).
-  function loadVisibleClips() {
+  // Give the inline hero the first download. Highlight clips only show a poster until opened.
+  async function loadVisibleClips() {
     if (!releaseDialog.open || compact.matches) return;
-    for (const view of [releaseView.heroVideo, ...releaseView.entries.map(entry => entry.video)]) {
-      if (view && !view.src) mediaCache.load(view.source).then(src => { view.src = src; if (view === releaseView.heroVideo) nextTick(syncReleaseVideo); });
+    const { heroVideo, entries } = releaseView;
+    if (heroVideo) {
+      if (!heroVideo.src) {
+        const src = await mediaCache.load(heroVideo.source);
+        if (!releaseDialog.open || compact.matches || heroVideo !== releaseView.heroVideo) return;
+        heroVideo.src = src;
+      }
+      await nextTick(syncReleaseVideo);
+    }
+    if (!releaseDialog.open || compact.matches || entries !== releaseView.entries) return;
+    for (const { video } of entries) {
+      if (video && !video.src) void mediaCache.load(video.source).then(src => { video.src = src; });
     }
   }
   function clipView(video: ReleaseVideo | null | undefined, locale: string): ReleaseClipView | null {
@@ -91,6 +100,12 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
           zoomLabel: t('release.zoomEntry', { title }),
           description,
           image: image ? import.meta.env.BASE_URL + image : '',
+          responsiveImages: item.responsiveImages ? Object.fromEntries(
+            Object.entries(item.responsiveImages).map(([variant, value]) => {
+              const file = releaseImage(value, locale);
+              return [variant, file ? import.meta.env.BASE_URL + file : ''];
+            })
+          ) : null,
           video: clipView(item.video, locale),
           playLabel: t('release.playEntry', { title }),
         };
@@ -98,14 +113,15 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     });
     updateReleaseView({ openHasUpdate: !releaseShownHere && shouldAnnounce(CURRENT_RELEASE, releaseStorage()) });
     nextTick(syncReleaseVideo);
-    loadVisibleClips();
+    void loadVisibleClips();
   }
   // The hero plays only while the notes are open and it is on screen (short landscape hides it); reduced motion keeps its poster and controls.
   function syncReleaseVideo() {
     const video = document.querySelector<HTMLVideoElement>('#release-video');
     if (!video) return;
-    if (releaseDialog.open && !compact.matches && !reducedMotion.matches && video.offsetParent) video.play().catch(() => { /* autoplay refused: the poster stays */ });
-    else video.pause();
+    if (releaseDialog.open && !compact.matches && !reducedMotion.matches && video.offsetParent)
+      return video.play().catch(() => { /* autoplay refused: the poster stays */ });
+    video.pause();
   }
   // iPhone refuses even a muted clip in Low Power Mode until the player touches the page: the first tap or key anywhere starts
   // the hero where it is (as it starts the music), not only a tap on the clip, which enlarges it. An enlarged view keeps it waiting.
@@ -138,7 +154,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     renderReleaseNotes();
     navigation.open();
     releaseDialog.scrollTop = 0;
-    loadVisibleClips();
+    void loadVisibleClips();
     $('#release-close').focus({ preventScroll: true });
     return true;
   }

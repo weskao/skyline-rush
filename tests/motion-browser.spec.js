@@ -1,3 +1,4 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -15,12 +16,12 @@ for (const [name, viewport, hasTouch] of [
   test.use({ viewport, hasTouch });
   test.beforeEach(async ({ page }) => { await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') }); });
   test('an airborne flick rolls the car, announces the landing and acknowledges its payout once', async ({ gameplayPage: page }) => {
+    await toggleSettingsSection(page, 'display');
+    await page.locator('[data-vfx="haptics"]').check();
+    await toggleSettingsSection(page, 'display');
     await page.locator('#start-button').click();
     await expect(page.locator('#race-status')).toHaveText('RACING');
     await expect(page.locator('#countdown')).toBeHidden();
-    await page.locator('#vfx-panel > summary').click();
-    await page.locator('[data-vfx="haptics"]').check();
-    await page.locator('#vfx-panel > summary').click();
     // Keep the flick and landing on simulation time, independent of software-rendering speed.
     await page.clock.pauseAt(new Date('2026-01-01T01:00:00Z'));
     await page.evaluate(() => {
@@ -69,9 +70,11 @@ for (const [name, viewport, hasTouch] of [
     for (const mode of ['reduce', 'comfortable']) {
       await page.emulateMedia({ reducedMotion: mode === 'reduce' ? 'reduce' : 'no-preference' });
       if (mode === 'comfortable') {
-        await page.locator('#vfx-panel > summary').click();
+        await page.locator('#pause-button').click();
+        await toggleSettingsSection(page, 'display');
         await page.locator('[data-vfx="comfortable"]').check();
-        await page.locator('#vfx-panel > summary').click();
+        await toggleSettingsSection(page, 'display');
+        await page.locator('#resume-button').click();
       }
       await page.evaluate(() => {
         const race = window.gameplay.race;
@@ -95,7 +98,7 @@ test('shared motion tokens control button feedback and comfort removes movement'
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(page.locator('#start-button')).toHaveCSS('transition-duration', '0s');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.locator('#vfx-panel > summary').click();
+  await toggleSettingsSection(page, 'display');
   await page.locator('[data-vfx="comfortable"]').check();
   await expect(page.locator('#start-button')).toHaveCSS('transition-duration', '0s');
 });
@@ -159,9 +162,9 @@ test.describe('touch button feedback', () => {
       Object.defineProperty(navigator, 'vibrate', { value: pattern => { window.vibrations.push(pattern); return true; } });
     });
     await open(page);
-    await page.locator('#vfx-panel > summary').click();
+    await toggleSettingsSection(page, 'display');
     await page.locator('[data-vfx="haptics"]').check();
-    await page.locator('#vfx-panel > summary').click();
+    await toggleSettingsSection(page, 'display');
     await page.locator('#start-button').click();
     await expect(page.locator('#race-status')).toHaveText('RACING');
     await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(100);
@@ -171,9 +174,11 @@ test.describe('touch button feedback', () => {
     await page.waitForTimeout(150);
     expect(await page.evaluate(() => window.vibrations.filter(Array.isArray).length)).toBe(1);
     await page.keyboard.up('d');
-    await page.locator('#vfx-panel > summary').click();
+    await page.locator('#pause-button').click();
+    await toggleSettingsSection(page, 'display');
     await page.locator('[data-vfx="haptics"]').uncheck();
-    await page.locator('#vfx-panel > summary').click();
+    await toggleSettingsSection(page, 'display');
+    await page.locator('#resume-button').click();
     const count = await page.evaluate(() => window.vibrations.length);
     await page.keyboard.down('d');
     await page.waitForTimeout(1800);

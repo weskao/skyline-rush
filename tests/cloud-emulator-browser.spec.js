@@ -1,4 +1,4 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, markStartupSeen } from './helpers/test.js';
 import { readFile } from 'node:fs/promises';
 
 const liveApis = /^https?:\/\/(?:(?:identitytoolkit|firestore)\.googleapis\.com|accounts\.google\.com)/;
@@ -35,6 +35,7 @@ test('Google sign-in stores unlocked maps and restores them after site data is c
   await expect(page.locator('#cloud-last-sync')).toContainText('Last synced');
 
   const fresh = await browser.newPage({ locale: 'en-US' });
+  await markStartupSeen(fresh);
   await fresh.context().route(liveApis, route => route.abort());
   await fresh.addInitScript(disableWebGL);
   await fresh.goto('/?firebase-emulator=1');
@@ -63,12 +64,13 @@ test('switching Google accounts isolates local maps and retains the first player
   await expect(page.locator('#cloud-login')).toBeVisible();
   await mockGoogleSignIn(page, { email: 'second@example.test' });
   await expect(page.locator('#cloud-status')).toContainText('another Google account');
-  page.once('dialog', dialog => dialog.accept());
   await page.locator('#cloud-switch').click();
+  await page.locator('#confirm-accept').click();
   await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-unlocked')))).toEqual(['coast']);
 
   const firstAccount = await browser.newPage({ locale: 'en-US' });
+  await markStartupSeen(firstAccount);
   await firstAccount.context().route(liveApis, route => route.abort());
   await firstAccount.addInitScript(disableWebGL);
   await firstAccount.goto('/?firebase-emulator=1');
@@ -107,9 +109,9 @@ test('export includes maps, then delete clears cloud and local progress without 
   await page.evaluate(() => localStorage.setItem('skyline-rush-cup-progress-v1', JSON.stringify({
     version: 1, cup: { tracks: ['coast', 'neon', 'canyon'], results: [] },
   })));
-  page.once('dialog', dialog => dialog.accept());
   const reloaded = page.waitForEvent('load');
   await page.locator('#cloud-delete').click();
+  await page.locator('#confirm-accept').click();
   await reloaded;
   await page.locator('#cloud-open').click();
   await expect(page.locator('#cloud-login')).toBeVisible();
@@ -144,6 +146,7 @@ test('offline map progress stays pending then syncs when the browser comes onlin
   await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
 
   const restored = await browser.newPage({ locale: 'en-US' });
+  await markStartupSeen(restored);
   await restored.context().route(liveApis, route => route.abort());
   await restored.addInitScript(disableWebGL);
   await restored.goto('/?firebase-emulator=1');
@@ -179,6 +182,7 @@ test('two devices merge different results and repeated sign-in does not duplicat
   const raceB = { date: '2026-10-20T02:00:00.000Z', track: 'neon', position: 2, time: 70 };
   const openDevice = async (unlocked, run) => {
     const device = await browser.newPage({ locale: 'en-US' });
+    await markStartupSeen(device);
     await device.context().route(liveApis, route => route.abort());
     await device.addInitScript(disableWebGL);
     if (run) await device.addInitScript(({ unlocked, run }) => {
@@ -272,6 +276,7 @@ test('permanent rule-scoped Mode best restores to a second browser independent o
   await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
 
   const fresh = await browser.newPage({ locale: 'en-US' });
+  await markStartupSeen(fresh);
   await fresh.context().route(liveApis, route => route.abort());
   await fresh.addInitScript(disableWebGL);
   await fresh.goto('/?firebase-emulator=1');
@@ -298,6 +303,7 @@ test('permanent Stunt score, combo and air time restore to a clean device', asyn
   await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
 
   const fresh = await browser.newPage({ locale: 'en-US' });
+  await markStartupSeen(fresh);
   await fresh.context().route(liveApis, route => route.abort());
   await fresh.addInitScript(disableWebGL);
   await fresh.goto('/?firebase-emulator=1');
@@ -316,19 +322,19 @@ test('cloud save JSON import merges restored records and rejects malformed files
   await page.addInitScript(disableWebGL);
   await page.goto('/?firebase-emulator=1');
   await page.locator('#cloud-open').click();
-  page.once('dialog', dialog => dialog.accept());
   await page.locator('#cloud-import-file').setInputFiles({
     name: 'skyline-rush-progress.json',
     mimeType: 'application/json',
     buffer: Buffer.from(JSON.stringify({ version: 2, unlocked: ['coast', 'neon'], stars: { neon: 2 }, bests: {},
       medals: {}, history: [], modeHistory: [], daily: [] })),
   });
+  await page.locator('#confirm-accept').click();
   await expect(page.locator('#cloud-status')).toContainText('Backup imported on this device.');
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-unlocked')))).toContain('neon');
-  page.once('dialog', dialog => dialog.accept());
   await page.locator('#cloud-import-file').setInputFiles({
     name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('not-json'),
   });
+  await page.locator('#confirm-accept').click();
   await expect(page.locator('#cloud-status')).toContainText('Could not import this backup.');
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-unlocked')))).toContain('neon');
 });
@@ -351,16 +357,16 @@ test('an unsynced permanent record survives A to B to A account switching', asyn
   await page.locator('#cloud-logout').click();
   await expect(page.locator('#cloud-login')).toBeVisible();
   await mockGoogleSignIn(page, { email: 'switch-B@example.test' });
-  page.once('dialog', dialog => dialog.accept());
   await page.locator('#cloud-switch').click();
+  await page.locator('#confirm-accept').click();
   await page.locator('#cloud-open').click(); // Account switch reloads the page and closes this dialog.
   await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
   expect(await page.evaluate(key => JSON.parse(localStorage.getItem('skyline-rush-mode-bests-v1') || '{}')[key], key)).toBeUndefined();
 
   await page.locator('#cloud-logout').click();
   await mockGoogleSignIn(page, { existing: true, email: 'switch-A@example.test' });
-  page.once('dialog', dialog => dialog.accept());
   await page.locator('#cloud-switch').click();
+  await page.locator('#confirm-accept').click();
   await page.locator('#cloud-open').click(); // The second switch also performs a reload.
   await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
   expect(await page.evaluate(key => JSON.parse(localStorage.getItem('skyline-rush-mode-bests-v1') || '{}')[key], key)).toBe(47);
@@ -374,12 +380,10 @@ test('cloud dialog explains sign-out separately from deleting Google identity', 
   await mockGoogleSignIn(page, { email: 'logout-copy@example.test' });
   await expect(page.locator('#cloud-logout-note')).toContainText('Signing out does not delete');
   await expect(page.locator('#cloud-delete')).toBeVisible();
-  const warning = page.waitForEvent('dialog');
-  const click = page.locator('#cloud-delete').click({ noWaitAfter: true });
-  const confirmation = await warning;
-  expect(confirmation.message()).toContain('does not delete your Google sign-in account');
-  await confirmation.dismiss();
-  await click;
+  await page.locator('#cloud-delete').click();
+  await expect(page.locator('#confirm-body')).toContainText('does not delete your Google sign-in account');
+  await page.locator('#confirm-cancel').click();
+  await expect(page.locator('#confirm-dialog')).not.toBeVisible();
   await page.locator('#cloud-logout').click();
   await expect(page.locator('#cloud-logout-note')).toBeHidden();
 });
@@ -435,13 +439,18 @@ test('the equipped car is restored on a clean device, and a device that picked i
   const storedCar = target => target.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-car')));
   await context.route(liveApis, route => route.abort());
   await page.addInitScript(disableWebGL);
-  await page.addInitScript(() => localStorage.setItem('skyline-rush-car', JSON.stringify('crimson-gt')));
+  const trial = Date.now() - 60_000;
+  await page.addInitScript(trial => {
+    localStorage.setItem('skyline-rush-gt-trial-started-at', JSON.stringify(trial));
+    localStorage.setItem('skyline-rush-car', JSON.stringify('crimson-gt'));
+  }, trial);
   await page.goto('/?firebase-emulator=1');
   await page.locator('#cloud-open').click();
   await mockGoogleSignIn(page, { email });
   await expect(page.locator('#cloud-status')).toHaveText(savedMessage);
 
   const fresh = await browser.newPage({ locale: 'en-US' });
+  await markStartupSeen(fresh);
   await fresh.context().route(liveApis, route => route.abort());
   await fresh.addInitScript(disableWebGL);
   await fresh.goto('/?firebase-emulator=1');
@@ -451,9 +460,11 @@ test('the equipped car is restored on a clean device, and a device that picked i
   await expect(fresh.locator('#cloud-status')).toHaveText(savedMessage);
   await expect.poll(() => storedCar(fresh)).toBe('crimson-gt');
   await expect(fresh.locator('#garage-screen [data-car="crimson-gt"]')).toHaveAttribute('aria-pressed', 'true'); // worn without a reload
+  expect(await fresh.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-gt-trial-started-at')))).toBe(trial);
   await fresh.close();
 
   const own = await browser.newPage({ locale: 'en-US' });
+  await markStartupSeen(own);
   await own.context().route(liveApis, route => route.abort());
   await own.addInitScript(disableWebGL);
   await own.addInitScript(() => localStorage.setItem('skyline-rush-car', JSON.stringify('roadster')));
@@ -465,4 +476,134 @@ test('the equipped car is restored on a clean device, and a device that picked i
   expect(await storedCar(own)).toBe('roadster');
   await expect(own.locator('#garage-screen [data-car="roadster"]')).toHaveAttribute('aria-pressed', 'true');
   await own.close();
+});
+
+test('released Wave 3 keeps guest saves on the device and restores signed-in progress from Firestore', async ({ browser, page }) => {
+  await page.removeLocatorHandler(page.locator('#acquisition-reveal[open]'));
+  const load = async tab => {
+    await tab.context().route(liveApis, route => route.abort());
+    await tab.addInitScript(disableWebGL);
+    await tab.goto('/?firebase-emulator=1');
+  };
+  const signIn = async (tab, existing = false, email = 'wave3-preview@example.test') => {
+    const uid = await tab.evaluate(async ({ email, existing }) => {
+      const { signInWave3EmulatorUser } = await import('/tests/fixtures/wave3-firestore-auth.ts');
+      return signInWave3EmulatorUser(email, existing);
+    }, { email, existing });
+    await expect.poll(() => tab.evaluate(async () => {
+      const { wave3DemoExperience } = await import('/src/wave3-race-events.ts');
+      return wave3DemoExperience.getSnapshot().accountId;
+    })).toBe(uid);
+    return uid;
+  };
+  const deviceCheckpoint = (tab, uid) => tab.evaluate(id =>
+    localStorage.getItem('skyline-rush-wave3-demo:v1:' + id), uid);
+  const balances = async (tab, expected) => {
+    for (const [index, currency] of ['demo-points', 'coins', 'diamonds'].entries()) {
+      await expect(tab.locator(`.home-resource-strip [data-currency="${currency}"] strong`)).toHaveText(String(expected[index]));
+    }
+  };
+  const settle = (tab, id) => tab.evaluate(async id => {
+    const { createWave3RaceEventBridge, wave3DemoExperience } = await import('/src/wave3-race-events.ts');
+    const bridge = createWave3RaceEventBridge(wave3DemoExperience, () => id);
+    return (await bridge.finish({
+      phase: 'finished', trackId: 'coast', mode: 'classic', elapsed: 70, length: 5000,
+      config: { difficulty: 'normal' }, rivals: Array(7).fill({}),
+      player: { driftPayout: null, longestCombo: 0 }, result: { success: true, time: 70, position: 1 },
+    }, false)).status;
+  }, id);
+  const redeem = (tab, id) => tab.evaluate(async id => {
+    const { wave3DemoExperience } = await import('/src/wave3-race-events.ts');
+    return (await wave3DemoExperience.redeemPreview(id)).status;
+  }, id);
+
+  await load(page);
+  expect(await settle(page, 'guest-before-google')).toBe('completed');
+  await balances(page, [48, 86, 0]);
+  const pointsButton = page.locator('.home-resource-strip [data-currency="demo-points"]');
+  await expect(pointsButton).toHaveAttribute('aria-label', /Local demo/i);
+  const guestSave = await deviceCheckpoint(page, 'guest');
+  expect(guestSave).not.toBeNull();
+  const uid = await signIn(page);
+  await balances(page, [20, 0, 0]);
+  for (let race = 1; race <= 5; race += 1) expect(await settle(page, 'cloud-preview-race-' + race)).toBe('completed');
+  const statuses = await page.evaluate(async () => {
+    const { wave3DemoExperience: wallet } = await import('/src/wave3-race-events.ts');
+    return [
+      (await wallet.claimMission('mission-race:daily')).status,
+      (await wallet.claimMission('mission-race:weekly')).status,
+    ];
+  });
+  expect(statuses).toEqual(['completed', 'completed']);
+  // Recreate Garage's parent dialog history without booting the WebGL showroom in the emulator suite.
+  await page.locator('#garage-screen').evaluate(dialog => {
+    dialog.showModal();
+    history.pushState({ ...history.state, __skylineGaragePage: 'home' }, '');
+  });
+  await page.locator('[data-garage-section="store"]').click();
+  const store = page.locator('[data-wave3-demo-store]');
+  const ion = store.locator('[data-demo-offer="thruster-ion"]');
+  await ion.getByRole('button', { name: 'Redeem Ion thruster' }).click();
+  const quote = store.getByRole('group', { name: 'Confirm demo redemption' });
+  await expect(quote).toContainText('Remaining 155 Demo points');
+  await quote.getByRole('button', { name: 'Confirm demo redeem' }).click();
+  const reveal = page.locator('#acquisition-reveal');
+  await expect(reveal.getByRole('heading', { name: 'Ion thruster' })).toBeVisible();
+  await reveal.getByRole('button', { name: 'Continue' }).click();
+  await ion.getByRole('button', { name: 'View in collection' }).click();
+  await expect(page.locator('[data-wave3-demo-collection] [data-demo-id="thruster-ion"]')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#garage-close').click();
+  await balances(page, [155, 350, 5]);
+  await expect(pointsButton).toHaveAttribute('aria-label', /Cloud demo/i);
+  expect(await deviceCheckpoint(page, uid)).toBeNull();
+  expect(await deviceCheckpoint(page, 'guest')).toBe(guestSave);
+  const visual = await page.evaluate(async () => {
+    const { wave3DemoExperience: wallet } = await import('/src/wave3-race-events.ts');
+    const { currentGarageSkins, equipGarageSkin, garageSkinEntry } = await import('/src/garage-skin-runtime.ts');
+    const equipped = await wallet.equipPreview('thruster-ion');
+    return {
+      status: equipped.status, vfx: currentGarageSkins().thruster,
+      owned: garageSkinEntry('thruster-ion')?.owned, catalogCanEquip: equipGarageSkin('thruster-ion'),
+    };
+  });
+  expect(visual).toEqual({ status: 'completed', vfx: 'thruster-ion', owned: false, catalogCanEquip: false });
+
+  const fresh = await browser.newPage();
+  try {
+    await load(fresh);
+    expect(await signIn(fresh, true)).toBe(uid);
+    await balances(fresh, [155, 350, 5]);
+    expect(await settle(fresh, 'cloud-preview-race-5')).toBe('duplicate');
+    const paired = await Promise.all([settle(page, 'cloud-preview-shared-race'), settle(fresh, 'cloud-preview-shared-race')]);
+    expect(paired.sort()).toEqual(['completed', 'duplicate']);
+    await balances(fresh, [183, 406, 5]);
+    const sameOffer = await Promise.all([redeem(page, 'nitro-trail-cyan'), redeem(fresh, 'nitro-trail-cyan')]);
+    expect(sameOffer.sort()).toEqual(['completed', 'duplicate']);
+    await balances(fresh, [183, 256, 5]);
+    const sameBalance = await Promise.all([redeem(page, 'launch-flare-magenta'), redeem(fresh, 'drift-trail-rainbow')]);
+    expect(sameBalance.sort()).toEqual(['completed', 'insufficient-demo-diamonds']);
+    await balances(fresh, [183, 256, 0]);
+    await fresh.context().setOffline(true);
+    expect(await redeem(page, 'launch-flare-ring')).toBe('completed');
+    await balances(fresh, [183, 256, 0]);
+    await fresh.context().setOffline(false);
+    await balances(fresh, [183, 36, 0]);
+    expect(await redeem(fresh, 'launch-flare-ring')).toBe('duplicate');
+    // Account B has no access to account A's preview save.
+    const other = await browser.newPage();
+    try {
+      await load(other);
+      await signIn(other, false, 'wave3-other@example.test');
+      await balances(other, [20, 0, 0]);
+    } finally {
+      await other.close();
+    }
+  } finally {
+    await fresh.close();
+  }
+  await page.evaluate(async () => (await import('/src/cloud-save.ts')).signOutOfCloud());
+  await balances(page, [48, 86, 0]);
+  const afterLogout = await page.evaluate(async () =>
+    (await import('/src/garage-skin-runtime.ts')).currentGarageSkins().thruster);
+  expect(afterLogout).toBe('thruster-basic');
 });

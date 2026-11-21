@@ -6,13 +6,13 @@ const account = 'signedInA';
 const profile = (value = {}) => normalizeSkinProfile({ version: 1, accountId: account, ...value }, account);
 const session = (value = {}) => ({ accountId: account, now: 1000, trialEnabled: false, trialExpiresAt: 0, ...value });
 
-test('BDD catalog groups all four categories with stable unique IDs and default entries', () => {
-  assert.equal(GARAGE_SKINS.length, 22);
-  assert.equal(new Set(GARAGE_SKINS.map(s => s.id)).size, 22);
+test('BDD catalog groups all five categories with stable unique IDs and default entries', () => {
+  assert.equal(GARAGE_SKINS.length, 28);
+  assert.equal(new Set(GARAGE_SKINS.map(s => s.id)).size, 28);
   for (const category of SKIN_CATEGORIES) {
     assert.equal(GARAGE_SKINS.filter(s => s.category === category && s.default).length, 1);
     assert.equal(GARAGE_SKINS.filter(s => s.category === category && !s.default).length,
-      category === 'launch-flare' ? 8 : category === 'nitro-trail' ? 4 : 3);
+      ({ 'launch-flare': 8, 'nitro-trail': 4, 'drift-trail': 5 })[category] ?? 3);
   }
 });
 
@@ -136,4 +136,15 @@ test('all airflow skins resolve to four distinct native 3x transparent PNG artwo
     assert.ok(existsSync(fallback), 'preserve the SVG fallback');
   }
   assert.equal(sources.size, 4);
+});
+
+test('distinct VFX colour accents identify every style in the Garage', async () => {
+  const { skinAccentHue } = await import('../src/garage-skin-catalog.ts');
+  for (const category of SKIN_CATEGORIES) {
+    const hues = GARAGE_SKINS.filter(skin => skin.category === category).map(skin => skinAccentHue(skin.id));
+    assert.ok(hues.every(hue => Number.isFinite(hue) && hue >= 0 && hue < 360));
+    assert.equal(new Set(hues).size, hues.length, category);
+  }
+  assert.ok(skinAccentHue('nitro-trail-cyan') >= 170 && skinAccentHue('nitro-trail-cyan') <= 205);
+  assert.ok(skinAccentHue('thruster-void') >= 260 && skinAccentHue('thruster-void') <= 300);
 });

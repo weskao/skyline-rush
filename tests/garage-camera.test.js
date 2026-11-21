@@ -54,3 +54,13 @@ test('Studio ‹ › steps the five presets, wraps, and starts from an end when 
   assert.equal(stepGarageAngle('', -1), 'cinematic');
   for (const angle of GARAGE_ANGLES) assert.notDeepEqual(garagePreset(angle), defaultGarageCamera(), angle);
 });
+
+test('Garage sections aim the camera at what they change and keep the player pose', async () => {
+  const { garageSectionCamera } = await import('../src/garage-camera.ts');
+  const posed = { ...defaultGarageCamera(), zoom: 1.4, mode: 'flight', wing: true };
+  const keep = { zoom: 1.4, mode: 'flight', wing: true };
+  assert.deepEqual(garageSectionCamera('effects', posed), { angle: 'rear', camera: { ...garagePreset('rear'), ...keep } });
+  assert.deepEqual(garageSectionCamera('paints', posed), { angle: 'side', camera: { ...garagePreset('side'), ...keep } });
+  assert.deepEqual(garageSectionCamera('cars', posed), { angle: '', camera: { ...defaultGarageCamera(), ...keep } });
+  for (const section of ['missions', 'store', 'collection']) assert.equal(garageSectionCamera(section, posed), null, section);
+});

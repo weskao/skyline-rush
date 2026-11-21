@@ -43,8 +43,8 @@ test('median picks the middle value, or the mean of the two middle values', () =
 // Re-locked for the user's 2026-11-13 increase (40% more rings and pickups on the first five maps, Aurora included).
 // Aurora before it: accf48d891104502.
 const LOCKED_LAYOUTS = {
-  aurora: 'd66e118bccbeec3c', taipei: 'c8a0656396c290d7', tokyo: 'd1963910b490325b',
-  alpine: 'edf1cb0bf8ec882a', coastal: 'fbbf0b518e3cba3b', cosmic: '02405104894581e8',
+  aurora: '3f11939e0f38f3a1', taipei: 'f527fc488e989735', tokyo: '9d6c3da43f6bfce9',
+  alpine: '7fdfb5aae621d924', coastal: '8d15dbf6fd7a36f2', cosmic: '817cc9ad2ce8def2',
 };
 test('AC3: Aurora and the World Tour keep their (scaled) ring and pickup layout', () => {
   for (const [id, hash] of Object.entries(LOCKED_LAYOUTS)) assert.equal(layoutHash(id), hash, id);

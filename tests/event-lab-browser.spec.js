@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { selectLocale } from './helpers/locale-browser.js';
@@ -12,7 +13,7 @@ for (const [name, viewport, hasTouch] of [
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await selectLocale(page, locale);
-    await page.locator('button[data-race-mode="eventlab"]').click();
+    await clickLobbyOption(page, 'button[data-race-mode="eventlab"]');
     const dialog = page.locator('#event-lab-dialog');
     await expect(dialog).toBeVisible();
     await page.locator('.lab-share > summary').click();
@@ -76,7 +77,7 @@ for (const [name, viewport, hasTouch] of [
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await selectLocale(page, locale);
-    await page.locator('button[data-race-mode="eventlab"]').click();
+    await clickLobbyOption(page, 'button[data-race-mode="eventlab"]');
     await page.locator('#lab-template-checkpoints').click();
     const map = page.locator('.lab-map'), box = await map.boundingBox();
     const press = position => hasTouch ? map.tap({ position }) : map.click({ position });
@@ -131,7 +132,7 @@ test.describe('narrow Event Lab', () => {
 
   test('keeps the action reachable at keyboard height and scopes validation to the edited object', async ({ gameplayPage: page }) => {
     const entry = page.locator('button[data-race-mode="eventlab"]');
-    await entry.click();
+    await clickLobbyOption(page, 'button[data-race-mode="eventlab"]'); // phones keep the mode list behind the Mode dropdown
     const dialog = page.locator('#event-lab-dialog');
     const objects = dialog.getByRole('button', { name: 'Objects', exact: true });
     await expect(dialog.locator('.lab-map')).toBeVisible();

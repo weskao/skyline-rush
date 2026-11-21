@@ -1,3 +1,4 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -15,7 +16,7 @@ const chooseFps = async (page, value) => {
 test('FPS selector remembers manual 30/60/90/120 independently of graphics quality across reload and localizes', async ({page}) => {
   test.setTimeout(ciTimeout(120_000)); // five reloads and four picker rounds in one page: past the 45 s default
   await page.goto('/');
-  await page.locator('#vfx-panel > summary').click();
+  await toggleSettingsSection(page, 'display');
   await expect(page.locator('#target-fps')).toHaveValue('auto');
   await chooseFps(page, '30');
   await expect(page.locator('[data-vfx="quality"]')).toHaveValue(/^(low|medium|high)$/);
@@ -23,12 +24,12 @@ test('FPS selector remembers manual 30/60/90/120 independently of graphics quali
   await page.reload();
   await expect(page.locator('#target-fps')).toHaveValue('30');
   for (const value of ['60', '90']) {
-    await page.locator('#vfx-panel > summary').click();
+    await toggleSettingsSection(page, 'display');
     await chooseFps(page, value);
     await page.reload();
     await expect(page.locator('#target-fps')).toHaveValue(value);
   }
-  await page.locator('#vfx-panel > summary').click();
+  await toggleSettingsSection(page, 'display');
   await chooseFps(page, '120');
   await selectLocale(page, 'zh-TW');
   await expect(page.locator('[data-i18n="vfx.fps"]')).toHaveText('目標幀率');

@@ -2,7 +2,7 @@
 
 Second player car (`crimson-gt`), selectable in the Garage. Its shape is built from the deep-red GT
 in the four studio panels (top-left 2x2) of
-`docs/designs/3d-pipeline/concept-art/skyline-rush-3d-target-concept-board.jpeg`, not from the
+`docs/designs/3d-pipeline/track-profiles/skyline-rush-3d-target-concept-board.jpeg`, not from the
 Roadster: every body curve is read off the hand-traced panel silhouettes. Only the rig pivots
 (wheels, wing, lift ports) are the Roadster's contract numbers, so `src/garage-model-rig.ts` binds
 it unchanged. The board is a concept illustration, not a blueprint, and its panels do not agree as

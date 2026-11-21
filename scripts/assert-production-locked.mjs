@@ -5,6 +5,7 @@ import { PAINTS } from '../src/appearance.ts';
 // Each marker is a string its development-only module needs at runtime, so minification cannot strip it.
 const RELEASE_LEAK_MARKERS = {
   SKYLINE_RUSH_DEV_UNLOCK_ALL_ONLY: 'development unlock code',
+  'data-garage-playtest-equip': 'development Store equip action',
   'skyline-rush-crash-log': 'diagnostic crash log / live panel (VITE_DIAG build)',
   '__diag/log': 'diagnostic log relay client (VITE_DIAG build)',
   'diag-relay-token': 'diagnostic log relay token (VITE_DIAG dev server)',
@@ -26,7 +27,7 @@ if (!['coming-soon', 'trial', 'released'].includes(mode)) {
 }
 const locked = mode === 'coming-soon';
 if (locked) {
-  for (const marker of ['thruster-ion', 'thruster-plasma', 'thruster-void', 'airflow-slipstream', 'airflow-vortex', 'airflow-prism', 'nitro-trail-cyan', 'nitro-trail-gold', 'nitro-trail-red', 'launch-flare-blue', 'launch-flare-ring', 'launch-flare-pulse', 'nitro-trail-purple', 'launch-flare-gold', 'launch-flare-red', 'launch-flare-cyan', 'launch-flare-magenta', 'launch-flare-white', 'live-shared-aero', 'Free trial', 'Ion thruster']) {
+  for (const marker of ['thruster-ion', 'thruster-plasma', 'thruster-void', 'airflow-slipstream', 'airflow-vortex', 'airflow-prism', 'nitro-trail-cyan', 'nitro-trail-gold', 'nitro-trail-red', 'launch-flare-blue', 'launch-flare-ring', 'launch-flare-pulse', 'nitro-trail-purple', 'launch-flare-gold', 'launch-flare-red', 'launch-flare-cyan', 'launch-flare-magenta', 'launch-flare-white', 'drift-trail-flame', 'drift-trail-rainbow', 'drift-trail-ice', 'drift-trail-arc', 'drift-trail-stardust', 'live-shared-aero', 'Free trial', 'Ion thruster']) {
     RELEASE_LEAK_MARKERS[marker] = 'unreleased garage trial catalog/runtime';
   }
   // Must equal SKIN_PICK_STORAGE_KEY in src/garage-skin-preference.ts (trial runtime only).

@@ -13,9 +13,10 @@ loads it: its manifest fallback is `procedural-scenery`.
 | Coastal Cliff 04 | https://polyhaven.com/a/coastal_cliff_04 | Rob Tuytel (photography, processing), Rico Cilliers (cleanup) | `sea_arch` (kitbashed) |
 | Coast Rocks 05 | https://polyhaven.com/a/coast_rocks_05 | Rob Tuytel | `rock_a`, `rock_b` |
 | Palm Bark | https://polyhaven.com/a/palm_bark | Charlotte Baglioni | palm trunk material |
-| Metal Plate 02 | https://polyhaven.com/a/metal_plate_02 | Rob Tuytel | guard-rail roughness/normal |
+| Metal Plate 02 | https://polyhaven.com/a/metal_plate_02 | Rob Tuytel | guard-rail and lamp-post roughness/normal |
 
-Palm geometry, fronds and the W-beam rail are modelled procedurally by `build/props.py` (project work).
+Palm geometry, fronds, the W-beam rail and the street light are modelled procedurally by `build/props.py`
+(project work).
 Raw 2K/8K sources stay outside the repo in `$POLYHAVEN_CACHE` (default `$HOME/.cache/skyline-rush/polyhaven`,
 filled by `scripts/assets/fetch_polyhaven.py`). `build.py` verifies each file's sha256 against that cache's
 `sources.json` before use.
@@ -35,7 +36,12 @@ node scripts/assets/check-glb.mjs coast-scenery --promote
 
 - Metric, +Y up in glTF (Blender +Z). Every node's pivot sits at ground contact, centred in plan.
 - Scan pieces face Blender -Y = three.js +Z. `guard_rail` beam faces the road at three.js +Z (Blender -Y),
-  posts behind it, 12 m long, posts at ±1, ±3, ±5 m, so copies tile end to end every 12 m.
+  posts behind it, 12 m long, posts at ±1, ±3, ±5 m, so copies tile end to end every 12 m. The runtime turns the
+  right-hand rail about so the beam faces the road on both sides.
+- `lamp_post` is a 12.25 m tapered column with its arm toward three.js +Z (Blender -Y); the luminaire housing sits
+  3.3 m out and 12.84 to 12.97 m up, on the emissive lamp head `world.js` draws there. It carries no light of its own.
+- `cliff_a_far`, `cliff_b_far` are collapse-decimated copies of the finished cliffs (same pivot, skirt, UVs,
+  material and baked maps) that the far headlands draw at 5 to 12 x scale, 290 m and further from the road.
 - `sea_arch` is an empty with two linked shells (`sea_arch_front`, `sea_arch_back`, rotated 180°, 4 m apart).
 - Scan pieces have a ground skirt (cliffs 2.5 m, rocks 0.4 m) below the pivot, so uneven terrain shows no gap.
 
@@ -54,12 +60,15 @@ node scripts/assets/check-glb.mjs coast-scenery --promote
 | --- | --- | --- |
 | `cliff_a` | 11,385 (12k) | 1K diff / ARM / normal |
 | `cliff_b` | 11,188 (12k) | 1K diff / ARM / normal |
+| `cliff_a_far`, `cliff_b_far` | 2,499 / 2,499 (2.5k) | the close cliffs' maps |
 | `sea_arch` (2 shells) | 18,986 (20k) | 1K diff / ARM / normal |
 | `rock_a`, `rock_b` (shared) | 2,718 / 2,176 (3k) | 1K diff, 512 ARM / normal |
 | `palm_a`, `palm_b` | 5,154 / 4,482 (6k) | 512 bark diff / normal; fronds use vertex colour |
 | `guard_rail` | 408 (1.5k) | 512 roughness / normal (mirrored crop) |
+| `lamp_post` | 136 (300) | the rail's steel material |
 
-GLB: 56,497 tris, 11 draws, 5,827,256 bytes (budget 6,000,000), max texture 1024 px.
+GLB: 61,631 tris, 14 draws, 5,879,276 bytes (budget 6,000,000), max texture 1024 px. Before the far nodes and the
+lamp post (2026-11-18): 56,497 tris, 11 draws, 5,827,256 bytes.
 
 Texture encoding: base colour ETC1S (sRGB), normals UASTC (linear), ARM/roughness ETC1S (linear) through the
 `KTX2_SLOT_OVERRIDES` entry in `scripts/assets/optimize-glb.mjs`, then meshopt. Normals dominate the bytes
@@ -73,4 +82,8 @@ normal/ARM (still ~128 px/m, denser than the 41–92 m cliffs at 1K).
 - `cliff_a` texel density is about 11 px/m: soft at point-blank range. A 2K Ultra set is not shipped because
   the manifest `lods` only model high/low; it would need a separate entry and byte budget.
 - Fronds are vertex-coloured mesh leaflets without an alpha texture; no wind animation.
+- Far sea stacks draw the full rock scans (2.2k to 2.7k triangles, at most one per 480 m slot); only the cliffs
+  have far nodes.
+- A rebuild rebakes the normal maps with differences of at most 1/255 per channel (Cycles noise): keep the
+  committed `textures/*_nrm.png` unless the bake inputs changed.
 - No in-game WebGL capture yet: contact-sheet renders are Blender EEVEE stills, not in-game screenshots.

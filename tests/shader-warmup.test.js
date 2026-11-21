@@ -20,3 +20,22 @@ test('warmup draws hidden and culled objects once into the given target, then re
   assert.ok(!hidden.visible && !parent.visible && nested.visible && culled.visible, 'visibility restored');
   assert.ok(hidden.frustumCulled && culled.frustumCulled && !nested.frustumCulled, 'culling restored');
 });
+
+test('warmup draws hidden fallback materials and restores their visibility', () => {
+  const scene = new Scene();
+  const fallback = new MeshBasicMaterial({ visible: false });
+  const regular = new MeshBasicMaterial();
+  const mesh = new Mesh(new BoxGeometry(), [fallback, regular]);
+  mesh.frustumCulled = false;
+  scene.add(mesh, new Mesh(new BoxGeometry(), fallback));
+  const renderer = {
+    setRenderTarget() {},
+    render() {
+      assert.equal(fallback.visible, true, 'the fallback can draw during warmup');
+      assert.equal(regular.visible, true);
+    },
+  };
+  warmupShaders(renderer, scene, {}, null);
+  assert.equal(fallback.visible, false);
+  assert.equal(regular.visible, true);
+});

@@ -1,9 +1,32 @@
-// [start Hz, end Hz, length in seconds, delay, gain]. Stingers share the SFX bus.
-type Note = readonly [number, number, number, number, number];
-export const FEEDBACK_SOUNDS: Readonly<Partial<Record<string, readonly Note[]>>> = {
+import { ACQUISITION_KIND, type AcquisitionKind } from './acquisition-reveal.ts';
+
+// [start Hz, end Hz, length, delay, gain, waveform]. All motifs go through the SFX bus.
+type Note = readonly [number, number, number, number, number, OscillatorType?];
+export const FEEDBACK_SOUNDS = {
+  'freeze-hit': [[310, 105, .22, 0, .035, 'triangle'], [1750, 960, .26, .014, .025], [2640, 1620, .22, .055, .017]],
+  'freeze-thaw': [[1740, 2710, .13, .018, .015], [2210, 1410, .19, .051, .009]],
+  'emp-hit': [[162, 63, .29, 0, .035, 'triangle'], [680, 182, .14, .009, .019, 'square'], [543, 146, .1, .108, .014, 'square']],
+  'emp-clear': [[156, 265, .14, 0, .021, 'triangle'], [510, 665, .1, .049, .014]],
+  'acquisition-track': [[294, 220, .30, 0, .046], [68, 43, .41, 0, .055],
+    [146.83, 220, .41, .09, .035, 'triangle'], [293.66, 293.66, .52, .20, .038, 'triangle'],
+    [440, 587.33, .53, .35, .035], [784, 784, .42, .54, .022]],
+  'acquisition-paint': [[349.23, 522, .44, 0, .050, 'triangle'], [659, 880, .39, .12, .035],
+    [1047, 1174.66, .34, .24, .024], [1568, 1568, .34, .30, .014]],
+  'acquisition-equipment': [[275, 150, .14, 0, .031], [587, 699, .17, .07, .023], [1175, 1319, .21, .13, .017]],
+  'acquisition-clothing': [[220, 349.23, .28, 0, .043, 'triangle'], [440, 440, .34, .09, .032],
+    [698.46, 698.46, .39, .20, .027, 'triangle'], [880, 880, .29, .33, .021]],
+  'acquisition-item': [[180, 68, .20, 0, .059, 'triangle'], [293.66, 349.23, .30, .10, .045],
+    [523.25, 587.33, .32, .21, .039, 'triangle'], [880, 880, .27, .34, .022]],
+  'acquisition-medal': [[146.83, 146.83, .82, 0, .050, 'triangle'], [293.66, 293.66, .41, .06, .035],
+    [440, 440, .48, .18, .034, 'triangle'], [587.33, 587.33, .64, .31, .046, 'triangle'],
+    [880, 880, .66, .43, .035], [1174.66, 1174.66, .51, .53, .025]],
+  'acquisition-currency': [[880, 990, .17, 0, .048], [1174.66, 1174.66, .24, .095, .041, 'triangle'],
+    [1320, 1760, .29, .185, .033], [2349, 2349, .20, .25, .019]],
+  'acquisition-select': [[932, 784, .095, 0, .016]],
   'reward-credited': [[880, 990, .17, 0, .033], [1320, 1568, .25, .09, .028]],
   'reward-mission-ready': [[880, 990, .17, 0, .033], [1320, 1568, .19, .09, .028], [1760, 1865, .24, .21, .021]],
-  'redeem-unlocked': [[660, 784, .13, 0, .030], [990, 1175, .21, .10, .029]],
+  'redeem-review': [[540, 620, .075, 0, .022], [790, 880, .095, .045, .017]],
+  'redeem-cancelled': [[540, 410, .095, 0, .016]],
   'equip-confirmed': [[235, 118, .09, 0, .037], [1047, 784, .11, .035, .017]],
   'action-unavailable': [[370, 280, .15, 0, .025]],
   'reset-confirmed': [[650, 480, .15, 0, .025], [480, 520, .15, .09, .020]],
@@ -16,7 +39,12 @@ export const FEEDBACK_SOUNDS: Readonly<Partial<Record<string, readonly Note[]>>>
   'elimination-warning': [[720, 720, .12, 0, .035], [720, 720, .15, .17, .033]],
   'rival-eliminated': [[500, 340, .21, 0, .025]],
   'gap-warning': [[495, 420, .12, 0, .037], [495, 420, .17, .16, .035]],
-  'fall-recovery': [[230, 62, .33, 0, .055]],
+  // Drop, reset command or automatic rescue. Return and touchdown follow the simulated car.
+  'recovery-fall': [[298, 86, .60, 0, .034, 'triangle'], [146, 52, .36, .24, .027]],
+  'recovery-reset': [[710, 540, .072, 0, .036, 'triangle'], [960, 1120, .085, .058, .022]],
+  'recovery-rescue': [[337, 212, .12, 0, .033, 'triangle'], [470, 560, .09, .06, .021]],
+  'recovery-return': [[224, 345, .23, 0, .034, 'triangle'], [680, 1010, .23, .043, .025]],
+  'recovery-touchdown': [[148, 54, .17, 0, .054, 'triangle'], [278, 167, .11, .019, .023]],
   'drift-release': [[260, 105, .17, 0, .042], [690, 1100, .19, .035, .024]],
   'perfect-line': [[1175, 1568, .12, 0, .024], [1760, 2349, .21, .07, .020]],
   'endless-ended': [[330, 220, .21, 0, .039], [245, 135, .37, .15, .031]],
@@ -29,6 +57,32 @@ export const FEEDBACK_SOUNDS: Readonly<Partial<Record<string, readonly Note[]>>>
   halfway: [[698, 698, .13, 0, .040], [880, 880, .15, .08, .036], [1175, 1175, .22, .16, .030]],
   'final-lap': [[590, 590, .15, 0, .030], [885, 885, .25, .13, .027]],
   'objective-invalid': [[385, 240, .23, 0, .030]],
-};
+} satisfies Readonly<Record<string, readonly Note[]>>;
 
-export const STINGERS = new Set(['victory', 'achievement-earned', 'tutorial-complete', 'halfway']);
+// Filtered noise for surface contact, air movement and item effects.
+export const FEEDBACK_TEXTURES = {
+  'freeze-hit': [3900, 1100, .25, .045],
+  'freeze-thaw': [5100, 2250, .16, .035],
+  'emp-hit': [1850, 460, .22, .043],
+  'emp-clear': [1150, 520, .11, .019],
+  'recovery-fall': [2600, 580, .64, .047],
+  'recovery-return': [510, 1850, .23, .035],
+  'recovery-touchdown': [820, 160, .16, .041],
+} as const;
+
+export const ACQUISITION_SOUNDS = {
+  [ACQUISITION_KIND.CAR]: 'acquisition-car',
+  [ACQUISITION_KIND.TRACK]: 'acquisition-track',
+  [ACQUISITION_KIND.PAINT]: 'acquisition-paint',
+  [ACQUISITION_KIND.EQUIPMENT]: 'acquisition-equipment',
+  [ACQUISITION_KIND.CLOTHING]: 'acquisition-clothing',
+  [ACQUISITION_KIND.ITEM]: 'acquisition-item',
+  [ACQUISITION_KIND.MEDAL]: 'acquisition-medal',
+  [ACQUISITION_KIND.CURRENCY]: 'acquisition-currency',
+} as const satisfies Readonly<Record<AcquisitionKind, keyof typeof FEEDBACK_SOUNDS | 'acquisition-car'>>;
+
+export const STINGERS = new Set([
+  'victory', 'achievement-earned', 'tutorial-complete', 'halfway', 'acquisition-track', 'acquisition-medal',
+  'acquisition-car', 'acquisition-car-signature', 'acquisition-car-profile',
+  'acquisition-car-thrusters', 'acquisition-car-hero',
+]);

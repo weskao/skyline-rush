@@ -43,7 +43,7 @@ export function pickPeripheralSlot(viewport: Size, size: Size, obstacles: Feedba
   return best && { left: best.left, top: best.top };
 }
 
-const SELECTORS = '.brand, .toolbar, .aero-tools, .airflow-hud, .race-progress, .mode-indicator, .position-stat, .speedometer, .flight-telemetry, #nitro-status, .leaderboard, .race-route-map, .impact-report, #touch-controls [data-control], .touch-pad, #tutorial-coach';
+const SELECTORS = '.brand, .toolbar, .airflow-hud, .race-progress, .mode-indicator, .position-stat, .speedometer, .flight-telemetry, #nitro-status, .leaderboard, .race-route-map, .impact-report, #touch-controls [data-control], .touch-pad, #tutorial-coach';
 const visible = (el: HTMLElement): boolean => !el.hidden && !!el.getClientRects().length &&
   getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden';
 // The countdown hides the telemetry footer (speed, mode chip, flight stats) with visibility only; the mode chip keeps clear of it for GO.
@@ -142,7 +142,7 @@ export function createRoadSafeFeedback(chip: HTMLElement, warning: HTMLElement, 
   window.addEventListener('foldablelayoutchange', refresh);
   const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(refresh);
   // Only structural layout changes invalidate placements; numeric HUD text changes every tick.
-  for (const block of blocks.filter(el => el.matches('.race-progress, .leaderboard, .race-route-map, .mode-indicator, .aero-tools, .flight-telemetry')))
+  for (const block of blocks.filter(el => el.matches('.race-progress, .leaderboard, .race-route-map, .mode-indicator, .flight-telemetry')))
     observer?.observe(block);
   new MutationObserver(refresh).observe(document.body, { attributes: true, attributeFilter: ['data-hud-mode', 'data-fold-axis', 'data-phase'] });
   const watch = (id: string, attributeFilter: string[]): void => {

@@ -8,7 +8,7 @@
   import * as THREE from 'three';
   import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
   import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-  import { shouldDrawShowcaseFrame } from './showcase-probe-draw.js';
+  import { shouldDrawShowcaseFrame, untilDrawn } from './showcase-probe-draw.js';
   import { createWorld } from '../../src/world.js';
   import { createRace } from '../../src/game.js';
   import { trackFrame } from '../../src/track-paths.ts';
@@ -45,7 +45,7 @@
   }
   // Renders `seconds` of ready-screen frames and samples the bearing every `every` seconds.
   // `racing` parks the player at the preview point mid-race, where the showcase view must not move the camera.
-  window.showcaseCameraProbe = (id, view, { airflow = false, seconds = 2, every = 0, start = 2, racing = false, quality = 'low', garage = false } = {}) => {
+  window.showcaseCameraProbe = async (id, view, { airflow = false, seconds = 2, every = 0, start = 2, racing = false, quality = 'low', garage = false } = {}) => {
     world.setGarageSkinPreview({}, garage);
     world.setGaragePose(garage ? { mode: 'ground', wing: false } : null);
     world.configureVFX({ quality, enabled: true, bloom: 0, airflow, view });
@@ -54,6 +54,7 @@
     const samples = [];
     const frames = Math.round(seconds * 30);
     const stride = every ? Math.max(1, Math.round(every * 30)) : 0;
+    await untilDrawn(() => world.render(race, 1 / 30, start, {}));
     try {
       for (let i = 0; i <= frames; i++) {
         drawFrame = shouldDrawShowcaseFrame(i, frames, stride);

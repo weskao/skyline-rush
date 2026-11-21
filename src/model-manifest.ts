@@ -1,5 +1,6 @@
 // Phase 2 model manifest. Contract: docs/designs/3d-pipeline/phase2-model-contracts.md §1.
 import { NEON_MODELS } from './model-manifest-neon.ts';
+import { SPIRAL_MODELS } from './model-manifest-spiral.ts';
 
 export const FALLBACK_KEYS = ['procedural-car', 'procedural-scenery', 'procedural-pickup'] as const;
 export type FallbackKey = (typeof FALLBACK_KEYS)[number];
@@ -156,20 +157,21 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
     budgets: { triangles: 60_000, bytes: 1_500_000, textureMaxPx: 1024 },
   },
   // Task 5 Coast close scenery (Medium+; Low keeps the procedural scenery). Poly Haven CC0 scans decimated with baked
-  // normals, plus modelled palms and W-beam rail. Each node is a top-level piece at the origin, pivot at ground contact.
+  // normals, plus modelled palms, W-beam rail and street light. Each node is a top-level piece at the origin, pivot at
+  // ground contact; `cliff_*_far` are the 2.5k-triangle copies the far headlands draw (coast-scenery-glb.ts).
   'coast-scenery': {
     id: 'coast-scenery',
     url: 'models/coast-scenery/coast-scenery.glb',
     source: {
       master: 'assets-src/coast-scenery/coast-scenery.blend',
       script: 'assets-src/coast-scenery/build.py',
-      masterSha256: 'd0d1fc30a29ecdafaa44a7223be89bf50488218e0157f359b8f21a0c2f0f0168',
-      scriptSha256: '78911534d79b4664897bed9f7e6b667af3b068f24e1b7b73e51b8e96ffaab952',
+      masterSha256: '13baa152fe1af86628401c1e3f5bdfb6dcd07a7063d6da3cc635f5e06c186cff',
+      scriptSha256: 'b774df408c9c215a0073e3f0fcd8e4affb4caef2a5761e0dd6e609a8efbea91a',
     },
-    glb: { sha256: 'edbababe79fc952b8c5043ff4b92bbdafc55ed7eaf7e299e6f590cddaf9aa930', bytes: 5_827_256 },
+    glb: { sha256: 'bfb40ef2f2e17ca746906235b2c1b1edb05ba36e0b8180853606ffb6205abd88', bytes: 5_879_276 },
     license: {
       id: 'CC0-1.0',
-      creator: 'Poly Haven: Rob Tuytel, Rico Cilliers (coastal_cliff_01/02/04, coast_rocks_05, metal_plate_02), Charlotte Baglioni (palm_bark); palms and rail modelled by Skyline Rush project',
+      creator: 'Poly Haven: Rob Tuytel, Rico Cilliers (coastal_cliff_01/02/04, coast_rocks_05, metal_plate_02), Charlotte Baglioni (palm_bark); palms, rail and street light modelled by Skyline Rush project',
       sourceUrl: 'https://polyhaven.com/a/coastal_cliff_04',
     },
     provenance: {
@@ -184,7 +186,7 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
         'node scripts/assets/check-glb.mjs coast-scenery --promote',
       ],
     },
-    nodes: ['sea_arch', 'sea_arch_front', 'sea_arch_back', 'cliff_a', 'cliff_b', 'rock_a', 'rock_b', 'palm_a', 'palm_b', 'guard_rail'],
+    nodes: ['sea_arch', 'sea_arch_front', 'sea_arch_back', 'cliff_a', 'cliff_b', 'cliff_a_far', 'cliff_b_far', 'rock_a', 'rock_b', 'palm_a', 'palm_b', 'guard_rail', 'lamp_post'],
     materials: ['coast_arch', 'coast_cliff_a', 'coast_cliff_b', 'coast_rock', 'coast_palm_bark', 'coast_palm_frond', 'coast_rail_steel'],
     lods: [],
     fallback: 'procedural-scenery',
@@ -284,6 +286,7 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
     bytes: 283232,
   }),
   ...NEON_MODELS, // Task 5b city kit and landmarks
+  ...SPIRAL_MODELS, // Task 8c landmark kit
 };
 
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;

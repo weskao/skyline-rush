@@ -49,26 +49,30 @@ export function roadRibbon(rows: number): BufferGeometry {
 /** Metres of road per texture repeat along the road; across, u spans the full road width once. */
 export const ROAD_UV_METRES = 24;
 // v is measured from a base that only jumps by whole repeats, so it stays small for float32 yet never swims.
-const ROAD_UV_PERIOD = ROAD_UV_METRES * 64;
+export const ROAD_UV_PERIOD = ROAD_UV_METRES * 64;
 
 /** Writes a level road row perpendicular to heading, with u across the road and v measured along it. */
 export function setRoadRow(geometry: BufferGeometry, row: number, x: number, z: number, distance: number,
-  ribbonTile: number, halfWidth = 12, heading = 0): void {
+  ribbonTile: number, halfWidth = 12, heading = 0, y = 0, pitch = 0): void {
   const dx = Math.cos(heading) * halfWidth, dz = Math.sin(heading) * halfWidth;
-  (geometry.attributes.position.array as Float32Array).set([x - dx, 0, z - dz, x + dx, 0, z + dz], row * 6);
+  (geometry.attributes.position.array as Float32Array).set([x - dx, y, z - dz, x + dx, y, z + dz], row * 6);
+  const normalX = -Math.sin(heading) * Math.sin(pitch), normalY = Math.cos(pitch), normalZ = Math.cos(heading) * Math.sin(pitch);
+  (geometry.attributes.normal.array as Float32Array).set([normalX, normalY, normalZ, normalX, normalY, normalZ], row * 6);
   const v = (distance - Math.floor(ribbonTile / ROAD_UV_PERIOD) * ROAD_UV_PERIOD) / ROAD_UV_METRES;
   (geometry.attributes.uv.array as Float32Array).set([0, v, 1, v], row * 4);
 }
 
 const matrix = new Matrix4();
 const rotation = new Quaternion();
+const tilt = new Quaternion(), pitchAxis = new Vector3(1, 0, 0);
 const position = new Vector3();
 const scale = new Vector3();
 
-export function putInstance(mesh: InstancedMesh, index: number, x: number, y: number, z: number, sx: number, sy: number, sz: number, angle = 0) {
+export function putInstance(mesh: InstancedMesh, index: number, x: number, y: number, z: number, sx: number, sy: number, sz: number, angle = 0, pitch = 0) {
   position.set(x, y, z);
   scale.set(sx, sy, sz);
   rotation.setFromAxisAngle(Object3D.DEFAULT_UP, angle);
+  if (pitch) rotation.multiply(tilt.setFromAxisAngle(pitchAxis, pitch));
   matrix.compose(position, rotation, scale);
   mesh.setMatrixAt(index, matrix);
 }

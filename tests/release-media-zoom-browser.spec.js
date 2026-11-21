@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
+import { markStartupSeen } from './helpers/test.js';
 import { recentReleases, NOTES_SEEN_KEY } from '../src/release-notes.ts';
 
 // Tapping a What's New picture or clip shows all of it, uncropped and on screen, on desktops and phones.
@@ -129,6 +130,19 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
   });
 
   test('the hero clip plays inline with an enlarge button on its corner, and its clip opens whole and carries on playing', async ({ page, gameplayURL }) => {
+    await page.addInitScript(() => {
+      const fetch = window.fetch;
+      const playing = new WeakSet();
+      document.addEventListener('playing', event => playing.add(event.target), true);
+      window.clipsRequestedBeforeHero = [];
+      window.fetch = (input, ...options) => {
+        const hero = document.querySelector('#release-video');
+        if (typeof input === 'string' && input.endsWith('.mp4') && hero && !playing.has(hero) && input !== hero.dataset.source) {
+          window.clipsRequestedBeforeHero.push(input);
+        }
+        return fetch.call(window, input, ...options);
+      };
+    });
     const errors = await openNotes(page, gameplayURL);
     const hero = page.locator('#release-video'), zoom = page.locator('#release-video-zoom');
     if (height <= 420) {
@@ -139,7 +153,9 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
       expect(await hero.evaluate(el => el.paused)).toBe(true);
       return;
     }
+    await expect(hero).toHaveAttribute('src', /^blob:/);
     await expect.poll(() => playing(hero), 'the hero autoplays inline').toBe(true);
+    expect(await page.evaluate(() => window.clipsRequestedBeforeHero), 'only the visible hero loads before playback starts').toEqual([]);
     // Measure together: the notes entrance animation can move between browser round trips.
     const [zoomBox, heroBox, iconBox] = await zoom.evaluate(el =>
       [el, document.getElementById('release-video'), el.querySelector('svg')].map(node => node.getBoundingClientRect().toJSON()));
@@ -175,6 +191,7 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
 test.describe('hero picture and animated pictures', () => {
   for (const [device, width, height, touch] of [DEVICES[0], DEVICES[1]]) test(`${device}: the hero picture and an animated highlight open whole`, async ({ browser, gameplayURL }) => {
     const page = await browser.newPage({ viewport: { width, height }, hasTouch: touch, isMobile: touch });
+    await markStartupSeen(page);
     // A bare page has no What's New record, so the notes would already be open on load and cover their opener.
     await page.addInitScript(key => localStorage.setItem(key, '999.0.0'), NOTES_SEEN_KEY);
     const errors = await openNotes(page, gameplayURL, "CURRENT_RELEASE.video = null; CURRENT_RELEASE.image = 'whats-new/0.26.0/world-tour-scenery.webp'; CURRENT_RELEASE.highlights[0].image = 'whats-new/test/animated.gif';");

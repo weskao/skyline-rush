@@ -3,7 +3,7 @@
 let nextEntry = 0;
 const key = 'skylineRushDialog';
 
-export function dialogNavigation(dialog: HTMLDialogElement, beforeClose = () => {}) {
+export function dialogNavigation(dialog: HTMLDialogElement, beforeClose = () => {}, afterClose = () => {}) {
   let entry = '';
   let pendingBack = false;
   const cleanup = () => window.removeEventListener('popstate', onBack);
@@ -12,6 +12,7 @@ export function dialogNavigation(dialog: HTMLDialogElement, beforeClose = () => 
     pendingBack = false;
     beforeClose();
     dialog.close();
+    afterClose();
   };
   const onBack = () => {
     if (dialog.open && !history.state?.[key]?.includes(entry)) closeDialog();
@@ -23,6 +24,17 @@ export function dialogNavigation(dialog: HTMLDialogElement, beforeClose = () => 
     if (ownsEntry) { pendingBack = true; history.back(); }
     if (immediate || !ownsEntry) closeDialog();
   }
+
+  // close() waits for an async history pop, so an exit animation holds its last frame until the dialog really closes:
+  // without the fill the dialog repaints at full opacity for those frames (.claude/rules/dialog-exit-animation.md).
+  let leaving: Animation[] = [];
+  function leave(keyframes: Keyframe[] | PropertyIndexedKeyframes, options: KeyframeAnimationOptions, backdrop = false) {
+    if (!dialog.open || leaving.length) return;
+    const hold = { ...options, fill: 'forwards' as const };
+    leaving = [dialog.animate(keyframes, hold), ...(backdrop ? [dialog.animate(keyframes, { ...hold, pseudoElement: '::backdrop' })] : [])];
+    void leaving[0]!.finished.then(() => close(), () => {});
+  }
+  dialog.addEventListener('close', () => leaving.splice(0).forEach(animation => animation.cancel()));
 
   dialog.addEventListener('keydown', event => event.stopPropagation());
   return {
@@ -38,6 +50,7 @@ export function dialogNavigation(dialog: HTMLDialogElement, beforeClose = () => 
       }
     },
     close,
+    leave,
   };
 }
 

@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -10,7 +11,7 @@ const frames = (page, count = 2) => page.evaluate(count => new Promise(resolve =
 const elapsed = page => page.evaluate(() => window.gameplay.race.elapsed);
 const phase = page => page.evaluate(() => window.gameplay.race.phase);
 async function startEndless(page) {
-  await page.locator('button[data-race-mode="endless"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="endless"]');
   await page.locator('#start-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15000) });
 }

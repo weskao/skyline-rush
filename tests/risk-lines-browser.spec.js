@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { selectLocale } from './helpers/locale-browser.js';
@@ -19,7 +20,7 @@ for (const [name, viewport, hasTouch] of [
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await selectLocale(page, locale);
-    await page.locator('button[data-race-mode="custom"]').click();
+    await clickLobbyOption(page, 'button[data-race-mode="custom"]');
     await page.locator('#race-mode-rules > summary').click();
     const select = page.locator('[data-race-rule="riskLines"]');
     await expect(select).toHaveValue('on');

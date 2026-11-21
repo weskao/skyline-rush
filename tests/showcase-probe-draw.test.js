@@ -1,6 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { shouldDrawShowcaseFrame } from './fixtures/showcase-probe-draw.js';
+import { shouldDrawShowcaseFrame, untilDrawn } from './fixtures/showcase-probe-draw.js';
+
+// world.render() returns false while the model or scenery still loads (graphics-first-frame); a probe that renders in one
+// synchronous loop never lets those loads finish, so it read a camera that never drew.
+test('a probe waits across frames until the world really draws', async () => {
+  const answers = [false, false, true];
+  let calls = 0, frames = 0;
+  await untilDrawn(() => answers[calls++], 10, () => { frames++; return Promise.resolve(); });
+  assert.equal(calls, 3);
+  assert.equal(frames, 2);
+});
+
+test('a world that never draws fails the probe instead of reading a stale camera', async () => {
+  await assert.rejects(untilDrawn(() => false, 3, () => Promise.resolve()), /never drew/);
+});
 
 test('orbit camera checks draw only sampled frames plus the final frame', () => {
   const draws = Array.from({ length: 1246 }, (_, frame) => frame)

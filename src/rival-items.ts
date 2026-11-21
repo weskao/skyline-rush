@@ -2,6 +2,8 @@ import { RACE_DRIVER_IDS } from './race-grid.ts';
 import { NITRO_MAX, NITRO_PICKUPS, RING_NITRO } from './ring-layout.ts';
 import { NITRO_CAP_BONUS } from './drive-rules.ts';
 import { RACE_TRACKS } from './race-tracks.ts';
+import { mysteryEffect } from './active-items.ts';
+import type { ItemAttack } from './item-attacks.ts';
 
 // Stage 2 (user, 2026-11-02): a ring or pickup taken by any car is gone this long, then back for everyone.
 export const ITEM_RESPAWN = 2.5; // s
@@ -10,11 +12,14 @@ export const ITEM_RESPAWN = 2.5; // s
 
 interface Collectible { distance: number; x: number; altitude: number; downUntil?: number; catchUp?: boolean }
 interface PickupItem extends Collectible { tier: string }
-interface RingItem extends Collectible { type: string; radius: number; row?: boolean }
+interface RingItem extends Collectible { type: string; radius: number; row?: boolean; mysteryIndex?: number }
 /** What the renderer shows when a rival collects (`effects.js`). */
 export interface RivalTake { time: number; distance: number; x: number; altitude: number; kind: string }
-export interface RivalCollector { x: number; altitude: number; distance: number; nitro: number; itemTakes: number; lastTake: RivalTake | null }
-interface CollectRace { trackId: string; elapsed: number; config: { difficulty?: string }; pickups: PickupItem[]; rings: RingItem[]; course?: unknown }
+export interface RivalCollector { x: number; altitude: number; distance: number; nitro: number; itemTakes: number; lastTake: RivalTake | null; heldAttack?: ItemAttack }
+interface CollectRace {
+  trackId: string; mode: string; seed: number; elapsed: number; config: { difficulty?: string; itemRules?: string };
+  pickups: PickupItem[]; rings: RingItem[]; course?: unknown;
+}
 
 /** The rivals' skill level: the race's difficulty, except Easy and Normal on an opening map (user, 2026-11-07) are 'intro'. */
 export function rivalLevel(race: { trackId: string; config: { difficulty?: string } }): string {
@@ -31,12 +36,12 @@ function firstAfter(items: readonly Collectible[], d: number): number {
 }
 function take(race: Pick<CollectRace, 'elapsed'>, rival: RivalCollector, item: Collectible, amount: number, kind: string): void {
   item.downUntil = race.elapsed + ITEM_RESPAWN;
-  rival.nitro = Math.min(NITRO_MAX, rival.nitro + amount); // the player's cap
+  if (amount) rival.nitro = Math.min(NITRO_MAX, rival.nitro + amount); // the player's cap
   rival.itemTakes++;
   rival.lastTake = { time: race.elapsed, distance: item.distance, x: item.x, altitude: item.altitude, kind };
 }
 
-// A rival takes the NITRO rings (nitro, risk) and pickups (not the overcharge) it crosses this step, with the
+// A rival takes attack rings and NITRO items (except overcharge) it crosses this step, with the
 // player's boxes: pickups within 1.7 m sideways and 1.8 m in height, rings inside their radius. Takes are
 // shared: the item is gone for every car until it respawns.
 // A graph course (race.course) sweeps per edge instead: course-race-step.ts calls rivalTakes.
@@ -49,13 +54,19 @@ export function rivalCollects(race: CollectRace, rival: RivalCollector, before: 
     if (!(r.row && r.distance === rowTaken) && rivalTakes(race, rival, r, true) && r.row) rowTaken = r.distance;
   }
 }
-/** One item a rival's step crossed: taken (shared, respawning) when it pays NITRO, is up and inside the player's box. */
+/** The crossed item must be up and within the same collection radius used by the player. */
 export type TakeItem = PickupItem | RingItem;
-export function rivalTakes(race: Pick<CollectRace, 'elapsed'>, rival: RivalCollector, item: TakeItem, ring: boolean): boolean {
+export function rivalTakes(race: Pick<CollectRace, 'elapsed' | 'mode' | 'config' | 'seed'> & { rings: readonly object[] }, rival: RivalCollector, item: TakeItem, ring: boolean): boolean {
   const altitude = rival.altitude || 0;
   if (ring) {
-    const r = item as RingItem, amount = r.catchUp ? 0 : RING_NITRO[r.type] ?? 0;
-    if (!amount || gone(r, race.elapsed) || !(Math.hypot(r.x - rival.x, r.altitude - altitude) < r.radius)) return false;
+    const r = item as RingItem, amount = RING_NITRO[r.type] ?? 0;
+    if (r.catchUp || gone(r, race.elapsed) || !(Math.hypot(r.x - rival.x, r.altitude - altitude) < r.radius)) return false;
+    if (!amount) {
+      if (rival.heldAttack || race.config.itemRules === 'off') return false;
+      if (r.type === 'emp' && race.mode === 'custom' && race.config.itemRules === 'all') rival.heldAttack = 'emp';
+      else if (r.type === 'mystery' && mysteryEffect(race.seed, r.mysteryIndex ?? race.rings.indexOf(r)) === 'freeze') rival.heldAttack = 'freeze';
+      else return false;
+    }
     take(race, rival, r, amount, r.type);
     return true;
   }

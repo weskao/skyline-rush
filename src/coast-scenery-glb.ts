@@ -7,16 +7,16 @@ import { seededRng } from './rng.ts';
 import type { VfxQuality } from './vfx-settings.ts';
 
 export const COAST_CHUNK_METRES = 120;
-export const COAST_PIECES = ['sea_arch', 'cliff_a', 'cliff_b', 'rock_a', 'rock_b', 'palm_a', 'palm_b', 'guard_rail'] as const;
+export const COAST_PIECES = ['sea_arch', 'cliff_a', 'cliff_b', 'rock_a', 'rock_b', 'palm_a', 'palm_b', 'guard_rail', 'lamp_post'] as const;
 export type CoastPiece = typeof COAST_PIECES[number];
 
 /** Lateral half-depth (m) at scale 1 with the plan's yaw: long pieces lie along the road, round ones use their radius. */
 export const PIECE_DEPTH: Readonly<Record<CoastPiece, number>> = {
-  sea_arch: 10.4, cliff_a: 5.5, cliff_b: 4.4, rock_a: 2.1, rock_b: 1.3, palm_a: 6, palm_b: 5, guard_rail: .35,
+  sea_arch: 10.4, cliff_a: 5.5, cliff_b: 4.4, rock_a: 2.1, rock_b: 1.3, palm_a: 6, palm_b: 5, guard_rail: .35, lamp_post: .25,
 };
 /** Upper bound of placements per chunk; sizes the instance pools. */
 const MAX_PER_CHUNK: Readonly<Record<CoastPiece, number>> = {
-  sea_arch: 1, cliff_a: 1, cliff_b: 1, rock_a: 6, rock_b: 3, palm_a: 3, palm_b: 3, guard_rail: 20,
+  sea_arch: 1, cliff_a: 1, cliff_b: 1, rock_a: 6, rock_b: 3, palm_a: 3, palm_b: 3, guard_rail: 20, lamp_post: 2,
 };
 /** Rails are thin: beyond the nearest chunks they are sub-pixel and the procedural rail lights carry the line. */
 export const RAIL_CHUNKS = 4;
@@ -24,6 +24,9 @@ const AHEAD: Readonly<Record<Exclude<VfxQuality, 'low'>, number>> = { medium: 4,
 const MAX_CHUNKS = 2 + AHEAD.high;
 const RAIL_LENGTH = 12;
 const CURB = 12.4, CLEAR = 20, ALONG_ROAD = Math.PI / 2;
+/** Street lights stand where world.js draws its lamp heads: every 60 m of absolute distance, odd indices on the
+ *  right, the column 12.7 m out and the head 3.3 m toward the road. */
+const LAMP_SPACING = 60, LAMP_OFFSET = 12.7;
 /** Height of the sea plane the scans stand in (and the boats of coast-boats.ts float on). */
 export const SEA = -6;
 
@@ -35,6 +38,11 @@ export function coastChunkPlan(chunk: number, seed?: number): Placement[] {
   const side = (): number => (r() < .5 ? -1 : 1);
   const out: Placement[] = [];
   for (const s of [-1, 1]) for (let i = 0; i < 10; i++) out.push({ piece: 'guard_rail', along: RAIL_LENGTH * (i + .5), offset: s * CURB, y: .76, yaw: ALONG_ROAD, scale: 1 });
+  // No random numbers above this line: the scan placements below keep their reviewed positions.
+  for (let along = 0; along < COAST_CHUNK_METRES; along += LAMP_SPACING) {
+    const right = (chunk * COAST_CHUNK_METRES + along) / LAMP_SPACING % 2 !== 0; // the arm (model +z) reaches over the road
+    out.push({ piece: 'lamp_post', along, offset: right ? LAMP_OFFSET : -LAMP_OFFSET, y: 0, yaw: ALONG_ROAD + (right ? Math.PI : 0), scale: 1 });
+  }
   const cliffSide = side();
   const cliff: CoastPiece = r() < .5 ? 'cliff_a' : 'cliff_b';
   const cliffScale = cliff === 'cliff_a' ? 1.4 + r() * .6 : 1.6 + r() * .8;
@@ -68,11 +76,15 @@ export function coastChunkWindow(distance: number, quality: VfxQuality): ChunkWi
 /** Far coast (full-scene step 3): the same cliff and rock scans at headland and sea-stack size, in 480 m slots keyed
  *  by absolute distance and the endless seed like the chunks. `along` is metres into the slot. */
 export const COAST_FAR_SLOT_METRES = 480;
-const FAR_SLOTS: Readonly<Record<Exclude<VfxQuality, 'low'>, number>> = { medium: 3, high: 4 };
-/** Upper bound of far placements per slot; added to the same instance pools, so the far coast adds no draw call. */
-// shortcut: a far headland draws the full 11k-triangle cliff scan (about +90k triangles on High, +70k on Medium);
-// add decimated far nodes to coast-scenery.glb if a phone profile shows the vertex cost.
+/** Four slots on Medium and High: a new slot's nearest piece enters 1340 m out, under 83% fog or more. (Three on
+ *  Medium let it enter at 860 m, about 52% fog: a visible pop.) */
+const FAR_SLOTS = 4;
+/** Upper bound of far placements per slot. */
 const FAR_PER_SLOT: Partial<Record<CoastPiece, number>> = { cliff_a: 2, cliff_b: 2, rock_a: 1, rock_b: 1 };
+/** A far headland draws the piece's decimated node (2.5k triangles, same material and maps as the 11k scan): two
+ *  more draw calls, no program or texture.
+ *  shortcut: far sea stacks draw the full rock scans from the close pools (2.5k triangles each, at most one per slot). */
+export const COAST_FAR_LOD: Partial<Record<CoastPiece, string>> = { cliff_a: 'cliff_a_far', cliff_b: 'cliff_b_far' };
 
 export function coastFarPlan(slot: number, seed?: number): Placement[] {
   const r = seededRng(seed ?? 0, 'coast-far-v1:' + slot), out: Placement[] = [];
@@ -86,10 +98,10 @@ export function coastFarPlan(slot: number, seed?: number): Placement[] {
   }
   return out;
 }
-/** From half a slot behind the car to past where the fog closes on High; Low keeps the procedural cones. */
+/** From half a slot behind the car to past where the fog closes; Low keeps the procedural cones. */
 export function coastFarWindow(distance: number, quality: VfxQuality): ChunkWindow | null {
   if (quality === 'low') return null;
-  return { first: Math.floor(distance / COAST_FAR_SLOT_METRES - .5), count: FAR_SLOTS[quality] };
+  return { first: Math.floor(distance / COAST_FAR_SLOT_METRES - .5), count: FAR_SLOTS };
 }
 
 interface Part { mesh: THREE.InstancedMesh; locals: THREE.Matrix4[]; used: number }
@@ -101,11 +113,16 @@ export interface ShoreSink { begin(x: number, z: number): void; stamp(x: number,
 export function createCoastModelLayer(source: THREE.Object3D, shore?: ShoreSink) {
   source.updateMatrixWorld(true);
   const rootInverse = source.matrixWorld.clone().invert();
-  const parts = new Map<CoastPiece, Part[]>();
+  const parts = new Map<string, Part[]>();
   const meshes: THREE.InstancedMesh[] = [];
   const parked = new THREE.Matrix4().makeTranslation(0, -1000, 0);
-  const half = new Map<CoastPiece, THREE.Vector3>(), box = new THREE.Box3();
-  for (const piece of COAST_PIECES) {
+  const half = new Map<string, THREE.Vector3>(), box = new THREE.Box3();
+  const pools = new Map<string, number>(COAST_PIECES.map(piece => [piece, MAX_PER_CHUNK[piece] * MAX_CHUNKS]));
+  for (const [base, count] of Object.entries(FAR_PER_SLOT) as [CoastPiece, number][]) {
+    const node = COAST_FAR_LOD[base] ?? base;
+    pools.set(node, (pools.get(node) ?? 0) + count * FAR_SLOTS);
+  }
+  for (const [piece, pool] of pools) {
     const root = source.getObjectByName(piece);
     if (!root) throw new Error(`coast-scenery: missing node ${piece}`);
     half.set(piece, box.setFromObject(root).getSize(new THREE.Vector3()).multiplyScalar(.5));
@@ -119,7 +136,7 @@ export function createCoastModelLayer(source: THREE.Object3D, shore?: ShoreSink)
       byKey.set(key, entry);
     });
     const list: Part[] = [...byKey.values()].map(({ geometry, material, locals }, k) => {
-      const capacity = (MAX_PER_CHUNK[piece] * MAX_CHUNKS + (FAR_PER_SLOT[piece] ?? 0) * FAR_SLOTS.high) * locals.length;
+      const capacity = pool * locals.length;
       const mesh = new THREE.InstancedMesh(geometry, material, capacity);
       mesh.name = k ? `${piece}:${k}` : piece;
       mesh.frustumCulled = false; // instances span the whole window; the pool's bounds would be stale
@@ -142,20 +159,20 @@ export function createCoastModelLayer(source: THREE.Object3D, shore?: ShoreSink)
       for (const list of parts.values()) for (const entry of list) entry.used = 0;
       const [midX, midZ] = route.point((window.first + window.count / 2) * COAST_CHUNK_METRES);
       shore?.begin(midX, midZ + origin);
-      const write = (piece: CoastPiece): void => {
+      const write = (piece: string): void => {
         transform.compose(p, q, s);
         for (const entry of parts.get(piece)!) for (const local of entry.locals) {
           if (entry.used < entry.mesh.instanceMatrix.count) entry.mesh.setMatrixAt(entry.used++, part.multiplyMatrices(transform, local));
         }
       };
-      const stand = (placement: Placement, distance: number, wet: boolean): void => {
+      const stand = (placement: Placement, distance: number, wet: boolean, node: string = placement.piece): void => {
         const [x, z] = route.point(distance, placement.offset);
         p.set(x, placement.y, z + origin);
         const yaw = placement.yaw - route.heading(distance), size = half.get(placement.piece)!;
         q.setFromAxisAngle(up, yaw);
         s.setScalar(placement.scale);
         if (wet && placement.y <= SEA) shore?.stamp(p.x, p.z, size.x * placement.scale, size.z * placement.scale, yaw);
-        write(placement.piece);
+        write(node);
       };
       for (let chunk = window.first; chunk < window.first + window.count; chunk++) {
         for (const placement of coastChunkPlan(chunk, seed)) {
@@ -165,16 +182,18 @@ export function createCoastModelLayer(source: THREE.Object3D, shore?: ShoreSink)
             const [ax, az] = route.point(distance - RAIL_LENGTH / 2, placement.offset);
             const [bx, bz] = route.point(distance + RAIL_LENGTH / 2, placement.offset);
             p.set((ax + bx) / 2, placement.y, (az + bz) / 2 + origin);
-            q.setFromAxisAngle(up, Math.atan2(az - bz, bx - ax));
+            // The W-beam (model +z) faces the road on both sides: the right-hand rail is turned about.
+            q.setFromAxisAngle(up, Math.atan2(az - bz, bx - ax) + (placement.offset > 0 ? Math.PI : 0));
             s.set(Math.hypot(bx - ax, bz - az) / RAIL_LENGTH, 1, 1);
             write(placement.piece);
           } else stand(placement, distance, true);
         }
       }
-      // shortcut: no shore foam on the far pieces (their bounding ellipse is far wider than the rock); give them a
-      // footprint mesh or a larger mask if the base of a headland ever reads as cut out of the water.
+      // shortcut: no shore foam on the far pieces: a 3 m foam band 290 m or more from a 9 m high camera is under a
+      // pixel tall, and their bounding ellipse is far wider than the rock; give them a footprint mesh if the
+      // concept-board parity review flags a hard waterline.
       if (far) for (let slot = far.first; slot < far.first + far.count; slot++) {
-        for (const placement of coastFarPlan(slot, seed)) stand(placement, slot * COAST_FAR_SLOT_METRES + placement.along, false);
+        for (const placement of coastFarPlan(slot, seed)) stand(placement, slot * COAST_FAR_SLOT_METRES + placement.along, false, COAST_FAR_LOD[placement.piece]);
       }
       for (const list of parts.values()) for (const { mesh, used } of list) {
         for (let i = used; i < mesh.count; i++) mesh.setMatrixAt(i, parked);

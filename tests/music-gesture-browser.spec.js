@@ -42,7 +42,9 @@ test('a page shown again without a visibilitychange event recovers its music on 
   await installMusicProbe(page);
   await page.goto('/');
   await ready(page);
-  await page.locator('#intro-title').click();
+  const { width, height } = page.viewportSize();
+  const tapScene = () => page.mouse.click(width / 2, height / 2);
+  await tapScene();
   await expectMusicPlaying(page);
   await page.evaluate(() => {
     Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
@@ -54,9 +56,48 @@ test('a page shown again without a visibilitychange event recovers its music on 
   const before = await page.evaluate(() => window.__music.ctxs.length);
   for (let tap = 0; tap < 4; tap++) {
     await page.waitForTimeout(ciTimeout(1300)); // past the engine's 1 s rebuild guard, as a player's separate taps are
-    await page.locator('#intro-title').click();
+    await tapScene();
   }
   await expectMusicPlaying(page);
   const made = await page.evaluate(() => window.__music.ctxs.length); // settled: music is playing, so every tap was handled
   expect(made - before, 'at most the one iOS-style rebuild on the first tap, never one per tap').toBeLessThanOrEqual(1);
 });
+
+for (const [orientation, width, height] of [['portrait', 390, 844], ['landscape', 844, 390]]) {
+  test.describe(`phone ${orientation}`, () => {
+    test.use({ viewport: { width, height }, isMobile: true, hasTouch: true });
+
+    test('touching Resume restores race music and effects after the audio clock stops', async ({ page }) => {
+      await installMusicProbe(page);
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.goto('/');
+      await ready(page);
+      await page.locator('#start-button').tap();
+      const phase = page.locator('body');
+      await expect(phase).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15000) });
+      await page.locator('#pause-button').tap();
+      await expect(phase).toHaveAttribute('data-phase', 'paused');
+      await expectMusicPlaying(page);
+
+      // A mobile OS audio interruption can stall Web Audio without changing page visibility or context state.
+      const interrupted = await page.evaluate(() => {
+        const { ctxs } = window.__music;
+        const ctx = ctxs.at(-1);
+        Object.defineProperty(ctx, 'currentTime', { value: ctx.currentTime });
+        return { index: ctxs.length - 1, time: performance.now() };
+      });
+      await expect.poll(() => page.evaluate(() => performance.now()))
+        .toBeGreaterThan(interrupted.time + 1000);
+      await page.locator('#resume-button').tap();
+      await expect(phase).toHaveAttribute('data-phase', 'racing');
+      await expectMusicPlaying(page);
+      const recovered = await page.evaluate(() => window.__music.ctxs.length - 1);
+      expect(recovered).toBe(interrupted.index + 1);
+      const effectCount = index => page.evaluate(ctx => window.__music.effects.filter(effect => effect.ctx === ctx).length, index);
+      const beforeCamera = await effectCount(recovered);
+      await page.locator('#camera-button').tap();
+      await expect.poll(() => effectCount(recovered)).toBeGreaterThan(beforeCamera);
+      await expect(phase).toHaveAttribute('data-phase', 'racing');
+    });
+  });
+}

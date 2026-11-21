@@ -129,7 +129,7 @@ async function checkHighDetail(page, id, viewport, airflow) {
       { airflow, quality: 'high', seconds: orbit ? 41.5 : 2, every: orbit ? 0.5 : 0 }), [id, view, airflow, orbit]);
     const size = sizeLabel(viewport, airflow);
     for (const [i, s] of (orbit ? result.samples.slice(3) : [result]).entries())
-      expectWholeCar(s, `${id}/${view}${orbit ? ` sample ${i}` : ''} ${size}`);
+      expectWholeCar(s, `${id}/${view}${orbit ? ` sample ${i} (${s.bearing.toFixed(0)}°)` : ''} ${size}`);
     if (view === 'drive') {
       // Drive is the curated three-quarter chase shot: the camera stays behind the car, inside the planner's edge margins.
       const { minX, maxX, minY, maxY } = result.carBounds, label = `${id}/drive ${size}`;
@@ -158,9 +158,10 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
   test(`Garage retains home camera distance and a visible car at ${viewport.width}px`, async ({ page }) => {
     await openProbe(page, viewport);
     for (const id of TRACKS) for (const view of ['drive', ...Object.keys(FIXED), 'orbit']) {
-      const [home, garage] = await page.evaluate(([id, view]) => [
-        window.showcaseCameraProbe(id, view, { airflow: true }),
-        window.showcaseCameraProbe(id, view, { airflow: true, garage: true }),
+      // One probe at a time: both share the live world and wait for its first drawn frame.
+      const [home, garage] = await page.evaluate(async ([id, view]) => [
+        await window.showcaseCameraProbe(id, view, { airflow: true }),
+        await window.showcaseCameraProbe(id, view, { airflow: true, garage: true }),
       ], [id, view]);
       expect.soft(garage.range, `${id}/${view}: retain scenery around the vehicle`).toBeGreaterThanOrEqual(home.range * .95);
       expectWholeCar(garage, `${id}/${view}/garage`);

@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test } from './helpers/gameplay-browser.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -15,7 +16,7 @@ for (const [label, viewport, locale, touch] of [
       page.on('pageerror', error => errors.push(error.message));
       await page.waitForTimeout(750);
       if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-      await page.locator('button[data-race-mode="endless"]').click();
+      await clickLobbyOption(page, 'button[data-race-mode="endless"]');
       await expect(page.locator('body')).toHaveAttribute('data-race-mode', 'endless');
       await expect(page.locator('[data-track="neon"]')).toBeEnabled();
       await expect(page.locator('#mode-description')).toContainText(locale === 'en' ? 'All tracks' : '所有賽道');

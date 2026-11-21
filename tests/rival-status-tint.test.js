@@ -1,8 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Scene, Group, Mesh, BoxGeometry, MeshStandardMaterial, Color, Matrix4, Vector3, Quaternion } from 'three';
+import { Scene, Group, Mesh, Box3, BoxGeometry, MeshStandardMaterial, Color, Matrix4, Vector3, Quaternion } from 'three';
 import { createRace } from '../src/game.js';
 import { createEffects } from '../src/effects.js';
+import { CARS } from '../src/car-catalog.ts';
+import { createGarageModel } from '../src/garage-model.ts';
 
 // A Freeze or EMP that slows a rival (game.js FREEZE_RIVAL_SPEED) shows on that rival's car as a status tint.
 const shared = new MeshStandardMaterial({ color: '#c0392b' }); // one paint shared by every car, like makeCar may do
@@ -55,7 +57,7 @@ test('an EMP flickers a rival in a distinct colour; reduced motion keeps it stea
   const samples = [];
   for (let i = 0; i < 20; i++) { frame(0.016); samples.push(lit(tint, 1)); }
   const c = colorOf(tint, 1);
-  assert.ok(c.b < c.r || c.b < c.g, `EMP is not Freeze blue (${c.toArray()})`);
+  assert.ok(c.r > c.g && c.g > c.b * 3, `rival EMP reads warm yellow (${c.toArray()})`);
   assert.equal(lit(tint, 0), 0, 'only the EMP-hit rival');
   assert.ok(Math.max(...samples.slice(10)) - Math.min(...samples.slice(10)) > 0.3, 'flickers');
   const calm = setup(t);
@@ -96,4 +98,195 @@ test('a hidden rival gets no tint', t => {
   for (let i = 0; i < 10; i++) frame();
   assert.equal(lit(tint, 1), 0);
   assert.ok(lit(tint, 0) > 0);
+});
+
+// Game feel (user 2026-11-17): Freeze grows ice crystals that shatter on thaw; EMP fires a shockwave and sparks.
+const shardsOf = scene => scene.getObjectByName('Rival freeze shards');
+const shownInstances = (mesh, from = 0, to = mesh.count) => {
+  const m = new Matrix4(), p = new Vector3();
+  let n = 0;
+  for (let i = from; i < to; i++) { mesh.getMatrixAt(i, m); p.setFromMatrixPosition(m); if (p.y > -1000) n++; }
+  return n;
+};
+const liveParticles = scene => { let n = 0; scene.traverse(o => { if (o.isPoints) n += o.geometry.attributes.alpha.array.filter(a => a > 0).length; }); return n; };
+
+test('a Freeze grows ice crystals on each frozen rival, and they shatter outward on thaw', t => {
+  const { race, frame, effects, vehicles, tint } = setup(t);
+  const scene = vehicles[0].parent;
+  const shards = shardsOf(scene);
+  assert.ok(shards?.isInstancedMesh, 'one instanced shard mesh');
+  const per = shards.count / tint.count;
+  race.player.effects.freeze = 2;
+  for (let i = 0; i < 10; i++) frame();
+  assert.equal(shards.visible, true);
+  for (let r = 0; r < 3; r++) assert.equal(shownInstances(shards, r * per, (r + 1) * per), per, `rival ${r + 1} wears its crystals`);
+  const m = new Matrix4(), before = new Vector3(), after = new Vector3(), car = vehicles[1].position;
+  shards.getMatrixAt(0, m); before.setFromMatrixPosition(m);
+  race.player.effects.freeze = 0;
+  for (let i = 0; i < 6; i++) frame(0.03);
+  shards.getMatrixAt(0, m); after.setFromMatrixPosition(m);
+  assert.ok(after.distanceTo(car) > before.distanceTo(car) + 0.3, 'a thawed crystal flies off the car');
+  for (let i = 0; i < 30; i++) frame();
+  assert.equal(shownInstances(shards), 0, 'the shatter clears');
+  effects.reset();
+});
+
+test('Low keeps the soft tint only: no ice crystals', t => {
+  const { race, frame, vehicles } = setup(t);
+  race.player.effects.freeze = 2;
+  for (let i = 0; i < 10; i++) frame(0.05, { quality: 'low' });
+  assert.equal(shownInstances(shardsOf(vehicles[0].parent)), 0);
+});
+
+test('an EMP hit fires an expanding shockwave and spits sparks; the shell tells the shader which status and how long', t => {
+  const { race, frame, tint, vehicles } = setup(t);
+  const scene = vehicles[0].parent;
+  const wave = scene.getObjectByName('Rival status shockwave');
+  assert.ok(wave?.isInstancedMesh);
+  const sparksBefore = liveParticles(scene);
+  race.rivals[1].empUntil = race.elapsed + 1.5;
+  const m = new Matrix4(), s = new Vector3(), scales = [];
+  for (let i = 0; i < 4; i++) { frame(0.03); wave.getMatrixAt(1, m); m.decompose(new Vector3(), new Quaternion(), s); scales.push(s.x); }
+  assert.ok(scales[3] > scales[0] * 1.5, `the shockwave expands (${scales})`);
+  assert.ok(liveParticles(scene) > sparksBefore + 5, 'sparks fly');
+  const status = tint.geometry.attributes.status;
+  assert.equal(status.getX(1), 1, 'EMP kind');
+  assert.ok(status.getY(1) > 0.05, 'age since the hit drives the hit flash and arcs');
+  for (let i = 0; i < 30; i++) frame();
+  wave.getMatrixAt(1, m); assert.ok(new Vector3().setFromMatrixPosition(m).y < -1000, 'the wave parks after it fades');
+});
+
+test('the incoming status shell tracks the player pose and clears on finish', t => {
+  const { race, tint, frame, vehicles } = setup(t, 1);
+  const playerIndex = tint.count - 1;
+  race.player.effects.freeze = 2;
+  frame();
+  assert.equal(lit(tint, playerIndex), 0, 'outgoing Freeze leaves the player clear');
+  const rivalTint = lit(tint, 0);
+  race.player.effects.freeze = 0;
+  race.player.freezeUntil = 22;
+  vehicles[0].position.x = -3;
+  frame();
+  assert.ok(colorOf(tint, playerIndex).b > 0.15, 'incoming Freeze shows on the player');
+  assert.ok(lit(tint, 0) < rivalTint, 'rival fades separately');
+  const matrix = new Matrix4();
+  tint.getMatrixAt(playerIndex, matrix);
+  assert.equal(new Vector3().setFromMatrixPosition(matrix).x, -3);
+  race.player.empUntil = race.rivals[0].empUntil = 21.5;
+  frame(.05, { quality: 'low' }, true);
+  const empColor = colorOf(tint, playerIndex);
+  const rivalEMP = colorOf(tint, 0);
+  assert.ok(empColor.r > empColor.g && empColor.g > empColor.b * 3, 'player EMP is warm yellow at Low quality');
+  assert.ok(Math.abs(empColor.r / empColor.b - rivalEMP.r / rivalEMP.b) < 1e-6, 'player and rival shell share the same hue');
+  const waves = vehicles[0].parent.getObjectByName('Rival status shockwave');
+  for (const index of [0, playerIndex]) {
+    const wave = colorOf(waves, index);
+    assert.ok(wave.r > wave.g && wave.g > wave.b * 3, 'player and rival shockwaves share the warm yellow hue');
+  }
+  race.phase = 'finished';
+  frame();
+  assert.equal(lit(tint, playerIndex), 0);
+});
+
+test('Low shows a few ice crystals on the nearby player while rivals keep the lightweight shell', t => {
+  const { race, tint, frame, vehicles } = setup(t);
+  const shards = shardsOf(vehicles[0].parent);
+  const playerStart = shards.count - shards.count / tint.count;
+  race.player.freezeUntil = race.elapsed + 2;
+  race.player.effects.freeze = 2;
+  for (let i = 0; i < 10; i++) frame(0.05, { quality: 'low' });
+  assert.equal(shownInstances(shards, 0, playerStart), 0);
+  const playerShards = shownInstances(shards, playerStart);
+  assert.ok(playerShards > 0 && playerShards < shards.count / tint.count);
+});
+
+test('the player shares the outward thaw animation and honors reduced motion', t => {
+  const { race, tint, frame, vehicles } = setup(t);
+  const shards = shardsOf(vehicles[0].parent);
+  const playerStart = shards.count - shards.count / tint.count;
+  const matrix = new Matrix4(), point = new Vector3();
+  const crystalDistance = () => {
+    shards.getMatrixAt(playerStart, matrix);
+    return point.setFromMatrixPosition(matrix).distanceTo(vehicles[0].position);
+  };
+  for (const calm of [false, true]) {
+    race.player.freezeUntil = race.elapsed + 2;
+    for (let i = 0; i < 10; i++) frame(0.05, {}, calm);
+    assert.equal(shownInstances(shards, playerStart), shards.count / tint.count);
+    const frozen = crystalDistance();
+    race.player.freezeUntil = 0;
+    for (let i = 0; i < 6; i++) frame(0.03, {}, calm);
+    if (calm) assert.equal(crystalDistance(), frozen, 'crystals shrink in place');
+    else assert.ok(crystalDistance() > frozen + 0.3, 'crystals fly off the car');
+    for (let i = 0; i < 30; i++) frame(0.05, {}, calm);
+    assert.equal(shownInstances(shards, playerStart), 0);
+  }
+});
+
+test('the player shell refits across the selectable catalog, an unlisted model and the fallback', async t => {
+  const { race, tint, frame, vehicles: [player] } = setup(t, 0);
+  const keep = new Group();
+  player.add(keep);
+  const host = { name: 'home', car: player, scene: player.parent, keep };
+  race.player.freezeUntil = race.elapsed + 2;
+  const matrix = new Matrix4(), scale = new Vector3();
+  const playerWidth = () => {
+    frame();
+    tint.getMatrixAt(tint.count - 1, matrix);
+    return scale.setFromMatrixScale(matrix).x;
+  };
+  const fallback = playerWidth();
+  const models = [...Object.values(CARS).map(car => car.model), 'future-model'];
+  for (const [index, id] of models.entries()) {
+    const mesh = new Mesh(new BoxGeometry(3 + index, 1.2, 5), shared);
+    const dataset = {};
+    const model = createGarageModel({ id, dataset, compile: async () => {},
+      cache: { load: async () => ({ kind: 'model', instance: () => mesh, release() {} }) } });
+    model.sync(true, 'high', host, 'drive');
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(mesh.parent, player, `${id} uses the same race-car host`);
+    const width = new Box3().setFromObject(mesh).getSize(new Vector3()).x;
+    assert.ok(Math.abs(playerWidth() - width * .6) < 1e-5, `${id} fits the currently rendered model`);
+    race.player.empUntil = race.elapsed + 1;
+    assert.ok(Math.abs(playerWidth() - width * .6) < 1e-5, `${id} EMP shares the model fit`);
+    race.player.empUntil = 0;
+    model.dispose();
+    assert.equal(playerWidth(), fallback, `${id} returns to the procedural fit when removed`);
+  }
+});
+
+// Freeze and EMP follow the car, not a bubble around it (2026-11-21): the shell is a hull lofted through the
+// measured width and roof of 24 slices of the car that is drawn, whatever its model.
+test('the shell hugs each car: its hull takes the measured width and roof of every slice', t => {
+  const { race, tint, frame, vehicles } = setup(t, 1);
+  const rival = vehicles[1];
+  rival.clear(); // a wedge: a low, narrow nose ahead of a tall, wide cabin
+  const nose = new Mesh(new BoxGeometry(1, 0.5, 2.4), shared), cabin = new Mesh(new BoxGeometry(2.2, 1.3, 2.4), shared);
+  nose.position.set(0, 0.25, -1.2); cabin.position.set(0, 0.65, 1.2);
+  rival.add(nose, cabin);
+  race.rivals[0].empUntil = race.elapsed + 1.5;
+  frame();
+  const hull = tint.material.uniforms.hull.value;
+  assert.deepEqual([hull.image.width, hull.image.height], [24, tint.count], 'one row of 24 slices per car');
+  const slice = j => ({ halfWidth: hull.image.data[j * 4 + 1], top: hull.image.data[j * 4 + 2] });
+  // Shell units: 1 = the fitted half extent (half the car's box x 1.2).
+  assert.ok(Math.abs(slice(21).halfWidth - 1.1 / 1.32) < 1e-4 && Math.abs(slice(21).top - 0.65 / 0.78) < 1e-4, `cabin ${JSON.stringify(slice(21))}`);
+  assert.ok(Math.abs(slice(2).halfWidth - 0.5 / 1.32) < 1e-4 && Math.abs(slice(2).top + 0.15 / 0.78) < 1e-4, `nose ${JSON.stringify(slice(2))}`);
+  assert.match(tint.material.vertexShader, /texelFetch\(hull/, 'the vertex shader lofts the shell through the slices');
+});
+
+test('a car under Freeze and EMP at once wears both: the shell draws both surfaces and the crystals stay through the EMP', t => {
+  const { race, frame, tint, vehicles } = setup(t);
+  const shards = shardsOf(vehicles[0].parent), per = shards.count / tint.count, status = tint.geometry.attributes.status;
+  race.rivals[1].freezeUntil = race.elapsed + 3;
+  for (let i = 0; i < 10; i++) frame();
+  assert.equal(shownInstances(shards, per, 2 * per), per, 'frozen: crystals on');
+  race.rivals[1].empUntil = race.elapsed + 1;
+  for (let i = 0; i < 10; i++) frame();
+  assert.equal(status.getX(1), 2, 'both kinds: EMP over Freeze');
+  assert.equal(shownInstances(shards, per, 2 * per), per, 'the crystals hold under the EMP');
+  race.elapsed += 1.1; // effects.update does not step the race clock
+  for (let i = 0; i < 4; i++) frame();
+  assert.equal(status.getX(1), 0, 'the EMP ends, the Freeze stays');
+  assert.equal(shownInstances(shards, per, 2 * per), per, 'no thaw while still frozen');
 });

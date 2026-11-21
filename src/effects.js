@@ -13,6 +13,7 @@ import { createDriftCharge } from './drift-charge-vfx.js';
 import { createSkidMarks } from './skid-marks.js';
 import { createMiniBoostStreaks } from './mini-boost-streaks.js';
 import { LIFT_PORTS, liftPort } from './lift-ports.js';
+import { createNitroSparks } from './nitro-sparks.ts';
 import { blue, bonusStyles, gas, gold, mist, orange, pickupColors, purple, ringColors } from './effects-palette.ts';
 
 const COUNT = 480, flatShadow = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
@@ -108,7 +109,10 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
     return wheel;
   }
   let classicRoute;
-  const burst = createParticleBurst(emit, (d, x) => classicRoute?.point(d, x) ?? [roadCenter(d) + x, -d]);
+  const roadPoint = (d, x) => classicRoute?.point(d, x) ?? [roadCenter(d) + x, -d];
+  const burst = createParticleBurst(emit, roadPoint), nitroSparks = createNitroSparks(emit);
+  const headingAt = d => classicRoute?.heading(d) ?? Math.atan((roadCenter(d + 1) - roadCenter(d - 1)) / 2);
+  const statusEmit = (d, x, y, ...rest) => { const [wx, wz] = roadPoint(d, x); emit(wx, y, -wz, ...rest); }; // rival-status-fx.ts
   // rings[0] flashes a crash, rings[1] a hit the shield blocked (ITEM-12); one shader program for both.
   const rings = [orange, blue].map(color => {
     const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(...color), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
@@ -126,9 +130,12 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
   magnetRing.visible = false;
   magnetRing.scale.setScalar(MAGNET_RANGE);
   scene.add(magnetRing);
-  const statusTint = createRivalStatusTint(RACE_DRIVER_IDS.length - 1); // Freeze / EMP on the rivals they slow
-  scene.add(statusTint.mesh);
+  const statusTint = createRivalStatusTint(RACE_DRIVER_IDS.length); // Shared pool for the player and rivals
+  scene.add(statusTint.object);
   return {
+    get pickupsLoading() { return pickupMarkers.loading; },
+    setDriftTrail(id) { skids?.setSkin(id); },
+    setNitroTrail(ids) { nitroSparks.setSkin(ids); },
     // `origin`: the scene's floating origin (scene + origin = absolute; world.js), defaulting to the flat road's.
     update(race, dt, center, preview, reducedMotion, vehicles, options = {}, origin = null) {
       dt = Math.max(0, dt);
@@ -217,7 +224,9 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
       // A tier just paid: a burst off both rear tyres in its colour. Kept under reduced motion as the payout cue.
       const fired = driftCharge?.update(car.drift, dt, active, reducedMotion) ?? 0;
       miniBoostStreaks?.update(car, vehicles?.[0], camera, dt, { active, enabled, quality: options.quality, reducedMotion });
-      skids?.update(enabled && !preview && (race.phase === 'racing' || race.phase === 'paused') && car.altitude < 0.2 ? car.drift : null, origin ?? skidOrigin.set(center, 0, -distance)); // kept to the race's end
+      const groundedDrift = enabled && !preview && (race.phase === 'racing' || race.phase === 'paused') && car.altitude < 0.2 ? car.drift : null;
+      skids?.update(groundedDrift, origin ?? skidOrigin.set(center, 0, -distance),
+        race.phase === 'paused' ? 0 : dt, reducedMotion, options.ultra ? 'ultra' : options.quality, enabled && !preview);
       if (fired && car.altitude < 0.2) for (const side of [-1, 1]) for (let i = reducedMotion ? 3 : lowQuality ? 5 : 10; i > 0; i--) {
         const { x, d } = rearWheel(side, car, center, originZ, vehicles);
         emit(x, 0.2, d, side * (1 + Math.random() * 3), 2 + Math.random() * 2, car.speed * 0.9, 0.16, 0.45, driftColors[fired - 1], 6);
@@ -242,6 +251,8 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
         if (lastLanding && active) burst(lastLanding, 65, mist, car.speed, true);
         if (lastLanding?.chain && active) burst(lastLanding, reducedMotion ? 6 : lowQuality ? 12 : 40, blue, car.speed);
       }
+      // NITRO sparks leave the player's rear ports through this pool (nitro-sparks.ts): none in calm modes or with VFX off.
+      if (active) nitroSparks.update(vehicles?.[0], car, headingAt(car.distance), center, originZ, dt, options.quality ?? 'high', reducedMotion);
       for (let source = 0; source <= race.rivals.length; source++) {
         const driver = source === 0 ? car : race.rivals[source - 1];
         const pose = vehicles?.[source];
@@ -261,7 +272,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
         if (!enabled || strengths[source] < 0.01 || dt === 0) continue;
         const d = preview ? source === 0 ? 340 : 375 + (source - 1) * 28 : driver.distance;
         const altitude = pose ? pose.position.y : preview ? source === 0 ? 1.6 : 5 : driver.altitude;
-        const heading = classicRoute?.heading(d) ?? Math.atan((roadCenter(d + 1) - roadCenter(d - 1)) / 2);
+        const heading = headingAt(d);
         const speed = preview ? 0 : driver.speed;
         if (pose) pose.updateWorldMatrix(true, false);
         emissions[source] = Math.min(12, emissions[source] + dt * strengths[source] * (reducedMotion ? 65 : source === 0 ? 240 : 90));
@@ -356,7 +367,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
         // Fades over the final second; a gentle pulse unless motion is reduced.
         magnetRing.material.opacity = Math.min(1, magnet) * (reducedMotion ? .3 : .3 + Math.sin(flowTime * 5) * .08);
       }
-      statusTint.update(race, vehicles, dt, { quality: options.quality, reducedMotion, preview });
+      statusTint.update(race, vehicles, dt, { quality: options.quality, reducedMotion, preview, playerEnabled: enabled, emit: active ? statusEmit : null });
       if (race.phase === 'countdown' || race.phase === 'ready') {
         lastImpact = null; lastLanding = null; lastShieldBlock = null;
       }

@@ -1,6 +1,8 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect, settled } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
+import { clickLobbyOption } from './helpers/home-lobby.js';
 
 const open = async page => {
   await page.goto('/');
@@ -15,7 +17,7 @@ const bank = page => page.evaluate(() => parseFloat(document.body.style.getPrope
 
 test('desktop remaps swap conflicts, reject reserved keys, persist and drive AIR DASH live', async ({ page }) => {
   await open(page);
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   await expect(page.getByRole('slider', { name: 'Steering sensitivity', exact: true })).toBeVisible();
   await page.keyboard.down('d');
   await page.locator('[data-rebind="fly"]').click();
@@ -34,9 +36,9 @@ test('desktop remaps swap conflicts, reject reserved keys, persist and drive AIR
   await page.locator('[data-rebind="fly"]').click();
   await page.keyboard.press('f');
   await page.reload();
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   await expect(page.locator('[data-rebind="fly"]')).toContainText('F');
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   await start(page);
   await page.keyboard.down('w');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(70);
@@ -67,7 +69,7 @@ test.describe('touch controls', () => {
     await page.locator('#pause-button').click();
     await settled(page.locator('.overlay-content'));
     await expect(page.locator('#race-status')).toHaveText('PAUSED');
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('[data-controls="mode"][value="buttons"]').check();
     await page.locator('[data-controls="hand"][value="right"]').check();
     await page.locator('#layout-edit').click();
@@ -80,13 +82,13 @@ test.describe('touch controls', () => {
       await touch('touchEnd');
     }
     await page.locator('#layout-done').click();
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('#layout-edit').click();
     await page.keyboard.press('p');
     await expect(page.locator('#layout-toolbar')).toBeHidden();
     await expect(page.locator('#race-status')).toHaveText('RACING');
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls-layout-v2')));
-    expect(saved.version).toBe(2);
+    expect(saved.version).toBe(3);
     expect(Object.keys(saved.landscape)).toHaveLength(7);
     expect(saved.portrait).toEqual({});
     await page.reload();
@@ -108,13 +110,13 @@ test.describe('touch controls', () => {
     await expect(page.locator('.nitro-segment')).toHaveCount(3);
     await page.locator('#pause-button').click();
     await settled(page.locator('.overlay-content'));
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('[data-controls="hand"][value="left"]').check();
     await page.locator('#layout-edit').click();
     const mirrored = await page.locator('[data-control="right"]').boundingBox();
     expect(mirrored.x + mirrored.width / 2).toBeCloseTo(saved.landscape.right.x * 844, 0);
     await page.locator('#layout-done').click();
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('#layout-reset').click();
     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls-layout-v2')).landscape)).toEqual({});
   });
@@ -123,7 +125,7 @@ test.describe('touch controls', () => {
     await start(page);
     await page.locator('#pause-button').click();
     await settled(page.locator('.overlay-content'));
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('#layout-edit').click();
     const session = await context.newCDPSession(page);
     await session.send('Emulation.setSafeAreaInsetsOverride', { insets: { left: 59, right: 59, top: 20, bottom: 21 } });
@@ -147,11 +149,11 @@ test.describe('touch controls', () => {
 
 gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire once per press', async ({ gameplayPage: page }) => {
   gameplayTest.setTimeout(ciTimeout(90000));
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   await page.locator('#controls-sensitivity').focus();
   await page.keyboard.press('Home');
   await expect(page.locator('#controls-sensitivity')).toHaveValue('0.4');
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   // Snapshot the HUD in-page the moment charge reads 0.5; polling from the test misses the 0.6s refill window on slow CI.
   await page.evaluate(() => {
     const meter = document.querySelector('#nitro-meter');
@@ -172,48 +174,32 @@ gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and 
   });
   // Solo Time Trial: rivals ahead on the grid take Coast's first rings (2.5 s respawn), so the player's first charge
   // would skip 0.5 and the group could not complete. This test is about the player's own ring rewards.
-  await page.locator('button[data-race-mode="time"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="time"]');
   await expect(page.locator('body')).toHaveAttribute('data-race-mode', 'time');
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
-  // Drive the real key handlers from the page frame: host round trips miss narrow flight windows under parallel WebGL load.
-  // Coast's first group from this race's layout: ring heights vary, so each gate is flown at its own altitude (a row is
-  // four rings at one distance and altitude, one gate). The group is made nitro rings so the rewards are known: 0.5 per
-  // gate (a row pays once) plus PERFECT LINE's 1 fills the 3-charge meter from four gates. Set during the countdown, so
-  // the pilot is flying before the first gate even on a slow runner.
-  await expect.poll(() => page.evaluate(() => window.gameplay.race.mode)).toBe('time');
-  const gates = await page.evaluate(([RING_RADIUS, RING_NITRO, PERFECT_LINE_NITRO]) => {
-    const group = window.gameplay.race.rings.filter(ring => ring.group === 0);
-    for (const ring of group) Object.assign(ring, { type: 'nitro', radius: RING_RADIUS });
-    // Rings use every lane and the pilot only flies, never steers: a one-ring gate is moved into the player's lane
-    // (a row already spans every lane).
-    const at = [...new Set(group.map(ring => ring.distance))], x = window.gameplay.race.player.x;
-    for (const distance of at) {
-      const gate = group.filter(ring => ring.distance === distance);
-      if (gate.length === 1) gate[0].x = x;
-    }
-    if (at.length * RING_NITRO.nitro + PERFECT_LINE_NITRO < 3) throw new Error(`first group has only ${at.length} gates`);
-    return at.map(distance => ({ distance, altitude: group.find(ring => ring.distance === distance).altitude }));
-  }, [RING_RADIUS, RING_NITRO, PERFECT_LINE_NITRO]);
   await expect(page.locator('#race-status')).toHaveText('RACING');
-  const perfectLine = await page.evaluate(([budget, gates]) => new Promise(resolve => {
-    let held = false;
-    const deadline = performance.now() + budget;
-    const key = type => window.dispatchEvent(new KeyboardEvent(type, { code: 'Space', key: ' ', bubbles: true, cancelable: true }));
-    const pilot = () => {
-      const collected = !document.querySelector('#maneuver-report').hidden;
-      if (collected || performance.now() >= deadline || document.body.dataset.phase !== 'racing') {
-        key('keyup'); resolve(collected); return;
-      }
-      const distance = Number(document.querySelector('#distance').textContent) * 1000;
-      const altitude = Number(document.querySelector('#altitude').textContent);
-      const gate = gates.find(ring => ring.distance >= distance);
-      const fly = !!gate && gate.distance - distance < 125 && altitude < gate.altitude + 0.8;
-      if (fly !== held) { key(fly ? 'keydown' : 'keyup'); held = fly; }
-      requestAnimationFrame(pilot);
-    };
-    pilot();
-  }), [ciTimeout(65000), gates]);
-  expect(perfectLine, 'The visible first ring group must produce a real PERFECT LINE').toBe(true);
+  // Cross every gate in the real loop. Seeding the approach removes the software renderer's speed from the test;
+  // pickup geometry, half-charge animation, the one-per-row rule and the PERFECT LINE reward still come from the game.
+  const perfectLines = await page.evaluate(async ([radius, charge, bonus]) => {
+    const { race } = window.gameplay;
+    const { player } = race;
+    const group = race.rings.filter(ring => ring.group === 0);
+    const gates = [...new Map(group.map(ring => [ring.distance, ring])).values()];
+    if (gates.length * charge + bonus < 3) throw new Error(`First group has only ${gates.length} gates`);
+    for (const ring of group) Object.assign(ring, { type: 'nitro', radius });
+    player.effects.ghost = 30; // traffic cannot knock the car out of a seeded approach
+    for (const [index, ring] of gates.entries()) {
+      Object.assign(player, { distance: ring.distance - 0.2, x: ring.x, altitude: ring.altitude, verticalSpeed: 0, speed: 50 });
+      const until = race.elapsed + 1;
+      while (!ring.hit && player.distance <= ring.distance && race.elapsed < until) await new Promise(requestAnimationFrame);
+      if (!ring.hit) throw new Error(`Missed gate at ${ring.distance} m`);
+      // Let the real HUD report the first half charge before crossing the next gate.
+      if (index === 0) while (!window.halfCharge && race.elapsed < until) await new Promise(requestAnimationFrame);
+    }
+    if (player.rings !== gates.length) throw new Error(`Collected ${player.rings} rings across ${gates.length} gates`);
+    return player.perfectLines;
+  }, [RING_RADIUS, RING_NITRO.nitro, PERFECT_LINE_NITRO]);
+  expect(perfectLines, 'The visible first ring group must produce a real PERFECT LINE').toBe(1);
   expect(await page.evaluate(() => window.halfCharge)).toEqual({ transform: 'scaleX(0.5)', refilling: 'true', color: 'rgb(255, 124, 118)' });
   await expect(page.locator('#maneuver-report')).toBeVisible();
   await expect(page.locator('#nitro-status')).toHaveText('NITRO READY');
@@ -223,11 +209,14 @@ gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and 
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(page.locator('#nitro-meter')).toHaveCSS('animation-name', 'none');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.locator('#vfx-panel > summary').click();
+  // Settings is available on pause and results, but the charge must still be tested in the same race.
+  await page.locator('#pause-button').click();
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
+  await expect(page.locator('#maneuver-report')).toBeHidden();
+  await toggleSettingsSection(page, 'display');
   await page.locator('[data-vfx="comfortable"]').check();
   await expect(page.locator('#nitro-meter')).toHaveCSS('animation-name', 'none');
-  await page.locator('#vfx-panel > summary').click();
-  await expect(page.locator('#maneuver-report')).toBeHidden();
+  await toggleSettingsSection(page, 'display');
   // Record every charge change in-page: the race keeps refilling (rings, pickups, slipstream) while slow CI polls,
   // so "one charge per press" is the first change landing on 2 and the meter never dropping below it.
   await page.evaluate(() => {
@@ -236,6 +225,8 @@ gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and 
     new MutationObserver(() => window.nitroValues.push(Number(meter.getAttribute('aria-valuenow'))))
       .observe(meter, { attributes: true, attributeFilter: ['aria-valuenow'] });
   });
+  await page.locator('#resume-button').click();
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
   await page.keyboard.down('e');
   await expect.poll(() => page.evaluate(() => window.nitroValues[0])).toBe(2);
   await expect(page.locator('#nitro-status')).toHaveText('NITRO ACTIVE');

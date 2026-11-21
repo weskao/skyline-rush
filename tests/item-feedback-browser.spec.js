@@ -1,9 +1,11 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test } from './helpers/gameplay-browser.js';
+import { reloadWithBlockedStorage } from './helpers/test.js';
 import { expect } from '@playwright/test';
 
 // ITEM-12 feedback and 12B acceptance (misses, blocked storage, touch layout) in the real game.
 const startWithItems = async (page, { blockedStorage = false } = {}) => {
-  await page.locator('button[data-race-mode="free"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="free"]');
   await page.locator('#race-mode-rules > summary').click();
   await page.locator('[data-race-rule="itemRules"]').evaluate(node => { node.value = 'active'; node.dispatchEvent(new Event('change', { bubbles: true })); });
   await page.locator('#start-button').click();
@@ -79,13 +81,58 @@ for (const [name, viewport, hasTouch] of [
 test('item rules still start a race when storage is blocked', async ({ gameplayPage: page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.addInitScript(() => {
-    for (const method of ['getItem', 'setItem', 'removeItem'])
-      Storage.prototype[method] = () => { throw new DOMException('blocked', 'SecurityError'); };
-  });
-  await page.reload();
-  if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+  await reloadWithBlockedStorage(page);
   await startWithItems(page, { blockedStorage: true });
   await expect(page.locator('#item-slot')).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+for (const [name, viewport, hasTouch] of [
+  ['desktop', { width: 1440, height: 900 }, false],
+  ['portrait', { width: 390, height: 844 }, true],
+  ['landscape', { width: 844, height: 390 }, true],
+]) test.describe(`incoming item feedback on ${name}`, () => {
+  test.use({ viewport, hasTouch });
+
+  test('a rival EMP makes the HUD show the hit while the player is slowed', async ({ gameplayPage: page }, testInfo) => {
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await clickLobbyOption(page, 'button[data-race-mode="custom"]');
+    await page.locator('#race-mode-rules > summary').click();
+    await page.locator('#race-mode-rules').getByRole('combobox', { name: 'Item rules', exact: true }).click();
+    await page.getByRole('listbox', { name: 'Item rules', exact: true }).getByRole('option', { name: /^All ·/ }).click();
+    await page.locator('#start-button').click();
+    await page.waitForFunction(() => ['countdown', 'racing'].includes(window.gameplay.race.phase));
+    await page.evaluate(() => {
+      const race = window.gameplay.race, [rival] = race.rivals;
+      // Stage the live encounter independently of asynchronous scenery warmup.
+      race.phase = 'racing';
+      race.elapsed = 13;
+      race.traffic = [];
+      race.pickups = [];
+      race.rivals.length = 1;
+      Object.assign(rival, { distance: 200, x: -2.5, homeX: -2.5, speed: 60 });
+      Object.assign(race.player, { distance: 220, x: 2.5, speed: 60 });
+      race.rings = [{ distance: 200.5, x: -2.5, altitude: 0, radius: 2, group: 0, type: 'emp' }];
+    });
+    const status = page.locator('#bonus-status');
+    const screen = page.locator('#player-hit-screen');
+    await expect(screen).toHaveAttribute('data-hit', 'emp');
+    await expect(screen).toBeVisible();
+    await expect(screen).toHaveCSS('pointer-events', 'none');
+    expect(await screen.boundingBox()).toEqual({ x: 0, y: 0, ...viewport });
+    await expect(status).toBeVisible();
+    await expect(status).toHaveText(/^EMP HIT · [12]s$/);
+    const box = await status.boundingBox();
+    expect(box.x >= 0 && box.y >= 0 && box.x + box.width <= viewport.width && box.y + box.height <= viewport.height).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath('rival-emp.png') });
+    // Advance to the end of the hit in game time. Software WebGL can spend many real seconds per simulated second.
+    await page.evaluate(() => {
+      const { race } = window.gameplay;
+      race.elapsed = Math.max(race.elapsed, race.player.empUntil - .01);
+    });
+    await expect(status).toBeHidden();
+    await expect(screen).toBeHidden();
+    expect(errors).toEqual([]);
+  });
 });

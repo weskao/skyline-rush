@@ -40,6 +40,30 @@ test('hero architecture is present and distinguishable across all five locations
  assert.ok(tokyo.children.length>50,'Tokyo Tower needs open lattice and observation decks');
 });
 
+test('the Taipei Presidential Office presents its front facade along the race approach', () => {
+  const scene = new THREE.Scene();
+  const visual = createWorldTourScene(scene);
+  const track = RACE_TRACKS.taipei;
+  try {
+    for (const endless of [false, true]) {
+      for (const distance of [950, 1100, 1240, 1330]) {
+        visual.update('taipei', distance, 'low', track.sections, 0, false, endless);
+        scene.updateMatrixWorld(true);
+        const office = visual.landmarks().find(hero => hero.userData.landmarkKind === 'office');
+        const front = office.getWorldDirection(new THREE.Vector3()).setY(0).normalize();
+        const position = office.getWorldPosition(new THREE.Vector3());
+        for (const lane of [-6, 0, 6]) {
+          const eye = new THREE.Vector3(...trackLocalPosition('taipei', distance - 8, lane, 2.5, distance, endless));
+          const facing = front.dot(eye.sub(position).setY(0).normalize());
+          assert.ok(facing > .9, `Taipei at ${distance} m, lane ${lane}, endless=${endless}: facade alignment ${facing.toFixed(2)}`);
+        }
+      }
+    }
+  } finally {
+    visual.dispose();
+  }
+});
+
 test('shared scenery system renders five real road meshes, boost hoops and quality budgets',()=>{
  const scene=new THREE.Scene(),visual=createWorldTourScene(scene);
  const world=scene.getObjectByName('World Tour authored scenery');

@@ -5,7 +5,7 @@ Status: active · v2 adopted 2026-11-08 · Supersedes [3d-visual-fidelity-pipeli
 ## 0. What changed from v1 (owner decisions 2026-11-08)
 
 1. **The concept board is now an acceptance target, not just a mood reference.** The board is
-   `docs/designs/3d-pipeline/concept-art/skyline-rush-3d-target-concept-board.jpeg`. Every visual phase ends with a
+   `docs/designs/3d-pipeline/track-profiles/skyline-rush-3d-target-concept-board.jpeg`. Every visual phase ends with a
    side-by-side review: a real WebGL capture next to the matching board panel (§8.1). v1 only asked for a look "closer
    to authored 3D art". Under v1 the finished game would not have looked like the board, and the car was the furthest
    off.

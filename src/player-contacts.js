@@ -1,9 +1,10 @@
 import { aiRetention, clearOf, hitProp, knock, knockX, propTouches } from './car-collisions.js';
 import { carGap, syncCourseContact } from './course-race-step.ts';
+import { FINISH_IMPACT_RETENTION, isParkedRival, pushFinishedRival } from './finished-rival.js';
 import { recoveryRetention } from './bonus-gates.ts';
 import { ROAD_LIMIT, SCRAPE_RATIO, shortcutPylons } from './game.js';
 import { SHORTCUT_TOLERANCE } from './road-falls.ts';
-import { bodiesShareHeight, isCircuitFinisher, vehicleContactSize } from './vehicle-contact-size.js';
+import { bodiesShareHeight, vehicleContactSize } from './vehicle-contact-size.js';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const SIDE_CLEARANCE = 0.01, FOLLOW_CLEARANCE = 0.03, RELEASE_CLEARANCE = 0.12;
@@ -26,7 +27,7 @@ export function trackPhaseExit(race, dt) {
   const car = race.player;
   if (car.effects.ghost > dt) { phaseExits.delete(car); return; }
   if (car.effects.ghost > 0) {
-    const cars = new Set([...race.traffic, ...race.rivals].filter(other => !isCircuitFinisher(race, other) && overlappingCars(race, car, other)));
+    const cars = new Set([...race.traffic, ...race.rivals].filter(other => overlappingCars(race, car, other)));
     const props = race.props.filter(prop => propTouches(prop, car, car.distance));
     if (cars.size || props.length) phaseExits.set(car, { cars, props });
     return;
@@ -58,6 +59,10 @@ export function contact(race, kind, obstacleX, intensity, retention, sideways = 
 }
 
 const following = new WeakMap();
+export function clearRecoveryContacts(car) {
+  following.delete(car);
+  vehicleContacts.delete(car);
+}
 export const isFollowingVehicle = car => following.has(car);
 const vehicleContacts = new WeakMap();
 const paceOf = other => other.pace ?? other.speed;
@@ -102,7 +107,7 @@ function follow(race, other, gap, followGap, retention) {
 function resolveVehicles(race, previousDistance, previousX, retention, exit) {
   const car = race.player, body = vehicleContactSize(race, car);
   const leader = following.get(car);
-  const opponents = [...race.traffic, ...race.rivals.filter(other => !isCircuitFinisher(race, other))];
+  const opponents = [...race.traffic, ...race.rivals];
   let contacts = vehicleContacts.get(car);
   if (contacts) for (const other of contacts) {
     const gap = opponents.includes(other) ? carGap(race, car, other) : null;
@@ -113,7 +118,7 @@ function resolveVehicles(race, previousDistance, previousX, retention, exit) {
         !bodiesShareHeight(car, other)) contacts.delete(other);
   }
   if (leader) {
-    const gap = opponents.includes(leader) && !exit?.cars.has(leader) ? carGap(race, car, leader) : null;
+    const gap = !isParkedRival(leader) && opponents.includes(leader) && !exit?.cars.has(leader) ? carGap(race, car, leader) : null;
     const size = vehicleContactSize(race, leader), followGap = body.front + size.rear + FOLLOW_CLEARANCE;
     // A car put ahead of its leader (gap respawn) has left the queue: holding on dragged it back, a fall per frame.
     if (gap !== null && gap <= followGap + RELEASE_CLEARANCE && gap > -(body.rear + size.front) &&
@@ -124,6 +129,13 @@ function resolveVehicles(race, previousDistance, previousX, retention, exit) {
   for (const other of opponents) {
     const size = vehicleContactSize(race, other), width = body.halfWidth + size.halfWidth;
     if (exit?.cars.has(other) || Math.abs(car.x - other.x) >= width || !bodiesShareHeight(car, other)) continue;
+    if (isParkedRival(other)) {
+      if (car.fall?.time !== race.elapsed) {
+        const intensity = pushFinishedRival(race, car, other, previousDistance);
+        if (intensity) contact(race, 'vehicle', other.x, intensity, FINISH_IMPACT_RETENTION, false);
+      }
+      continue;
+    }
     const gap = carGap(race, car, other), front = body.front + size.rear, rear = body.rear + size.front;
     if (gap === null || gap >= front) continue;
     const previousGap = gap + car.distance - previousDistance;

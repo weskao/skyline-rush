@@ -1,23 +1,24 @@
+import { shallowReactive } from 'vue';
 import type { BonusCar } from './bonus-gates.ts';
-import { useHeldItem } from './game.js';
-import type { ActiveItemCar, ActiveItem } from './active-items.ts';
+import { itemHit, useHeldItem, type ItemAttack, type PlayerItemRace } from './item-attacks.ts';
+import { debuffPhase, type DebuffPhase } from './debuff/timeline.ts';
+import { ACTIVE_ITEMS, type ActiveItem } from './active-items.ts';
 import { EFFECT_TIMES } from './ring-layout.ts';
 import { t } from './i18n.ts';
 import { setHiddenIfChanged, setTextIfChanged } from './hud-dom.ts';
 
-export interface ItemRace {
-  phase: string;
-  elapsed: number;
-  rings: { type: string; distance: number; hit?: boolean }[];
-  config: { activeItems?: boolean };
-  player: ActiveItemCar & Partial<BonusCar>;
-  rivals: unknown[];
+export interface ItemRace extends PlayerItemRace {
+  rings: { type: string; distance: number; hit?: boolean; downUntil?: number }[];
+  player: PlayerItemRace['player'] & Partial<BonusCar>;
 }
 interface ItemSettings { itemRules?: unknown; activeItems?: unknown }
-const powers: ActiveItem[] = ['shield', 'magnet', 'ghost', 'freeze', 'emp'];
 export const itemRuleValue = (rules: ItemSettings): string => typeof rules.itemRules === 'string' ? rules.itemRules : rules.activeItems ? 'all' : 'classic';
 
-export function setupItemUI({ getRace, cue }: { getRace: () => ItemRace; cue: (name: string) => void }) {
+/** Incoming hits for the HUD: seconds left in tenths (0 = none) and where each stands on its timeline. */
+export const playerHitView = shallowReactive({ emp: 0, freeze: 0, empPhase: '' as DebuffPhase | '', freezePhase: '' as DebuffPhase | '', calm: false });
+
+export function setupItemUI({ getRace, cue, calm = () => false }: { getRace: () => ItemRace; cue: (name: string) => void; calm?: () => boolean }) {
+  const screen = document.getElementById('player-hit-screen')!;
   const slot = document.getElementById('item-slot')!;
   const status = document.getElementById('item-status')!;
   const phaseStatus = document.getElementById('ghost-phase-status')!;
@@ -30,17 +31,43 @@ export function setupItemUI({ getRace, cue }: { getRace: () => ItemRace; cue: (n
   let wasCooling = false;
   let lastBonus: BonusCar['lastBonus'];
   let warned: ItemRace['rings'][number] | undefined;
+  const hitUntil = { emp: 0, freeze: 0 }, hitSince = { emp: 0, freeze: 0 };
+  function updateHit(attack: ItemAttack, until: number, elapsed: number, shown: boolean): void {
+    // A new or repeated hit moves `until` and replays the impact; a pause stops the race clock, so it replays nothing.
+    if (until !== hitUntil[attack]) { hitUntil[attack] = until; hitSince[attack] = elapsed; }
+    const left = shown ? until - elapsed : 0;
+    const seconds = Math.max(0, Math.ceil(left * 10 - 1e-9) / 10); // tenths: at most ten reactive writes a second
+    const phase = seconds > 0 ? debuffPhase(attack, elapsed - hitSince[attack], left) : '';
+    if (playerHitView[attack] !== seconds) playerHitView[attack] = seconds;
+    if (playerHitView[`${attack}Phase`] !== phase) playerHitView[`${attack}Phase`] = phase;
+  }
   function updateBonus(race: ItemRace): void {
     const car = race.player;
-    const ahead = race.rings.find(ring => !ring.hit && (ring.type.endsWith('-pad') || ring.type === 'emp') && ring.distance > (car.distance ?? 0));
+    const ahead = race.rings.find(ring => !ring.hit && (ring.downUntil ?? 0) <= race.elapsed &&
+      (ring.type.endsWith('-pad') || ring.type === 'emp') && ring.distance > car.distance);
     const active = (car.recoveryTime ?? 0) > 0 ? 'recovery-pad' : (car.multiplierTime ?? 0) > 0 ? 'score-pad' : null;
     const recent = car.lastBonus && race.elapsed - car.lastBonus.time < 1.2 ? car.lastBonus : null;
-    const near = ahead && ahead.distance - (car.distance ?? 0) <= 170 ? ahead : null;
-    setHiddenIfChanged(bonus, race.phase === 'ready' || !(active || recent || near));
-    if (!bonus.hidden) {
+    const near = ahead && ahead.distance - car.distance <= 170 ? ahead : null;
+    const hit = (race.phase === 'racing' || race.phase === 'paused') ? itemHit(race, car) : null;
+    const screenHit = race.phase === 'racing' ? hit ?? '' : '';
+    if (screen.dataset.hit !== screenHit) screen.dataset.hit = screenHit;
+    if (screenHit) {
+      const isCalm = calm();
+      if (playerHitView.calm !== isCalm) playerHitView.calm = isCalm;
+      const calmValue = String(isCalm);
+      if (screen.dataset.calm !== calmValue) screen.dataset.calm = calmValue;
+    }
+    setHiddenIfChanged(screen, !screenHit);
+    updateHit('emp', car.empUntil ?? 0, race.elapsed, !!screenHit);
+    updateHit('freeze', car.freezeUntil ?? 0, race.elapsed, !!screenHit);
+    setHiddenIfChanged(bonus, race.phase === 'ready' || !(hit || active || recent || near));
+    if (hit) {
+      const until = hit === 'emp' ? car.empUntil! : car.freezeUntil!;
+      setTextIfChanged(bonus, t(`mode.itemHit.${hit}`, { sec: Math.ceil(until - race.elapsed) }));
+    } else if (!bonus.hidden) {
       const item = t('mode.bonus.' + (active ?? recent?.type ?? near!.type));
       setTextIfChanged(bonus, active ? t('mode.bonusActive', { item, sec: Math.ceil(active === 'recovery-pad' ? car.recoveryTime! : car.multiplierTime!) }) :
-        recent ? t('mode.bonusCollected', { item }) : t('mode.bonusAhead', { item, n: Math.ceil(near!.distance - (car.distance ?? 0)) }));
+        recent ? t('mode.bonusCollected', { item }) : t('mode.bonusAhead', { item, n: Math.ceil(near!.distance - car.distance) }));
     }
     if (race.phase === 'racing') {
       if (car.lastBonus && car.lastBonus !== lastBonus) cue('pickup');
@@ -66,7 +93,7 @@ export function setupItemUI({ getRace, cue }: { getRace: () => ItemRace; cue: (n
       const fill = `scaleX(${Math.min(1, car.effects.ghost / EFFECT_TIMES.ghost).toFixed(3)})`;
       if (phaseFill.style.transform !== fill) phaseFill.style.transform = fill;
     }
-    const effect = car.heldItem ?? powers.find(item => (car.effects[item] ?? 0) > 0) ?? null;
+    const effect = car.heldItem ?? ACTIVE_ITEMS.find(item => (car.effects[item] ?? 0) > 0) ?? null;
     const cooling = car.itemCooldown > 0;
     const key = cooling ? 'mode.itemCooling' : car.heldItem ? 'mode.itemReady' : effect ? 'mode.itemActive' : 'mode.itemEmpty';
     setTextIfChanged(status, t(key, { item: effect ? t('mode.item.' + effect) : '',

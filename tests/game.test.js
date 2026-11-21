@@ -4,6 +4,7 @@ import { createRace, startRace, stepRace, racePosition, sprintGaps, RACE_LENGTH,
 import { hazardX } from '../src/hazards.ts';
 import { rivalBaseCap, RIVAL_SKILL } from '../src/rival-driver.ts';
 import { BOOST_CAP_BONUS, NITRO_CAP_BONUS } from '../src/drive-rules.ts';
+import { SKY_JUMPS } from '../src/sky-track.ts';
 
 function advance(race, seconds, input = {}) {
   for (let frame = 0; frame < Math.ceil(seconds * 60); frame++) stepRace(race, input, 1 / 60);
@@ -68,9 +69,9 @@ test('accelerating, coasting, braking and steering respect road and speed limits
   const speed = race.player.speed;
   advance(race, 1);
   assert.ok(race.player.speed < speed);
-  advance(race, 5, { brake: true, steer: -1 }); // drifts down to 45 m/s, then hard-brakes to a stop
-  assert.equal(race.player.speed, 0);
+  advance(race, 5, { brake: true, steer: -1 });
   assert.ok(race.player.x >= -ROAD_LIMIT);
+  assert.equal(race.player.speed, 0, 'holding BRAKE brings the car to a stop after the drift');
 });
 
 test('thrusters require speed, lift the car, spend fuel and land on release', () => {
@@ -481,7 +482,7 @@ function sectionOf(trackId, type, index = 0) {
 
 test('the track table holds all ten tracks and coast matches the original race', () => {
   assert.deepEqual(Object.keys(RACE_TRACKS), TRACK_IDS);
-  assert.deepEqual(TRACK_IDS.map(id => RACE_TRACKS[id].length), [5000, 10000, 6000, 5500, 5600, 6200, 6800, 7600, 5800, 8000]);
+  assert.deepEqual(TRACK_IDS.map(id => RACE_TRACKS[id].length), [5000, ...Array(9).fill(10000)]);
   assert.equal(RACE_LENGTH, RACE_TRACKS.coast.length);
   assert.deepEqual(createRace(), createRace('coast'));
   const coast = createRace();
@@ -503,7 +504,7 @@ test('special sections stay on the road, never overlap and cover each track sign
   }
   assert.deepEqual(RACE_TRACKS.coast.sections.map(section => section.type), ['shortcut']); // coast's ground race is unchanged
   assert.ok(sectionOf('neon', 'tunnel'));
-  assert.ok([2, 3].includes(RACE_TRACKS.canyon.sections.filter(section => section.type === 'gap').length));
+  assert.equal(RACE_TRACKS.canyon.sections.filter(section => section.type === 'gap').length, 1);
   assert.ok(sectionOf('canyon', 'crosswind') && sectionOf('aurora', 'ice') && sectionOf('aurora', 'uphill'));
 });
 
@@ -522,7 +523,12 @@ test('every track can be finished', () => {
   for (const id of TRACK_IDS) {
     const race = racingOn(id);
     assert.equal(race.trackId, id);
-    advance(race, 300, { throttle: true });
+    const bridge = id === 'canyon' ? sectionOf(id, 'gap') : null;
+    for (let i = 0; i < 300 * 60 && race.phase === 'racing'; i++) {
+      const distance = race.player.distance;
+      stepRace(race, { throttle: true, fly: !!bridge && distance >= bridge.from - 65 && distance < bridge.to,
+        boost: id === 'spiral' && SKY_JUMPS.some(jump => distance >= jump.rampFrom - 180 && distance < jump.gapTo) }, 1 / 60);
+    }
     assert.equal(race.phase, 'finished', id);
     assert.equal(race.player.distance, RACE_TRACKS[id].length);
     assert.ok(race.result.time > 30, id);
@@ -557,13 +563,17 @@ test('flying into a tunnel roof is barrier contact; driving or flying outside is
   assert.equal(outside.player.altitude > TUNNEL_CEILING, true);
 });
 
-test('falling into a gap slows the car and respawns it past the gap; flying over is safe', () => {
+test('falling into a gap slows the car and returns it before the gap; flying over is safe', () => {
   const gap = sectionOf('canyon', 'gap');
   const fall = racingOn('canyon');
   Object.assign(fall.player, { distance: gap.from + 5, speed: 60 });
   stepRace(fall, {}, 1 / 60);
   assert.equal(fall.player.falls, 1);
-  assert.ok(fall.player.distance > gap.to);
+  assert.ok(fall.player.distance < gap.to);
+  advance(fall, 0.4);
+  assert.ok(fall.player.altitude < 0);
+  advance(fall, 0.84);
+  assert.ok(fall.player.distance < gap.from);
   assert.ok(fall.player.speed < 40);
   assert.equal(fall.player.altitude, 0);
   stepRace(fall, {}, 1 / 60);
@@ -599,18 +609,18 @@ test('Aurora uphill ground recharge is slower and returns to normal outside the 
   }
 });
 
-test('a gap respawn skips rings traversed by the jump but collects a later ring normally', () => {
+test('a gap rewind sweeps no rings and leaves the approach ring collectible', () => {
   const gap = sectionOf('canyon', 'gap');
   const race = racingOn('canyon');
   race.rivals = [];
   race.pickups = [];
-  race.rings = [gap.from + 10, gap.to + 3, gap.to + 6].map(distance => ({ distance, x: 0, altitude: 0, radius: RING_RADIUS, type: 'nitro', group: 0 }));
+  race.rings = [gap.from - 66, gap.from + 10, gap.to + 3].map(distance => ({ distance, x: 0, altitude: 0, radius: RING_RADIUS, type: 'nitro', group: 0 }));
   Object.assign(race.player, { distance: gap.from + 5, speed: 60, x: 0 });
   stepRace(race, {}, 1 / 60);
   assert.equal(race.player.falls, 1);
   assert.equal(race.player.rings, 0);
   assert.equal(race.player.nitro, 0);
-  advance(race, 0.1);
+  advance(race, 1.55, { throttle: true });
   assert.equal(race.player.rings, 1);
   assert.equal(race.player.nitro, 0.5);
   assert.equal(race.player.perfectLines, 0);
@@ -1603,7 +1613,7 @@ test('gap charge warning: within range of a broken bridge with too little charge
   assert.equal(gapChargeWarning(coast), null, 'no gaps on coast');
   const spiral = racingOn('spiral'), jumpGap = RACE_TRACKS.spiral.sections.find(s => s.type === 'gap');
   Object.assign(spiral.player, { distance: jumpGap.from - 100, speed: 60, fuel: 0 });
-  assert.equal(gapChargeWarning(spiral), null, 'Sky Spiral launch ramps carry the car across');
+  assert.equal(gapChargeWarning(spiral), null, 'the flight charge warning is separate from the BOOST speed threshold');
 });
 
 test('races count charge run-outs and gap falls for tuning', () => {
@@ -1618,6 +1628,7 @@ test('races count charge run-outs and gap falls for tuning', () => {
   Object.assign(fall.player, { distance: gap.from - 1, speed: 60 });
   advance(fall, 0.2, { throttle: true });
   assert.equal(fall.player.falls, 1);
+  advance(fall, 1.3);
   Object.assign(fall.player, { distance: fall.length - 1, fuelOuts: 2 });
   advance(fall, 0.2, { throttle: true });
   assert.equal(fall.result.fuelOuts, 2);

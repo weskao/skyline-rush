@@ -1,6 +1,6 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
-import { ciTimeout } from './helpers/ci.js';
 
 for (const [width, height, hasTouch] of [[1440, 900, false], [390, 844, true], [320, 740, true], [844, 390, true]]) {
   test.describe(`collections ${width}x${height}`, () => {
@@ -12,7 +12,7 @@ for (const [width, height, hasTouch] of [[1440, 900, false], [390, 844, true], [
       await page.waitForTimeout(700);
       if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
       const garageButton = page.getByRole('button', { name: 'Garage', exact: true });
-      await expect(garageButton).toBeVisible({ timeout: ciTimeout(3000) });
+      await expect(garageButton).toBeVisible();
       await garageButton.click();
       await openGarageSection(page, 'paints');
       await expect(page.getByRole('dialog', { name: 'Garage' })).toBeVisible();
@@ -33,15 +33,16 @@ for (const [width, height, hasTouch] of [[1440, 900, false], [390, 844, true], [
       await page.locator('.history-button').click();
       await page.locator('#history-tab-daily').click(); // History opens on its Races tab
       await expect(page.locator('#daily-challenge')).toContainText('Today:');
+      await expect(page.locator('#daily-card-start')).toBeEnabled();
       await expect(page.getByRole('button', { name: 'Start daily challenge' })).toBeEnabled();
       await expect(page.locator('#daily-board')).toContainText('No challenge runs');
       await page.locator('#history-tab-medals').click();
       await expect(page.locator('#achievement-list > li')).toHaveCount(4);
       await page.getByRole('button', { name: 'Close history' }).click();
-      await page.locator('#controls-button').click();
+      await toggleSettingsSection(page, 'driving');
       await expect(page.getByRole('checkbox', { name: 'Show best-run ghost' })).toBeEnabled();
       await expect(page.locator('#ghost-status')).toContainText('No best-run replay');
-      await page.locator('#controls-button').click();
+      await toggleSettingsSection(page, 'driving');
       await page.locator('#start-button').click();
       await expect(page.locator('#race-status')).toHaveText('RACING');
       expect(errors).toEqual([]);

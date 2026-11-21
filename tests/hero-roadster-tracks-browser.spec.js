@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test, glbRoots, programs, modelInstances as instances, dressedAs, HERO_MODEL, landed } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
@@ -23,7 +24,7 @@ function drive(id) {
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(gameplayURL);
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-    await page.locator(`[data-track="${id}"]`).click();
+    await clickLobbyOption(page, `[data-track="${id}"]`);
     await expect(page.locator(`[data-track="${id}"]`)).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#world')).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(20000) });
     await expect.poll(() => glbRoots(page)).toBe(1); // Home showcase car dressed
@@ -76,7 +77,7 @@ async function carousel({ gameplayPage: page, gameplayURL }) {
   await expect(page.locator('#world')).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(20000) });
   let last = (await instances(page)).home;
   for (const id of COURSES) {
-    await page.locator(`[data-upcoming-track="${id}"]`).click();
+    await clickLobbyOption(page, `[data-upcoming-track="${id}"]`);
     await expect.poll(async () => (await instances(page)).showcase ?? last, { timeout: ciTimeout(20000) }).not.toBe(last);
     last = (await instances(page)).showcase;
     expect(await glbRoots(page)).toBe(0); // settled: instances polled above; the Home car gave its copy up
@@ -85,7 +86,7 @@ async function carousel({ gameplayPage: page, gameplayURL }) {
     await expect(page.locator('#showcase-camera-name')).not.toHaveText(view ?? '');
     expect((await instances(page)).showcase).toBe(last); // settled: camera name polled above; the camera never rebuilds the car
   }
-  await page.locator('[data-track="coast"]').click();
+  await clickLobbyOption(page, '[data-track="coast"]');
   await expect.poll(async () => Object.keys(await instances(page))).toEqual(['home']);
   expect(await glbRoots(page)).toBe(1); // settled: polled above
   expect(errors).toEqual([]);

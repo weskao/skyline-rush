@@ -1,3 +1,4 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
 import { TUTORIAL_COPY } from '../src/locales/tutorial-copy.ts';
@@ -42,7 +43,7 @@ for (const [width, height] of [[390, 844], [844, 390]]) {
         await page.addInitScript(prefs => localStorage.setItem('skyline-rush-controls', JSON.stringify(prefs)),
           { version: 1, mode, hand: 'right', size: 'L' });
         await page.goto('/');
-        await page.locator('#controls-button').click();
+        await toggleSettingsSection(page, 'driving');
         await page.locator('#tutorial-open').click();
         const coach = page.locator('#tutorial-coach');
         await expect(coach).toHaveAttribute('data-step', 'throttle');

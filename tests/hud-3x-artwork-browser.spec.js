@@ -1,11 +1,13 @@
+import { openSettingsSection } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
+import { clickLobbyOption } from './helpers/home-lobby.js';
 test('all 18 artwork cards preserve native 3x pixels, visible icons and labels on phone and desktop', async ({ page }) => {
   test.setTimeout(ciTimeout(180000));
   for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1440,height:900}]) {
     await page.setViewportSize(viewport);
     await page.goto('/');
-    await page.locator('#settings-button').click();
+    await openSettingsSection(page, 'display');
     const gallery = page.locator('#hud-3x-source-gallery');
     await expect(gallery).toBeVisible();
     await gallery.locator('summary').click();
@@ -49,7 +51,7 @@ test('HUD art remains uncropped at alpha-pixel level and is visually reviewable 
   for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
     await page.setViewportSize(viewport);
     await page.goto('/');
-    await page.locator('#settings-button').click();
+    await openSettingsSection(page, 'display');
     const gallery = page.locator('#hud-3x-source-gallery');
     await gallery.locator('summary').click();
     const result = await gallery.evaluate(async root => {
@@ -121,7 +123,7 @@ test.describe('touch sprint artwork', () => {
     test.setTimeout(ciTimeout(90000));
     await page.goto('/');
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-    await page.locator('button[data-race-mode="free"]').tap();
+    await clickLobbyOption(page, 'button[data-race-mode="free"]', 'tap');
     await page.locator('#start-button').tap();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
     const touch = page.locator('#touch-controls');

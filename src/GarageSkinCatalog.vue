@@ -1,17 +1,22 @@
 <script setup lang="ts">
-import { inject, computed } from 'vue';
+import CollectibleIcon from './CollectibleIcon.vue';
+import { computed, inject, nextTick, ref, watch } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import GarageArtworkTile from './GarageArtworkTile.vue';
-import { GARAGE_SKINS, SKIN_CATEGORIES, skinArtwork } from './garage-skin-catalog.ts';
+import { GARAGE_SKINS, SKIN_CATEGORIES, skinAccentHue, skinArtwork } from './garage-skin-catalog.ts';
+import GarageSkinCardFace from './GarageSkinCardFace.vue';
 import { garageSkinState, garageSkinEntry, selectGarageSkin, equipGarageSkin, selectedGarageSkins, currentGarageSkins } from './garage-skin-runtime.ts';
+import GarageDriftPreview from './GarageDriftPreview.vue';
+import GaragePreviewTier from './GaragePreviewTier.vue';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import { garageStudioView } from './garage-view-state.ts';
 import { GARAGE_RELEASE_MODE } from '#garage-release-config';
 
 const cue = inject<(name: string) => void>('game-audio-cue', () => {});
-defineProps<{ locale: string }>();
-const animatedArtworkSrc = (id: string): string =>
-  `${import.meta.env.BASE_URL}feature-assets/garage-animated/${id}@3x.gif`;
+const props = defineProps<{ locale: string; active?: boolean }>();
+const driftPreview = ref<HTMLElement>();
+const showingDrift = ref(false);
+watch(() => props.active, active => { if (!active) showingDrift.value = false; });
 
 // Source-only cosmetic status and rarity icon gallery. These artworks do not
 // create a badge, inventory entitlement, artificial rarity or monetary offer.
@@ -48,7 +53,9 @@ const categoryNames: Record<SkinCategory, { en: string; 'zh-TW': string }> = {
   airflow: { en: 'Airflow', 'zh-TW': '氣流' },
   'nitro-trail': { en: 'NITRO trail', 'zh-TW': '氮氣尾跡' },
   'launch-flare': { en: 'Launch flare', 'zh-TW': '起跑閃焰' },
+  'drift-trail': { en: 'Drift trails', 'zh-TW': '甩尾痕跡' },
 };
+const displayCategories: readonly SkinCategory[] = ['drift-trail', ...SKIN_CATEGORIES.filter(category => category !== 'drift-trail')];
 const entries = GARAGE_SKINS.map(skin => ({ ...skin, artwork: skinArtwork(skin.id, import.meta.env.BASE_URL)! }));
 // This live selection strip uses the same artwork and session as the actual 3D Garage preview.
 // A preview is never treated as ownership or a permanent equipment grant.
@@ -64,12 +71,13 @@ const liveLoadout = computed(() => {
     };
   });
 });
-const categoryHue: Record<SkinCategory, number> = { thruster: 191, airflow: 202, 'nitro-trail': 44, 'launch-flare': 300 };
-const airflowHue: Partial<Record<SkinId, number>> = {
-  'airflow-basic': 192, 'airflow-slipstream': 210, 'airflow-vortex': 280, 'airflow-prism': 312,
-};
-const skinHue = (id: SkinId, category: SkinCategory): number => airflowHue[id] ?? categoryHue[category];
 const skinLabel = (id: SkinId, locale: string): string => GARAGE_SKINS.find(s => s.id === id)!.name[locale === 'zh-TW' ? 'zh-TW' : 'en'];
+const activeDrift = computed(() => liveLoadout.value.find(item => item.category === 'drift-trail')!);
+function previewSkin(id: SkinId, category: SkinCategory) {
+  selectGarageSkin(id);
+  showingDrift.value = category === 'drift-trail';
+  if (showingDrift.value) void nextTick(() => driftPreview.value?.scrollIntoView({ block: 'nearest' }));
+}
 const view = (id: SkinId) => { void garageSkinState.revision; return garageSkinEntry(id); };
 const isPreviewActive = (id: SkinId, category: SkinCategory) => {
   void garageSkinState.revision;
@@ -77,12 +85,11 @@ const isPreviewActive = (id: SkinId, category: SkinCategory) => {
 };
 const isPreviewOnly = (id: SkinId, category: SkinCategory) =>
   isPreviewActive(id, category) && view(id)?.state !== 'equipped';
+// The action button already says trial, equipped and locked: the pill only adds what the button cannot.
 const statusText = (id: SkinId, locale: string) => {
-  const entry = view(id);
-  if (entry?.state === 'equipped' && !entry.owned) return locale === 'zh-TW' ? '試用中' : 'Trial active';
-  const state = entry?.state ?? 'locked';
-  return ({ en: { trial: 'Free trial', equipped: 'Equipped', owned: 'Owned', locked: 'Locked' },
-    'zh-TW': { trial: '免費試用', equipped: '已裝備', owned: '已擁有', locked: '未解鎖' } } as const)[locale === 'zh-TW' ? 'zh-TW' : 'en'][state];
+  const entry = view(id), zh = locale === 'zh-TW';
+  if (entry?.state === 'equipped' && !entry.owned) return zh ? '試用中' : 'Trial active';
+  return entry?.state === 'owned' ? (zh ? '已擁有' : 'Owned') : '';
 };
 
 </script>
@@ -92,14 +99,14 @@ const statusText = (id: SkinId, locale: string) => {
   <section id="garage-vfx-catalog" class="garage-vfx-catalog" data-preview-contract="live-shared-aero" :data-release-mode="GARAGE_RELEASE_MODE"
     aria-labelledby="garage-vfx-catalog-heading">
     <h3 id="garage-vfx-catalog-heading">{{ locale === 'zh-TW' ? '外觀特效收藏' : 'VFX collection' }}</h3>
-    <p class="garage-vfx-message">{{ GARAGE_RELEASE_MODE === 'trial' ? (locale === 'zh-TW' ? '點選卡片可預覽，按「試用」暫時裝備。重新載入後仍會記住你在此帳號最後的選擇，但這不是擁有權；試用結束後會還原為預設。' : 'Select a card to preview, then Try to equip temporarily. Your last pick is remembered on reload for this account, but it is not ownership; it returns to default when the trial ends.') : (locale === 'zh-TW' ? '預覽不會解鎖外觀。裝備需要有效擁有權。' : 'Preview does not unlock skins. Equip requires ownership.') }}</p>
+    <p class="garage-vfx-message">{{ GARAGE_RELEASE_MODE === 'trial' ? (locale === 'zh-TW' ? '點選卡片即可在車上預覽。免費試用期間可暫時裝備，這不是擁有權；試用結束後會還原為預設。' : 'Tap a card to preview it on the car. Free trial: equip it for now. This is not ownership; it returns to default when the trial ends.') : (locale === 'zh-TW' ? '預覽不會解鎖外觀。裝備需要有效擁有權。' : 'Preview does not unlock skins. Equip requires ownership.') }}</p>
     <section v-show="garageStudioView.effectsVisible" id="garage-vfx-live-loadout" class="garage-vfx-live-loadout" :aria-label="locale === 'zh-TW' ? '目前外觀特效' : 'Current VFX appearance'">
       <h4>{{ locale === 'zh-TW' ? '目前外觀特效' : 'Current VFX appearance' }}</h4>
       <ul class="garage-vfx-loadout-grid">
         <li v-for="item in liveLoadout" :key="item.category" class="garage-vfx-loadout-tile"
           :data-loadout-category="item.category" :data-preview-skin="item.id"
           :data-equipped-skin="item.equipped" :data-preview-only="String(item.id !== item.equipped)"
-          :data-owned="String(item.owned)">
+          :data-owned="String(item.owned)" :style="{ '--card-hue': skinAccentHue(item.id) }">
           <span class="garage-loadout-art">
             <GarageArtworkImage :src="item.artwork.src"
               :fallback-src="item.artwork.hasRaster ? item.artwork.fallback : ''"
@@ -118,32 +125,32 @@ const statusText = (id: SkinId, locale: string) => {
         </li>
       </ul>
     </section>
-    <div v-for="category in SKIN_CATEGORIES" :key="category" class="garage-vfx-category">
+    <div v-for="category in displayCategories" :key="category" class="garage-vfx-category" :data-vfx-category="category">
       <h4>{{ categoryNames[category][locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</h4>
+      <GaragePreviewTier v-if="category === 'thruster'" :locale="locale" />
+      <div v-if="category === 'drift-trail' && showingDrift && garageStudioView.effectsVisible" :ref="el => driftPreview = el as HTMLElement | undefined">
+        <GarageDriftPreview :key="garageStudioView.car" :skin="activeDrift.id" :locale="locale"
+          :label="skinLabel(activeDrift.id, locale)" :poster="activeDrift.artwork.src" />
+      </div>
       <ul>
         <li v-for="skin in entries.filter(entry => entry.category === category)" :key="skin.id"
           :data-skin="skin.id" :data-state="view(skin.id)?.state" :data-owned="String(view(skin.id)?.owned ?? false)"
           :data-preview-active="String(isPreviewActive(skin.id, skin.category))"
           :data-preview-only="String(isPreviewOnly(skin.id, skin.category))"
-          class="garage-skin-card" :style="{ '--card-hue': skinHue(skin.id, skin.category) }">
+          class="garage-skin-card" :style="{ '--card-hue': skinAccentHue(skin.id) }">
           <!-- Native full-surface Preview control; Equip/Try is its sibling, not nested. -->
           <button class="garage-skin-preview-hitarea" type="button"
             :aria-label="`${locale === 'zh-TW' ? '預覽' : 'Preview'} ${skinLabel(skin.id, locale)}`"
             :aria-pressed="isPreviewActive(skin.id, skin.category)"
-            @click="selectGarageSkin(skin.id)">
-            <span class="garage-vfx-art">
-              <GarageArtworkImage :src="skin.artwork.src" :fallback-src="skin.artwork.hasRaster ? skin.artwork.fallback : ''"
-                :animated-src="animatedArtworkSrc(skin.id)"
-                :size="skin.artwork.cssSize" alt="" loading="lazy" fallback-class="garage-vfx-fallback"
-                :fallback-text="categoryNames[category][locale === 'zh-TW' ? 'zh-TW' : 'en']" />
-            </span>
-            <strong>{{ skin.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</strong>
+            @click="previewSkin(skin.id, skin.category)">
+            <GarageSkinCardFace :skin-id="skin.id" :locale="locale" />
             <small class="garage-skin-status">{{ statusText(skin.id, locale) }}</small>
             <small class="garage-skin-preview-label" :aria-hidden="!isPreviewOnly(skin.id, skin.category)">{{ locale === 'zh-TW' ? '預覽中' : 'Previewing' }}</small>
           </button>
           <div class="garage-vfx-actions">
             <button class="garage-skin-action" type="button" :disabled="!view(skin.id)?.canEquip"
               @click.stop="equipGarageSkin(skin.id) && cue('equip-confirmed')">
+              <CollectibleIcon v-if="view(skin.id)?.state !== 'equipped'" :name="view(skin.id)?.canEquip ? 'tools' : 'locked'" />
               {{ view(skin.id)?.state === 'equipped' ? (locale === 'zh-TW' ? '已裝備' : 'Equipped') : view(skin.id)?.owned ? (locale === 'zh-TW' ? '裝備' : 'Equip') : GARAGE_RELEASE_MODE === 'trial' ? (locale === 'zh-TW' ? '免費試用' : 'Try free') : (locale === 'zh-TW' ? '未解鎖' : 'Locked') }}
             </button>
           </div>
@@ -167,8 +174,8 @@ const statusText = (id: SkinId, locale: string) => {
 .garage-vfx-catalog { border-top: 1px solid #35536a; margin-top: 14px; padding-top: 10px; }
 .garage-vfx-catalog h3 { margin: 0 0 6px; font-size: 15px; }
 .garage-vfx-live-loadout {
-  padding: 8px 6px; border: 1px solid #467a93; border-radius: 12px;
-  background: linear-gradient(160deg, #162d43, #0c1c2e 82%);
+  padding: 8px; border: 1px solid #314d62; border-radius: 12px;
+  background: linear-gradient(155deg, #142737, #0b1724 82%);
 }
 .garage-vfx-live-loadout h4 { margin: 0 0 6px; font-size: 13px; color: #e2f8ff; }
 /* Four tiles as one 2x2 block: the 226px tablet/landscape column still fits two 104px art frames. */
@@ -180,42 +187,40 @@ const statusText = (id: SkinId, locale: string) => {
   display: flex; flex-direction: column; align-items: center; min-width: 0;
   gap: 2px; padding: 5px 2px 6px; box-sizing: border-box; text-align: center;
   border: 1px solid #315875; border-radius: 10px;
-  background: radial-gradient(ellipse at center 30%, #26719c28, transparent 70%), #102438;
+  background: radial-gradient(ellipse at center 24%, hsl(var(--card-hue) 52% 43% / .17), transparent 72%), #0e1c2a;
 }
 .garage-loadout-art {
   width: 104px; height: 104px; max-width: 100%; padding: 4px; box-sizing: border-box;
   display: grid; place-items: center; position: relative;
-  border-radius: 10px; background: radial-gradient(circle, #36a6c02b, transparent 76%);
+  border-radius: 10px; background: radial-gradient(circle, hsl(var(--card-hue) 66% 51% / .14), transparent 76%);
 }
 .garage-loadout-art :deep(.artwork-img) { object-fit: contain; max-width: 100%; max-height: 100%; }
 .garage-vfx-loadout-tile strong { color: #e8faff; font-size: 12px; line-height: 1.25; }
 .garage-loadout-name { font-size: 11px; line-height: 1.3; color: #d3e7f4; overflow-wrap: anywhere; }
 .garage-loadout-status { font-size: 11px; font-weight: 750; color: #83f0da; }
 .garage-vfx-loadout-tile[data-preview-only="true"] {
-  border-color: #76e8ff; box-shadow: inset 0 0 12px #30caff2d, 0 0 9px #31c6f73d;
+  border-color: hsl(var(--card-hue) 63% 70% / .8); box-shadow: inset 0 2px hsl(var(--card-hue) 67% 64% / .37);
 }
 .garage-vfx-loadout-tile[data-preview-only="true"] .garage-loadout-status { color: #bcecff; }
-.garage-vfx-loadout-tile[data-preview-only="true"] .garage-loadout-art::after {
-  content: ''; position: absolute; inset: 8px; border-radius: 50%;
-  border: 1px solid #8feaff9e; pointer-events: none;
-  animation: garage-vfx-preview-pulse 2.6s ease-in-out infinite;
-}
 .garage-vfx-message { font-size: 12px; line-height: 1.45; color: #c2d4e3; margin: 6px 0 10px; }
 .garage-vfx-category { margin: 12px 0; }
-.garage-vfx-category h4 { font-size: 13px; margin: 0 0 6px; }
-/* 114px = 112px art frame + borders: three cards fit the 358px list of a 390px phone, art stays native 96px. */
+.garage-vfx-category h4 { font-size: 13px; margin: 0 0 7px; display: flex; gap: 8px; align-items: center; }
+.garage-vfx-category h4::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, #456078, transparent); }
+/* 114px = 112px art frame + borders, so the art stays native 96px. */
 .garage-vfx-category ul {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 114px), 1fr));
   gap: 6px; padding: 0; margin: 0; list-style: none;
 }
+/* Exactly four cards are one 2x2 block, like the loadout strip: never three and an orphan. */
+.garage-vfx-category ul:has(> li:nth-child(4):last-child) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .garage-vfx-category li.garage-skin-card {
   box-sizing: border-box; position: relative; isolation: isolate;
   min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
   padding: 0; text-align: center;
   border: 1px solid hsl(var(--card-hue) 63% 59% / .5);
-  border-radius: 14px 6px 14px 6px;
-  background: radial-gradient(ellipse at 50% 18%, hsl(var(--card-hue) 64% 38% / .28), transparent 78%),
-    linear-gradient(158deg, #1c2d4a, #0b1729 85%);
+  border-radius: 12px 5px 12px 5px;
+  background: radial-gradient(ellipse at 50% 8%, hsl(var(--card-hue) 58% 40% / .23), transparent 72%),
+    linear-gradient(155deg, #172939, #0b1624 79%);
   box-shadow: inset 0 1px #ffffff18, 0 5px 15px #0005;
   transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
 }
@@ -236,35 +241,6 @@ const statusText = (id: SkinId, locale: string) => {
 .garage-skin-preview-hitarea:focus-visible {
   outline: 3px solid #74ebff; outline-offset: 3px;
 }
-.garage-vfx-art {
-  position: relative;
-  width: 112px; height: 112px; max-width: 100%; box-sizing: border-box;
-  padding: 8px; display: grid; place-items: center; border-radius: 13px;
-  background: radial-gradient(circle, hsl(var(--card-hue) 74% 44% / .19), transparent 73%);
-  pointer-events: none;
-}
-.garage-vfx-art :deep(.artwork-img) {
-  max-width: 100%; max-height: 100%; object-fit: contain;
-  filter: drop-shadow(0 0 5px hsl(var(--card-hue) 85% 64% / .34));
-}
-.garage-vfx-art::after {
-  content: ''; position: absolute; inset: 9px; border-radius: 50%;
-  border: 1px solid hsl(var(--card-hue) 95% 74% / .8);
-  box-shadow: 0 0 13px hsl(var(--card-hue) 100% 67% / .35);
-  opacity: 0; pointer-events: none;
-}
-.garage-skin-card[data-preview-only="true"] .garage-vfx-art::after {
-  animation: garage-vfx-preview-pulse 2.6s ease-in-out infinite;
-}
-@keyframes garage-vfx-preview-pulse {
-  0%, 100% { opacity: .15; transform: scale(.94); }
-  50% { opacity: .55; transform: scale(1.05); }
-}
-.garage-vfx-fallback { color: #c4e7f0; font-size: 12px; overflow-wrap: anywhere; }
-.garage-skin-card strong {
-  padding: 0 4px; font-size: 12px; line-height: 1.3; color: #ecf6ff;
-  font-weight: 750; overflow-wrap: anywhere; pointer-events: none;
-}
 /* One state pill per card: "Previewing" takes the status pill's place instead of its own row. */
 .garage-skin-status, .garage-skin-preview-label {
   font-size: 11px; min-height: 19px; padding: 1px 7px; border-radius: 999px;
@@ -272,16 +248,18 @@ const statusText = (id: SkinId, locale: string) => {
   color: hsl(var(--card-hue) 91% 80%); border: 1px solid hsl(var(--card-hue) 60% 61% / .28);
   pointer-events: none;
 }
+/* An empty pill keeps its row, so starting a preview never moves the cards below. */
+.garage-skin-status:empty { visibility: hidden; }
 .garage-skin-preview-label { display: none; font-weight: 750; color: #bdefff; }
 .garage-skin-card[data-preview-only="true"] .garage-skin-preview-label { display: block; }
 .garage-skin-card[data-preview-only="true"] .garage-skin-status { display: none; }
 .garage-vfx-actions { position: relative; z-index: 2; width: 100%; display: flex; justify-content: center; margin-top: auto; padding: 0 5px 5px; box-sizing: border-box; }
 .garage-vfx-actions .garage-skin-action {
   display: block; min-height: 44px; width: 100%; border-radius: 10px 4px 10px 4px;
-  border: 1px solid hsl(var(--card-hue) 82% 67% / .85);
-  background: linear-gradient(125deg, hsl(var(--card-hue) 72% 43%), hsl(var(--card-hue) 71% 27%));
+  border: 1px solid hsl(var(--card-hue) 57% 62% / .64);
+  background: linear-gradient(125deg, hsl(var(--card-hue) 46% 26%), hsl(var(--card-hue) 55% 16%));
   color: #f4fdff; font-size: 12px; font-weight: 800; letter-spacing: .04em;
-  text-shadow: 0 1px 2px #0008; box-shadow: inset 0 1px #ffffff45, 0 3px 9px #0005;
+  text-shadow: 0 1px 2px #0008; box-shadow: inset 0 1px #ffffff21, 0 3px 9px #0005;
   cursor: pointer; transition: background .18s ease, filter .18s ease, transform .18s ease;
 }
 .garage-vfx-actions .garage-skin-action:disabled {
@@ -290,25 +268,28 @@ const statusText = (id: SkinId, locale: string) => {
 }
 .garage-vfx-actions .garage-skin-action:focus-visible { outline: 3px solid #74ebff; outline-offset: 2px; }
 .garage-skin-card[data-state="equipped"] .garage-skin-status { color: #70f3d6; border-color: #37bca286; }
-.garage-skin-card[data-state="locked"] .garage-skin-status { color: #b5c1d3; border-color: #8093ad66; }
-/* id-qualified so the Garage panel's shared card surface cannot cancel the selected glow */
+/* Equipped and locked are both disabled buttons: a teal tick and a grey padlock tell them apart at a glance. */
+.garage-skin-card[data-state="equipped"] .garage-skin-action:disabled { background: #0f2b2c; border-color: #37bca2; color: #70f3d6; }
+.garage-skin-card[data-state="equipped"] .garage-skin-action::before { content: '✓ '; }
+.garage-skin-action svg { width: 13px; height: 13px; margin-right: 3px; vertical-align: -2px; }
+/* Locked art sits back until the player previews it. */
+.garage-skin-card[data-state="locked"][data-preview-active="false"] :deep(.garage-vfx-art) { filter: saturate(.3) brightness(.72); }
+/* The category colour stays local to the active card. */
 #garage-vfx-catalog .garage-vfx-category li.garage-skin-card[data-preview-active="true"] {
   border-color: hsl(var(--card-hue) 94% 77%);
-  box-shadow: 0 0 0 1px hsl(var(--card-hue) 90% 70% / .57),
-    0 0 23px hsl(var(--card-hue) 88% 58% / .32), inset 0 0 20px hsl(var(--card-hue) 80% 48% / .15);
+  box-shadow: inset 0 -3px hsl(var(--card-hue) 65% 60% / .78),
+    inset 0 0 24px hsl(var(--card-hue) 73% 48% / .13), 0 5px 15px #0006;
 }
-.garage-skin-card[data-preview-active="true"]::before {
-  content: '◉'; position: absolute; top: 4px; right: 6px;
-  z-index: 2; font-size: 13px; color: hsl(var(--card-hue) 95% 78%);
-  pointer-events: none;
+.garage-skin-card[data-preview-only="true"] .garage-skin-action:enabled {
+  background: linear-gradient(128deg, hsl(var(--card-hue) 70% 34%), hsl(var(--card-hue) 48% 21%));
 }
 @media (hover: hover) and (pointer: fine) {
   .garage-vfx-category li.garage-skin-card:hover {
     transform: translateY(-3px);
     border-color: hsl(var(--card-hue) 92% 72%);
-    box-shadow: 0 9px 24px #0008, 0 0 16px hsl(var(--card-hue) 80% 60% / .25);
+    box-shadow: 0 9px 22px #0009, inset 0 1px hsl(var(--card-hue) 69% 69% / .33);
   }
-  .garage-vfx-actions .garage-skin-action:enabled:hover { filter: brightness(1.19) saturate(1.15); transform: translateY(-1px); }
+  .garage-vfx-actions .garage-skin-action:enabled:hover { filter: brightness(1.11); transform: translateY(-1px); }
 }
 @media (hover: none) {
   .garage-vfx-category li.garage-skin-card:active { transform: scale(.99); }

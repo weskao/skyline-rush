@@ -1,4 +1,5 @@
 import { reactive } from 'vue';
+import { garagePlaytestStorage } from '#garage-playtest-storage';
 import { DEFAULT_SKINS, SKIN_CATEGORIES, findSkin } from './garage-skin-catalog.ts';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import { createGarageSkinSession } from './garage-skin-session.ts';
@@ -24,12 +25,15 @@ economy.setAccount(accountId);
 export const garageEconomySnapshot = economy.snapshot;
 // Free-to-try is a temporary feature flag, NEVER a purchase or a cloud entitlement.
 declare const __GARAGE_SKIN_TRIAL__: boolean;
+declare const __WAVE3_FIRESTORE_PREVIEW__: boolean;
 const trialMode = typeof __GARAGE_SKIN_TRIAL__ === 'undefined' || __GARAGE_SKIN_TRIAL__;
+const wave3ReleasePreview = typeof __WAVE3_FIRESTORE_PREVIEW__ !== 'undefined' && __WAVE3_FIRESTORE_PREVIEW__;
 const freeTrialExpiry = Number.MAX_SAFE_INTEGER;
 const MAX_TIMEOUT_MS = 2_147_483_647;
 session.setTrial({ enabled: trialMode, expiresAt: trialMode ? freeTrialExpiry : 0 });
 // Remembered picks re-enter through session.equip, so storage can never bypass the owned/trial gate.
-const restorePicks = () => restoreSkinPicks(browserSkinPickStorage(), accountId, id => session.equip(id));
+const skinPickStorage = () => garagePlaytestStorage ?? browserSkinPickStorage();
+const restorePicks = () => restoreSkinPicks(skinPickStorage(), accountId, id => session.equip(id));
 restorePicks();
 export const garageSkinState = reactive({ revision: 0 });
 const listeners = new Set<(equipped: boolean) => void>();
@@ -46,11 +50,15 @@ export const subscribeGarageSkins = (listener: (equipped: boolean) => void): (()
   listeners.add(listener);
   return () => listeners.delete(listener);
 };
+// Released Wave 3 previews overlay the equipped VFX without mutating the ownership session.
+function activeGarageSkin(category: SkinCategory): SkinId {
+  return !trialMode && demoApplied?.category === category ? demoApplied.itemId : session.active(category);
+}
 export function currentGarageSkins(): Record<SkinCategory, SkinId> {
-  return Object.fromEntries(SKIN_CATEGORIES.map(category => [category, session.active(category)])) as Record<SkinCategory, SkinId>;
+  return Object.fromEntries(SKIN_CATEGORIES.map(category => [category, activeGarageSkin(category)])) as Record<SkinCategory, SkinId>;
 }
 export function selectedGarageSkins(): Record<SkinCategory, SkinId> {
-  return Object.fromEntries(SKIN_CATEGORIES.map(category => [category, session.preview(category)])) as Record<SkinCategory, SkinId>;
+  return Object.fromEntries(SKIN_CATEGORIES.map(category => [category, session.preview(category, activeGarageSkin(category))])) as Record<SkinCategory, SkinId>;
 }
 export const garageSkinEntry = (id: unknown) => session.view(id);
 export function selectGarageSkin(id: unknown): boolean {
@@ -61,16 +69,17 @@ export function selectGarageSkin(id: unknown): boolean {
 export function equipGarageSkin(id: unknown): boolean {
   if (!session.equip(id)) return false;
   if (demoApplied?.category === findSkin(id)?.category) clearDemoSelection();
-  rememberSkinPick(browserSkinPickStorage(), accountId, id);
+  rememberSkinPick(skinPickStorage(), accountId, id);
   publish(true);
   return true;
 }
-/** Session-only VFX, gated by both the local demo scope and the existing trial entitlement. */
+/** The Wave 3 experience authorizes this temporary selection after redemption. */
 export function equipWave3DemoSkin(id: unknown, expectedAccount: string): boolean {
   const skin = findSkin(id);
-  if (!trialMode || !skin || skin.default || expectedAccount !== accountId) return false;
+  if ((!trialMode && !wave3ReleasePreview) || !skin || skin.default || expectedAccount !== accountId) return false;
   const prior = demoApplied?.category === skin.category ? demoApplied.prior : session.active(skin.category);
-  if (!session.equip(skin.id)) return false;
+  if (trialMode && !session.equip(skin.id)) return false;
+  if (!trialMode) session.cancelPreview();
   if (demoApplied?.category !== skin.category) resetWave3DemoSkin();
   demoApplied = { category: skin.category, prior, itemId: skin.id };
   publish(true);
@@ -80,7 +89,7 @@ export function resetWave3DemoSkin(): void {
   if (!demoApplied) return;
   const { category, prior } = demoApplied;
   demoApplied = null;
-  if (!session.equip(prior)) session.equip(DEFAULT_SKINS[category]);
+  if (trialMode && !session.equip(prior)) session.equip(DEFAULT_SKINS[category]);
   publish();
 }
 export function cancelGarageSkinPreview(): void {
