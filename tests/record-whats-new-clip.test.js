@@ -67,3 +67,11 @@ test('--master refuses to record while the screen is locked', () => {
   assert.match(code, /CGSSessionScreenIsLocked/);
   assert.ok(code.indexOf('CGSSessionScreenIsLocked') < code.indexOf('chromium.launch('), 'checked before anything is recorded');
 });
+
+// A debuff clip must go through the game's real hit path (stepRivalAttacks and its center countdown card), so the
+// recorder arms a rival's heldAttack and never writes freezeUntil / empUntil itself.
+test('--rival-attack arms a rival held attack and never sets the hit timers directly', () => {
+  assert.match(code, /'rival-attack': \{ type: 'string'/);
+  assert.match(code, /\.heldAttack = item/);
+  assert.doesNotMatch(code, /freezeUntil|empUntil/);
+});

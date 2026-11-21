@@ -1,6 +1,7 @@
 // Records a What's New clip from the real game (never a mock-up): one race window, desktop + phone, en + zh-TW.
 //   node scripts/record-whats-new-clip.mjs <theme-slug> [--track coast] [--from 3] [--seconds 6] [--scale 2]
-//        [--seed 7] [--bot [--bot-until 12]] [--press "KeyE@4,KeyS@8:2.5,KeyD@8:2.5"] [--shapes desktop,mobile]
+//        [--seed 7] [--bot [--bot-until 12]] [--press "KeyE@4,KeyS@8:2.5,KeyD@8:2.5"] [--rival-attack "freeze@2.5,emp@6.5"]
+//        [--shapes desktop,mobile]
 // Writes public/whats-new/<theme-slug>/<theme-slug>.{desktop,mobile}.{en,zh-TW}.{mp4,jpg}: the clip starts when the
 // race clock reaches --from (holding throttle from the green light) and the poster is its middle frame.
 // --seed fixes the ring and pickup layout (the app re-rolls it every race), so a --press script replays the same race.
@@ -9,6 +10,8 @@
 // --bot-until hands the keys back to --press from that race second (a drift needs A/D held), releasing the bot's key.
 // --press adds scripted input on top of the held throttle: KeyboardEvent.code@race-seconds[:hold-seconds] (hold
 // defaults to 0.15), e.g. KeyE (NITRO, chains during a burn), KeyS + KeyA/KeyD together (drift), Space (fly).
+// --rival-attack gives the rival nearest the player a held Freeze or EMP at that race second (EMP only fires in range), so
+// the game's own stepRivalAttacks hits the player: the real hit path and the center countdown card, nothing is set directly.
 // Frames are lossless PNG screenshots at --scale x the CSS size (default 2), taken one per 1/30 s step of a paused
 // virtual clock, never Playwright recordVideo (a low-bitrate VP8 webm at device scale 1 that CRF 20 cannot recover).
 // --master instead plays the same race in real time in a visible window and screen-records it with sound (ffmpeg,
@@ -23,10 +26,10 @@ import { parseArgs } from 'node:util';
 import { chromium } from '@playwright/test';
 import { createServer } from 'vite';
 
-const USAGE = 'Usage: record-whats-new-clip.mjs <theme-slug> [--track id] [--from s] [--seconds s] [--scale n] [--seed n] [--bot] [--press "Key@s[:hold],..."] [--shapes desktop,mobile] [--master]';
+const USAGE = 'Usage: record-whats-new-clip.mjs <theme-slug> [--track id] [--from s] [--seconds s] [--scale n] [--seed n] [--bot] [--press "Key@s[:hold],..."] [--rival-attack "freeze|emp@s,..."] [--shapes desktop,mobile] [--master]';
 const { values: opts, positionals: [slug] } = parseArgs({ allowPositionals: true, options: {
   track: { type: 'string', default: 'coast' }, from: { type: 'string', default: '3' }, seconds: { type: 'string', default: '6' },
-  scale: { type: 'string', default: '2' }, seed: { type: 'string', default: '1' }, press: { type: 'string', default: '' }, bot: { type: 'boolean', default: false }, 'bot-until': { type: 'string', default: '1e9' }, shapes: { type: 'string', default: 'desktop,mobile' },
+  scale: { type: 'string', default: '2' }, seed: { type: 'string', default: '1' }, press: { type: 'string', default: '' }, 'rival-attack': { type: 'string', default: '' }, bot: { type: 'boolean', default: false }, 'bot-until': { type: 'string', default: '1e9' }, shapes: { type: 'string', default: 'desktop,mobile' },
   master: { type: 'boolean', default: false },
 } });
 const master = opts.master;
@@ -37,6 +40,11 @@ const from = Number(opts.from), seconds = Number(opts.seconds), scale = Number(o
 const steps = opts.press.split(',').filter(Boolean).flatMap(spec => {
   const [, code, at, hold = '0.15'] = spec.match(/^(\w+)@([\d.]+)(?::([\d.]+))?$/) ?? fail(`Bad --press "${spec}".`);
   return [[Number(at), 'down', code], [Number(at) + Number(hold), 'up', code]];
+}).sort((a, b) => a[0] - b[0]);
+// Sorted [race second, 'freeze' | 'emp'] from "freeze@2.5,emp@6.5".
+const attacks = opts['rival-attack'].split(',').filter(Boolean).map(spec => {
+  const [, item, at] = spec.match(/^(freeze|emp)@([\d.]+)$/) ?? fail(`Bad --rival-attack "${spec}".`);
+  return [Number(at), item];
 }).sort((a, b) => a[0] - b[0]);
 const root = fileURLToPath(new URL('../', import.meta.url));
 const outDir = `${root}${master ? 'assets-src' : 'public'}/whats-new/${slug}/`;
@@ -167,7 +175,7 @@ async function record(locale, system, shape, { width, height, mobile }) {
   await page.keyboard.down('ArrowUp');
   // CSS animations and transitions run on real time, not the virtual clock: match them to the game's pace (1/FPS s of
   // animation per step) from the measured real time per step.
-  let realMs = 150, last = Date.now(), window0, state;
+  let nextAttack = 0, realMs = 150, last = Date.now(), window0, state;
   for (let frame = 0, next = 0; frame < seconds * FPS; await step()) {
     realMs = 0.8 * realMs + 0.2 * (Date.now() - last); last = Date.now();
     if (!master) await cdp.send('Animation.setPlaybackRate', { playbackRate: Math.max(0.05, 1000 / FPS / realMs) });
@@ -175,6 +183,12 @@ async function record(locale, system, shape, { width, height, mobile }) {
     const now = state.elapsed;
     if (opts.bot) await drive(now < Number(opts['bot-until']) ? state : { ...state, cars: [], rewards: [], x: 0 }); // past --bot-until: no goal, so the held key is released
     if (now >= from && !window0) window0 = state;
+    for (; nextAttack < attacks.length && attacks[nextAttack][0] <= now; nextAttack++) {
+      await page.evaluate(item => { // stepRivalAttacks fires it on the next race step
+        const { player: p, rivals } = window.gameplay.race;
+        rivals.filter(r => r.finishTime == null).sort((a, b) => Math.abs(a.distance - p.distance) - Math.abs(b.distance - p.distance))[0].heldAttack = item;
+      }, attacks[nextAttack][1]);
+    }
     for (; next < steps.length && steps[next][0] <= now; next++) await page.keyboard[steps[next][1]](steps[next][2]);
     if (master) { if (now >= from + seconds) break; } // real time: the race clock, not a frame count, ends the master
     else if (now >= from) await page.screenshot({ path: `${dir}/${String(frame++).padStart(5, '0')}.png`, animations: 'allow', caret: 'initial' });
