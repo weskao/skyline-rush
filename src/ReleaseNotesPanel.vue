@@ -29,7 +29,11 @@ function viewerClosed(time: number | null) {
   if (fromHero && time !== null) inline.currentTime = time;
   if (resumeHero && !releaseView.compact && document.querySelector('#whats-new-screen[open]')) inline.play().catch(() => { /* autoplay refused: the poster stays */ });
 }
-const zoomImage = (src: string, label: string, event: Event) => enlarge({ kind: 'image', src, label }, event.currentTarget as HTMLElement);
+const zoomImage = (src: string, label: string, event: Event) => {
+  const trigger = event.currentTarget as HTMLElement;
+  // Zoom the file the browser actually chose for this device and orientation.
+  enlarge({ kind: 'image', src: trigger.querySelector('img')?.currentSrc || src, label }, trigger);
+};
 const clipMedia = (clip: ReleaseClipView, label: string): ZoomedMedia => ({ kind: 'video', src: clip.src || clip.source, poster: clip.poster, source: clip.source, label });
 // A highlight's poster opens its clip enlarged; the hero (playing inline) opens from its corner button, or from a tap on the clip itself.
 const playClip = (clip: ReleaseClipView, label: string, event: Event) => enlarge(clipMedia(clip, label), event.currentTarget as HTMLElement);
@@ -82,7 +86,14 @@ function zoomHero() {
             <ReleasePlayBadge />
           </button>
           <button v-else-if="entry.image" type="button" class="release-zoom" :aria-label="entry.zoomLabel" @click="zoomImage(entry.image, entry.title, $event)">
-            <img :src="entry.image" alt="" loading="lazy" @error="hideBrokenThumbnail(index)">
+            <picture>
+              <source v-if="entry.responsiveImages?.tabletPortrait" media="(orientation: portrait) and (min-width: 650px)" :srcset="entry.responsiveImages.tabletPortrait">
+              <source v-if="entry.responsiveImages?.portrait" media="(orientation: portrait)" :srcset="entry.responsiveImages.portrait">
+              <source v-if="entry.responsiveImages?.landscape" media="(orientation: landscape) and (max-width: 960px)" :srcset="entry.responsiveImages.landscape">
+              <source v-if="entry.responsiveImages?.tablet" media="(max-width: 1399px)" :srcset="entry.responsiveImages.tablet">
+              <source v-if="entry.responsiveImages?.desktop" media="(min-width: 1400px)" :srcset="entry.responsiveImages.desktop">
+              <img :src="entry.image" alt="" loading="lazy" @error="hideBrokenThumbnail(index)">
+            </picture>
           </button>
           <div><span class="release-kind">{{ entry.kindLabel }}</span><strong>{{ entry.title }}</strong><p>{{ entry.description }}</p></div>
         </article>
@@ -102,6 +113,7 @@ function zoomHero() {
 }
 .release-zoom { display: block; width: 100%; padding: 0; border: 0; border-radius: 8px; background: none; cursor: zoom-in; }
 .release-zoom[hidden] { display: none; }
+.release-zoom picture { display: block; width: 100%; }
 /* Tapping a picture or clip, or getting focus back when its enlarged view closes, never flashes a focus ring. */
 .release-zoom, .release-zoom-corner, .release-hero-frame video, .release-play { -webkit-tap-highlight-color: transparent; }
 /* Hugs the centered clip so the enlarge button sits on its corner: 480 px wide landscape, height-sized portrait. */

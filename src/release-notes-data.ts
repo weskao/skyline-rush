@@ -69,6 +69,13 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
       {
         id: 'rival-items', kind: 'new',
         image: { en: 'whats-new/rival-items/debuffs.en.webp', 'zh-TW': 'whats-new/rival-items/debuffs.zh-TW.webp' },
+        responsiveImages: {
+          desktop: { en: 'whats-new/rival-items/debuffs.desktop.en.svg', 'zh-TW': 'whats-new/rival-items/debuffs.desktop.zh-TW.svg' },
+          tablet: { en: 'whats-new/rival-items/debuffs.tablet.en.svg', 'zh-TW': 'whats-new/rival-items/debuffs.tablet.zh-TW.svg' },
+          landscape: { en: 'whats-new/rival-items/debuffs.landscape.en.svg', 'zh-TW': 'whats-new/rival-items/debuffs.landscape.zh-TW.svg' },
+          portrait: { en: 'whats-new/rival-items/debuffs.portrait.en.svg', 'zh-TW': 'whats-new/rival-items/debuffs.portrait.zh-TW.svg' },
+          tabletPortrait: { en: 'whats-new/rival-items/debuffs.tablet-portrait.en.svg', 'zh-TW': 'whats-new/rival-items/debuffs.tablet-portrait.zh-TW.svg' }
+        },
         title: { en: 'Rivals fight back with Freeze and EMP', 'zh-TW': '對手也會用冰凍與 EMP' },
         description: {
           en: 'Rivals can hit you with Freeze or EMP. A center countdown shows how long it lasts, while your speedometer lights up icy blue or gold.',

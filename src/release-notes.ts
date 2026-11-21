@@ -4,6 +4,8 @@ export interface ReleaseHighlight {
   id: string;
   kind: string;
   image?: LocalizedImage;
+  // Optional device-specific compositions; image remains the fallback for older clients.
+  responsiveImages?: Partial<Record<'desktop' | 'tablet' | 'landscape' | 'portrait' | 'tabletPortrait', LocalizedImage>>;
   // Optional clip for this item: its still (with a play button) takes the picture's place and the clip plays enlarged.
   video?: ReleaseVideo | null;
   title: LocalizedText;
@@ -92,7 +94,7 @@ const bundledPath = (value: LocalizedImage | undefined, locale: string, extensio
   return typeof path === 'string' && new RegExp(`^(?!\\/)(?!.*\\.\\.)[a-zA-Z0-9][a-zA-Z0-9/_.-]*\\.(?:${extensions})$`).test(path) ? path : null;
 };
 export const releaseImage = (value: LocalizedImage | undefined, locale: string): string | null =>
-  bundledPath(value, locale, 'png|jpe?g|webp|avif|gif');
+  bundledPath(value, locale, 'png|jpe?g|webp|avif|gif|svg');
 
 export function releaseHeroVideo(video: ReleaseVideo | null | undefined, locale: string, portrait: boolean):
   { src: string; poster: string; variant: keyof ReleaseVideo } | null {

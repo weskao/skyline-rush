@@ -100,6 +100,12 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
           zoomLabel: t('release.zoomEntry', { title }),
           description,
           image: image ? import.meta.env.BASE_URL + image : '',
+          responsiveImages: item.responsiveImages ? Object.fromEntries(
+            Object.entries(item.responsiveImages).map(([variant, value]) => {
+              const file = releaseImage(value, locale);
+              return [variant, file ? import.meta.env.BASE_URL + file : ''];
+            })
+          ) : null,
           video: clipView(item.video, locale),
           playLabel: t('release.playEntry', { title }),
         };

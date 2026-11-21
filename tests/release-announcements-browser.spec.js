@@ -236,3 +236,26 @@ test('scrolled notes slide under the dialog top edge, never over its gradient ba
   });
   expect(hit).toBe(true);
 });
+
+// The thumbnail and enlarged viewer must use the same, readable device-specific image.
+for (const [width, height, variant] of [
+  [1440, 900, 'desktop'], [1024, 768, 'tablet'], [844, 390, 'landscape'],
+  [390, 844, 'portrait'], [768, 1024, 'tablet-portrait'],
+]) {
+  test(`Freeze and EMP announcement uses ${variant} artwork at ${width}x${height}`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await page.locator('#whats-new-open').click();
+    const entry = page.locator('.release-entry').filter({ hasText: 'Rivals fight back with Freeze and EMP' });
+    const button = entry.locator('button.release-zoom');
+    await button.scrollIntoViewIfNeeded();
+    const image = button.locator('img');
+    await expect.poll(() => image.evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
+    await expect.poll(() => image.evaluate(img => img.currentSrc)).toContain(`debuffs.${variant}.en.svg`);
+    await button.click();
+    const zoomed = page.locator('#release-media-viewer img');
+    await expect(zoomed).toBeVisible();
+    await expect(zoomed).toHaveAttribute('src', new RegExp(`debuffs\\.${variant}\\.en\\.svg$`));
+    await page.locator('.release-viewer-close').click();
+  });
+}

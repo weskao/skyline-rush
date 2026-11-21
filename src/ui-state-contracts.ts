@@ -31,6 +31,7 @@ export interface ReleaseEntry {
   title: string;
   description: string;
   image: string;
+  responsiveImages: Partial<Record<'desktop' | 'tablet' | 'landscape' | 'portrait' | 'tabletPortrait', string>> | null;
   zoomLabel: string;
   // Replaces the picture slot with a poster and play button when set.
   video: ReleaseClipView | null;

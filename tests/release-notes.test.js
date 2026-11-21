@@ -328,3 +328,18 @@ test('notes are drafted only from changes players can notice', () => {
     'feat: add a night track', 'fix(audio)!: keep music on after a call'
   ]);
 });
+
+// The same artwork must be readable on desktop, tablets, folded layouts and phones.
+test('Freeze and EMP announcement bundles safe localized artwork for every device shape', () => {
+  const entry = RELEASE_NOTES.find(release => release.highlights.some(item => item.id === 'rival-items'))
+    ?.highlights.find(item => item.id === 'rival-items');
+  assert.ok(entry?.image && entry.responsiveImages);
+  for (const locale of ['en', 'zh-TW']) {
+    for (const variant of ['desktop', 'tablet', 'landscape', 'portrait', 'tabletPortrait']) {
+      const path = releaseImage(entry.responsiveImages[variant], locale);
+      assert.ok(path?.startsWith('whats-new/rival-items/debuffs.'), variant);
+      assert.ok(path?.endsWith('.svg'), variant);
+      assert.ok(fs.existsSync(new URL('../public/' + path, import.meta.url)), path);
+    }
+  }
+});
