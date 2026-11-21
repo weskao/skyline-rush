@@ -2,7 +2,7 @@ import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
 import { DataUtils, EquirectangularReflectionMapping, PMREMGenerator, Scene, type Texture, type WebGLRenderer, type WebGLRenderTarget } from 'three';
 import { CAR_REFLECTION, createCarEnvironment } from './car-reflections.ts';
 import { COAST_ENV_VARIANTS, type CoastEnvName } from './coast-lighting.ts';
-import { coastSkyYaw } from './coast-sky.ts';
+import { coastSkyYaw, waitForSceneTexture } from './coast-sky.ts';
 
 /** Scales every RGBA half-float texel brighter than `cap` down to it, hue kept. Positive half floats order as their
  *  bits do, so the scan is an integer compare and only the few texels of the sun are converted. */
@@ -34,11 +34,12 @@ export function createCoastEnvironments(renderer: WebGLRenderer, baseUrl: string
   const ready = new Map<CoastEnvName, Texture>(), skies = new Map<CoastEnvName, WebGLRenderTarget>();
   let studio: Texture | null = null, painted: CoastEnvName | null = null; // the room as made, to copy back
   const pending = new Map<CoastEnvName, Promise<Texture | null>>();
-  let generator: PMREMGenerator | null = null;
+  let generator: PMREMGenerator | null = null, disposed = false;
   const load = (name: CoastEnvName): Promise<Texture | null> => {
     const cached = pending.get(name);
     if (cached) return cached;
-    const task = new HDRLoader().loadAsync(`${baseUrl}environments/${COAST_ENV_VARIANTS[name].file}`).then(equirect => {
+    const task = waitForSceneTexture(new HDRLoader().loadAsync(`${baseUrl}environments/${COAST_ENV_VARIANTS[name].file}`)).then(equirect => {
+      if (disposed) { equirect.dispose(); return null; }
       equirect.mapping = EquirectangularReflectionMapping;
       const cap = COAST_ENV_VARIANTS[name].radianceCap;
       if (cap) capRadiance(equirect.image.data as Uint16Array, cap); // HDRLoader's default type is half float
@@ -64,6 +65,7 @@ export function createCoastEnvironments(renderer: WebGLRenderer, baseUrl: string
       painted = name;
     },
     dispose() {
+      disposed = true;
       generator?.dispose(); generator = null; for (const texture of ready.values()) texture.dispose(); ready.clear(); pending.clear();
       for (const target of skies.values()) target.dispose(); skies.clear(); studio?.dispose(); studio = null;
     },

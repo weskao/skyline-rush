@@ -43,6 +43,7 @@ function setupStartup() {
   const music = root.querySelector<HTMLButtonElement>('#startup-music')!;
   const sound = createSound();
   const locale = resolveInitialLocale();
+  const deviceSelection = readInitialDeviceVisuals();
   const copy = COPY[locale];
   const viewport = new AbortController();
   let entered = false;
@@ -77,7 +78,7 @@ function setupStartup() {
 
   const finishAudio = entered ? () => {} : startOpeningAudio(sound, music);
   if (!entered) {
-    const { settings } = readInitialDeviceVisuals();
+    const { settings } = deviceSelection;
     root.dataset.motion = settings.enabled && !settings.comfortable ? settings.quality : 'off';
     advanceProgress(0);
     refreshFoldableViewport();
@@ -88,7 +89,7 @@ function setupStartup() {
   retry.addEventListener('click', () => location.reload());
 
   return {
-    sound,
+    sound, deviceSelection,
     get entered() { return entered; },
     get waitingForFrame() { return !entered && !ready && !failed; },
     step(step: 1 | 2) {

@@ -48,7 +48,8 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
   let open = false, quality: ModelQuality | null = null, handle: ModelHandle | null = null;
   let controller: AbortController | null = null, warmups = 0, status = 'off', held = false;
   const dressed = new Map<GarageModelHost, Dressing>();
-  const pending = new Set<GarageModelHost>();
+  const pending = new Map<GarageModelHost, ModelHandle>();
+  const failed = new WeakMap<GarageModelHost, ModelHandle>();
   const wanted = new Set<GarageModelHost>(); // every host shown since the Garage opened
 
   function report(): void {
@@ -82,7 +83,7 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
   }
 
   async function dress(host: GarageModelHost, from: ModelHandle): Promise<void> {
-    pending.add(host); // request() and the per-frame sync() never dress one host twice at once
+    pending.set(host, from);
     const instance = from.instance();
     instance.userData.garageModel = id;
     if (dressesRaceCar(id)) fitToRoadsterSize(instance); // before the airflow fit and the rig, which measure the shown size
@@ -90,7 +91,20 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
     const outdoor = host.name === 'home'; // the same car drives the Home showcase and every race
     const rig = bindGarageRig(host.car, instance, outdoor && !!carMap); // clone before adjusting the finish; pose only after compiling
     if (carMap) applyCarReflections(instance, carMap, outdoor ? 'outdoor' : 'studio');
-    try { await compile(instance, host.scene); } catch { rig.dispose(); return; } finally { pending.delete(host); } // keeps the Roadster
+    try {
+      await compile(instance, host.scene);
+    } catch {
+      rig.dispose();
+      if (handle === from && wanted.has(host) && !held) {
+        failed.set(host, from);
+        undress(host);
+        status = 'fallback:compile';
+        report();
+      }
+      return;
+    } finally {
+      if (pending.get(host) === from) pending.delete(host);
+    }
     warmups++;
     if (handle !== from || !open || held || !wanted.has(host)) { rig.dispose(); return; } // closed, swapped, released or GO while compiling
     const old = dressed.get(host);
@@ -118,8 +132,11 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
     try {
       const result = await cache.load(id, { quality: next, signal: own.signal });
       if (own !== controller) { if (result.kind === 'model') result.release(); return; }
-      controller = null;
-      if (result.kind === 'fallback') { console.warn(`[model-probe] ${id} → ${result.fallback} (${result.reason})`); status = `fallback:${result.reason}`; report(); return; }
+      if (result.kind === 'fallback') {
+        console.warn(`[model-probe] ${id} → ${result.fallback} (${result.reason})`);
+        fallback(result.reason);
+        return;
+      }
       const old = handle;
       handle = result;
       status = 'model';
@@ -128,8 +145,21 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
       old?.release(); // only after no host shows an old instance
       if (open && handle === result) report();
     } catch (error) {
-      if (!(error instanceof DOMException && error.name === 'AbortError')) throw error;
+      if (own === controller && !own.signal.aborted) {
+        console.warn(`[model-probe] ${id} → procedural (${error})`);
+        fallback('load');
+      }
+    } finally {
+      if (own === controller) controller = null;
     }
+  }
+
+  function fallback(reason: string): void {
+    for (const host of dressed.keys()) undress(host);
+    handle?.release();
+    handle = null;
+    status = `fallback:${reason}`;
+    report();
   }
 
   function release(host: GarageModelHost): void {
@@ -153,16 +183,18 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
 
   return {
     /** Per frame: cheap when nothing changed. `host` is the car currently shown (Home or Studio), or null. */
-    sync(nextOpen: boolean, nextQuality: ModelQuality, host: GarageModelHost | null, mode: DressMode = 'garage'): void {
-      if (!nextOpen) { if (open || status !== 'off') close(); return; }
+    sync(nextOpen: boolean, nextQuality: ModelQuality, host: GarageModelHost | null, mode: DressMode = 'garage'): boolean {
+      if (!nextOpen) { if (open || status !== 'off') close(); return false; }
       if (!open) { open = true; status = 'loading'; report(); }
       held = mode === 'race';
       if (nextQuality !== quality && !held) { quality = nextQuality; void request(nextQuality); } // a tier change waits for the race to stop
       if (host && mode !== 'garage' && wanted.size > (wanted.has(host) ? 1 : 0)) for (const other of wanted) if (other !== host) release(other);
       if (host) wanted.add(host);
-      if (host && handle && !held && !dressed.has(host) && !pending.has(host)) void dress(host, handle);
+      if (!host) return false;
+      if (handle && !held && !controller && !dressed.has(host) && pending.get(host) !== handle && failed.get(host) !== handle) void dress(host, handle);
       // shortcut: world.js calls sync before posing the car, so the GLB trails the pose by one frame; add a post-pose hook if it shows.
-      if (host) dressed.get(host)?.rig.update();
+      dressed.get(host)?.rig.update();
+      return !held && (controller !== null || (handle !== null && pending.get(host) === handle));
     },
     /** After webglcontextrestored: rebuild the programs of every shown instance; nothing is re-fetched. */
     warmAgain(): Promise<unknown> {
@@ -220,15 +252,15 @@ export function createWorldGarageModel(canvas: HTMLCanvasElement, renderer: Pick
   return {
     /** Per frame, before posing: dresses the car on screen. `studio` only while the Preview Studio camera is on;
      *  `showcase` only while the Coming Soon stage renders the Home preview; `home` is the Home/race player car. */
-    frame(quality: ModelQuality, phase: string, garageOpen: boolean, studio: GarageModelHost | null, showcase: GarageModelHost | null, home: GarageModelHost, startingFreeDrive = false): void {
+    frame(quality: ModelQuality, phase: string, garageOpen: boolean, studio: GarageModelHost | null, showcase: GarageModelHost | null, home: GarageModelHost, startingFreeDrive = false): boolean {
       const equipped = (garageOpen ? garagePreviewModel() : undefined) ?? carModel();
       const wanted = equipped === CARS.roadster.model ? (proceduralRoadster ? null : probe ?? equipped) : equipped;
       if (wanted !== id && (phase !== 'racing' || startingFreeDrive)) use(wanted); // never rebuild mid-race
-      if (!model || id === null) return;
-      if (studio) { model.sync(true, quality, studio); return; }
+      if (!model || id === null) return false;
+      if (studio) return model.sync(true, quality, studio);
       const everywhere = dressesRaceCar(id);
       const shown = showcase ?? (garageOpen || everywhere ? home : null);
-      model.sync(garageOpen || everywhere, quality, shown, garageOpen ? 'garage' : phase === 'racing' ? 'race' : 'drive');
+      return model.sync(garageOpen || everywhere, quality, shown, garageOpen ? 'garage' : phase === 'racing' ? 'race' : 'drive');
     },
     release: (host: GarageModelHost): void => model?.release(host),
     dispose() {

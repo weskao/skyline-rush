@@ -1,0 +1,44 @@
+#world[data-frame-loading] { visibility: hidden; }
+
+.race-loading-rail { display: none; }
+
+.countdown[data-step="loading"]:not([hidden]) {
+  top: 50%;
+  translate: -50% -50%;
+  display: grid;
+  gap: 14px;
+  width: min(290px, calc(100% - 32px));
+  padding: 18px 24px;
+  border: 1px solid #d29b6070;
+  border-radius: 5px 15px 5px 15px;
+  background: #081221f5;
+  box-shadow: 0 12px 36px #020713a6;
+}
+
+.countdown[data-step="loading"] > :is(.start-lights, strong) { display: none; }
+.countdown[data-step="loading"] > #countdown-label {
+  margin: 0;
+  color: #fff2de;
+  font: 650 12px/1.4 system-ui, sans-serif;
+  letter-spacing: .09em;
+}
+
+.countdown[data-step="loading"]:not([hidden]) > .race-loading-rail {
+  display: block;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 1px;
+  transform: skewX(-20deg);
+  background: repeating-linear-gradient(90deg, #cd7948 0 calc(100% / 3 - 3px), transparent calc(100% / 3 - 3px) calc(100% / 3));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  body:not(.vfx-comfort, [data-vfx-enabled="false"]) .countdown[data-step="loading"]:not([hidden]) > .race-loading-rail::after {
+    content: '';
+    display: block;
+    width: 48%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, #ffe9c9 72%, transparent);
+    animation: startup-ignition 1.65s cubic-bezier(.24,.3,.45,1) infinite;
+  }
+}

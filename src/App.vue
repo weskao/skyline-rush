@@ -12,6 +12,7 @@ import { RACE_TRACKS } from './game.js';
 import { UPCOMING_TRACKS } from './upcoming-tracks.ts';
 import { VFX_RANGES, vfxLabelKey } from './vfx-settings.ts';
 import './progress-bars.css';
+import './race-loading.css';
 import './touch-sprint-buttons.css';
 import { MODE_ART } from './lobby-art.ts';
 import './race-lobby.css';
@@ -292,7 +293,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       <div class="leaderboard" id="leaderboard" aria-label="Race leaderboard" data-i18n-aria-label="race.leaderboard"></div><div id="race-route-map" class="race-route-map" role="region" aria-label="Full course map with live racer positions" data-i18n-aria-label="race.map"><div class="progress-bar"><div class="progress-labels"><span id="race-status">READY</span><span><span id="distance">0.00</span> / <span id="race-length">5.00</span><span class="unit"> KM</span></span></div></div></div>
     </section>
 
-    <div class="countdown" id="countdown" role="status" aria-live="polite" hidden><div class="start-lights" aria-hidden="true"><i></i><i></i><i></i></div><strong id="countdown-number">3</strong><span id="countdown-label">HOLD ACCELERATOR · GET READY</span></div>
+    <div class="countdown" id="countdown" role="status" aria-live="polite" hidden><div class="start-lights" aria-hidden="true"><i></i><i></i><i></i></div><strong id="countdown-number">3</strong><div class="race-loading-rail" aria-hidden="true"></div><span id="countdown-label">HOLD ACCELERATOR · GET READY</span></div>
     <div class="event-callout" id="event-callout" role="status" aria-live="polite" aria-atomic="true" hidden>
       <div id="maneuver-report" hidden></div><div id="skill-report" hidden></div><div id="action-report" hidden></div>
     </div>

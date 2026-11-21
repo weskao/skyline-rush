@@ -1,6 +1,6 @@
 import { t } from './i18n.ts';
 import { vfxSettings, VFX_PRESETS, SHOWCASE_VIEWS, type VfxSettings, type ShowcaseView, type VfxPreset } from './vfx-settings.ts';
-import { readInitialDeviceVisuals, QUALITY_STORAGE_KEY } from './device-quality.ts';
+import { type InitialDeviceVisuals, QUALITY_STORAGE_KEY } from './device-quality.ts';
 import { showSettingToast } from './toast-view-state.ts';
 import { confirmDialog } from './confirm-dialog.ts';
 import { icons } from './icons.ts';
@@ -11,19 +11,19 @@ interface VfxOptions {
   /** The showcase hides the track picker, so swiping is how to change track. */
   onAirflowShown(): void;
   reducedMotion: MediaQueryList;
+  deviceSelection: InitialDeviceVisuals;
 }
 
 export const stepView = (view: ShowcaseView, delta: number): ShowcaseView =>
   SHOWCASE_VIEWS[(SHOWCASE_VIEWS.indexOf(view) + delta + SHOWCASE_VIEWS.length) % SHOWCASE_VIEWS.length]!;
 
-export function setupVfxUI({ getWorld, onAirflowShown, reducedMotion }: VfxOptions) {
+export function setupVfxUI({ getWorld, onAirflowShown, reducedMotion, deviceSelection }: VfxOptions) {
   const $ = <T extends Element = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   const vfxControls = [...document.querySelectorAll<HTMLInputElement>('[data-vfx]')];
   const airflowHud = $('#airflow-hud');
   const airflowToggles = document.querySelectorAll<HTMLButtonElement>('#airflow-toggle, #home-airflow-toggle');
-  const deviceSelection = readInitialDeviceVisuals();
   let visual = deviceSelection.settings;
-  const calm = (): boolean => visual.comfortable || reducedMotion.matches;
+  const calm = (): boolean => !visual.enabled || visual.comfortable || reducedMotion.matches;
   function stopMotionIfCalm(): void {
     if (calm()) document.getAnimations().forEach(animation => animation.cancel());
   }

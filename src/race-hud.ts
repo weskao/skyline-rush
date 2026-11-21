@@ -255,12 +255,11 @@ export function createRaceHud(options: HudOptions) {
     const loading = countdown && options.waitingForScenery();
     setHudHidden(ui.countdown!, !(countdown || (race.phase === 'racing' && now < options.getGoUntil())));
     const step = loading ? 'loading' : countdown ? String(Math.ceil(race.countdown)) : 'GO';
-    const countdownText = loading ? '…' : countdown ? step : L['hud.go']!;
-    if (countdownNumber.textContent !== countdownText) {
-      countdownNumber.textContent = countdownText;
+    if (ui.countdown!.dataset.step !== step) {
       ui.countdown!.dataset.step = step;
-      if (!calm) countdownNumber.animate([{ opacity: 0.4, transform: `scale(${countdown ? 1.3 : 0.65})` }, { opacity: 1, transform: 'scale(1)' }], motionOptions(countdown ? 'base' : 'slow'));
+      if (!loading && !calm) countdownNumber.animate([{ opacity: 0.4, transform: `scale(${countdown ? 1.3 : 0.65})` }, { opacity: 1, transform: 'scale(1)' }], motionOptions(countdown ? 'base' : 'slow'));
     }
+    setHudText(countdownNumber, loading ? '' : countdown ? step : L['hud.go']!);
     setHudText(countdownLabel, L[loading ? 'hud.loadingScenery' : countdown ? options.isAutoThrottle() ? 'hud.autoReady' : 'hud.holdReady' : 'hud.goSkyline']!);
   }
   function updateStatus(race: HudRace, car: HudRace, input: HudInput, impactAge: number): void {
@@ -327,7 +326,7 @@ export function createRaceHud(options: HudOptions) {
     modePanels.update(race);
     const car = race.player;
     const impactAge = car.impact ? race.elapsed - car.impact.time : 10;
-    const calm = visual.comfortable || reducedMotion.matches;
+    const calm = !visual.enabled || visual.comfortable || reducedMotion.matches;
     const flying = car.altitude > 0.25;
     updateSpeedAndPosition(now, race, car, calm);
     updateProgress(race, car);
