@@ -414,6 +414,31 @@ test('a spec never asserts absence between its countdown wait and its racing wai
   assert.deepEqual(offenders, [], 'Record the countdown frames in the page and assert after GO (.claude/rules/browser-test-stability.md)');
 });
 
+// Since 556d163c the starting grid holds (#countdown data-step="loading") until the equipped car's GLB settles, so a spec
+// that holds an asset and waits for RACING before releasing it deadlocks until the loader's 15 s deadline turns the
+// car into `fallback:timeout` (crimson-gt, develop CI 44892040873). Release on the loading step, never on RACING.
+test('a spec that holds an asset releases it before it waits for RACING', () => {
+  const offenders = FILES.flatMap(file => {
+    const lines = readFileSync(new URL(file, import.meta.url), 'utf8').split('\n');
+    return lines.flatMap((line, i) => {
+      if (!/await held;/.test(line)) return [];
+      const end = lines.findIndex((next, j) => j > i && /\b(?:arrive|release)\(\)/.test(next));
+      return lines.slice(i + 1, end < 0 ? i + 1 : end).flatMap((next, k) => /toHaveText\('RACING'/.test(next) ? [`tests/${file}:${i + k + 2}`] : []);
+    });
+  });
+  assert.deepEqual(offenders, [], 'Wait for #countdown data-step="loading", then release the held asset (.claude/rules/browser-test-stability.md)');
+});
+
+// A held model response on the gameplay (Vite dev) server must not race the loader's 15 s deadline on a slow runner.
+test('a gameplay-server spec that holds a model GLB widens the loader deadline (widenModelDeadline)', () => {
+  const offenders = FILES.filter(file => file.endsWith('browser.spec.js')).flatMap(file => {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    const holds = /page\.route\([^\n]*\/models\/[^\n]*await held|page\.route\([^\n]*GLB[^\n]*await held/.test(source);
+    return holds && /gameplayURL/.test(source) && !/widenModelDeadline\(/.test(source) ? [`tests/${file}`] : [];
+  });
+  assert.deepEqual(offenders, [], 'Call widenModelDeadline(page) from tests/helpers/gameplay-browser.js before holding the GLB (.claude/rules/browser-test-stability.md)');
+});
+
 // A page-wide wait on document.getAnimations() also sees a toast that unmounts mid-wait: cancel rejects `finished` with
 // AbortError (airflow showcase, 7 of 7 viewports red once pressing `v` raised the toast). Scope to a node or catch.
 test('a page-wide animation wait tolerates a cancelled animation (finished.catch)', () => {

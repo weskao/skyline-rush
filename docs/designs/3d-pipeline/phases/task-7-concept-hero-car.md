@@ -145,8 +145,8 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
   missing GLB falls back to the procedural car with no page error. The car never swaps during a race.
 - [x] Preload and compile the equipped car before GO (2026-11-13): `tests/shader-warmup-browser.spec.js` runs with
   the GT equipped (boost, afterimages, top speed), with and without `?look=3d` (historical; gate removed): 2/2, no program compiles mid-race.
-  A race started before the GLB arrives stays on the procedural car and compiles nothing; the GT dresses the car
-  once the race is left (`tests/crimson-gt-browser.spec.js`).
+  The starting grid waits for the GLB (`556d163c`, 2026-11-21), then the GT races dressed and compiles nothing while
+  driving; a GLB landing after GO is not attached mid-race (`tests/crimson-gt-browser.spec.js`, `tests/garage-model.test.js`).
 - [x] `npm test`, `npm run typecheck`, `npm run build` and `node --test tests/module-size.test.js` (2026-11-13).
 - [x] Regression with the new car (2026-11-13): `HERO_CAR=crimson-gt` equips the GT in the Phase 2b track matrix
   (`tests/hero-roadster-tracks-browser.spec.js`, which now asserts the dressed model is the equipped car's), the

@@ -163,6 +163,14 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   dispatch the wheel on the canvas element itself. Call `waitForWorldFrame(page)` (`tests/helpers/test.js`) after
   `waitForHome` before any real mouse press or hit-test on the preview. Enforced by `tests/browser-timeouts.test.js`
   (*waits for the painted world frame*).
+- **A held asset is released on the loading step, never on RACING.** Since `556d163c` the starting grid waits for the
+  equipped car, scenery and pickups (`#countdown[data-step="loading"]`, `race-hud.ts`), so a race cannot start while a
+  GLB is held. Trap (2026-11-21, develop CI 44892040873): crimson-gt held the GT GLB until `#race-status` read RACING;
+  the grid sat in COUNTDOWN until the loader's 15 s deadline (`timeoutMs`, `src/asset-model-loader.ts`) fell back to
+  the procedural car, and the spec then read `data-garage-model` `fallback:timeout` instead of `model`. Never raise
+  or weaken the shipped deadline: wait for the loading step, release, then expect RACING. A hold that outlasts a slow
+  runner calls `widenModelDeadline(page)` (`tests/helpers/gameplay-browser.js`, Vite dev server only). Enforced by
+  `tests/browser-timeouts.test.js` (*releases it before it waits for RACING*, *widens the loader deadline*).
 - **A route handler can outlive its test.** A spec that ends on a navigation leaves `route.fetch()` in flight;
   closing the context disposes the response and fails a passed test with "Response has been disposed"
   (hazard-captures, track-themes, 44674764907). The shared context fixture runs `unrouteAll` with

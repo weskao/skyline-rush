@@ -75,4 +75,16 @@ export const landed = page => page.evaluate(async () => {
   const { race } = window.gameplay, until = race.elapsed + 6;
   while (race.player.altitude !== 0 && race.elapsed < until) await new Promise(requestAnimationFrame);
 });
+/**
+ * A test that holds a GLB response past a slow software render would race the loader's 15 s download deadline
+ * (`timeoutMs` in src/asset-model-loader.ts) and see `fallback:timeout`. Serve the dev module with a wider deadline;
+ * the shipped value is untouched, and the timeout/fallback paths have their own tests. Gameplay (Vite dev) server only.
+ */
+export const widenModelDeadline = page => page.route(url => url.pathname === '/src/asset-model-loader.ts', async route => {
+  const response = await route.fetch();
+  const source = await response.text();
+  const deadline = /\btimeoutMs\s*=\s*(?:15000|15e3)\b/;
+  if (!deadline.test(source)) throw new Error('src/asset-model-loader.ts no longer holds the normal model download deadline');
+  await route.fulfill({ response, body: source.replace(deadline, 'timeoutMs = 90000') });
+});
 export const modelInstances = async page => JSON.parse((await page.locator('#world').getAttribute('data-garage-model-instances')) ?? '{}');

@@ -1,6 +1,6 @@
 import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { expect } from '@playwright/test';
-import { captureHooks, test } from './helpers/gameplay-browser.js';
+import { captureHooks, test, widenModelDeadline } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 
 test.use({ unlockedAccess: true, hasTouch: true, isMobile: true });
@@ -23,15 +23,7 @@ for (const { track, viewport, asset, quality, layer, piece = '' } of [
     page.on('pageerror', error => errors.push(error.message));
     let release;
     const held = new Promise(resolve => { release = resolve; });
-    // Keep the intentionally held response inside the loader deadline on slow software renderers.
-    // The existing loader and missing-asset tests cover timeout and fallback independently.
-    await page.route(url => url.pathname === '/src/asset-model-loader.ts', async route => {
-      const response = await route.fetch();
-      const source = await response.text();
-      const deadline = /\btimeoutMs\s*=\s*(?:15000|15e3)\b/;
-      expect(deadline.test(source), 'the dev module contains the normal model download deadline').toBe(true);
-      await route.fulfill({ response, body: source.replace(deadline, 'timeoutMs = 90000') });
-    });
+    await widenModelDeadline(page); // the held response must not race the loader deadline on a slow renderer
     await page.route(`**/models/${asset}/${asset}.glb`, async route => { await held; await route.continue(); });
 
     const world = page.locator('#world');

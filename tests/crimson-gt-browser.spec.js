@@ -1,7 +1,7 @@
 import { GT_EARNED_STARS } from './helpers/gt-progress.js';
 import { clickLobbyOption } from './helpers/home-lobby.js';
 import { openGarageSection } from './helpers/garage-browser.js';
-import { test, captureHooks, glbRoots, programs, modelInstances as instances, dressedAs as dressed, watchRequests } from './helpers/gameplay-browser.js';
+import { test, captureHooks, glbRoots, programs, modelInstances as instances, dressedAs as dressed, watchRequests, widenModelDeadline } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 import { openGarage } from './helpers/test.js';
@@ -85,8 +85,9 @@ test('Garage and Preview Studio keep equipped and previewed paint while switchin
 
   await carButton(page, 'crimson-gt').click();
   await expect(carButton(page, 'crimson-gt')).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(() => dressed(page)).toBe('crimson-gt'); // the Roadster's own `model` state would pass modelReady before the GT starts
   await modelReady(page);
-  expect(requests).toEqual(['/models/roadster2/roadster2-low.glb', '/models/crimson-gt/crimson-gt-low.glb']); // settled: model state polled above
+  expect(requests).toEqual(['/models/roadster2/roadster2-low.glb', '/models/crimson-gt/crimson-gt-low.glb']); // settled: the GT dressing was polled above
   await expect(page.locator('#garage-screen [data-paint]')).toHaveCount(7);
   await expect.poll(() => paintHex(page)).toEqual({ model: 'crimson-gt', glb: 'e6e9e7', proc: 'e6e9e7' });
   await expect(page.locator('[data-paint="pearl"]')).toHaveAttribute('data-state', 'equipped');
@@ -420,22 +421,28 @@ test('a missing GT GLB falls back to the procedural car', async ({ gameplayPage:
   expect(errors).toEqual([]);
 });
 
-test('a race started before the GLB arrives stays on the procedural car and compiles nothing; the GT dresses the car once the race is left', async ({ gameplayPage: page, gameplayURL }) => {
+// Since 556d163c the starting grid waits for the equipped car (race-hud 'loading'), so a race cannot begin before the GLB
+// arrives; a GLB landing after GO is covered by tests/garage-model.test.js (*not attached mid-race*).
+test('the starting grid waits for the GT, then races dressed in it and compiles nothing while driving; the GT stays worn after a restart', async ({ gameplayPage: page, gameplayURL }) => {
   test.setTimeout(ciTimeout(90000));
   let arrive;
   const held = new Promise(resolve => { arrive = resolve; });
+  await widenModelDeadline(page); // the held GLB must not race the loader's 15 s deadline on a slow runner
   await page.route(GLB, async route => { await held; await route.continue(); });
   const { requests, errors } = await prepare(page, gameplayURL, { quality: 'low', storage: GT });
   await page.locator('#start-button').click();
   await page.evaluate(() => { window.gameplay.race.countdown = .01; });
-  await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(15000) });
-  expect(requests).toEqual(['/models/crimson-gt/crimson-gt-low.glb']);
-  const before = await programs(page);
+  await expect(page.locator('#countdown')).toHaveAttribute('data-step', 'loading', { timeout: ciTimeout(15000) });
+  await expect(page.locator('#race-status')).toHaveText('COUNTDOWN'); // the grid is held while the GLB is outstanding
+  expect(requests).toEqual(['/models/crimson-gt/crimson-gt-low.glb']); // settled: the request is what the route holds
   arrive();
-  await modelReady(page); // the file loads while the race still uses the procedural car
-  await page.waitForTimeout(ciTimeout(1500)); // a moment of driving after the GLB arrived
-  expect(await glbRoots(page), 'the car never swaps during a race').toBe(0);
+  await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(20000) });
+  await expect.poll(() => glbRoots(page), { message: 'the GT dresses the car before GO' }).toBe(1);
+  await modelReady(page);
+  const before = await programs(page);
+  await page.waitForTimeout(ciTimeout(1500)); // a moment of driving
   expect(await programs(page), 'no shader compiled while driving').toBe(before);
+  expect(await glbRoots(page), 'the car never swaps during a race').toBe(1);
   await page.locator('#pause-button').click();
   await page.locator('#restart-button').click();
   await expect.poll(() => glbRoots(page), { timeout: ciTimeout(15000), message: 'back on the grid, the GT is worn' }).toBe(1);
