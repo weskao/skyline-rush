@@ -44,7 +44,11 @@
     }
   },
   "allowScripts": {
-    "@codepawlhq/crucible": false
+    "@codepawlhq/crucible": false,
+    "@firebase/util": false,
+    "esbuild": true,
+    "fsevents": false,
+    "protobufjs": false
   },
   "imports": {
     "#garage-playtest-storage": "./src/access/garage-production.ts",
