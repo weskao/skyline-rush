@@ -21,7 +21,8 @@ landmarks · `src/world.js` lighting · `src/route-map.js` + `src/style.css` rou
   player; mountain/coastal terrain joins exactly at chunk boundaries.
 - `src/game.js` owns `boost-tunnel` rewards: one claim **per authored section** per race,
   keyed by section start; visual trigger volumes never grant repeated frame rewards.
-- Tokyo's two well-separated, 640/680 m Hyperdrive sections add only +4 charge/sec while
+- Tokyo keeps the original 4880–5300 m low-clearance rail underpass intact. Its two
+  well-separated 640/680 m Hyperdrive sections (5450–6090 / 8220–8900 m) add only +4 charge/sec while
   grounded and moving >=20 m/s. BOOST retains net drain. Render the **nearby** sector in
   every graphics tier, with subdued roadside lighting; never reuse the first sector at
   all distances or make stopped/airborne cars farm charge.

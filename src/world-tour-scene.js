@@ -330,7 +330,7 @@ export function createWorldTourScene(scene){
       group.position.set(home.x-current.x,home.y-current.y,home.z-current.z);
       sceneryLayer.position.set(-home.x,-home.y,-home.z);
       streamScenery(id,distance,quality,sections);motion.update(id,distance,quality,time,reducedMotion,endless);
-      const tunnel=sections.find(s=>s.type==='boost-tunnel' && Math.abs(distance-(s.from+s.to)/2)<1500);
+      const tunnel=sections.find(s=>s.type==='boost-tunnel' && Math.abs(distance-(s.from+s.to)/2)<(id==='tokyo'?1300:1500));
       const rebuild=cachedOrigin!==origin||cachedQuality!==quality||cachedTunnel!==tunnel?.from;
       if(rebuild){
         cachedOrigin=origin;cachedQuality=quality;cachedTunnel=tunnel?.from;

@@ -4,16 +4,16 @@
 Give Tokyo's 10 km nighttime route two visually readable powered-road sections rather than a single short one. Balance is important: not a full-lap fast charger, not a new pickup type, no changes to other tracks' mechanics.
 
 ## Chosen implementation
-- Section A: **4880–5520 m** (640 m), adapting the existing central underpass.
+- Section A: **5450–6090 m** (640 m), starting after the existing central underpass (4880–5300 m), preserving its low-clearance collision behavior.
 - Section B: **8220–8900 m** (680 m), extending the existing late Hyperdrive section.
-- 2700 m gap after sector A; total powered length = **1320 m / 10 km (13.2%)**.
+- 2130 m gap after sector A; total powered length = **1320 m / 10 km (13.2%)**.
 - While on either Tokyo section at >=20 m/s and effectively on road, gain **+4 fuel/s**. BOOST still drains **10 fuel/s**, so charging offsets only 40% of that spend.
 - Existing one-time-per-section reward persists: **3.5 s mini BOOST** and **0.25 NITRO**; at most two claims per race.
 - Tokyo record layout advances to **5** (new speed opportunities make prior timed records incomparable). Older records are preserved; Firestore best-ID allowlist includes `tokyo@5`.
 
 ## Visual and UI
 - Retro-futuristic low-glare cyan/magenta side charging rails, softly colored entrance arches and overhead trim; no solid obstruction in the road centre.
-- Existing pooled World Tour tunnel geometry and camera-relative scene renderer remain shared. Select the sector close to the driver, not `sections.find`'s first sector; ensure both work on low/high graphics and with reduced motion.
+- Existing pooled World Tour tunnel geometry and camera-relative scene renderer remain shared. Select the sector close to the driver (Tokyo radius 1300 m, leaving a dark gap between its two corridors), not `sections.find`'s first sector; ensure both work on low/high graphics and with reduced motion.
 - HUD fuel-caption shows a short translated powered-road message; fuel meter uses subtle static cyan feedback, rather than a screen-centre pop-up.
 
 ## Verification and regression gates

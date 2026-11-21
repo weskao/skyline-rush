@@ -180,7 +180,7 @@ test('both Tokyo charge tunnels show energy hoops at low and high graphics witho
    assert.equal(boost.visible,true,`Tokyo ${t.from}m charge tunnel absent at ${quality} graphics`);
    assert.ok(boost.children.some(c=>c.visible),'energy geometry must exist');
   }
-  visual.update('tokyo',6850,'high',RACE_TRACKS.tokyo.sections,0,false);
+  visual.update('tokyo',7150,'high',RACE_TRACKS.tokyo.sections,0,false);
   assert.equal(boost.visible,false,'no energy tunnel appears between the two charge sectors');
  }finally{visual.dispose();}
 });

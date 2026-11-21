@@ -8,8 +8,9 @@ test('World Tour sections keep Tokyo two spaced charge tunnels while other track
   const tunnels=sections.filter(s=>s.type==='boost-tunnel');
   assert.equal(tunnels.length,id==='tokyo'?2:1,id);
    if(id==='tokyo'){
-    assert.deepEqual(tunnels.map(t=>[t.from,t.to]),[[4880,5520],[8220,8900]]);
-    assert.ok(tunnels[1].from-tunnels[0].to>=2500,'Tokyo charge sectors stay well separated');
+    assert.deepEqual(tunnels.map(t=>[t.from,t.to]),[[5450,6090],[8220,8900]]);
+    assert.ok(tunnels[1].from-tunnels[0].to>=2000,'Tokyo charge sectors stay well separated');
+    assert.ok(sections.some(s=>s.type==='tunnel'&&s.from===4880&&s.to===5300),'Tokyo retains its original low-ceiling underpass');
    }
   assert.ok(tunnels[0].to-tunnels[0].from>=300,id);
   assert.ok(tunnels[0].to<track.length-100,id);
