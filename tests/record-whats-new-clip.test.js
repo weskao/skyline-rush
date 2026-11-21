@@ -43,6 +43,13 @@ test('the clip recorder accepts scripted input with --press and a fixed layout s
   assert.match(code, /'bot-until': \{ type: 'string'/);
 });
 
+// The Sky Spiral clip once showed no birds: sky life is only drawn on Medium and above, and the recorder left the tier to
+// the game's own pick for the machine. --quality pins it the way the VFX settings save it.
+test('the clip recorder can pin the graphics tier with --quality', () => {
+  assert.match(code, /quality: \{ type: 'string'/);
+  assert.match(code, /localStorage\.setItem\('skyline-rush-vfx', JSON\.stringify\(\{ quality, enabled: true \}\)\)/);
+});
+
 // A Vite dev server defaults to the Garage `trial` build (wallet chips, store concept card, trial VFX), which is not what
 // ships (`coming-soon`). Media shot from it shows UI players never see, so the recorder must pin the shipped mode.
 test('the clip recorder serves the shipped coming-soon Garage build, never the dev trial one', () => {

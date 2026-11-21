@@ -1,7 +1,7 @@
 // Records a What's New clip from the real game (never a mock-up): one race window, desktop + phone, en + zh-TW.
 //   node scripts/record-whats-new-clip.mjs <theme-slug> [--track coast] [--from 3] [--seconds 6] [--scale 2]
 //        [--seed 7] [--bot [--bot-until 12]] [--press "KeyE@4,KeyS@8:2.5,KeyD@8:2.5"] [--rival-attack "freeze@2.5,emp@6.5"]
-//        [--shapes desktop,mobile]
+//        [--shapes desktop,mobile] [--quality high]
 // Writes public/whats-new/<theme-slug>/<theme-slug>.{desktop,mobile}.{en,zh-TW}.{mp4,jpg}: the clip starts when the
 // race clock reaches --from (holding throttle from the green light) and the poster is its middle frame.
 // --seed fixes the ring and pickup layout (the app re-rolls it every race), so a --press script replays the same race.
@@ -10,6 +10,8 @@
 // --bot-until hands the keys back to --press from that race second (a drift needs A/D held), releasing the bot's key.
 // --press adds scripted input on top of the held throttle: KeyboardEvent.code@race-seconds[:hold-seconds] (hold
 // defaults to 0.15), e.g. KeyE (NITRO, chains during a burn), KeyS + KeyA/KeyD together (drift), Space (fly).
+// --quality pins the graphics tier (low, medium, high, ultra) as the VFX settings save it, so a take does not depend on
+// the tier the game picks for the machine (the Sky Spiral's birds and airship need Medium or above).
 // --rival-attack gives the rival nearest the player a held Freeze or EMP at that race second (EMP only fires in range), so
 // the game's own stepRivalAttacks hits the player: the real hit path and the center countdown card, nothing is set directly.
 // Frames are lossless PNG screenshots at --scale x the CSS size (default 2), taken one per 1/30 s step of a paused
@@ -26,11 +28,11 @@ import { parseArgs } from 'node:util';
 import { chromium } from '@playwright/test';
 import { createServer } from 'vite';
 
-const USAGE = 'Usage: record-whats-new-clip.mjs <theme-slug> [--track id] [--from s] [--seconds s] [--scale n] [--seed n] [--bot] [--press "Key@s[:hold],..."] [--rival-attack "freeze|emp@s,..."] [--shapes desktop,mobile] [--master]';
+const USAGE = 'Usage: record-whats-new-clip.mjs <theme-slug> [--track id] [--from s] [--seconds s] [--scale n] [--seed n] [--bot] [--press "Key@s[:hold],..."] [--rival-attack "freeze|emp@s,..."] [--shapes desktop,mobile] [--quality low|medium|high|ultra] [--master]';
 const { values: opts, positionals: [slug] } = parseArgs({ allowPositionals: true, options: {
   track: { type: 'string', default: 'coast' }, from: { type: 'string', default: '3' }, seconds: { type: 'string', default: '6' },
   scale: { type: 'string', default: '2' }, seed: { type: 'string', default: '1' }, press: { type: 'string', default: '' }, 'rival-attack': { type: 'string', default: '' }, bot: { type: 'boolean', default: false }, 'bot-until': { type: 'string', default: '1e9' }, shapes: { type: 'string', default: 'desktop,mobile' },
-  master: { type: 'boolean', default: false },
+  quality: { type: 'string', default: '' }, master: { type: 'boolean', default: false },
 } });
 const master = opts.master;
 const fail = message => { throw new Error(`${message}\n${USAGE}`); };
@@ -51,6 +53,7 @@ const outDir = `${root}${master ? 'assets-src' : 'public'}/whats-new/${slug}/`;
 const LOCALES = [['en', 'en-US'], ['zh-TW', 'zh-TW']];
 const ALL_SHAPES = { desktop: { width: 960, height: 600, mobile: false }, mobile: { width: 390, height: 844, mobile: true } };
 const SHAPES = Object.fromEntries(opts.shapes.split(',').map(name => [name, ALL_SHAPES[name] ?? fail(`Unknown shape "${name}".`)]));
+if (opts.quality && !['low', 'medium', 'high', 'ultra'].includes(opts.quality)) fail(`Unknown --quality "${opts.quality}".`);
 const MAX_BYTES = 4 * 1024 * 1024;
 
 // The dev server defaults to the Garage `trial` build; players get `coming-soon`, so shoot that one.
@@ -107,12 +110,13 @@ async function screenRecord(page, cdp, path) {
 
 async function record(locale, system, shape, { width, height, mobile }) {
   const context = await browser.newContext({ locale: system, viewport: { width, height }, deviceScaleFactor: scale, hasTouch: mobile, isMobile: mobile });
-  await context.addInitScript(track => {
+  await context.addInitScript(([track, quality]) => {
     localStorage.setItem('skyline-rush-guide-seen', '1');
+    if (quality) localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality, enabled: true }));
     localStorage.setItem('skyline-rush-whats-new-seen-v1', '999.0.0');
     localStorage.setItem('skyline-rush-last-track', track);
     localStorage.setItem('skyline-rush-unlocked', JSON.stringify(['coast', track])); // a fresh profile has only Coast
-  }, opts.track);
+  }, [opts.track, opts.quality]);
   // A headed Chrome offers Google Translate over pages in a language other than its UI, and no launch flag stops it.
   if (master) await context.addInitScript(() => addEventListener('DOMContentLoaded', () => {
     const meta = document.createElement('meta'); meta.name = 'google'; meta.content = 'notranslate'; document.head.prepend(meta);
