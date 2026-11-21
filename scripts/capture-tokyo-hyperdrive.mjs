@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { RACE_TRACKS } from '../src/race-tracks.ts';
+import { clickLobbyOption } from '../tests/helpers/home-lobby.js';
 
 const root = new URL('../', import.meta.url);
 const out = new URL('../artifacts/tokyo-hyperdrive/', import.meta.url);
@@ -25,7 +26,7 @@ const probe = async (page, distance) => {
     Object.assign(race.player, { distance: d, speed: 72, altitude: 0, verticalSpeed: 0,
       x: 0, fuel: 48, miniBoost: 0, boosting: false, boostTunnelEvent: null });
   }, distance);
-  await page.waitForFunction(() => window.gameplay?.race?.player?.section === 'boost-tunnel', { timeout: 30000 });
+  await page.waitForFunction(() => window.gameplay?.race?.player?.section === 'boost-tunnel', null, { timeout: 30000 });
   await page.waitForTimeout(180);
 };
 async function gamePage(viewport, quality) {
@@ -54,13 +55,11 @@ async function gamePage(viewport, quality) {
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(server.resolvedUrls.local[0], { waitUntil: 'domcontentloaded' });
   await page.locator('#start-button').waitFor({ timeout: 90000 });
-  await page.waitForFunction(() => document.body.dataset.phase === 'ready', { timeout: 90000 });
+  await page.waitForFunction(() => document.body.dataset.phase === 'ready', null, { timeout: 90000 });
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-  await page.locator('#lobby-tracks-toggle').click();
-  await page.locator('#track-chooser [data-track="tokyo"]').first().click();
-  await page.locator('#track-choose-confirm').click();
+  await clickLobbyOption(page, '[data-track="tokyo"]');
   await page.locator('#start-button').click();
-  await page.waitForFunction(() => document.body.dataset.phase === 'racing', { timeout: 90000 });
+  await page.waitForFunction(() => document.body.dataset.phase === 'racing', null, { timeout: 90000 });
   if (errors.length) throw new Error('Browser error(s): ' + errors.join(' | '));
   return { context, page, errors };
 }
