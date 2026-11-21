@@ -60,8 +60,8 @@ for (const track of ['canyon', 'spiral']) test(`${track}: gap half-way boundary 
   }
 });
 
-test('third failure at the same Sky Spiral gap rescues the player but pays no rewards', () => {
-  const race = racing('spiral'), car = race.player, gap = RACE_TRACKS.spiral.sections.find(section => section.type === 'gap');
+for (const track of ['spiral', 'canyon']) test(`${track}: third failure rescues without awarding rewards`, () => {
+  const race = racing(track), car = race.player, gap = RACE_TRACKS[track].sections.find(section => section.type === 'gap');
   race.rivals = race.traffic = race.rings = race.pickups = [];
   const snapshot = [car.score, car.rings, car.nitro, car.fuel];
   const before = race.elapsed;
