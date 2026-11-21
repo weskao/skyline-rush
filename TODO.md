@@ -1,3 +1,15 @@
+# Freeze / EMP cinematic debuff VFX (2026-11-21, `feature/debuff-cinematic-vfx`)
+
+- [x] Shared seam: each effect owns `src/debuff/<effect>/` (CSS, screen layer, panel decor, shell GLSL chunk, particle/mesh fx); shared HUD and status files only route. Guard `tests/debuff-seam.test.js`, RED before the split.
+- [x] The status shell follows each car's measured silhouette (24 slices in a float `DataTexture`, one program, one draw). Guard `tests/rival-status-tint.test.js` (*the shell hugs each car*), RED on the ellipsoid.
+- [x] HUD phases (`impact` / `spread` / `active` / `recover`, `src/debuff/timeline.ts`) on the card, speedometer and screen layer; new en and zh-TW copy with a decimal countdown.
+- [x] Seam gates: `npm test` 3733 pass / 0 fail; module-size, typecheck, build pass; `player-debuff`, `black-frame`, `item-feedback`, `motion`, `race-halfway`, `race-hud-overlap`, `foldable-layout` browser specs 56/56.
+- [ ] `tests/shader-warmup-browser.spec.js` on High fails on this branch and on its base `6cdb4d3b` alike (Roadster 101 → 103): the rain preset compiles the sky and ground programs mid-race. Not caused by this feature; needs its own fix.
+- [ ] Freeze look (frost on the body, ice crystals on arches / wing / roof / skirts / bumper, edge frost, hex panel, icy speedometer, recovery crack).
+- [ ] EMP look (branching arcs on the silhouette, sparks, amber edge arcs, technical-glass panel, electric sweep on the speedometer, fade-out).
+- [ ] Freeze and EMP active together: HUD stacking with the 50% card, speedometer precedence, both vehicle effects.
+- [ ] Real WebGL captures (desktop, phone portrait and landscape, both active) looked at and sent; the hull shell itself has not been judged on a capture yet.
+
 # 下拉選單與設定分頁（2026-11-21）
 
 - [x] 756×265 手機橫向 WebGL 畫面重現氣候選單的雨天和霧景落在畫面外。改用共用浮動選單後，六個選項同時可點，點選霧景成功。另在縮放且可捲動的瀏覽器對話框驗證 44 px 選項、動態新增選項、Enter 與 Escape。

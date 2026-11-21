@@ -78,7 +78,18 @@ test('item HUD announces pickup/cooldown once, keeps activation paused-safe and 
     assert.equal(screen.hidden, false);
     assert.deepEqual(screen.dataset, { hit: 'emp', calm: 'false' });
     assert.equal(nodes['bonus-status'].textContent, 'EMP HIT · 2s');
-    assert.deepEqual(itemUI.playerHitView, { emp: 2, freeze: 2, calm: false });
+    assert.deepEqual(itemUI.playerHitView, { emp: 1.5, freeze: 2, empPhase: 'impact', freezePhase: 'impact', calm: false }, 'tenths of a second, each on its own timeline');
+    race.elapsed = 3.2;
+    ui.update(race);
+    assert.deepEqual(itemUI.playerHitView, { emp: 1.3, freeze: 1.8, empPhase: 'spread', freezePhase: 'spread', calm: false });
+    race.elapsed = 3.7;
+    ui.update(race);
+    assert.equal(itemUI.playerHitView.empPhase, 'active');
+    race.player.empUntil = 5.2; // hit again: the impact replays, Freeze carries on
+    ui.update(race);
+    assert.deepEqual(itemUI.playerHitView, { emp: 1.5, freeze: 1.3, empPhase: 'impact', freezePhase: 'active', calm: false });
+    race.player.empUntil = 4.5; race.elapsed = 3;
+    ui.update(race);
     calm = true;
     ui.update(race);
     assert.equal(screen.dataset.calm, 'true');
@@ -88,15 +99,17 @@ test('item HUD announces pickup/cooldown once, keeps activation paused-safe and 
     assert.equal(screen.hidden, true, 'hide the screen effect behind pause');
     assert.equal(itemUI.playerHitView.emp, 0);
     assert.equal(itemUI.playerHitView.freeze, 0);
+    assert.equal(itemUI.playerHitView.empPhase + itemUI.playerHitView.freezePhase, '');
     race.phase = 'racing';
     ui.update(race);
     assert.equal(screen.hidden, false);
+    assert.equal(itemUI.playerHitView.freezePhase, 'impact', 'a pause does not move the hit forward: the race clock stood still');
 
     race.elapsed = 4.5;
     ui.update(race);
     assert.equal(nodes['bonus-status'].textContent, 'FROZEN · 1s');
     assert.equal(screen.dataset.hit, 'freeze');
-    assert.deepEqual(itemUI.playerHitView, { emp: 0, freeze: 1, calm: true });
+    assert.deepEqual(itemUI.playerHitView, { emp: 0, freeze: .5, empPhase: '', freezePhase: 'recovery', calm: true });
     race.elapsed = 5;
     ui.update(race);
     assert.equal(screen.hidden, true);

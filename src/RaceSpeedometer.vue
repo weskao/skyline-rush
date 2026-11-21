@@ -6,10 +6,11 @@ const hit = computed(() => playerHitView.emp > 0 ? 'emp' : playerHitView.freeze 
 </script>
 
 <template>
-  <div class="speedometer" :data-debuff="hit" :data-calm="hit ? playerHitView.calm : undefined">
+  <!-- Each effect's gauge look is in src/debuff/<effect>/<effect>.css; `.speed-hit-arc` is theirs to light. -->
+  <div class="speedometer" :data-debuff="hit" :data-phase="hit && playerHitView[`${hit}Phase`] || undefined" :data-calm="hit ? playerHitView.calm : undefined">
     <div class="speed-number"><strong id="speed">0</strong><span>KM/H</span></div>
     <div class="speed-ticks" aria-hidden="true">
-      <svg class="speed-dial" viewBox="0 0 200 22"><path d="M4 20 Q100 -16 196 20"/><path id="speed-needle" d="M100 20V2"/></svg>
+      <svg class="speed-dial" viewBox="0 0 200 22"><path d="M4 20 Q100 -16 196 20"/><path class="speed-hit-arc" d="M4 20 Q100 -16 196 20" pathLength="100"/><path id="speed-needle" d="M100 20V2"/></svg>
       <i v-for="i in 24" :key="i"></i>
     </div>
     <span class="speed-caption" id="speed-caption">READY FOR TAKEOFF</span>
@@ -17,14 +18,7 @@ const hit = computed(() => playerHitView.emp > 0 ? 'emp' : playerHitView.freeze 
 </template>
 
 <style scoped>
-.speedometer[data-debuff="freeze"] {
-  --speed-color: var(--freeze-hit-color);
-  --speed-line: linear-gradient(90deg, #39a0ec, #c4f6ff 64%, transparent);
-}
-.speedometer[data-debuff="emp"] {
-  --speed-color: var(--emp-hit-color);
-  --speed-line: linear-gradient(110deg, #d98124, var(--emp-hit-color) 34%, #fff7d6 56%, transparent 88%);
-}
+.speed-hit-arc { opacity: 0; }
 .speedometer[data-debuff] .speed-number { position: relative; }
 .speedometer[data-debuff] .speed-number > strong,
 .speedometer[data-debuff] .speed-number > span { color: var(--speed-color); }
@@ -42,23 +36,5 @@ const hit = computed(() => playerHitView.emp > 0 ? 'emp' : playerHitView.freeze 
   pointer-events: none;
   transform-origin: left;
 }
-@media (prefers-reduced-motion: no-preference) {
-  .speedometer[data-debuff="freeze"][data-calm="false"] .speed-number::after {
-    animation: speed-frost 620ms var(--ease-out) both;
-  }
-  .speedometer[data-debuff="emp"][data-calm="false"] .speed-number::after {
-    animation: speed-surge 620ms var(--ease-out) both;
-  }
-}
 :global(body[data-vfx-enabled="false"] .speedometer[data-debuff] .speed-number::after) { animation: none !important; }
-@keyframes speed-frost {
-  from { transform: scaleX(.15); opacity: .35; }
-  to { transform: scaleX(1); opacity: 1; }
-}
-@keyframes speed-surge {
-  0% { transform: scaleX(.4); opacity: .3; }
-  35% { transform: scaleX(1); opacity: 1; }
-  65% { opacity: .55; }
-  100% { opacity: 1; }
-}
 </style>

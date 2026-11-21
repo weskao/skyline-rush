@@ -1,0 +1,27 @@
+/* Freeze: its screen edge, centre card and speedometer. Shared files (player-hit-screen.css, PlayerHitCenter.vue,
+   RaceSpeedometer.vue) only route here. `#player-hit-screen[data-hit]` names the hit that takes precedence (EMP over
+   Freeze); whatever must show while both are live goes on `[data-hit-layer="freeze"]`. */
+:root { --freeze-hit-color: #99e4ff; }
+
+#player-hit-screen[data-hit="freeze"] { --hit-rgb: 107 210 255; }
+#player-hit-screen[data-hit="freeze"]::before {
+  --hit-edge-detail:
+    repeating-conic-gradient(from -17deg at top left, rgb(231 250 255 / .22) 0deg 2deg, transparent 3deg 19deg),
+    repeating-conic-gradient(from 11deg at bottom right, rgb(231 250 255 / .16) 0deg 2deg, transparent 3deg 24deg);
+}
+
+.player-hit-center .player-hit-card[data-debuff="freeze"] { --hit-accent: var(--freeze-hit-color); }
+
+.speedometer[data-debuff="freeze"] {
+  --speed-color: var(--freeze-hit-color);
+  --speed-line: linear-gradient(90deg, #39a0ec, #c4f6ff 64%, transparent);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .speedometer[data-debuff="freeze"][data-calm="false"] .speed-number::after {
+    animation: speed-frost 620ms var(--ease-out) both;
+  }
+}
+@keyframes speed-frost {
+  from { transform: scaleX(.15); opacity: .35; }
+  to { transform: scaleX(1); opacity: 1; }
+}

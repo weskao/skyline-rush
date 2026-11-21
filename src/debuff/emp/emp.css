@@ -1,0 +1,39 @@
+/* EMP: its screen edge, centre card and speedometer. Shared files (player-hit-screen.css, PlayerHitCenter.vue,
+   RaceSpeedometer.vue) only route here. `#player-hit-screen[data-hit]` names the hit that takes precedence (EMP over
+   Freeze); whatever must show while both are live goes on `[data-hit-layer="emp"]`. */
+:root {
+  --emp-hit-color: #ffe37a;
+  --emp-yellow-rgb: 252 214 80;
+  --emp-amber-rgb: 246 173 58;
+}
+
+#player-hit-screen[data-hit="emp"] {
+  --hit-rgb: var(--emp-yellow-rgb);
+  background:
+    radial-gradient(ellipse at 0 40%, rgb(var(--emp-yellow-rgb) / .33), transparent 33%),
+    radial-gradient(ellipse at 100% 58%, rgb(var(--emp-amber-rgb) / .27), transparent 33%),
+    linear-gradient(0deg, rgb(var(--emp-yellow-rgb) / .20), transparent 21% 82%, rgb(var(--emp-amber-rgb) / .24));
+}
+#player-hit-screen[data-hit="emp"]::before {
+  --hit-edge-detail:
+    repeating-linear-gradient(130deg, transparent 0 36px, rgb(255 248 215 / .22) 37px 38px, transparent 40px 86px),
+    repeating-linear-gradient(156deg, transparent 0 55px, rgb(255 205 105 / .16) 59px 60px, transparent 62px 103px);
+}
+
+.player-hit-center .player-hit-card[data-debuff="emp"] { --hit-accent: var(--emp-hit-color); }
+
+.speedometer[data-debuff="emp"] {
+  --speed-color: var(--emp-hit-color);
+  --speed-line: linear-gradient(110deg, #d98124, var(--emp-hit-color) 34%, #fff7d6 56%, transparent 88%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .speedometer[data-debuff="emp"][data-calm="false"] .speed-number::after {
+    animation: speed-surge 620ms var(--ease-out) both;
+  }
+}
+@keyframes speed-surge {
+  0% { transform: scaleX(.4); opacity: .3; }
+  35% { transform: scaleX(1); opacity: 1; }
+  65% { opacity: .55; }
+  100% { opacity: 1; }
+}

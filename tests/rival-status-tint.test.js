@@ -254,3 +254,23 @@ test('the player shell refits across the selectable catalog, an unlisted model a
     assert.equal(playerWidth(), fallback, `${id} returns to the procedural fit when removed`);
   }
 });
+
+// Freeze and EMP follow the car, not a bubble around it (2026-11-21): the shell is a hull lofted through the
+// measured width and roof of 24 slices of the car that is drawn, whatever its model.
+test('the shell hugs each car: its hull takes the measured width and roof of every slice', t => {
+  const { race, tint, frame, vehicles } = setup(t, 1);
+  const rival = vehicles[1];
+  rival.clear(); // a wedge: a low, narrow nose ahead of a tall, wide cabin
+  const nose = new Mesh(new BoxGeometry(1, 0.5, 2.4), shared), cabin = new Mesh(new BoxGeometry(2.2, 1.3, 2.4), shared);
+  nose.position.set(0, 0.25, -1.2); cabin.position.set(0, 0.65, 1.2);
+  rival.add(nose, cabin);
+  race.rivals[0].empUntil = race.elapsed + 1.5;
+  frame();
+  const hull = tint.material.uniforms.hull.value;
+  assert.deepEqual([hull.image.width, hull.image.height], [24, tint.count], 'one row of 24 slices per car');
+  const slice = j => ({ halfWidth: hull.image.data[j * 4 + 1], top: hull.image.data[j * 4 + 2] });
+  // Shell units: 1 = the fitted half extent (half the car's box x 1.2).
+  assert.ok(Math.abs(slice(21).halfWidth - 1.1 / 1.32) < 1e-4 && Math.abs(slice(21).top - 0.65 / 0.78) < 1e-4, `cabin ${JSON.stringify(slice(21))}`);
+  assert.ok(Math.abs(slice(2).halfWidth - 0.5 / 1.32) < 1e-4 && Math.abs(slice(2).top + 0.15 / 0.78) < 1e-4, `nose ${JSON.stringify(slice(2))}`);
+  assert.match(tint.material.vertexShader, /texelFetch\(hull/, 'the vertex shader lofts the shell through the slices');
+});
