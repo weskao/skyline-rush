@@ -8,6 +8,7 @@ import { DRIVING_CONTROLS_COPY } from './locales/driving-controls-copy.ts';
 import { GAME } from './locales/game.ts';
 import { EVENT_LAB } from './locales/event-lab.ts';
 import { CHALLENGE_MEDAL_COPY } from './locales/challenge-medals.ts';
+import { RACE_CLOCK_COPY } from './locales/race-clock.ts';
 import { SUPPORTED_LOCALES, isLocale, type Locale } from './locale-preference.ts';
 export { SUPPORTED_LOCALES, saveLocale, loadLocale, detectLocale, savedLocale, resolveInitialLocale, type Locale } from './locale-preference.ts';
 const raceTracks = RACE_TRACKS as Record<string, { name?: string }>;
@@ -27,7 +28,7 @@ export const trackName = (trackId: string, locale: string = 'en'): string =>
   ?? (isUpcomingTrack(trackId) ? upcomingTrackName(trackId, locale) : undefined)
   ?? TRACK_NAMES.en[trackId] ?? raceTracks[trackId]?.name ?? String(trackId);
 export const CATALOGS = Object.freeze(Object.fromEntries(
-  SUPPORTED_LOCALES.map(l => [l, Object.freeze({ ...UI[l], ...UI_OVERHAUL_COPY[l], ...DRIVING_CONTROLS_COPY[l], ...GAME[l], ...EVENT_LAB[l], ...ENDLESS_COPY[l], ...CIRCUIT_COPY[l], ...CHALLENGE_MEDAL_COPY[l] })]),
+  SUPPORTED_LOCALES.map(l => [l, Object.freeze({ ...UI[l], ...UI_OVERHAUL_COPY[l], ...DRIVING_CONTROLS_COPY[l], ...GAME[l], ...EVENT_LAB[l], ...ENDLESS_COPY[l], ...CIRCUIT_COPY[l], ...CHALLENGE_MEDAL_COPY[l], ...RACE_CLOCK_COPY[l] })]),
 )) as unknown as Readonly<Record<Locale, Record<string, string>>>;
 
 let current: Locale = 'en';
