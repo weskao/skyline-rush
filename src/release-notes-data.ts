@@ -150,7 +150,7 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
       },
       { id: 'chasm-rescue', kind: 'improvement', image: null,
         title: { en: 'Bigger jumps, better recoveries', 'zh-TW': '斷崖更刺激，重返賽道更輕鬆' },
-        description: { en: 'Sky Spiral's wider gaps need a fast BOOST launch or flight. If you fall repeatedly at one gap, you'll get help past it.', 'zh-TW': '天際螺旋的寬闊斷崖需要高速 BOOST 或飛行才能通過；連續失足時也會協助你繼續前進。' }
+        description: { en: 'Sky Spiral\'s wider gaps need a fast BOOST launch or flight. If you fall repeatedly at one gap, you\'ll get help past it.', 'zh-TW': '天際螺旋的寬闊斷崖需要高速 BOOST 或飛行才能通過；連續失足時也會協助你繼續前進。' }
       },
       { id: 'reward-quick-equip', kind: 'improvement', image: null,
         title: { en: 'Equip your rewards right away', 'zh-TW': '新獎勵，一鍵裝備' },
