@@ -11,7 +11,14 @@ export function setupRaceNavigation(deps: {
   clearControls(): void;
   chooseTrack(): void;
   isPracticing(): boolean;
-}): void {
+  requestVehicleReset(): boolean;
+}) {
+  const resetButton = document.querySelector<HTMLButtonElement>('#vehicle-reset-button')!;
+  function resetVehicle(): void {
+    if (deps.isPracticing() || deps.phase() !== 'racing' || document.querySelector('dialog[open]')) return;
+    if (deps.requestVehicleReset()) resetButton.disabled = true;
+  }
+  resetButton.addEventListener('click', resetVehicle);
   const leaveScreen = document.querySelector<HTMLDialogElement>('#leave-screen')!;
   const endRace = document.querySelector<HTMLButtonElement>('#leave-end')!;
   const labels = {
@@ -53,4 +60,5 @@ export function setupRaceNavigation(deps: {
     event.preventDefault();
     returnToSelection();
   });
+  return { resetVehicle };
 }

@@ -13,6 +13,8 @@ const rowDistance = (distance, endless) => endless ? distance : boundaries.get(d
 // instead of ending in the air under it (.claude/rules/road-runout.md).
 const rowFrame = (s, endless) => skyFrame(s, endless || s > SKY_LENGTH);
 const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
+/** Shared by the procedural and detailed scenery. */
+export const SPIRAL_TRIM = Object.freeze({ rails: '#b4bcc6', lanes: '#ffffff' });
 
 export function createSkyScene(scene) {
   const group = new THREE.Group();
@@ -22,9 +24,8 @@ export function createSkyScene(scene) {
   const geometry = roadRibbon(ROWS);
   const [positions, normals, indices] = [geometry.attributes.position.array, geometry.attributes.normal.array, geometry.index.array];
   const uvs = geometry.attributes.uv.array; // for the KTX2 road set of the detailed look (spiral-look.ts)
-  const road = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
-    color: '#202b42', metalness: 0.13, roughness: 0.70, side: THREE.DoubleSide,
-  }));
+  const pavement = new THREE.MeshStandardMaterial({ color: '#202b42', metalness: 0.13, roughness: 0.70, side: THREE.DoubleSide });
+  const road = new THREE.Mesh(geometry, pavement);
   road.frustumCulled = false;
   group.add(road);
 
@@ -114,11 +115,29 @@ export function createSkyScene(scene) {
   // This dome is the course's own sky. world.js hides the shared sky while it is up.
   const backdrop = new THREE.Mesh(new THREE.SphereGeometry(2200, 24, 16), new THREE.ShaderMaterial({
     side: THREE.BackSide, depthWrite: false, fog: false,
-    uniforms: { time: { value: 0 } },
+    uniforms: { time: { value: 0 }, daylight: { value: 0 } },
     vertexShader: 'varying vec3 vPosition; void main(){ vPosition=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
-    fragmentShader: `varying vec3 vPosition; uniform float time;
+    fragmentShader: `varying vec3 vPosition; uniform float time,daylight;
       float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
-      void main(){vec3 dir=normalize(vPosition);float h=dir.y;
+      float noise(vec2 p){
+        vec2 i=floor(p),f=smoothstep(vec2(0.),vec2(1.),fract(p));
+        return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+1.),f.x),f.y);
+      }
+      vec3 daySky(vec3 dir,float h){
+        vec3 col=mix(vec3(.60,.73,.82),vec3(.09,.30,.60),smoothstep(-.06,.76,h));
+        if(h>=0.){
+          vec2 q=dir.xz/max(.2,h);
+          float cirrus=noise(q*vec2(3.,7.))*.7+noise(q*vec2(8.,16.))*.3;
+          float cover=smoothstep(.50,.80,cirrus)*smoothstep(.02,.18,h);
+          return mix(col,vec3(.91,.94,.96),cover*.65);
+        }
+        // The distant cloud sea is part of this dome, with no extra pass or texture.
+        vec2 q=dir.xz/max(.12,-h);
+        float billows=noise(q*3.5)*.70+noise(q*9.)*.30;
+        vec3 cloud=mix(vec3(.53,.65,.76),vec3(.92,.96,1.),smoothstep(.15,.82,billows));
+        return mix(col,cloud,smoothstep(0.,.22,-h));
+      }
+      vec3 nightSky(vec3 dir,float h){
         vec3 col=mix(vec3(.22,.12,.42),vec3(.012,.027,.09),smoothstep(-.15,.72,h));
         vec2 grid=dir.xy*220.;
         float stars=step(.985,hash(floor(grid)))*(1.-smoothstep(.02,.16,length(fract(grid)-.5)));
@@ -127,8 +146,11 @@ export function createSkyScene(scene) {
         float band=smoothstep(-.05,.2,h)*(1.-smoothstep(.55,.9,h));
         col+=vec3(0.,.85,1.)*pow(max(0.,sin(spin*3.+h*22.+time)),24.)*band;
         col+=vec3(.85,.12,.72)*pow(max(0.,sin(spin*3.+h*22.+time+2.2)),24.)*band*.85;
-        col=mix(col,vec3(.04,.05,.16),smoothstep(.08,-.2,h));
-        gl_FragColor=vec4(col,1.);
+        return mix(col,vec3(.04,.05,.16),1.-smoothstep(-.2,.08,h));
+      }
+      void main(){
+        vec3 dir=normalize(vPosition);
+        gl_FragColor=vec4(daylight>.5 ? daySky(dir,dir.y) : nightSky(dir,dir.y),1.);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }`,
@@ -154,12 +176,29 @@ export function createSkyScene(scene) {
   const roadInstances = [borders, rails, beacons, laneLines];
 
   const landmarks = [landmark];
-  /** What the detailed look (spiral-look.ts) dresses on Medium and above; Low never touches these. `replaced` are
-   *  the materials of the procedural tower, skyline and fog banks its kit stands in for, `stream` its per-frame hook. */
+  const palette = entries => entries.map(([color, day]) => ({ color, day, night: color.clone() }));
+  const architecture = palette([
+    [pavement.color, '#4b5563'], [tower.material.color, '#e6e9ec'], [towerCore.material.color, '#739cba'],
+    [towerCyan.color, '#7ab1de'], [towerMagenta.color, '#3279b8'],
+  ]);
+  const trim = palette([[magenta.color, cyan.color], [concrete.color, SPIRAL_TRIM.rails], [stripes.color, SPIRAL_TRIM.lanes]]);
+  const applyPalette = (entries, day) => { for (const entry of entries) entry.color.set(day ? entry.day : entry.night); };
+  let daylight = false, lightTrim = false;
   const parts = {
     group, road, backdrop, landmark, stream: undefined,
     replaced: [...heroMaterials, skylineMesh.material, skylineLights.material, cloudMat],
     trim: { accent: cyan, beacons: magenta, rails: concrete, lanes: stripes },
+    setDay(day, detailed) {
+      if (daylight !== day) {
+        daylight = day;
+        backdrop.material.uniforms.daylight.value = day ? 1 : 0;
+        applyPalette(architecture, day);
+      }
+      if (lightTrim !== (day || detailed)) {
+        lightTrim = day || detailed;
+        applyPalette(trim, lightTrim);
+      }
+    },
   };
   return {
     landmarks: () => landmarks,
@@ -173,11 +212,12 @@ export function createSkyScene(scene) {
       const approach = Math.max(anchor.entry - distance, distance - anchor.entry - (SKY_SPIRAL.end - SKY_SPIRAL.start));
       const fade = endless ? THREE.MathUtils.smoothstep(1700 - approach, 0, 450) : 1;
       landmark.visible = fade > 0;
-      heroMaterials.forEach((material, i) => { material.opacity = fade * (i === 1 ? .72 : 1); });
+      heroMaterials.forEach((material, i) => { material.opacity = fade; });
+      towerCore.material.opacity *= daylight ? .22 : .72;
       skyline.position.copy(landmark.position);
       fogBanks.position.copy(skyline.position);
-      skyline.visible = landmark.visible && quality !== 'low';
-      fogBanks.visible = landmark.visible && quality === 'high';
+      skyline.visible = !daylight && landmark.visible && quality !== 'low';
+      fogBanks.visible = !daylight && landmark.visible && quality === 'high';
       const start = Math.max(0, Math.floor((distance - 140) / STEP) * STEP);
       // Transform the static world-space road into camera-relative coordinates.
       // Geometry and matrices change only when a 10m stream sector changes.
@@ -222,7 +262,7 @@ export function createSkyScene(scene) {
     dispose() {
       group.removeFromParent();
       geometry.dispose();
-      road.material.dispose();
+      pavement.dispose();
       for (const mesh of landmark.children) mesh.geometry.dispose();
       for (const material of heroMaterials) material.dispose();
       for (const mat of [cyan, magenta, stripes, concrete, cloudMat, backdrop.material]) mat.dispose();

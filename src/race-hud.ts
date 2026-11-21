@@ -151,7 +151,7 @@ export function createRaceHud(options: HudOptions) {
     ui['fuel-meter']!.dataset.refilling = pickup ? 'pickup' : String(race.phase === 'racing' && car.fuel > previousFuel && car.fuel < 100);
     previousFuel = car.fuel;
     setHudText(hudNodes['style-score']!, race.mode === 'gauntlet' ? t('mode.hazardHud', { n: race.hazards.filter((h: HudRace) => h.passed).length, total: race.hazards.length, score: Math.floor(car.score) }) : interpolate(L['hud.style']!, { n: Math.floor(car.score) }));
-    setHudText(ui.altitude!, car.altitude.toFixed(1));
+    setHudText(ui.altitude!, Math.max(0, car.altitude).toFixed(1));
   }
   function updateNitro(now: number, race: HudRace, car: HudRace, state: ReturnType<typeof sprintReady.update>, tierCaption: string): void {
     const visual = getVisual();
@@ -356,7 +356,7 @@ export function createRaceHud(options: HudOptions) {
       : car.exhausted ? interpolate(L['hud.rechargeRoad']!, { action: tap ? L['hud.tapLand']! : release }) : car.speed < 18 ? interpolate(L['hud.reachLift']!, { hold }) : depleted ? L['hud.charging']! : interpolate(L[tap ? 'hud.lift' : 'hud.liftLand']!, { hold }));
     setHudText(ui['fuel-caption']!, race.modifier === 'no-flight' ? L['daily.flightDisabled.fuel']! : car.exhausted ? interpolate(L['hud.toRecharge']!, { action: tap ? L['hud.land']! : release }) : L[car.boosting ? 'hud.sharedCharge' : car.thrusting ? 'hud.thrustersOn' : flying ? !input.fly && car.fuel < 100 ? 'hud.glideRecharge' : 'hud.descendRoad' : 'hud.groundRecharge']!);
     setHudText(ui['climb-rate']!, `${car.verticalSpeed >= 0 ? '+' : ''}${car.verticalSpeed.toFixed(1)} M/S`);
-    ui['height-indicator']!.style.transform = `translateY(${-car.altitude / 12 * 110}px)`;
+    ui['height-indicator']!.style.transform = `translateY(${-Math.max(0, car.altitude) / 12 * 110}px)`;
     updateBoostAndFeedback(race, car, nitroActive, flying, calm);
     updateImpact(car, race.elapsed, race.phase === 'racing');
     updateTouchButtons(race, input, tap);

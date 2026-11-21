@@ -50,6 +50,7 @@ import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
 import { createSkyScene } from './sky-scene.js';
 import { skyPosition as finiteSkyPosition, skyFrame as finiteSkyFrame } from './sky-track.ts';
 import { orientCarOnRoad, placeGroundShadow } from './vehicle-pose.ts';
+import { createRoadRecoveryView, poseRoadRecovery, frameRoadRecovery } from './road-recovery-view.ts';
 import { poseFor, smoothDriftYaw, squatPitch, rearAxleLift } from './vehicle-render-motion.js';
 import { trackPoint as finitePoint, trackFrame as finiteFrame, trackLocalPosition as finitePosition, lookAheadDistance, trackRunoutFrame } from './track-paths.ts';
 import { HERO_PREVIEWS,SHOWCASE_BACKS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.ts';
@@ -363,7 +364,8 @@ export function createWorld(canvas) {
   const lookTarget = new THREE.Vector3();
   const smoothLook = new THREE.Vector3(0, 2, -25), rumble = new THREE.Vector3(), jolt = new THREE.Vector3(); // rumble: the world offset (rumble + jolt) added after lookAt last frame
   let cameraMode = 0, cameraSwing = 0;
-  let initialized = false, lastRace = null, trackId, carBank = 0, seenFall = null, spanLift = new THREE.Vector3(), nextLift = new THREE.Vector3(); const courseOriginPoint = [0, 0, 0]; // Frostbite span: a respawn (up to ~500 m back) cuts the camera; the lift carries it
+  const recoveryView = createRoadRecoveryView(canvas);
+  let initialized = false, lastRace = null, trackId, carBank = 0, spanLift = new THREE.Vector3(), nextLift = new THREE.Vector3(); const courseOriginPoint = [0, 0, 0];
   const classicRoadRender = createClassicRoadRender({ road, laneLines, curbs, edgeLines, railLights, tunnelRoofs, tunnelWalls, shortcutDeck, surfaceMarks }, segments, put, SHORTCUT_TOLERANCE);
   let photoView = null, photoCapture = null, garageCamera = null, garageHomePreview = false, garagePose = null, garageLighting = 'bright';
   const syncGarageLighting = () => { lens.uniforms.gain.value = garageCamera || garagePose ? GARAGE_LIGHTING[garageLighting] : 1; };
@@ -489,7 +491,7 @@ export function createWorld(canvas) {
     },
     render(race, dt, idleTime, input = {}, presentation = {}, ghost = null, motion = null) {
       garageModel?.frame(visual.quality === 'low' ? 'low' : 'high', race.phase, garageHomePreview || !!garageCamera, garageCamera ? garageStage?.modelHost ?? null : null, race.phase === 'ready' ? upcomingStage.modelHost : null, homeModelHost, race.mode === 'free' && (!initialized || lastRace !== race));
-      const preview = race.phase === 'ready';
+      const preview = race.phase === 'ready', recovery = recoveryView.update(race.phase, race.player.recovery);
       updateFoldableProjection(camera, garageCamera || photoView ? null : currentFoldableLayout(), preview, preview && !garageCamera && !garageHomePreview && !upcomingStage.scene && !framedRoad(race.trackId) && !(visual.enabled && visual.airflow));
       if (garageCamera && garageStage && preview) { renderPass.scene = garageStage.scene; garageStage.update(camera, garageCamera, idleTime, motionPreference.matches || visual.comfortable); lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0; configureBloom(bloom, visual.quality, .01, 1.1); if (garageWarmupPending) { garageWarmupPending = false; warmupShaders(renderer, garageStage.scene, camera, composer.renderTarget1); } renderer.info.reset(); composer.render(dt); return; } // r186 bloom is stronger in the Studio's bright environment.
       if (preview && upcomingStage.scene) {
@@ -693,6 +695,7 @@ export function createWorld(canvas) {
         });
       } else {
         updateCar(player, car, distance, center, time, motionDt, true, input, visualCar);
+        if (recovery) poseRoadRecovery(player, recovery, visualCar.altitude, race.course?.cars.get('YOU').travel.altitude, reducedMotion);
         if (race.phase === 'finished') {
           const finishTravel = presentation.finishDistance || 0;
           if (curvedClassic) player.position.fromArray(classicPosition(visualCar.distance + finishTravel, visualCar.x, visualCar.altitude, distance));
@@ -727,7 +730,7 @@ export function createWorld(canvas) {
       const { roadDistance, altitude: lift, span } = player.userData; // Classic: equals player.position.y; banked/sloped roads: height above the road
       if (classicRoute.elevation || trackId === 'spiral' || framedRoad(trackId, endlessActive)) placeGroundShadow(shadow, graphCentre ? race.course.cars.get('YOU').pose : trackId === 'spiral' ? skyFrame(roadDistance) : trackFrame(trackId, roadDistance, span), player.position, lift);
       else { shadow.position.set(player.position.x, 0.03, player.position.z); shadow.rotation.set(-Math.PI / 2, 0, 0); }
-      updateContactShadow(lift, visual.quality);
+      updateContactShadow(lift, visual.quality, !recovery || recovery.reseated);
       const graphFinish = graphCentre ? graphFinishVisual(race.course, courseOriginPoint) : null;
       if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
         if (graphFinish) finish.position.fromArray(graphFinish.position);
@@ -745,7 +748,7 @@ export function createWorld(canvas) {
         phase: race.phase, nitro: car.nitroTime > 0, chain: car.nitroTime > 0 ? car.nitroBurst : 0, boost: !!(car.boosting || car.miniBoost > 0),
         speed: visualCar.speed, dt: motionDt, enabled: visual.enabled, quality: visual.quality, reducedMotion, ultra: visual.ultra,
       });
-      const portrait = camera.aspect < 0.8, view = raceCameraView(cameraMode, portrait), sprintFrame = sprintVisual.update(sprintInput), chaseFov = reducedMotion ? 64 : rigFov(view, visualCar.speed) + sprintFovOffset(sprintFrame, visual); // chaseFov drives the dolly: no impact pinch
+      const portrait = camera.aspect < 0.8, first = cameraMode === 1 && (!recovery || reducedMotion), view = raceCameraView(first ? 1 : 0, portrait), sprintFrame = sprintVisual.update(sprintInput), chaseFov = reducedMotion ? 64 : rigFov(view, visualCar.speed) + sprintFovOffset(sprintFrame, visual); // chaseFov drives the dolly: no impact pinch
       const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, origin ?? aeroOrigin.set(center, 0, -distance), garageHomePreview ? garageHomeVisual : visual, reducedMotion, sprintFrame, garageHomePreview);
       const sprintActive = race.phase === 'racing' && !reducedMotion && visual.enabled;
       if (photoView && race.phase === 'paused') {
@@ -784,7 +787,7 @@ export function createWorld(canvas) {
         desiredCamera.fromArray(classicPosition(distance - (portrait ? 13.8 : 11.8), portrait ? 7.8 : 8.3, portrait ? 5.9 : 5.1, distance));
         lookTarget.fromArray(classicPosition(distance + 3.5, portrait ? 1 : -1.4, 1.4, distance));
       } else {
-        const first = cameraMode === 1, back = rigBack(view, chaseFov), look = rigLook(view, chaseFov, sprintFrame.fov), height = rigHeight(view, visualCar.altitude);
+        const back = rigBack(view, chaseFov), look = rigLook(view, chaseFov, sprintFrame.fov), height = rigHeight(view, visualCar.altitude);
         cameraSwing = reducedMotion ? 0 : stepCameraSwing(cameraSwing, player.userData.driftYaw ?? 0, view, dt);
         if (curvedClassic) {
           const heading = roadHeading(distance);
@@ -807,6 +810,7 @@ export function createWorld(canvas) {
           lookTarget.set(visualCar.x * 0.7 + (roadCenter(distance + 30) - center) * 0.35, visualCar.altitude * 0.85 + look, -25);
         }
       }
+      frameRoadRecovery(desiredCamera, lookTarget, player, recovery, visualCar.altitude, reducedMotion);
       desiredCamera.z -= reducedMotion ? 0 : (presentation.goPush || 0) * 1.4;
       const impactAge = car.impact ? race.elapsed - car.impact.time : 10; const impact = !preview && impactAge < 0.65 ? (1 - impactAge / 0.65) ** 2 * car.impact.intensity : 0;
       const landingAge = car.landing ? race.elapsed - car.landing.time : 10; const landing = landingAge < 0.55 ? Math.exp(-landingAge * 8) * Math.min(1, car.landing.speed / 14) : 0;
@@ -818,15 +822,11 @@ export function createWorld(canvas) {
         frameShowcaseCar(distance);
       }
       const smoothing = !initialized && !preview ? 1 : 1 - Math.exp(-dt * 7); camera.position.sub(rumble); if (trackId === FROSTBITE_ID && !endlessActive) { nextLift.fromArray(frostbiteSpanLift(distance, !!car.span)); camera.position.add(nextLift).sub(spanLift); smoothLook.add(nextLift).sub(spanLift); spanLift.copy(nextLift); } // a span car moves fast in road-local space: no lerp lag
-      if (!initialized || (car.fall !== seenFall && (trackId === FROSTBITE_ID || !!race.course))) { camera.position.copy(desiredCamera); smoothLook.copy(lookTarget); initialized = true; } seenFall = car.fall;
-      camera.position.lerp(desiredCamera, smoothing); smoothLook.lerp(lookTarget, smoothing);
-      // A paused photo needs immediate framing; dt-based camera smoothing is zero on pause.
-      if (photoView && race.phase === 'paused') {
-        camera.position.copy(desiredCamera);
-        smoothLook.copy(lookTarget);
-      }
+      const snap = !initialized || recoveryView.cut || (photoView && race.phase === 'paused');
+      camera.position.lerp(desiredCamera, snap ? 1 : smoothing); smoothLook.lerp(lookTarget, snap ? 1 : smoothing);
+      initialized = true;
       camera.lookAt(smoothLook);
-      carBank = THREE.MathUtils.damp(carBank, !reducedMotion && cameraMode === 1 && visualCar.altitude > 1 ? -(input.steer || 0) * 0.025 : 0, 5, dt); // flight banks first person only: the chase horizon stays level
+      carBank = THREE.MathUtils.damp(carBank, !reducedMotion && first && visualCar.altitude > 1 ? -(input.steer || 0) * 0.025 : 0, 5, dt); // flight banks first person only: the chase horizon stays level
       camera.rotation.z += carBank;
       // Applied after lookAt, so the shake never feeds the smoothed camera position.
       const shakeSetting = reducedMotion || race.phase !== 'racing' || !visual.enabled ? 0 : visual.shake, shake = rigShake(view, visualCar.speed, shakeSetting);

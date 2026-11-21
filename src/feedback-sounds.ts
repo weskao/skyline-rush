@@ -39,7 +39,12 @@ export const FEEDBACK_SOUNDS = {
   'elimination-warning': [[720, 720, .12, 0, .035], [720, 720, .15, .17, .033]],
   'rival-eliminated': [[500, 340, .21, 0, .025]],
   'gap-warning': [[495, 420, .12, 0, .037], [495, 420, .17, .16, .035]],
-  'fall-recovery': [[230, 62, .33, 0, .055]],
+  // Drop, reset command or automatic rescue. Return and touchdown follow the simulated car.
+  'recovery-fall': [[298, 86, .60, 0, .034, 'triangle'], [146, 52, .36, .24, .027]],
+  'recovery-reset': [[710, 540, .072, 0, .036, 'triangle'], [960, 1120, .085, .058, .022]],
+  'recovery-rescue': [[337, 212, .12, 0, .033, 'triangle'], [470, 560, .09, .06, .021]],
+  'recovery-return': [[224, 345, .23, 0, .034, 'triangle'], [680, 1010, .23, .043, .025]],
+  'recovery-touchdown': [[148, 54, .17, 0, .054, 'triangle'], [278, 167, .11, .019, .023]],
   'drift-release': [[260, 105, .17, 0, .042], [690, 1100, .19, .035, .024]],
   'perfect-line': [[1175, 1568, .12, 0, .024], [1760, 2349, .21, .07, .020]],
   'endless-ended': [[330, 220, .21, 0, .039], [245, 135, .37, .15, .031]],
@@ -54,12 +59,15 @@ export const FEEDBACK_SOUNDS = {
   'objective-invalid': [[385, 240, .23, 0, .030]],
 } satisfies Readonly<Record<string, readonly Note[]>>;
 
-// Filtered noise layered under the crystal snap and electrical discharge.
-export const ITEM_HIT_TEXTURES = {
+// Filtered noise for surface contact, air movement and item effects.
+export const FEEDBACK_TEXTURES = {
   'freeze-hit': [3900, 1100, .25, .045],
   'freeze-thaw': [5100, 2250, .16, .035],
   'emp-hit': [1850, 460, .22, .043],
   'emp-clear': [1150, 520, .11, .019],
+  'recovery-fall': [2600, 580, .64, .047],
+  'recovery-return': [510, 1850, .23, .035],
+  'recovery-touchdown': [820, 160, .16, .041],
 } as const;
 
 export const ACQUISITION_SOUNDS = {

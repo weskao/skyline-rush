@@ -30,6 +30,8 @@ test('first visit keeps the home screen clear; Controls opens the keyboard guide
   await expect(page.locator('#guide-mobile-panel')).toBeHidden();
   await expect(guide.locator('[data-keys="throttle"]')).toContainText('W');
   await expect(guide.locator('[data-keys="fly"]')).toContainText('Space');
+  await expect(guide.locator('p:has([data-i18n="guide.reset.keyboard"]) kbd')).toHaveText('R');
+  await expect(guide.locator('[data-i18n="guide.reset.keyboard"]')).toContainText('safe road');
   await expect(guide.locator('[data-i18n="guide.fly"]')).toHaveText('Hold to fly; release to land. Flight uses fuel.');
   await page.locator('[data-guide-device="mobile"]').click();
   await expect(page.locator('#guide-mobile-panel')).toBeVisible();

@@ -26,8 +26,8 @@ const TRACK_LOOKS: Readonly<Record<string, TrackLook>> = {
   coast: { env: { track: 'day', day: 'day', dusk: 'dusk', rain: 'rain', fog: 'fog' }, road: 'coast-asphalt', wetness: { rain: .85, dusk: .35, fog: .25 }, scenery: 'coast-scenery', boats: 'coast-boats' },
   // N2: night and rain night only; `track` is Neon's rainy default (board-effects.ts RAINY_TRACKS).
   neon: { env: { track: 'nightRain', rain: 'nightRain', night: 'night' }, road: 'neon-asphalt', wetness: { track: .85, rain: .85 }, scenery: 'neon-city', landmarks: 'neon-landmarks', ground: 'neon-pavement' },
-  // Task 8c: a clear day above the clouds on the default and `day` (owner decision 2026-11-19); the other presets keep
-  // the violet night. Coast's day sky, Neon's asphalt set, always dry; the kit and the road set on every preset.
+  // A clear day above the clouds on the default and `day`. The procedural scene shares these presets.
+  // Coast's day sky, Neon's asphalt set, always dry; the kit and the road set on every preset.
   spiral: { env: { track: 'day', day: 'day' }, helix: 'neon-asphalt', wetness: {}, landmarks: 'spiral-landmarks' },
 };
 
@@ -36,3 +36,7 @@ export const trackLook = (trackId: string): TrackLook | undefined => Object.hasO
 /** Shared quality gate for the detailed look of any registered track. */
 export const detailedTrackLook = (trackId: string, quality: VfxQuality): TrackLook | undefined =>
   quality === 'low' ? undefined : trackLook(trackId);
+
+/** The same time of day for the detailed and procedural Sky Spiral scenes. */
+export const spiralDay = (trackId: string, preset: string): boolean =>
+  trackId === 'spiral' && Object.hasOwn(TRACK_LOOKS.spiral.env, preset) && TRACK_LOOKS.spiral.env[preset] === 'day';

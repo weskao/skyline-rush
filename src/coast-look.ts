@@ -2,6 +2,7 @@ import type { Color, Scene, Texture, Vector3, WebGLRenderer } from 'three';
 import { createCoastEnvironments } from './coast-environment.ts';
 import { COAST_ENV_VARIANTS, coastEnvPlan, type CoastEnvName } from './coast-lighting.ts';
 import { coastSkyYaw, coastSunDirection } from './coast-sky.ts';
+import { spiralDay } from './track-look.ts';
 import type { VfxQuality } from './vfx-settings.ts';
 
 interface Envs { get(name: CoastEnvName): Texture | undefined; preload(names: readonly CoastEnvName[]): Promise<unknown>;
@@ -30,7 +31,7 @@ export function createCoastLook({ scene, renderer, lens, room, roomIntensity, en
   let applied: CoastEnvName | null = null, palette: { color: Color; intensity: number; position?: Vector3 } | null = null; // the track's own sun
   let paletteTrack = ''; // the track the procedural lighting was saved on
   let baseExposure = renderer.toneMappingExposure;
-  function applyRoom(trackId: string) {
+  function applyRoom(trackId: string, daylight = false) {
     if (applied && trackId === paletteTrack && renderer.toneMappingExposure === COAST_ENV_VARIANTS[applied].exposure) renderer.toneMappingExposure = baseExposure;
     scene.environment = room; scene.environmentIntensity = roomIntensity;
     grade.saturation.value = grade.contrast.value = 1; grade.tint.value.setRGB(1, 1, 1);
@@ -41,20 +42,24 @@ export function createCoastLook({ scene, renderer, lens, room, roomIntensity, en
       if (palette.position) sun.position?.copy(palette.position);
     }
     applied = palette = null;
+    if (daylight) applySun('day', trackId);
+  }
+  function applySun(name: CoastEnvName, trackId: string) {
+    if (trackId !== paletteTrack) { palette = null; paletteTrack = trackId; }
+    if (!sun) return;
+    const light = COAST_ENV_VARIANTS[name].sun;
+    palette ??= { color: sun.color.clone(), intensity: sun.intensity, position: sun.position?.clone() };
+    sun.color.set(light.color); sun.intensity = light.intensity;
+    if (sun.position && palette.position) coastSunDirection(name, sun.position).multiplyScalar(palette.position.length());
   }
   function applyVariant(name: CoastEnvName, texture: Texture, trackId: string) {
-    if (trackId !== paletteTrack) { palette = null; paletteTrack = trackId; }
     if (!applied || renderer.toneMappingExposure !== COAST_ENV_VARIANTS[applied].exposure) baseExposure = renderer.toneMappingExposure;
     const v = COAST_ENV_VARIANTS[name];
     scene.environment = texture; scene.environmentIntensity = v.intensity; renderer.toneMappingExposure = v.exposure;
     grade.saturation.value = v.grade.saturation; grade.contrast.value = v.grade.contrast; grade.tint.value.setRGB(...v.grade.tint);
     if (scene.environmentRotation) scene.environmentRotation.y = coastSkyYaw(name);
     environments.paintCars?.(v.carSky ? name : null);
-    if (sun) {
-      palette ??= { color: sun.color.clone(), intensity: sun.intensity, position: sun.position?.clone() };
-      sun.color.set(v.sun.color); sun.intensity = v.sun.intensity;
-      if (sun.position && palette.position) coastSunDirection(name, sun.position).multiplyScalar(palette.position.length());
-    }
+    applySun(name, trackId);
     applied = name;
   }
   return {
@@ -62,13 +67,14 @@ export function createCoastLook({ scene, renderer, lens, room, roomIntensity, en
       const plan = coastEnvPlan(trackId, preset, quality);
       // Keyed by track as well: world.js resets the sun and exposure on a track change, so a track that shares the
       // last one's sky (Coast to Sky Spiral, both `day`) must have them applied again.
-      const next = plan.kind === 'room' ? 'room' : `${trackId}:${plan.variant}`;
+      const daylight = spiralDay(trackId, preset);
+      const next = plan.kind === 'room' ? (daylight ? 'spiral:procedural-day' : 'room') : `${trackId}:${plan.variant}`;
       if (next === key) return;
       key = next;
-      if (plan.kind === 'room') return applyRoom(trackId);
+      if (plan.kind === 'room') return applyRoom(trackId, daylight);
       const ready = environments.get(plan.variant);
       if (ready) return applyVariant(plan.variant, ready, trackId);
-      if (applied && trackId !== paletteTrack) applyRoom(trackId); // never another track's sky while this one loads, or after it fails
+      if (daylight || (applied && trackId !== paletteTrack)) applyRoom(trackId, daylight); // daylight also covers a pending or failed HDRI
       void environments.preload([plan.variant]).then(() => {
         const texture = environments.get(plan.variant);
         if (key === next && texture) applyVariant(plan.variant, texture, trackId);

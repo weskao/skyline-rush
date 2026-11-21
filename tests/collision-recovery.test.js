@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, stepRace, useHeldItem } from '../src/game.js';
+import { isFollowingVehicle } from '../src/player-contacts.js';
 import { placeCourseCar } from '../src/course-race.ts';
 import { Box3 } from 'three';
 import { CAR_STYLES, TRAFFIC_CAR_STYLES, makeCar } from '../src/car-model.js';
@@ -403,14 +404,17 @@ test('shallow hull contact makes room without the full speed penalty of a direct
   assert.ok(player.speed > 35, 'a glancing rub should keep at least seven eighths of the speed');
 });
 
-test('a respawn ahead of a followed car releases it: the fall is not replayed behind its bumper', () => {
-  const { race, player, leader } = packedRoad();
+test('rewinding from a gap releases the pre-fall vehicle queue', () => {
+  const { race, player } = packedRoad();
   for (let i = 0; i < 30; i++) tick(race);
   assert.equal(player.collisions, 1, 'boxed in behind the leader');
+  assert.equal(isFollowingVehicle(player), true);
   race.sections = [{ type: 'gap', from: player.distance + 1, to: player.distance + 40 }];
-  while (player.falls === 0 && player.distance < race.sections[0].to) tick(race);
+  for (let i = 0; i < 120 && !player.falls; i++) tick(race);
   const respawn = player.fall?.distance;
-  assert.ok(respawn > leader.distance + 20, 'the queue led the car into the gap; it respawned well ahead of the leader');
+  assert.ok(respawn < race.sections[0].from);
+  for (let i = 0; i < 90 && player.recovery; i++) tick(race);
+  assert.equal(isFollowingVehicle(player), false);
   for (let i = 0; i < 30; i++) tick(race);
   assert.equal(player.falls, 1);
   assert.ok(player.distance >= respawn, `stays ahead of the respawn (${player.distance.toFixed(1)} m of ${respawn} m)`);

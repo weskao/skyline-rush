@@ -64,6 +64,7 @@ export function createControls(target: ControlTarget = window, onAction: (action
   }
   listen<KeyboardEvent>(target, 'keydown', event => {
     syncKeys();
+    if (event.code === 'KeyR' && (event.ctrlKey || event.metaKey || event.altKey)) return;
     if ((event.target as Element | null)?.matches?.('input, textarea, select, [contenteditable="true"]')) return;
     // Buttons and <details> summaries keep native Enter/Space activation (a summary opens its panel).
     const nativeControl = (event.target as Element | null)?.closest?.('button, summary');

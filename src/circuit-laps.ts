@@ -60,6 +60,16 @@ export function stepCircuit(race: CircuitRace, dt: number): void {
   if (circuit) stepCircuitDriver(circuit.player, race.player, circuit.laps, race.elapsed, dt);
 }
 
+/** A recovery is a stationary cut. Preserve earned splits and anchor the next measured sweep. */
+export function reanchorCircuitPlayer(race: CircuitRace): void {
+  const driver = race.circuit?.player;
+  if (!driver) return;
+  driver.previousDistance = race.player.distance;
+  driver.previousX = race.player.x;
+  driver.previousAltitude = 0;
+  driver.falls = race.player.falls ?? 0;
+}
+
 export function stepCircuitRivals(race: CircuitRace, dt: number): void {
   const circuit = race.circuit;
   if (!circuit) return;

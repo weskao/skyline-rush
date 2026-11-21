@@ -69,7 +69,7 @@ for (const [name, viewport, hasTouch] of [
     }), span);
     await expect.poll(() => page.evaluate(() => window.gameplay.race.player.falls), { timeout: ciTimeout(8_000) }).toBe(1);
     expect(await page.evaluate(() => window.gameplay.race.player.fall.distance), 'never ahead').toBe(span.from);
-    await page.waitForTimeout(500);
+    await expect.poll(() => page.evaluate(() => !!window.gameplay.race.player.recovery), { timeout: ciTimeout(12_000) }).toBe(false);
     expect(await page.evaluate(() => Math.abs(window.gameScene.player.position.y)), 'back on the lower road').toBeLessThan(3);
     await capture(page, `${name}-rift-recovered`);
     expect(await page.evaluate(() => window.gameScene.renderer.info.programs.length), 'no shader compiles mid-race').toBe(programs);

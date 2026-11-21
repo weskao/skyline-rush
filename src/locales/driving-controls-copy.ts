@@ -2,6 +2,11 @@ export const DRIVING_CONTROLS_COPY = Object.freeze({
   en: {
     "guide.closeAria": "Close driving guide",
     "guide.quick.label": "Quick driving controls",
+    "controls.vehicleReset": "Reset vehicle",
+    "controls.vehicleResetShort": "Reset",
+    "controls.vehicleResetTitle": "Reset vehicle · R",
+    "guide.reset.keyboard": "Return to nearby safe road and continue the race.",
+    "controls.vehicleResetTouch": "In a race, tap Reset vehicle beside Pause to return to nearby safe road. The race clock keeps running.",
     "guide.quick.steer": "Steer",
     "guide.quick.brake": "Brake",
     "guide.quick.throttle": "Accelerate",
@@ -28,6 +33,11 @@ export const DRIVING_CONTROLS_COPY = Object.freeze({
   'zh-TW': {
     "guide.closeAria": "關閉操作說明",
     "guide.quick.label": "快速操作說明",
+    "controls.vehicleReset": "重置車輛",
+    "controls.vehicleResetShort": "重置",
+    "controls.vehicleResetTitle": "重置車輛 · R",
+    "guide.reset.keyboard": "回到附近的安全路段，接著繼續比賽。",
+    "controls.vehicleResetTouch": "比賽中點按暫停鍵旁的「重置車輛」，即可回到附近的安全路段。比賽會繼續計時。",
     "guide.quick.steer": "轉向",
     "guide.quick.brake": "煞車",
     "guide.quick.throttle": "加速",

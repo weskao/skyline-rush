@@ -1,6 +1,6 @@
-import { aiImpacts, avoidObstacles } from './car-collisions.js';
+import { aiImpacts, avoidObstacles, bumpCars, TRAFFIC_ACCEL } from './car-collisions.js';
 import { stepCircuitRivals } from './circuit-laps.ts';
-import { progressGap } from './course-race-step.ts';
+import { progressGap, recycleCourseTraffic, stepCourseCars } from './course-race-step.ts';
 import { coastFinishedRival, isParkedRival, parkFinishedRival } from './finished-rival.js';
 import { CAR_HEIGHT, RUBBER_BAND_FREE, RUBBER_BAND_MAX, RUBBER_BAND_RANGE } from './game.js';
 import { rivalItemHit, ITEM_HIT_SPEED } from './item-attacks.ts';
@@ -35,4 +35,26 @@ export function stepRaceRivals(race, dt) {
     }
   });
   stepCircuitRivals(race, dt);
+}
+
+export function stepRaceWorld(race, dt) {
+  const car = race.player;
+  for (const traffic of race.traffic) {
+    traffic.cooldown = Math.max(0, (traffic.cooldown || 0) - dt);
+    if (traffic.speed < traffic.cruise) traffic.speed = Math.min(traffic.cruise, traffic.speed + TRAFFIC_ACCEL * dt); // back up to cruise after a knock
+    const before = traffic.distance;
+    traffic.distance += traffic.speed * dt;
+    avoidObstacles(race, traffic, traffic.speed, dt);
+    aiImpacts(race, traffic, before, traffic.speed);
+    // Recycle distant traffic so the same small scene stays populated for the full sprint.
+    if (!race.endless && (race.course ? recycleCourseTraffic(race, traffic) : traffic.distance < car.distance - 60)) traffic.distance += 1400;
+  }
+  stepRaceRivals(race, dt);
+  stepCourseCars(race, dt); // H2 rivals: graph poses, gates, hazards and finish from this frame's odometers
+  const { rivals, traffic } = race;
+  for (let i = 0; i < rivals.length; i++) {
+    for (let j = i + 1; j < rivals.length; j++) bumpCars(race, rivals[i], rivals[j], dt);
+    for (const other of traffic) bumpCars(race, rivals[i], other, dt);
+  }
+  for (let i = 0; i < traffic.length; i++) for (let j = i + 1; j < traffic.length; j++) bumpCars(race, traffic[i], traffic[j]);
 }

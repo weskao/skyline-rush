@@ -1,6 +1,6 @@
 import { acquisitionAudioBuffer } from './acquisition-audio.ts';
 import { createLoopingNoiseGain } from './audio-noise.ts';
-import { FEEDBACK_SOUNDS, ITEM_HIT_TEXTURES, STINGERS } from './feedback-sounds.ts';
+import { FEEDBACK_SOUNDS, FEEDBACK_TEXTURES, STINGERS } from './feedback-sounds.ts';
 import { musicForMode } from './mode-audio.ts'; import { driftTier } from './drive-rules.ts';
 import { createRaceAudioEvents } from './race-audio-events.ts';
 import { TRACKS, LOOP_STEPS, sprintFactor, pitch } from './music-tracks.ts';
@@ -175,7 +175,7 @@ export function createSound(gapWarning = () => null) {
       if (buffer) acquisitionBuffers.set(name, buffer);
     }
     if (notes || buffer) {
-      const texture = ITEM_HIT_TEXTURES[name];
+      const texture = FEEDBACK_TEXTURES[name];
       if (voices.size + (notes?.length ?? 0) + Number(!!buffer) + Number(!!texture) > 24) return;
       const end = buffer ? playAcquisitionLayer(buffer, context.currentTime + startAfter) : 0;
       for (const [from, to, duration, delay, volume, type] of notes ?? []) {

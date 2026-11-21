@@ -70,7 +70,7 @@ test('ramp automatically launches a sufficiently fast car', () => {
   assert.equal(race.player.falls, 0);
 });
 
-test('missing a Sky Spiral gap triggers the existing recovery path', () => {
+test('missing a Sky Spiral gap returns to the approach before its launch ramp', () => {
   const race = createRace('spiral');
   race.phase = 'racing';
   race.traffic = [];
@@ -80,7 +80,10 @@ test('missing a Sky Spiral gap triggers the existing recovery path', () => {
   race.player.altitude = 0;
   stepRace(race, { throttle: true }, 0.05);
   assert.equal(race.player.falls, 1);
-  assert.ok(race.player.distance >= SKY_JUMPS[0].gapTo + 5);
+  for (let i = 0; i < 120 && race.player.recovery; i++) stepRace(race, {}, 1 / 60);
+  assert.equal(race.player.recovery, undefined);
+  assert.ok(race.player.distance < SKY_JUMPS[0].rampFrom);
+  assert.ok(race.player.distance >= SKY_JUMPS[0].rampFrom - 30);
 });
 
 test('Sky Spiral has sweepers before and after the helix, with straight jump corridors', () => {

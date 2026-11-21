@@ -1,3 +1,9 @@
+import { stepCheckpointRush } from './checkpoint-rush.ts';
+import { scoreStuntAttack } from './stunt-attack.ts';
+import { stepElimination } from './elimination.ts';
+import { finishEndless } from './endless-highway.ts';
+import { stepCircuit } from './circuit-laps.ts';
+import { stepRivalAttacks } from './item-attacks.ts';
 import { raceCompletion } from './race-objectives.ts';
 import { courseFinished, PLAYER_ID } from './course-race-step.ts';
 
@@ -26,4 +32,30 @@ export function finishRace(race, previousDistance, dt) {
     car.thrusting = false;
     car.boosting = false;
   }
+}
+
+export function finishRecoveryFrame(race, dt) {
+  const car = race.player;
+  if (race.checkpoint) stepCheckpointRush(race.checkpoint, car.distance, car, dt);
+  if (race.styleAttack) scoreStuntAttack(race.styleAttack, car, 0, dt, race.elapsed);
+  finishRaceFrame(race, car.distance, dt, true);
+}
+
+export function finishRaceFrame(race, previousDistance, dt, recovering = false) {
+  const car = race.player;
+  if (race.elimination) {
+    const knockout = stepElimination(race.elimination,race);
+    if (knockout?.outcome) {
+      race.result = {position:knockout.outcome === 'won' ? 1 : race.rivals.length + 1, time:race.elapsed,
+        success:knockout.outcome === 'won', score:Math.round(car.score),
+        collisions:car.collisions, nearMisses:car.nearMisses, nitroUses:car.nitroUses,
+        rings:car.rings, perfectLines:car.perfectLines, stars:1};
+      race.phase='finished'; car.speed=0; car.thrusting=false; car.boosting=false;
+      return;
+    }
+  }
+  if (finishEndless(race)) return;
+  if (!recovering) stepCircuit(race, dt);
+  finishRace(race, previousDistance, dt);
+  if (!recovering) stepRivalAttacks(race);
 }

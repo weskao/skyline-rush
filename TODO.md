@@ -48,6 +48,13 @@ Three sessions built it (design `docs/designs/nitro-flame/DESIGN.md`; their evid
 - [x] 獎勵、商城、車庫與車輛檢視控制改用生成的透明 WebP，保留選中、按下、等待及已套用狀態。
 - [ ] 完整瀏覽器與 World Tour 套件、實機確認及此分支的 GitHub CI。
 
+# 斷層墜落與 R 重置（2026-11-21）
+
+- [x] RED → GREEN：重現直接跳過斷層與缺少重置快捷鍵。共用恢復涵蓋天際螺旋、峽谷天橋、極地冰原峽谷高架捷徑，以及沙暴裂谷、浮空群島的飛行分岔。
+- [x] 驗證重置時保留檢查點與環道分段，墜落後可再次起飛越過峽谷斷橋。回到安全路面期間，其他車與計時持續，玩家不掃取路線獎勵。
+- [x] 以 Web Audio 事件及播放層測試驗證墜落、R 重置、快速救援、返回與落地音效。手機工具列加入重置鍵，操作說明與設定補上繁中及英文。
+- [ ] 驗證精確提交的 GitHub CI 與真實 WebGL 桌面、手機畫面。本機瀏覽器在載入時中止，另外用實際模擬資料渲染掉落與重置的動畫預覽。
+
 # 獲得彈窗立即套用（2026-11-21）
 
 - [x] RED：商城成功兌換和賽後賽道解鎖的既有批次缺少可執行操作。
@@ -6494,6 +6501,13 @@ Repro: on Home, open What's New, tap a picture or clip, close the enlarged view.
 - [x] Prevention: `.claude/rules/dialog-exit-animation.md` plus the two guards above.
 - [ ] `tests/close-button-browser.spec.js` at 390x844 fails on this branch before and after the fix: `button[data-race-mode="eventlab"]` is not visible on phones. Not caused by this change; needs its own fix.
 - [ ] Not yet done: full `make verify`, a real iPhone (Safari and Home Screen app) in both orientations, exact-HEAD `quality-gate`.
+
+## 2026-11-21 — Sky Spiral daylight across graphics tiers
+
+- [x] Match Sky Spiral's default procedural sky, cloud sea, lighting and landmarks to the detailed daytime look in the showcase and during a race. Low stays asset-free, and an explicit weather preset keeps its original atmosphere.
+- [x] RED: five procedural daylight, lighting and trim assertions failed on the previous scene. GREEN: `npm test` 3,642 passed, 4 skipped, 0 failed; module-size, typecheck and production build passed.
+- [ ] Review desktop and phone WebGL captures in both orientations. Local Chromium could not launch in the verification environment. The browser spec covers the Low showcase, the helix in a race, and failed detailed-kit loading.
+- [ ] Verify the exact feature-branch HEAD in GitHub Actions.
 
 ## 2026-11-19 — Sky Spiral detailed 3D look, Task 8c (`feature/sky-spiral-3d-look`)
 

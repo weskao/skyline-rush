@@ -6,9 +6,17 @@ paths:
   - "src/upcoming-tracks.ts"
   - "src/upcoming-scenes/index.ts"
   - "src/track-preview.ts"
+  - "src/track-look.ts"
+  - "src/sky-scene.js"
+  - "src/spiral-look.ts"
+  - "src/coast-look.ts"
+  - "src/race-visuals.ts"
   - "src/track-swipe.ts"
   - "src/track-swipe-ui.ts"
   - "src/world.js"
+  - "src/road-falls.ts"
+  - "src/road-recovery-view.ts"
+  - "src/course-race-step.ts"
   - "src/main.js"
   - "src/garage-*.ts"
   - "src/GaragePanel.vue"
@@ -44,6 +52,23 @@ Before touching a course, read `AGENTS.md`, `CLAUDE.md`,
 `docs/superpowers/specs/2026-11-03-playable-coursegraph-contract.md`,
 `.claude/rules/track-showcase.md`, `.claude/rules/vehicle-road-stability.md`,
 and the map's source handoff/plan. Honor stricter scoped rules as well.
+
+## Atmosphere across graphics tiers
+
+- Give each course one source of truth for its default atmosphere and supported race
+  presets. Resolve time of day and weather from course and preset before choosing the
+  graphics tier. A given preset keeps the same daylight, dusk, night, fog, rain or snow
+  identity in the showcase and in the race from Low through Ultra, including failed or
+  loading detailed assets. Keep the sky, key light, haze and landmark palette coherent.
+- Graphics tiers may simplify geometry, textures, reflections and atmospheric effects.
+  Use a lightweight approximation for defining scenery such as a cloud sea, and keep
+  Low independent of detailed GLB, HDRI and KTX2 requests. For Sky Spiral, the default and
+  Day both show a bright sky over clouds with pale architecture and blue rail lights.
+- When creating or changing a course look, compare Low and the detailed tier for the
+  default and supported explicit presets, plus a missing-asset fallback. Check the
+  showcase and in-race WebGL at matching camera poses on desktop, phone portrait and
+  phone landscape. Sky Spiral's guards are `tests/spiral-look.test.js`,
+  `tests/coast-look.test.js` and `tests/spiral-look-browser.spec.js`.
 
 ## Exclusive in-race music
 
@@ -140,6 +165,26 @@ reuse or transpose another course's loop.
   `feature/epic-multiroute-longform-tracks` owns shared integration.
   Never merge map branch history, overwrite newer shared files, change
   sibling branches, `develop` or `main`, or deploy without explicit approval.
+
+## Recovering from a gap or flight shortcut
+
+- Use the shared recovery in `src/road-falls.ts`. Show gravity and modest vehicle
+  pitch/roll until the fade, relocate the camera and car together during that
+  fade, and settle the car onto the road before returning control. Keep the
+  phases and recovery point consistent at every quality. Reduced Motion skips
+  the added tumble and camera reframing.
+- Provide approach road before a gap, including the whole launch ramp where there
+  is one. For a flight-only branch or span, return to the authored ground fallback
+  at the split. Retain validated checkpoints and any completed circuit sectors.
+- R in a live race returns the car to nearby safe road with the same fade and
+  landing. Both recovery types keep the race clock and the other racers moving.
+  Skip pickup, hazard and checkpoint sweeps during the relocation. Verify a
+  successful jump, a failed jump, and a keyboard reset before releasing a
+  course with a gap.
+- Keep the same vehicle reset beside Pause on touch devices. Give each recovery
+  cause its own SFX cue, then cue return and touchdown from the simulation.
+  Never queue all three sounds from a button click. Keep the keyboard and touch
+  instructions in the Driving Guide and Controls.
 
 ## Regression matrix and evidence
 

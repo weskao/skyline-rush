@@ -10,6 +10,11 @@ import { createRace, stepRace, SHORTCUT_TOLERANCE } from '../src/game.js';
 const rift = FROSTBITE_TRACK.sections.find(s => s.span);
 const split = rift && rift.from - 30, L = routeLength(graph, 'rift-lower-canyon'), B = routeLength(graph, 'rift-ice-bridge');
 const gap = (a, b) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+function finishRecovery(race, hz = 60) {
+  for (let i = 0; i < 2 * hz && race.player.recovery; i++) stepRace(race, {}, 1 / hz);
+  assert.equal(race.player.recovery, undefined);
+}
+
 const lane = (f, x) => ({ x: f.point.x + f.right[0] * x, y: f.point.y + f.right[1] * x, z: f.point.z + f.right[2] * x });
 
 test('the Rift corridor is flagged as the span over the lower canyon', () => {
@@ -58,11 +63,14 @@ test('a failed jump (sinking out of the span) recovers to the corridor start on 
   for (let i = 0; i < 600 && !car.falls; i++) { before = car.speed; stepRace(race, { throttle: true }, 1 / 60); if (!car.falls) furthest = car.distance; }
   assert.equal(car.falls, 1);
   assert.ok(furthest - rift.from > 100, 'it fell mid-span');
+  const began = race.elapsed;
+  assert.equal(car.span, true, 'the animation starts on the upper bridge');
+  finishRecovery(race);
   assert.equal(car.distance, rift.from);
   assert.equal(frostbiteLeg(car.distance).edgeId, 'rift-lower-canyon');
   assert.deepEqual([car.span, car.altitude, car.verticalSpeed], [false, 0, 0]);
   assert.ok(car.speed <= before * 0.41 && car.cooldown > 0, `speed ${car.speed} cooldown ${car.cooldown}`);
-  assert.deepEqual(car.fall, { from: rift.from, distance: rift.from, time: race.elapsed });
+  assert.deepEqual(car.fall, { from: rift.from, distance: rift.from, time: began });
 });
 
 
@@ -72,6 +80,7 @@ for (const hz of [30, 60, 120]) test(`an exhausted Rift span car glides into the
     verticalSpeed: 0, speed: 0, fuel: 0, span: true });
   for (let i = 0; i < 5 * hz && car.falls === 0; i++) stepRace(race, { throttle: true, fly: true }, 1 / hz);
   assert.equal(car.falls, 1, 'the unpowered car must fall before the span exit');
+  finishRecovery(race, hz);
   assert.equal(car.distance, rift.from);
   assert.deepEqual([car.span, car.altitude, car.verticalSpeed], [false, 0, 0]);
 });
@@ -82,6 +91,7 @@ test('steering off the side of the span is a fall too; flying above it is not', 
   assert.ok(car.altitude > rift.altitude + SHORTCUT_TOLERANCE && car.span && !car.falls, 'above the deck stays on the span');
   for (let i = 0; i < 240 && !car.falls; i++) stepRace(race, { throttle: true, fly: true, steer: -1 }, 1 / 60);
   assert.equal(car.falls, 1);
+  finishRecovery(race);
   assert.equal(car.distance, rift.from);
 });
 

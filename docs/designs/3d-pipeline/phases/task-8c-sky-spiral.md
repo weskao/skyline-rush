@@ -17,8 +17,8 @@ Concept art and mood reference only (rule item 7). No concept-board panel exists
   [08-cross-section.svg](../track-profiles/spiral/08-cross-section.svg).
 - Look items: day sky with cirrus, a white tower with a blue light strip, banked helix road with blue rail lights,
   a cloud sea below, floating spire platforms, an S-bend sky deck with chevron signs.
-- The procedural scene in `src/sky-scene.js` uses a darker palette with magenta skyline lights; which time of day
-  the detailed look targets is an owner decision (to verify against the brief).
+- The procedural scene in `src/sky-scene.js` shares the detailed look's default daylight. It renders its sky and
+  distant cloud sea in one pass and uses a pale tower, blue trim and the same sun direction.
 
 ## Hero landmarks and sources to look for
 
@@ -71,7 +71,8 @@ there with the full tower were counted on the earlier 9,163-triangle GLB and not
 
 - Route length may move within 8–12 km to fit the art; outside that range the owner is asked first. Not used: the
   shipped 10 km route fits.
-- Time of day: day sky, as the concept art. Low keeps the dark procedural scene.
+- Time of day: day sky, as the concept art. The 2026-11-21 decision extends the same default and explicit Day
+  atmosphere to Low and detailed-asset fallback. Other explicit presets keep their existing atmosphere.
 - Cloud sea: cloud GLB models (not an engine plane, not a dome band). Superseded for High and Ultra later the same day (owner: the mounds look fake; High and above must be as close to the real thing as possible): a shader cloud deck with drifting wisps (`src/spiral-clouds.ts`). Medium keeps the GLB mounds.
 - Draw-call cap: the shared home 540 / race 380.
 - Later the same day: the road must feel in the sky, with cloud drifting over it; the violet light under the day sky

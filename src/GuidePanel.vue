@@ -52,6 +52,7 @@ function touchTip(action: typeof quickControls[number]['name']): string {
             <dd :data-i18n="`guide.${action}`"></dd>
           </div>
         </dl>
+        <p class="guide-shortcuts"><kbd>R</kbd> <span data-i18n="guide.reset.keyboard">Return to nearby safe road and continue the race.</span></p>
         <p class="guide-shortcuts"><kbd>Esc / P</kbd> <span data-i18n="guide.pause">Pause / resume</span> · <kbd>C</kbd> <span data-i18n="guide.camera">Camera</span> · <kbd>F2</kbd> <span data-i18n="guide.auto">Auto accelerate</span></p>
       </section>
       <section id="guide-mobile-panel" :hidden="guideView.selectedDevice !== 'mobile'"><MobileGuide /></section>
