@@ -44,7 +44,7 @@
     }
   },
   "allowScripts": {
-    "@codepawlhq/crucible": true,
+    "@codepawlhq/crucible@0.21.0": true,
     "@firebase/util": false,
     "esbuild": true,
     "fsevents": false,
