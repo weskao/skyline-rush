@@ -1,8 +1,11 @@
 ---
 paths:
   - "src/audio.js"
+  - "src/audio-context-health.ts"
+  - "src/audio-page-lifecycle.ts"
   - "src/audio-ui.ts"
   - "src/audio-settings.ts"
+  - "src/startup-audio.ts"
   - "src/user-activation.ts"
   - "tests/audio*.test.js"
   - "tests/music-*-browser.spec.js"
@@ -23,13 +26,20 @@ separate causes, each now removed in `src/audio.js` / `src/audio-ui.ts`:
   app switch, iOS home-screen apps) kept the flag `true`, so every tap rebuilt or re-suspended the
   context. Read live `document.hidden` (`pageHidden()`), and resync on `pageshow` and `focus`.
   Guards: `tests/audio.test.js` (live hidden), `tests/music-gesture-browser.spec.js` (B repro).
-- **One failed `resume()` was final.** `update()` retries at most once a second while sound or music
-  is on, the page is visible, the context is not running and the page has had a gesture
-  (`navigator.userActivation.hasBeenActive`, so no pre-gesture console warnings). Per-frame: no
-  allocations, no promises awaited.
-- **Auto-unlock wrote storage.** `unlockAudio` re-applied the saved choice with `setAudio(..., false)`;
-  only a player's toggle or slider release saves. An engine that failed to start must never turn the
-  saved setting off for later visits. Guard: `tests/audio-ui.test.js`.
+- **One failed `resume()` was final.** Retry at most once a second while sound or music is on, the
+  page is visible, and the page has had a gesture (`navigator.userActivation.hasBeenActive`). If
+  the browser exposes an interrupted `AudioSession`, automatic retries wait for the OS to release
+  it. Read live visibility again before completing a delayed recovery. Per-frame: no allocations,
+  no promises awaited on the healthy path.
+- **A system interruption can leave a frozen clock with state `running`.** Sample
+  `AudioContext.currentTime` during visible frames and check it on gestures. If it stops advancing,
+  try a single suspend/resume cycle, then reuse the gesture-only rebuild if the same context stays
+  stuck. Keep the current race song, mixer settings and 1 s rebuild guard. Guards:
+  `tests/audio.test.js`, `tests/music-gesture-browser.spec.js`.
+- **Returning to the page may omit a visibility event.** Startup and the game share handling for
+  `visibilitychange`, `pagehide`/`pageshow`, `freeze`/`resume`, and `focus`.
+- **Auto-unlock can fail temporarily.** The switches retain the player's preferences so later taps
+  still retry; only a player's toggle or slider release writes to storage. Guard: `tests/audio-ui.test.js`.
 
 ## Rules
 

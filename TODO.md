@@ -69,6 +69,13 @@ Three sessions built it (design `docs/designs/nitro-flame/DESIGN.md`; their evid
 - [x] Playwright 驗證賽後換車、套用車漆、手機橫向選賽道及焦點還原，並擷取手機直向商城兌換與試裝畫面。保留手機單一「繼續」按鈕的原有寬度。
 - [ ] 完整瀏覽器與 World Tour 套件、實機確認及最終提交的 GitHub CI。
 
+# 手機通知中斷後恢復比賽音訊
+
+- [x] RED → GREEN：重現音訊時鐘停住但狀態仍為 `running`，驗證已中斷的音訊可在同場比賽恢復配樂與音效，並保留音量。
+- [x] 回歸涵蓋未觸發頁面事件的中斷、切到背景再返回、系統仍占用音訊、恢復途中重新隱藏或靜音、舊音訊已換掉，以及臨時啟動失敗後保留設定。
+- [ ] iOS Safari／主畫面 App 與 Android Chrome／Samsung Internet 實機驗收（直向、橫向）：鬧鐘、SMS／LINE 通知、來電或通話 App、通知中心、切 App／分頁、鎖屏解鎖、省電凍結、藍牙耳機斷線。確認回到原場比賽、配樂及音效恢復，原本關閉的聲道保持靜音。
+- [ ] 驗證修正分支目前提交的 GitHub CI。
+
 # Garage showcase camera selection (2026-11-20)
 
 - [x] RED → GREEN: DOM integration reproduced Paints changing `right` to `left` and Effects changing `right` to `rear`. Chromium reproduced the Paints failure in the running game. All three showcase Playwright cases now pass at 1440×900, 390×844 and 844×390, including category and preview actions, the inspect-mode round trip, and both arrows saving the new value. Desktop screenshots of Paints and Effects showed the same Right label, with zero page errors.

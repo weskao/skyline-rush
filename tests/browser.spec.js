@@ -519,10 +519,13 @@ test('audio initialization failure leaves the silent game playable and retryable
   await page.locator('#pause-button').click();
   await page.locator('#settings-button').click();
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
+  // Playback may be unavailable, but user choices must remain togglable and persist for a later retry.
   await audioSwitch(page, 'Sound effects').click();
-  await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
+  await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'true');
+  await expect.poll(() => stored(page, 'skyline-rush-sound')).toBe('on');
   await audioSwitch(page, 'Music').click();
-  await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
+  await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'true');
+  await expect.poll(() => stored(page, 'skyline-rush-music')).toBe('on');
   expect(errors).toEqual([]);
 });
 
