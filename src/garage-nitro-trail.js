@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { createSprintRoadPlacement } from './sprint-plume.ts';
 import { MAX_SPEED } from './drive-rules.ts';
+import { nitroFlame } from './nitro-flame-texture.ts';
 
 // NITRO trail skins: a hot flame at every exhaust, a long light streak behind it and the glow it throws on the
 // road. One program for all four styles (1 cyan laser, 2 gold pulse, 3 crimson dash, 4 nebula twin ribbons):
@@ -8,28 +9,48 @@ import { MAX_SPEED } from './drive-rules.ts';
 // Each plume is an open tube (unit radius, u along +z) that leaves its round nozzle at exactly the nozzle radius and
 // swells behind it; the view-facing term shades it as a glowing round jet, so it reads as gas, never as a flat card.
 // Comfort (.claude/rules/nitro-trail-vfx.md): the whole plume, halo and road glow change no faster than 3 Hz; only
-// thin streaks on the core flow back fast (±18%, ~10 Hz), which is what sells speed. Colour caps at 1.2, so only the
-// thin core touches the bloom threshold. Speed comes from flow and length, not glow: the trail stretches with car
+// thin streaks on the core flow back fast (±18%, ~10 Hz), which is what sells speed. Colour caps at 1.2, and only the
+// small white-hot nozzle core passes the bloom threshold. Speed comes from flow and length, not glow: the trail stretches with car
 // speed and a tight halo flares once at ignition.
 const IGNITION_SECONDS = 0.45;
 const SHORTEST = 3, LONGEST = 17; // metres: a 20 m/s crawl keeps a stub, NITRO at top speed draws the full streak
-const plumeVertex = shell => `uniform float time,style,trailLength,nozzleRadius,ignite;varying vec2 vUv;varying float vFacing;
+const plumeVertex = shell => `uniform float time,style,trailLength,nozzleRadius,ignite;varying vec2 vUv;varying float vFacing;varying float vWide;varying float vAxis;
   void main(){vUv=uv;float u=clamp(position.z,0.,1.);
     float grow=style>3.5?2.5:style>2.5?1.8:style>1.5?2.1:1.15;
     if(style>1.5&&style<2.5)grow*=1.+.32*exp(-abs(fract(u*3.-time*1.35)-.5)*7.);
     float r=nozzleRadius*(1.+grow*sqrt(u))*${shell}*(1.+ignite*.6*(1.-u)); // the ignition swell bulges the mouth
+    vWide=r;
     vec3 p=vec3(position.xy*r,u*trailLength);
     vec4 view=modelViewMatrix*instanceMatrix*vec4(p,1.);
     vec3 n=normalize(mat3(modelViewMatrix*instanceMatrix)*vec3(position.xy,0.));
     vFacing=abs(dot(n,normalize(-view.xyz)));
+    float along=dot(normalize(mat3(modelViewMatrix*instanceMatrix)*vec3(0.,0.,1.)),normalize(-view.xyz));
+    vAxis=sqrt(max(0.,1.-along*along)); // the most vFacing can be here: 1 side-on, near 0 down the jet's axis
     gl_Position=projectionMatrix*view;}`;
 const HASH = 'float hash(vec2 v){return fract(sin(dot(v,vec2(12.9898,78.233)))*43758.5453);}';
 const FLOW = 'float flow(float x){return 1.+.18*sin(x);}'; // the only term allowed past 3 Hz: thin, ±18%
-const STREAK_FRAGMENT = `varying vec2 vUv;varying float vFacing;uniform float time,power,style,ignite;uniform vec3 color;${HASH}${FLOW}
+// The flame texture (nitro-flame-texture.ts) gives the jet its shape: R tears the body into tongues and erodes its
+// edge (`lick`, `torn`), G roughens that edge, B is the thin hot filaments along the core (`hair`). Patterns are
+// scaled in metres (`m`), not `u`: the chase camera sees only the first 3 to 4 m of a 17 m trail. `rim` is the
+// view-normalised profile (vFacing never passes ~.3 seen end-on), so the body reads down the axis. A sample scrolled
+// by `time*N` changes N x cycles times a second at one pixel; the real image's busiest columns hold R 3, G 11, B 3 cycles
+// a tile, so 1 x 3 and .27 x 11 stay under 3 Hz. On the
+// neutral 1 x 1 fallback (.5) `lick` is 1, `hair` is 0 and `torn` only narrows the jet: smooth, never broken.
+// `white` is the white-hot nozzle core, the one light added after the .66 normalisation: steady (no time, ignition or
+// texture), it ends 0.3 m behind the nozzle and wherever a swell draws the jet wider than 0.16 m.
+const STREAK_FRAGMENT = `varying vec2 vUv;varying float vFacing;varying float vWide;varying float vAxis;uniform float time,power,style,ignite,trailLength;uniform vec3 color;uniform sampler2D flame;${HASH}${FLOW}
   void main(){float u=clamp(vUv.y,0.,1.);float a=clamp(vUv.x,0.,1.);float f=clamp(vFacing,0.,1.);
+    float m=u*trailLength;float rim=clamp(f/max(vAxis,.08),0.,1.); // metres behind the nozzle; 1 on the jet's centre line, 0 at its silhouette
+    float tongue=texture2D(flame,vec2(a,m*.5-time*1.)).r;
+    vec2 fine=texture2D(flame,vec2(a*2.+tongue*.1,m*.12-time*.27)).gb; // x: G turbulence, y: B filaments
+    float rush=flow(u*40.+a*25.13-time*60.); // four thin streaks race back at ~10 Hz
+    float lick=smoothstep(.25,.75,tongue)*2.;
+    float hair=smoothstep(.52,.85,fine.y)*rim*rim*rush;
+    float torn=smoothstep(0.,.3,rim*.8+(tongue-.5)*1.6+(fine.x-.5)*.5-clamp(m*.3,0.,.5)-u*.4);
     float edge=pow(max(0.,f),1.2); // bright down the jet's axis, soft at its rim
-    float core=pow(max(0.,f),3.)*flow(u*40.+a*25.13-time*60.); // four thin streaks race back at ~10 Hz
-    float nozzle=exp(-u*9.)*(1.+ignite*1.5);float tail=pow(max(0.,1.-u),1.65);
+    float core=pow(max(0.,f),3.)*rush;
+    float nozzle=exp(-u*9.)*(1.+ignite*1.5);
+    float tail=pow(max(0.,1.-u),1.65)*torn; // the jet burns away from its rim, dark tongues first
     float glint=pow(max(0.,hash(floor(vec2(a*14.,u*32.)))),24.)*edge*.12;
     float filament=.5+.5*cos(a*18.85-u*13.+time*3.8);
     float body=edge*.15+core;vec3 tint=color;
@@ -42,9 +63,12 @@ const STREAK_FRAGMENT = `varying vec2 vUv;varying float vFacing;uniform float ti
     if(style>3.5){float twin=pow(max(0.,sin(a*12.566-u*9.+time*4.2)),6.);
       body=edge*.13+core*.28+twin*.85*edge;
       tint=mix(color,vec3(.72,.23,.61),.26+.48*filament);} // two violet ribbons
+    body=(body+rim*.75)*lick+hair*.6;
+    float white=(1.-smoothstep(.05,.3,u*trailLength))*(1.-smoothstep(.11,.16,vWide))*smoothstep(0.,.2,f);
     vec3 light=tint*(.19+body*.41+nozzle*.19+glint);
     light*=.66/max(.66,max(light.r,max(light.g,light.b)));
-    gl_FragColor=vec4(min(light,vec3(1.2)),clamp((body*tail+nozzle*.42*edge+glint)*power,0.,.76));}`;
+    light+=mix(color,vec3(1.),.75)*white*1.2;
+    gl_FragColor=vec4(min(light,vec3(1.2)),clamp((body*tail+nozzle*.42*edge+glint+white)*power,0.,.76));}`;
 const HALO_FRAGMENT = `varying vec2 vUv;varying float vFacing;uniform float time,power,style,ignite;uniform vec3 color;${HASH}
   void main(){float u=clamp(vUv.y,0.,1.);float a=clamp(vUv.x,0.,1.);float f=clamp(vFacing,0.,1.);
     float flare=.4+ignite*1.6; // a faint sheath while cruising, a bright bloom only for the ignition swell
@@ -66,9 +90,9 @@ function plumeTube() { // open round tube, unit radius, mouth at z=0 and tail at
   return new THREE.CylinderGeometry(1, 1, 1, 16, 24, true).rotateX(Math.PI / 2).translate(0, 0, 0.5);
 }
 
-export function createNitroTrail(car, rearPorts, vehicle, ground) {
+export function createNitroTrail(car, rearPorts, vehicle, ground, flame = nitroFlame) {
   const uniforms = { time: { value: 0 }, power: { value: 0 }, style: { value: 0 }, trailLength: { value: 8 }, ignite: { value: 0 }, nozzleRadius: { value: rearPorts[0].size },
-    color: { value: new THREE.Vector3(1, 1, 1) } };
+    color: { value: new THREE.Vector3(1, 1, 1) }, flame: flame.uniform }; // the sampler exists from creation: warm-up compiles it
   const additive = { uniforms, transparent: true, depthWrite: false, side: THREE.FrontSide, blending: THREE.AdditiveBlending };
   const tube = plumeTube();
   const streaks = new THREE.InstancedMesh(tube, new THREE.ShaderMaterial({ ...additive,
@@ -91,7 +115,10 @@ export function createNitroTrail(car, rearPorts, vehicle, ground) {
   let previousTime = 0, lastPower = 0, igniteAt = -Infinity;
   return {
     streaks, halo, pool,
-    setStyle(style, rgb) { uniforms.style.value = style; uniforms.color.value.set(...rgb); },
+    setStyle(style, rgb) {
+      uniforms.style.value = style; uniforms.color.value.set(...rgb);
+      if (style > 0) flame.request(); // fetched once, and only for a player who equips a trail skin
+    },
     // Low keeps the streaks but skips the halo and road overdraw; callers pass enabled=false for VFX Off / Reduced Motion.
     // speed (m/s) stretches the streak: its length, not its brightness, tells how fast the car goes. The road gets a
     // short, steady reflection on the ground only. Chain energy changes only length and travel speed.

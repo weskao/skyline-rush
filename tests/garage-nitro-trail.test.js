@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Scene, Group, Mesh, BoxGeometry, Vector3 } from 'three';
+import { Scene, Group, Mesh, BoxGeometry, Texture, Vector3 } from 'three';
 import { createAeroVFX, REAR_PORTS } from '../src/aero-vfx.js';
+import { createNitroTrail } from '../src/garage-nitro-trail.js';
+import { createNitroFlame, NITRO_FLAME_PATH } from '../src/nitro-flame-texture.ts';
 import { createRace } from '../src/game.js';
 import * as sprintVfx from '../src/vfx-settings.ts';
 
@@ -176,4 +178,28 @@ test('style filaments use the existing streak shader and do not lift its light c
   assert.match(shader, /float filament=/);
   assert.match(shader, /\.66\/max\(\.66/);
   assert.match(shader, /power,0\.,\.76\)/);
+});
+
+test('the flame sampler exists from creation and the image is fetched once, only when a trail skin is equipped', () => {
+  const urls = [], image = new Texture();
+  const flame = createNitroFlame((url, onLoad) => { urls.push(url); onLoad(image); }, '/base/');
+  const trail = createNitroTrail(new Group(), REAR_PORTS, undefined, undefined, flame), sampler = trail.streaks.material.uniforms.flame;
+  assert.equal(sampler, flame.uniform, 'every trail shares the one texture uniform');
+  assert.ok(sampler.value.isDataTexture, 'warm-up compiles the sampler on the neutral fallback, before any skin is equipped');
+  assert.match(trail.streaks.material.fragmentShader, /uniform sampler2D flame;/);
+  assert.match(trail.streaks.material.fragmentShader, /texture2D\(flame,/);
+  trail.setStyle(0, [1, 1, 1]);
+  assert.deepEqual(urls, [], 'the standard trail never fetches the texture');
+  trail.setStyle(2, [1, .7, .2]); trail.setStyle(3, [1, .2, .2]);
+  assert.deepEqual(urls, [`/base/${NITRO_FLAME_PATH}`]);
+  assert.equal(trail.streaks.material.uniforms.flame.value, image, 'the image arrives as a uniform value: same material, same program');
+  assert.ok(rig('nitro-trail-cyan').streaks.material.uniforms.flame.value.isTexture, 'the race car and the showroom get it through createAeroVFX');
+});
+
+test('the base exhaust cone stays faint under a trail skin\'s flame, so its flat fill cannot fill in the tongues', () => {
+  const base = rigged => rigged.car.getObjectByName('Cold gas nozzle 1').material.uniforms.brightness.value;
+  const plain = base(rig(null));
+  for (const skin of Object.keys(TRAILS)) assert.ok(base(rig(skin)) <= plain * 0.5, `${skin}: ${base(rig(skin))} of ${plain}`);
+  assert.equal(base(rig('nitro-trail-gold', { nitro: false })), base(rig(null, { nitro: false })), 'BOOST shows no trail: the base plume keeps its light');
+  assert.equal(base(rig('nitro-trail-gold', { reducedMotion: true })), base(rig(null, { reducedMotion: true })), 'Reduced Motion shows no trail either');
 });

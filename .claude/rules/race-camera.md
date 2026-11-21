@@ -78,6 +78,16 @@ a different camera (`track-showcase.md`, `src/track-preview.ts`).
   Reduced Motion re-aims by 0. Guard: *sprint re-aim: a held NITRO/BOOST lifts the landscape nozzles
   off the bottom edge without moving the eye*. The plume itself: `sprint-plume.md`.
 
+- **BOOST read as NITRO at 80% (2026-11-21).** `frame.power = max(nitro, boost * 0.8)` fed FOV, blur
+  and speed lines alike, and NITRO with BOOST held read exactly as NITRO. Every sprint strength now
+  comes from `SPRINT_TIERS` (`src/sprint-tier.ts`) through `sprintCue`, one share per cue: `share`
+  (FOV, re-aim, light), `blur`, `lines`, `punch`. FOV and light stay where the guards above pin them
+  (BOOST 0.8, NITRO and NITRO + BOOST 1: same top speed, no second FOV jump); NITRO and the combined
+  tier step up through the ignition punch, the held radial blur and the speed-line density and travel
+  speed. `frame.punch` is capped at `NITRO_CHAIN_LIFT.at(-1)`, the x3 NITRO punch the portrait HUD
+  and dolly guards check, so a stronger tier punch never leaves them. A new tier is a row there,
+  never a branch here. Guard: `tests/sprint-tier.test.js` (*each step measurably stronger*).
+
 ## Changing a number
 
 1. RED first: add or tighten the assertion in `tests/race-camera.test.js`, then change the table.
