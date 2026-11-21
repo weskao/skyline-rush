@@ -14,6 +14,17 @@ test('Garage Home bounds are read from the camera that draws the frame, not from
   assert.match(line, /camera\.getWorldDirection/);
 });
 
+// Trap (2026-11-22): the marker projected the classic `player` group, which a Coming Soon track never draws
+// (its car is the stage's own), so a car 2.4 m off to the side made stormline Rear read "out of frame" on an idle
+// runner. The Garage must measure the car the stage draws.
+test('Garage Home bounds measure the Coming Soon stage car, not the classic player', () => {
+  const line = read('world.js').split('\n').find(l => l.includes('inspectGarageStudio()'));
+  assert.match(line, /projectedCarBounds\([^;]*upcomingStage\.modelHost/);
+  const bounds = read('car-bounds.ts');
+  assert.match(bounds, /host\?: \{ car: THREE\.Object3D; keep: THREE\.Object3D \}/);
+  assert.match(bounds, /const car = host\?\.car \?\? player/);
+});
+
 test('a Coming Soon Garage preview centres the car instead of leaving room for the Home panel', () => {
   const src = read('upcoming-showcase.ts');
   assert.match(src, /const centred = portrait \|\| !!garageSkins/);
