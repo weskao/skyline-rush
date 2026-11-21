@@ -162,8 +162,10 @@ export function createUpcomingShowcase(
       rival.position.set(x, i === 1 ? 4.5 : .06, -6 - i * 8);
       rival.userData.jets.visible = i === 1 && !calm;
     }
-    const authored = portrait ? stage.environment.portraitCameraPose : stage.environment.cameraPose;
-    const pose = settings.view === 'drive' && authored || showcaseCameraPose(stage.id, settings.view, calm ? 0 : time, portrait);
+    // The Garage has no home panel beside the car: centre it, as the classic Home path does (world.js).
+    const centred = portrait || !!garageSkins;
+    const authored = centred ? stage.environment.portraitCameraPose : stage.environment.cameraPose;
+    const pose = settings.view === 'drive' && authored || showcaseCameraPose(stage.id, settings.view, calm ? 0 : time, centred);
     camera.fov = 50;
     camera.position.set(pose.cameraSide, player.position.y + pose.cameraHeight, pose.cameraBack);
     camera.lookAt(pose.lookSide, pose.lookHeight, -pose.lookAhead);
