@@ -84,6 +84,7 @@ written with `version: UPCOMING` (never a version number) until it ships; see se
   release's images. A missing image falls back to text. Formats: png, jpg, webp, avif and animated gif/
   webp. Players tap any picture or the clip to see it whole and uncropped (`ReleaseMediaViewer.vue`), so a
   thumbnail may crop as long as the full file reads well enlarged.
+- **Responsive highlight artwork:** when a highlight needs a readable device-specific composition, keep `image` as a safe fallback and set `responsiveImages` for `desktop`, `tablet`, `landscape`, `portrait`, and `tabletPortrait`. The announcement uses `<picture>` to select the matching artwork and enlarges the image actually displayed. Use localized files for artwork containing text. Bundled static SVG compositions may embed local screenshots as inline image data; never link to remote images or scripts. Validate each variant exists in `public/whats-new/` before release.
 - **Video** (optional `video` on the entry, and optional `video` on any highlight): a short muted clip. The
   entry's **hero** clip autoplays inline, muted and looping, as soon as the notes open; it plays only while the
   notes are open and its version tab is shown, and a small corner button (or a tap on the clip) opens the
