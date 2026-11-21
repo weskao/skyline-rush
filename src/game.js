@@ -10,7 +10,7 @@ import { createCircuit, lapItems, reanchorCircuitPlayer } from './circuit-laps.t
 import { attachCourse, stepCoursePlayer, carGap, courseGapWarning, courseResetSeat, placeCourseRecovery } from './course-race-step.ts'; import { finishRaceFrame, finishRecoveryFrame } from './race-finish.js';
 import { stepRaceWorld } from './race-rivals.js';
 import { seededRng, RACE_STREAMS } from './rng.ts';
-import { createHazards } from './hazards.ts'; import { crossesRamp, launchImpulse, LAUNCH_MIN_SPEED } from './launch-ramps.ts';
+import { createHazards } from './hazards.ts'; import { crossesRamp, launchImpulse, LAUNCH_MIN_SPEED, SKY_GAP_LAUNCH_MIN_SPEED, SKY_GAP_RECOVERY_RUNUP } from './launch-ramps.ts';
 import { stepPlayerHazards } from './hazard-race.ts';
 import { contact, isFollowingVehicle, resolvePlayerContacts, trackPhaseExit, clearRecoveryContacts } from './player-contacts.js';
 import { raceHazards, themedExtras } from './track-themes.ts'; import { mixedCourse, withHoops } from './gauntlet-course.ts';
@@ -28,6 +28,7 @@ import { RACE_DRIVER_IDS, startingGrid } from './race-grid.ts';
 import { raceCompletion } from './race-objectives.ts'; import { riskRules } from './risk-lines.ts'; import { spawnCatchUp } from './catch-up-items.ts';
 import { createRaceSessionContract } from './race-session.ts';
 import { skyJumpGap, SKY_JUMPS } from './sky-track.ts'; import { startRoadRecovery, advanceRoadRecovery, RESET_BACKTRACK, stepDeck, stepSpan, SHORTCUT_HALF_WIDTH, SHORTCUT_TOLERANCE } from './road-falls.ts';
+import { planGapRecovery, clearGapFallStreak } from './gap-recovery-seat.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 
 import { RACE_TRACKS, raceTrack, assertTrackMode, itemScale } from './race-tracks.ts';
@@ -171,6 +172,7 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
       nearMiss: null, nearMisses: 0, combo: 0, scrape: null, scrapeCooldown: 0, flyBuffer: 0,
       poweredFlightTime: 0, flightBoosted: false,
       section: null, inShortcut: false, falls: 0, fall: null, span: false,
+      gapFallStreak: /** @type {import('./gap-recovery-seat.ts').GapFallStreak | null} */ (null),
       nitro: 0, nitroTime: 0, nitroHeld: false, nitroUses: 0, nitroBurst: 0, nitroChain: 0, longestCombo: 0,
       slipstream: { time: 0, active: false, paid: false },
       driftHold: /** @type {import('./player-drift.ts').DriftHold | null} */ (null),
@@ -221,7 +223,7 @@ function safeRoadDistance(race, distance) {
     const section = race.sections[i];
     if (section.type !== 'gap' || distance < section.from - 4 || distance >= section.to + 4) continue;
     const ramp = race.trackId === 'spiral' && SKY_JUMPS.find(jump => jump.gapFrom === section.from);
-    distance = ramp ? ramp.rampFrom - 22 : section.from - 72;
+    distance = ramp ? ramp.rampFrom - SKY_GAP_RECOVERY_RUNUP : section.from - 72;
   }
   return Math.max(0, distance);
 }
@@ -254,6 +256,7 @@ export function stepRace(race, input, dt) {
   }
   streamEndless(race); spawnCatchUp(race);
   const car = race.player, wasSlowed = itemHit(race, car) !== null;
+  if (car.gapFallStreak) car.gapFallStreak = clearGapFallStreak(car.gapFallStreak, car.distance);
   race.elapsed += dt;
   const hitSpeed = itemHit(race, car) ? ITEM_HIT_SPEED : 1;
   if (wasSlowed && hitSpeed === 1) car.speed /= ITEM_HIT_SPEED; // lift the penalty, preserving braking and impacts
@@ -360,8 +363,8 @@ export function stepRace(race, input, dt) {
   if (boost) car.fuel = Math.max(0, car.fuel - (car.thrusting ? 3 : BOOST_DRAIN) * dt);
   const previousAltitude = car.altitude;
   // Sky Spiral launch ramps impart momentum automatically; FLY can extend the jump.
-  if (car.altitude === 0 && car.speed > LAUNCH_MIN_SPEED && (race.trackId === 'spiral' && car.section === 'launch' &&
-      car.distance >= section.to - car.speed * dt - 1 || crossesRamp(race.ramps, car, car.speed * dt + 1))) {
+  if (car.altitude === 0 && ((race.trackId === 'spiral' && car.speed >= SKY_GAP_LAUNCH_MIN_SPEED && car.section === 'launch' &&
+      car.distance >= section.to - car.speed * dt - 1) || (car.speed > LAUNCH_MIN_SPEED && crossesRamp(race.ramps, car, car.speed * dt + 1)))) {
     car.altitude = 0.02; // Event Lab ramps share the Spiral impulse
     car.verticalSpeed = Math.max(car.verticalSpeed, launchImpulse(car.speed));
   }
@@ -380,8 +383,12 @@ export function stepRace(race, input, dt) {
     skyGap || (race.trackId !== 'spiral' && race.sections.find(s => s.type === 'gap' && car.distance >= s.from && car.distance < s.to));
   if (gapNow && car.altitude < GAP_CLEARANCE && !(skyGap && car.altitude > 0 && car.verticalSpeed > 0)) {
     const from = skyGap ? skyGap.gapFrom : gapNow.from;
-    const approach = skyGap ? skyGap.rampFrom - 22 : from - 72;
-    startRoadRecovery(car, { distance: safeRoadDistance(race, approach) }, from, race.elapsed, GAP_SLOWDOWN);
+    const approach = skyGap ? skyGap.rampFrom - SKY_GAP_RECOVERY_RUNUP : from - 72;
+    const plan = planGapRecovery({ from, to: skyGap ? skyGap.gapTo : gapNow.to }, car.distance,
+      safeRoadDistance(race, approach), race.length, car.gapFallStreak);
+    car.gapFallStreak = plan.streak;
+    startRoadRecovery(car, { distance: plan.distance }, from, race.elapsed, GAP_SLOWDOWN);
+    if (car.recovery) car.recovery.assisted = plan.assisted;
   }
   if (!car.recovery) {
     if (previousAltitude > 0 && car.altitude === 0) {

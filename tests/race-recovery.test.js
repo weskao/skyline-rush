@@ -4,6 +4,8 @@ import { createRace, stepRace, RACE_TRACKS } from '../src/game.js';
 import { ACTION_KEYS, DEFAULT_KEY_MAP, rebind, validateKeyMap } from '../src/key-map.ts';
 import * as game from '../src/game.js';
 import { placeCourseCar } from '../src/course-race.ts';
+import { SKY_JUMPS } from '../src/sky-track.ts';
+import { SKY_GAP_RECOVERY_RUNUP } from '../src/launch-ramps.ts';
 
 function racing(track, config) {
   const race = createRace(track, config);
@@ -34,10 +36,82 @@ for (const track of ['canyon', 'spiral']) test(`${track}: gravity precedes a rew
   assert.equal(car.score, 0);
   assert.ok(race.rivals.some(rival => rival.distance > 0), 'the race continues around the recovering player');
   finishRecovery(race);
-  assert.ok(car.distance < gap.from - 20 && car.distance >= gap.from - 110);
+  if (track === 'spiral') assert.equal(car.distance, SKY_JUMPS[0].rampFrom - SKY_GAP_RECOVERY_RUNUP);
+  else assert.ok(car.distance < gap.from - 20 && car.distance >= gap.from - 110);
   assert.deepEqual([car.altitude, car.verticalSpeed, car.x, car.falls], [0, 0, 0, 1]);
   tick(race, 0.2, { throttle: true });
   assert.ok(car.distance > car.fall.distance, 'throttle resumes from the approach');
+});
+
+for (const track of ['canyon', 'spiral']) test(`${track}: gap half-way boundary chooses the nearer safe bank`, () => {
+  const gap = RACE_TRACKS[track].sections.find(section => section.type === 'gap');
+  const midpoint = (gap.from + gap.to) / 2;
+  for (const [offset, ahead] of [[-.01, false], [0, false], [.01, true]]) {
+    const race = racing(track), car = race.player;
+    race.rivals = race.traffic = race.rings = race.pickups = [];
+    Object.assign(car, { distance: midpoint + offset, altitude: 0, verticalSpeed: 0, speed: 0 });
+    tick(race);
+    assert.equal(car.falls, 1);
+    assert.equal(car.recovery.seat.distance > gap.to, ahead);
+    assert.equal(car.recovery.assisted, false, 'crossing the midpoint is not streak rescue');
+    finishRecovery(race);
+    assert.equal(car.gapFallStreak.count, 1, 'fall streak persists until racing resumes');
+    assert.equal(car.distance > gap.to, ahead, 'car lands on solid road on the chosen side');
+  }
+});
+
+for (const track of ['spiral', 'canyon']) test(`${track}: third failure rescues without awarding rewards`, () => {
+  const race = racing(track), car = race.player, gap = RACE_TRACKS[track].sections.find(section => section.type === 'gap');
+  race.rivals = race.traffic = race.pickups = [];
+  race.rings = [{ distance: gap.to + 8, x: 0, altitude: 0, radius: 2, type: 'nitro', group: 0, groupSize: 1 }];
+  const snapshot = [car.score, car.rings, car.nitro, car.fuel];
+  const before = race.elapsed;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    Object.assign(car, { distance: gap.from + 1, speed: 0, altitude: 0, verticalSpeed: 0 });
+    tick(race);
+    assert.equal(car.gapFallStreak.count, attempt);
+    assert.equal(car.recovery.seat.distance > gap.to, attempt === 3);
+    assert.equal(car.recovery.assisted, attempt === 3);
+    finishRecovery(race);
+  }
+  assert.ok(race.elapsed > before, 'three failed tries still cost race time');
+  assert.equal(car.falls, 3);
+  assert.equal(car.distance, gap.to + 18);
+  assert.deepEqual([car.score, car.rings, car.nitro, car.fuel], snapshot);
+  assert.ok(!race.rings[0].hit, 'rescue does not sweep the far-side ring');
+  tick(race);
+  assert.equal(car.gapFallStreak, null, 'the safe far side clears the consecutive-fall streak');
+});
+
+test('manual R does not increment consecutive falls; crossing solid road resets the streak', () => {
+  const race = racing('canyon'), car = race.player;
+  const gap = RACE_TRACKS.canyon.sections.find(section => section.type === 'gap');
+  race.rivals = race.traffic = race.rings = race.pickups = [];
+  Object.assign(car, { distance: gap.from + 1, speed: 0 });
+  tick(race);
+  finishRecovery(race);
+  assert.equal(car.gapFallStreak.count, 1);
+  assert.equal(game.requestRaceReset(race), true);
+  finishRecovery(race);
+  assert.equal(car.gapFallStreak.count, 1, 'a manual reset is not another fall');
+  Object.assign(car, { distance: gap.to + 1, speed: 0, altitude: 0 });
+  tick(race);
+  assert.equal(car.gapFallStreak, null);
+  Object.assign(car, { distance: gap.from + 1, speed: 0 });
+  tick(race);
+  assert.equal(car.gapFallStreak.count, 1, 'passing the gap prevents stale rescue credit');
+});
+
+test('mid-gap rescue cannot credit a checkpoint or its score', () => {
+  const race = racing('canyon', { mode: 'checkpoint' }), car = race.player;
+  const gap = RACE_TRACKS.canyon.sections.find(section => section.type === 'gap');
+  race.rivals = race.traffic = race.rings = race.pickups = [];
+  const original = { score: car.score, passed: race.checkpoint.passed, missed: race.checkpoint.missed };
+  Object.assign(car, { distance: (gap.from + gap.to) / 2 + 1, altitude: 0, verticalSpeed: 0, speed: 0 });
+  tick(race);
+  assert.ok(car.recovery.seat.distance > gap.to);
+  finishRecovery(race);
+  assert.deepEqual({ score: car.score, passed: race.checkpoint.passed, missed: race.checkpoint.missed }, original);
 });
 
 test('manual recovery stays in the same race, pauses cleanly and never sweeps rewards', () => {

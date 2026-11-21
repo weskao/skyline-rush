@@ -56,5 +56,6 @@ body[data-phase="racing"]:not([data-tutorial], .layout-editing) #vehicle-reset-b
   border-color: #ffb27a85;
   color: #ffe0bd;
 }
-#race-recovery[data-stage="fall"] > span:last-child,
-#race-recovery[data-stage="return"] > span:first-child { display: none; }
+#race-recovery[data-stage="fall"] > span:not(:first-child),
+#race-recovery[data-stage="return"] > span:not(:nth-child(2)),
+#race-recovery[data-stage="assist"] > span:not(:nth-child(3)) { display: none; }

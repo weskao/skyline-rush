@@ -19,6 +19,7 @@ export interface RecoverySeat {
 export interface RoadRecovery {
   reason: 'fall' | 'reset';
   falling: boolean;
+  assisted?: boolean; // automatic rescue after three consecutive failures on the same classic gap
   seat: RecoverySeat;
   elapsed: number;
   transferAt: number;

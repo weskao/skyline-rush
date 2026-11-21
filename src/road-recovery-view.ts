@@ -16,7 +16,7 @@ export function createRoadRecoveryView(canvas: HTMLCanvasElement) {
       if (overlay && (active || !overlay.hidden)) {
         overlay.hidden = !active;
         if (active) {
-          const stage = roadFallInProgress(active) ? 'fall' : 'return';
+          const stage = active.assisted && active.reseated ? 'assist' : roadFallInProgress(active) ? 'fall' : 'return';
           if (overlay.dataset.stage !== stage) overlay.dataset.stage = stage;
           overlay.style.setProperty('--recovery-fade', String(this.cut ? 1 : roadRecoveryFade(active)));
         }

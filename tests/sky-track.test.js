@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { skyPoint, skyFrame, skyPosition, skyGapAt, SKY_JUMPS, SKY_SPIRAL } from '../src/sky-track.ts';
 import { RACE_TRACKS, createRace, startRace, stepRace } from '../src/game.js';
+import { MAX_SPEED, BOOST_CAP_BONUS } from '../src/drive-rules.ts';
+import { SKY_GAP_LAUNCH_MIN_SPEED, SKY_GAP_RECOVERY_RUNUP } from '../src/launch-ramps.ts';
 
 const close = (a, b, tolerance = 0.5) => assert.ok(Math.abs(a - b) < tolerance, `${a} should be near ${b}`);
 
@@ -56,6 +58,31 @@ test('jump gaps are deterministic, aligned to launch sections, and bounded', () 
   }
 });
 
+test('Sky Spiral requires BOOST-range automatic launch speed', () => {
+  assert.ok(SKY_GAP_LAUNCH_MIN_SPEED > MAX_SPEED, 'throttle-only speed cannot automatically launch');
+  assert.ok(SKY_GAP_LAUNCH_MIN_SPEED <= MAX_SPEED + BOOST_CAP_BONUS, 'BOOST speed can launch');
+  assert.ok(SKY_GAP_RECOVERY_RUNUP >= 180, 'enough road to regain speed after reset');
+  for (const jump of SKY_JUMPS) {
+    assert.ok(jump.gapTo - jump.gapFrom >= 150, 'wide gap must prevent slow coasting');
+    assert.equal(jump.rampTo, jump.gapFrom);
+  }
+});
+
+for (const jump of SKY_JUMPS) for (const [mode, shouldCross] of [['throttle', false], ['boost', true], ['fly', true]]) {
+  test(`Sky Spiral ${jump.gapFrom}: ${mode} ${shouldCross ? 'crosses' : 'falls'} across real missing road`, () => {
+    const race = createRace('spiral'), car = race.player;
+    race.phase = 'racing';
+    race.rivals = race.traffic = race.rings = race.pickups = [];
+    Object.assign(car, { distance: jump.rampFrom - 55, speed: mode === 'fly' ? 70 : MAX_SPEED, fuel: 100, altitude: 0, verticalSpeed: 0, x: 0 });
+    for (let frame = 0; frame < 420 && !car.recovery && car.distance < jump.gapTo + 10; frame++) {
+      stepRace(race, { throttle: true, boost: mode === 'boost', fly: mode === 'fly' }, 1 / 60);
+    }
+    assert.equal(car.falls, Number(!shouldCross), `${mode} at ${jump.gapFrom}`);
+    if (shouldCross) assert.ok(car.distance >= jump.gapTo + 10, 'car must reach the far deck');
+    else assert.equal(car.recovery?.reason, 'fall');
+  });
+}
+
 test('ramp automatically launches a sufficiently fast car', () => {
   const race = createRace('spiral');
   startRace(race);
@@ -63,8 +90,8 @@ test('ramp automatically launches a sufficiently fast car', () => {
   race.traffic = [];
   race.rivals = [];
   race.player.distance = SKY_JUMPS[0].rampTo - 1;
-  race.player.speed = 75;
-  stepRace(race, { throttle: true }, 0.04);
+  race.player.speed = SKY_GAP_LAUNCH_MIN_SPEED + 4;
+  stepRace(race, { throttle: true, boost: true }, 0.04);
   assert.ok(race.player.altitude > 0);
   assert.ok(race.player.verticalSpeed > 0);
   assert.equal(race.player.falls, 0);
@@ -83,7 +110,7 @@ test('missing a Sky Spiral gap returns to the approach before its launch ramp', 
   for (let i = 0; i < 120 && race.player.recovery; i++) stepRace(race, {}, 1 / 60);
   assert.equal(race.player.recovery, undefined);
   assert.ok(race.player.distance < SKY_JUMPS[0].rampFrom);
-  assert.ok(race.player.distance >= SKY_JUMPS[0].rampFrom - 30);
+  assert.ok(race.player.distance >= SKY_JUMPS[0].rampFrom - SKY_GAP_RECOVERY_RUNUP - 2);
 });
 
 test('Sky Spiral has sweepers before and after the helix, with straight jump corridors', () => {
@@ -103,7 +130,7 @@ test('Sky Spiral streaming races drive through the former sprint gaps on solid r
     race.phase = 'racing';
     for (const { gapFrom, gapTo } of SKY_JUMPS) {
       Object.assign(race.player, { distance: gapFrom - 5, speed: 75, altitude: 0, x: 0, cooldown: 5 });
-      for (let step = 0; step < 120 && race.player.distance < gapTo + 5; step++) stepRace(race, { throttle: true }, 1 / 60);
+      for (let step = 0; step < 240 && race.player.distance < gapTo + 5; step++) stepRace(race, { throttle: true }, 1 / 60);
       assert.ok(race.player.distance >= gapTo + 5, mode);
       assert.equal(race.player.falls, 0, mode);
       assert.equal(race.player.altitude, 0, mode);

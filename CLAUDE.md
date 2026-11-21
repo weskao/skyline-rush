@@ -23,7 +23,7 @@ exactly. Topics whose work often starts before a scoped file is open:
 | --- | --- |
 | Home / HUD layout, any `(orientation: landscape)` or `max-height` media query | `.claude/rules/orientation-layout.md` (iOS paints portrait and landscape differently; check both) |
 | Creating or modifying any course, including its sky, weather, lighting or graphics-tier fallback | `.claude/rules/playable-course-shared-template.md` |
-| Track gaps, failed flight, or vehicle resets | `.claude/rules/playable-course-shared-template.md` (shared recovery) |
+| Track gaps, minimum jump speed, failed flight, or vehicle resets | `.claude/rules/playable-course-shared-template.md` (gap physics and shared recovery) |
 | Shortcut or hidden-path rewards on a course | `.claude/rules/ring-layout.md` |
 | A finish area, or any road that does not close into a loop | `.claude/rules/road-runout.md` (the drawn road runs on past the finish; it never ends in the air) |
 | Course music, or music while a map is only selected on the home screen | `.claude/rules/playable-course-shared-template.md` |
@@ -39,6 +39,8 @@ exactly. Topics whose work often starts before a scoped file is open:
 | Anything the player newly acquires or unlocks (car, track, paint, equipment, clothing, medal, currency, reward, store or mission claim) | `.claude/rules/acquisition-reveal.md` (one shared reveal via `presentAcquisition`) |
 | Any confirm, alert, prompt, dropdown, search box or picker; turning an important setting off | `.claude/rules/no-native-ui.md` (in-game `confirmDialog()`, never the browser's native UI) |
 | Pushing, reading CI, merging, releasing | `.claude/rules/ci-gates.md`, `.claude/rules/branch-release.md` |
+
+**Gap difficulty and recovery rule:** Missing road is a physical chasm at every graphics tier. Throttle-only speed must not bypass BOOST-range ground jumps; deliberate FLY may cross. On classic gaps, a fall in the first 50% (including exactly half) returns before the jump; after half, respawn on safe ground beyond it. Three consecutive falls at the **same** gap trigger an anti-stuck forward rescue, without free rewards or checkpoint credit; normal race time and fall penalties continue. Clear the streak when the gap is cleared, do not increment it for R, and never spawn past FINISH. Match simulation/mesh/minimap, preserve safe run-ups, and test both sides of the midpoint and repeated failures. CourseGraph branch/checkpoint recovery retains its own rules; see the course template.
 
 Player copy (What's New, locales, store text, captions) names a track exactly as `TRACK_NAMES` in
 `src/i18n.ts` does, in en and zh-TW; never a paraphrase or a second table. Renaming a track changes that table.
