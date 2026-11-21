@@ -33,7 +33,8 @@ interface GarageWorld {
     effectsVisible: boolean; voidBeams: boolean; launchPattern: number; launchPreviewActive: boolean;
     thrusterPattern: number; airflowPattern: number; trailPattern: number;
   };
-  inspectGarageStudio?(): { minX: number; maxX: number; minY: number; maxY: number; inFrame: boolean } | null;
+  /** `frame`: renderer frame count on the Home preview, so a sample can tell a new render from the last one. */
+  inspectGarageStudio?(): { minX: number; maxX: number; minY: number; maxY: number; inFrame: boolean; frame?: number } | null;
   inspectRenderLoad?(): { drawCalls: number; triangles: number };
   inspectPrograms?(): number;
 }
@@ -78,7 +79,7 @@ export function setupGarageUI({
   const owned = (): string[] => availablePaints(getStars());
   let camera = defaultGarageCamera();
   let section = 'cars';
-  let pendingStudioInspection = false;
+  let pendingStudioInspection = false, studioViewGeneration = 0;
   function syncSkins(): void {
     const equipped = currentGarageSkins();
     const inGarage = garageScreen.open;
@@ -98,16 +99,25 @@ export function setupGarageUI({
     if (equipped && garageScreen.open && !garageStudioView.effectsVisible) garageStudioView.effectsReminder++;
   });
   subscribeAccount(accountId => { setGarageSkinAccount(accountId); setWave3DemoAccount(accountId); });
-  function inspectStudioAfterFrame() {
+  const MAX_SETTLE_SAMPLES = 20; // frame pairs to wait for steady framing; an orbit view never rests
+  type StudioBounds = { minX: number; maxX: number; minY: number; maxY: number; frame?: number };
+  // Equal bounds from the same frame prove nothing: the camera has not moved yet because nothing was drawn.
+  const steady = (a: StudioBounds, b: StudioBounds): boolean => (b.frame === undefined || b.frame !== a.frame) &&
+    Math.abs(a.minX - b.minX) + Math.abs(a.maxX - b.maxX) + Math.abs(a.minY - b.minY) + Math.abs(a.maxY - b.maxY) < .02;
+  /** Publishes the car's framing once two samples agree: a slow runner is still easing, loading or resizing at the first. */
+  function inspectStudioAfterFrame(previous?: StudioBounds, tries = 0) {
     if (pendingStudioInspection || !garageScreen.open) return;
     pendingStudioInspection = true;
+    const started = studioViewGeneration;
     requestAnimationFrame(() => requestAnimationFrame(() => {
       pendingStudioInspection = false;
       if (!garageScreen.open) return;
+      if (started !== studioViewGeneration) { inspectStudioAfterFrame(); return; } // the view changed while waiting: sample the new camera
       const bounds = getWorld()?.inspectGarageStudio?.();
+      if (bounds && tries < MAX_SETTLE_SAMPLES && !(previous && steady(previous, bounds))) { inspectStudioAfterFrame(bounds, tries + 1); return; }
       if (bounds) {
         preview.dataset.carInFrame = String(bounds.inFrame);
-        preview.dataset.carBounds = JSON.stringify(bounds);
+        preview.dataset.carBounds = JSON.stringify({ ...bounds, frame: undefined });
       }
       const load = getWorld()?.inspectRenderLoad?.();
       if (load) {
@@ -128,6 +138,9 @@ export function setupGarageUI({
       if (programs !== undefined) preview.dataset.shaderPrograms = String(programs);
     }));
   }
+  // A showcase view change moves the Home camera: the previous view's framing must not stand.
+  new MutationObserver(() => { studioViewGeneration++; delete preview.dataset.carInFrame; inspectStudioAfterFrame(); })
+    .observe(dock, { attributes: true, attributeFilter: ['data-view'] });
 
   function showGarage(id: string = previewing): void {
     const stars = getStars();

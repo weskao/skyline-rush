@@ -451,7 +451,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
     },
     getGarageCameraYaw() { return garageStage?.getCameraYaw(); },
     inspectCosmeticPreview() { return garageCamera && garageStage ? garageStage.inspectCosmetics() : upcomingStage.inspectCosmetics() ?? aero.inspectCosmetics(); },
-        inspectGarageStudio() { if (garageStage && garageCamera) return garageStage.inspectBounds(camera); if (!garageHomePreview) return null; const { minX, maxX, minY, maxY } = projectedCarBounds(camera.position, smoothLook); return { minX, maxX, minY, maxY, inFrame: minX > -.94 && maxX < .94 && minY > -.94 && maxY < .94 }; }, // Home: QA reads how much of the showroom the car fills
+        inspectGarageStudio() { if (garageStage && garageCamera) return garageStage.inspectBounds(camera); if (!garageHomePreview) return null; const { minX, maxX, minY, maxY } = projectedCarBounds(camera.position, camera.getWorldDirection(new THREE.Vector3()).add(camera.position)); return { minX, maxX, minY, maxY, inFrame: minX > -.94 && maxX < .94 && minY > -.94 && maxY < .94, frame: renderer.info.render.frame }; }, // Home: QA reads how much of the showroom the car fills
     previewAppearance(paint) {
       garagePaint = paint; garageStage?.setPaint(paint); upcomingStage.setPaint(paint);
       const paintMaterial = player.userData.body.material; paintMaterial.color.set(paint.paint); paintMaterial.metalness = paint.metalness; paintMaterial.roughness = outdoorCarRoughness(paint.roughness);
