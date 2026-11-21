@@ -10,9 +10,9 @@ const helix = { start: 1850, end: 3250, rise: 104 };
 const helixLength = helix.end - helix.start;
 export const SKY_SPIRAL = Object.freeze({ ...helix, radius: Math.sqrt(helixLength ** 2 - helix.rise ** 2) / (2 * Math.PI) });
 export const SKY_JUMPS = Object.freeze([
-  { rampFrom: 4650, rampTo: 4720, gapFrom: 4720, gapTo: 4785 },
-  { rampFrom: 5550, rampTo: 5625, gapFrom: 5625, gapTo: 5690 },
-  { rampFrom: 6350, rampTo: 6430, gapFrom: 6430, gapTo: 6500 },
+  { rampFrom: 4650, rampTo: 4720, gapFrom: 4720, gapTo: 4880 },
+  { rampFrom: 5550, rampTo: 5625, gapFrom: 5625, gapTo: 5790 },
+  { rampFrom: 6350, rampTo: 6430, gapFrom: 6430, gapTo: 6600 },
 ]);
 export const SKY_LENGTH = profileLength('spiral');
 const clamp01 = (x: number): number => Math.max(0, Math.min(1, x));

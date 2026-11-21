@@ -10,7 +10,7 @@ import { createCircuit, lapItems, reanchorCircuitPlayer } from './circuit-laps.t
 import { attachCourse, stepCoursePlayer, carGap, courseGapWarning, courseResetSeat, placeCourseRecovery } from './course-race-step.ts'; import { finishRaceFrame, finishRecoveryFrame } from './race-finish.js';
 import { stepRaceWorld } from './race-rivals.js';
 import { seededRng, RACE_STREAMS } from './rng.ts';
-import { createHazards } from './hazards.ts'; import { crossesRamp, launchImpulse, LAUNCH_MIN_SPEED } from './launch-ramps.ts';
+import { createHazards } from './hazards.ts'; import { crossesRamp, launchImpulse, LAUNCH_MIN_SPEED, SKY_GAP_LAUNCH_MIN_SPEED, SKY_GAP_RECOVERY_RUNUP } from './launch-ramps.ts';
 import { stepPlayerHazards } from './hazard-race.ts';
 import { contact, isFollowingVehicle, resolvePlayerContacts, trackPhaseExit, clearRecoveryContacts } from './player-contacts.js';
 import { raceHazards, themedExtras } from './track-themes.ts'; import { mixedCourse, withHoops } from './gauntlet-course.ts';
@@ -221,7 +221,7 @@ function safeRoadDistance(race, distance) {
     const section = race.sections[i];
     if (section.type !== 'gap' || distance < section.from - 4 || distance >= section.to + 4) continue;
     const ramp = race.trackId === 'spiral' && SKY_JUMPS.find(jump => jump.gapFrom === section.from);
-    distance = ramp ? ramp.rampFrom - 22 : section.from - 72;
+    distance = ramp ? ramp.rampFrom - SKY_GAP_RECOVERY_RUNUP : section.from - 72;
   }
   return Math.max(0, distance);
 }
@@ -360,8 +360,8 @@ export function stepRace(race, input, dt) {
   if (boost) car.fuel = Math.max(0, car.fuel - (car.thrusting ? 3 : BOOST_DRAIN) * dt);
   const previousAltitude = car.altitude;
   // Sky Spiral launch ramps impart momentum automatically; FLY can extend the jump.
-  if (car.altitude === 0 && car.speed > LAUNCH_MIN_SPEED && (race.trackId === 'spiral' && car.section === 'launch' &&
-      car.distance >= section.to - car.speed * dt - 1 || crossesRamp(race.ramps, car, car.speed * dt + 1))) {
+  if (car.altitude === 0 && ((race.trackId === 'spiral' && car.speed >= SKY_GAP_LAUNCH_MIN_SPEED && car.section === 'launch' &&
+      car.distance >= section.to - car.speed * dt - 1) || (car.speed > LAUNCH_MIN_SPEED && crossesRamp(race.ramps, car, car.speed * dt + 1)))) {
     car.altitude = 0.02; // Event Lab ramps share the Spiral impulse
     car.verticalSpeed = Math.max(car.verticalSpeed, launchImpulse(car.speed));
   }
@@ -380,7 +380,7 @@ export function stepRace(race, input, dt) {
     skyGap || (race.trackId !== 'spiral' && race.sections.find(s => s.type === 'gap' && car.distance >= s.from && car.distance < s.to));
   if (gapNow && car.altitude < GAP_CLEARANCE && !(skyGap && car.altitude > 0 && car.verticalSpeed > 0)) {
     const from = skyGap ? skyGap.gapFrom : gapNow.from;
-    const approach = skyGap ? skyGap.rampFrom - 22 : from - 72;
+    const approach = skyGap ? skyGap.rampFrom - SKY_GAP_RECOVERY_RUNUP : from - 72;
     startRoadRecovery(car, { distance: safeRoadDistance(race, approach) }, from, race.elapsed, GAP_SLOWDOWN);
   }
   if (!car.recovery) {

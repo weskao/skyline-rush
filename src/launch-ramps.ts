@@ -1,5 +1,7 @@
 // One launch rule for Sky Spiral's track ramps and Event Lab's authored ramps.
-export const LAUNCH_MIN_SPEED = 32; // m/s
+export const LAUNCH_MIN_SPEED = 32; // m/s; Event Lab ramps retain their existing tuning
+export const SKY_GAP_LAUNCH_MIN_SPEED = 94; // m/s ≈ 338 km/h; BOOST or powered FLY over Sky Spiral
+export const SKY_GAP_RECOVERY_RUNUP = 180; // m before ramp, long enough to rebuild BOOST speed
 export const launchImpulse = (speed: number): number => 6 + speed * 0.075;
 
 export interface LaunchRamp { readonly distance: number; readonly x: number; readonly halfWidth: number; readonly halfLength: number; readonly height: number }

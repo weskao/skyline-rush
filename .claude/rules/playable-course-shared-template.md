@@ -166,6 +166,25 @@ reuse or transpose another course's loop.
   Never merge map branch history, overwrite newer shared files, change
   sibling branches, `develop` or `main`, or deploy without explicit approval.
 
+## Gap length, launch speed and visible road parity
+
+- Author each gap as real empty geometry at **all quality tiers**, using the same
+  `sections` / `spec.noRoad` as the physics, minimap and recovery. Do not leave
+  an invisible collision deck or let low-speed cars coast across a hole.
+- On Sky Spiral the three gaps measure **160 / 165 / 170 m**, with automatic
+  jump launch requiring **94 m/s (338 km/h)**, above the normal throttle cap
+  of 88 m/s but attainable with BOOST (102 m/s cap). Players can also use FLY
+  at lower speed; a supported flight must stay physically airborne until the
+  landing road. Failed gaps return **180 m before the launch ramp** for a new
+  BOOST run-up. This threshold does not apply to Event Lab ramps (32 m/s).
+- Canyon Skyway has **160 m** of missing deck and no automatic jump launch;
+  powered flight is its intended crossing. Do not invent one global threshold
+  for other CourseGraph and flight-only routes without measuring their run-ups.
+- Guard tests: throttle-only failure, BOOST and FLY success, failed recovery
+  and reset, all three Sky Spiral gaps, Canyon FLY, 30/60/120 FPS, Low/high
+  geometry parity and enough acceleration distance. Endless/Elimination still
+  use solid classic roads in place of gaps, and remain traversable.
+
 ## Recovering from a gap or flight shortcut
 
 - Use the shared recovery in `src/road-falls.ts`. Show gravity and modest vehicle

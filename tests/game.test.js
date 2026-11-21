@@ -4,6 +4,7 @@ import { createRace, startRace, stepRace, racePosition, sprintGaps, RACE_LENGTH,
 import { hazardX } from '../src/hazards.ts';
 import { rivalBaseCap, RIVAL_SKILL } from '../src/rival-driver.ts';
 import { BOOST_CAP_BONUS, NITRO_CAP_BONUS } from '../src/drive-rules.ts';
+import { SKY_JUMPS } from '../src/sky-track.ts';
 
 function advance(race, seconds, input = {}) {
   for (let frame = 0; frame < Math.ceil(seconds * 60); frame++) stepRace(race, input, 1 / 60);
@@ -525,7 +526,8 @@ test('every track can be finished', () => {
     const bridge = id === 'canyon' ? sectionOf(id, 'gap') : null;
     for (let i = 0; i < 300 * 60 && race.phase === 'racing'; i++) {
       const distance = race.player.distance;
-      stepRace(race, { throttle: true, fly: !!bridge && distance >= bridge.from - 65 && distance < bridge.to }, 1 / 60);
+      stepRace(race, { throttle: true, fly: !!bridge && distance >= bridge.from - 65 && distance < bridge.to,
+        boost: id === 'spiral' && SKY_JUMPS.some(jump => distance >= jump.rampFrom - 180 && distance < jump.gapTo) }, 1 / 60);
     }
     assert.equal(race.phase, 'finished', id);
     assert.equal(race.player.distance, RACE_TRACKS[id].length);
@@ -1611,7 +1613,7 @@ test('gap charge warning: within range of a broken bridge with too little charge
   assert.equal(gapChargeWarning(coast), null, 'no gaps on coast');
   const spiral = racingOn('spiral'), jumpGap = RACE_TRACKS.spiral.sections.find(s => s.type === 'gap');
   Object.assign(spiral.player, { distance: jumpGap.from - 100, speed: 60, fuel: 0 });
-  assert.equal(gapChargeWarning(spiral), null, 'Sky Spiral launch ramps carry the car across');
+  assert.equal(gapChargeWarning(spiral), null, 'the flight charge warning is separate from the BOOST speed threshold');
 });
 
 test('races count charge run-outs and gap falls for tuning', () => {

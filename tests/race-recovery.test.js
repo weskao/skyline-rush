@@ -4,6 +4,8 @@ import { createRace, stepRace, RACE_TRACKS } from '../src/game.js';
 import { ACTION_KEYS, DEFAULT_KEY_MAP, rebind, validateKeyMap } from '../src/key-map.ts';
 import * as game from '../src/game.js';
 import { placeCourseCar } from '../src/course-race.ts';
+import { SKY_JUMPS } from '../src/sky-track.ts';
+import { SKY_GAP_RECOVERY_RUNUP } from '../src/launch-ramps.ts';
 
 function racing(track, config) {
   const race = createRace(track, config);
@@ -34,7 +36,8 @@ for (const track of ['canyon', 'spiral']) test(`${track}: gravity precedes a rew
   assert.equal(car.score, 0);
   assert.ok(race.rivals.some(rival => rival.distance > 0), 'the race continues around the recovering player');
   finishRecovery(race);
-  assert.ok(car.distance < gap.from - 20 && car.distance >= gap.from - 110);
+  if (track === 'spiral') assert.equal(car.distance, SKY_JUMPS[0].rampFrom - SKY_GAP_RECOVERY_RUNUP);
+  else assert.ok(car.distance < gap.from - 20 && car.distance >= gap.from - 110);
   assert.deepEqual([car.altitude, car.verticalSpeed, car.x, car.falls], [0, 0, 0, 1]);
   tick(race, 0.2, { throttle: true });
   assert.ok(car.distance > car.fall.distance, 'throttle resumes from the approach');

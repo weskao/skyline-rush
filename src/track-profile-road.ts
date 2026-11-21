@@ -10,12 +10,12 @@ const roads = new Map<string, ClassicRoad>();
 export const hasRoadProfile = (id: string): boolean => profiles.has(id);
 export const profileLength = (id: string): number => profiles.get(id)!.designDistanceM;
 export const CANYON_LENGTH = profileLength('canyon');
-export const CANYON_GAP = { from: 3672, to: 3732, type: 'gap' } as const;
+export const CANYON_GAP = { from: 3672, to: 3832, type: 'gap' } as const; // 160 m of missing road: fly across
 
 export function buildCanyonRoad(): ClassicRoad {
   const knots = profiles.get('canyon')!.knots.map(([distance, bearing, height]) => ({ distance, bearing, height }));
   // One straight bridge deck, with room to line up before takeoff and recover after touchdown.
-  knots.push({ distance: 3580, bearing: -51, height: 102 }, { distance: 3800, bearing: -51, height: 99 });
+  knots.push({ distance: 3580, bearing: -51, height: 102 }, { distance: 3910, bearing: -51, height: 99 });
   knots.sort((a, b) => a.distance - b.distance);
   return buildProfileRoad(CANYON_LENGTH, knots);
 }

@@ -270,6 +270,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
         <div><span class="keys" data-keys="fly"></span><span data-i18n="hint.fly">Hold to fly</span></div>
         <div><span class="keys" data-keys="boost"></span><span data-i18n="hint.boost">Boost</span></div>
         <div><span class="keys" data-keys="nitro"></span><span data-i18n="hint.nitro">Nitro</span></div>
+        <div data-i18n-title="hint.resetTip" title="Return to nearby safe road; race clock continues"><kbd>R</kbd><span data-i18n="hint.reset">Reset vehicle</span></div>
         <div><kbd>V</kbd><span data-i18n="hint.airflow">Airflow</span></div>
       </div>
       <p class="flight-tip"><span class="tip-full" data-i18n="intro.tip">Build speed to lift off. Release to land. Recharge on the road. AUTO holds the accelerator; you steer and brake.</span><span class="tip-short" data-i18n="intro.tipShort">Build speed to fly, release to land. AUTO holds the throttle.</span></p>
