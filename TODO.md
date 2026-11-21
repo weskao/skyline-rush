@@ -1,3 +1,11 @@
+# Develop shader warmup in rain (2026-11-21)
+
+- [x] RED on `5f0e321e`: switching Coast from day to rain after GO compiled two extra programs on High for the Roadster (104 → 106) and Crimson GT (108 → 110). Both Low cases passed.
+- [x] RED → GREEN in `tests/shader-warmup.test.js`: the warmup now draws hidden fallback materials and restores visibility before the real frame. The focused unit and module-size checks pass.
+- [x] Real Coast WebGL day → rain on High: 106 programs before and after at 1440×900, 390×844 and 844×390, with no page errors. The six local captures are in `artifacts/develop-shader-warmup/`. The phone sizes are Chrome viewports, not physical devices.
+- [x] The original shader regression now passes all four car/quality combinations. `make verify` passed type checks, the unit suite (3,781 passed, 4 skipped), and the browser trial build.
+- [ ] Complete the full browser and World Tour suites and confirm the GitHub `quality-gate` on the repair commit.
+
 # What's New CI 修復（2026-11-21）
 
 - [x] 重現 `3921d39a` 的 `npm run typecheck:ts` 解析錯誤。跳脫天際螺旋公告中的兩個英文撇號，保留雙語文案。

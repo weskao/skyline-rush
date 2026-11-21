@@ -58,7 +58,7 @@ Guard the LRU/paint/disposal in `tests/upcoming-showcase.test.js` and selection 
 
 WebKit (iPhone Safari/Chrome) builds shaders and Metal pipelines the first time a material is
 drawn; a first draw mid-race stalls the frame and flashes black patches. `warmupShaders`
-(`src/shader-warmup.js`) draws the whole scene graph once, hidden objects included, on the first
+(`src/shader-warmup.ts`) draws the whole scene graph once, hidden objects included, on the first
 frame and on every track change, so no per-module warmup flag is needed. Keep it complete:
 
 - Every material a race can show is attached to some object in the scene before racing starts;
@@ -66,6 +66,8 @@ frame and on every track change, so no per-module warmup flag is needed. Keep it
   tiers), and streamed content has a hidden sample (`shaderRack` in `world-tour-scene.js`: every
   prop kind batched and plain, the terrain ribbon, all tunnel shells and entrances per track). A
   material only used after a swap (`mesh.material = …`) must still sit on a pooled mesh at load.
+- Detailed looks can hide fallback skies and terrain with `material.visible` while keeping their
+  children visible. Warmup draws those materials too, then restores visibility before the real frame.
 - The visible-light count is part of every lit shader's cache key. Never toggle `light.visible`
   while a track runs; keep the light visible and drive `intensity` (alpine tunnel lights).
   Changing the count recompiled 8 programs at the bore.
