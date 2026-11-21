@@ -6,7 +6,8 @@ export type ScreenBounds = { minX: number; maxX: number; minY: number; maxY: num
 export function createCarBounds(probe: THREE.PerspectiveCamera, camera: THREE.PerspectiveCamera, player: THREE.Object3D, airflow: () => THREE.Object3D) {
   const box = new THREE.Box3();
   const corner = new THREE.Vector3();
-  function projectedCarBounds(eye: THREE.Vector3, look: THREE.Vector3, measure = true): ScreenBounds {
+  /** `host` measures another car (a Coming Soon stage draws its own, never `player`) and skips that car's airflow group. */
+  function projectedCarBounds(eye: THREE.Vector3, look: THREE.Vector3, measure = true, host?: { car: THREE.Object3D; keep: THREE.Object3D }): ScreenBounds {
     probe.fov = 50;
     probe.aspect = camera.aspect;
     probe.view = camera.view;
@@ -15,9 +16,10 @@ export function createCarBounds(probe: THREE.PerspectiveCamera, camera: THREE.Pe
     probe.updateProjectionMatrix();
     probe.updateMatrixWorld(true);
     if (measure) {
-      player.updateMatrixWorld(true);
+      const car = host?.car ?? player, skip = host?.keep ?? airflow();
+      car.updateMatrixWorld(true);
       box.makeEmpty();
-      for (const part of player.children) if (part !== airflow()) box.expandByObject(part, true);
+      for (const part of car.children) if (part !== skip) box.expandByObject(part, true);
     }
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     for (const x of [box.min.x, box.max.x])

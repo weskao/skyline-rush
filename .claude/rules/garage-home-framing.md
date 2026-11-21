@@ -16,6 +16,10 @@ paths:
   `src/upcoming-showcase.ts`, so `smoothLook` stayed stale there and the marker followed timing: 19 to 24 of 24
   `coming-soon-views-browser` cases failed under `CI=1 --workers=12`, and stormline and monsoon failed on main
   (CI 44925164077, 2026-11-21). The stale read had also hidden a real defect.
+- Measure **the car the stage draws**. `createCarBounds` defaults to the classic `player` group; a Coming Soon
+  track draws `upcomingStage.modelHost.car`, so `inspectGarageStudio()` passes that host (and skips its `keep`
+  airflow group). The classic car sat 2.4 m off to the side, so stormline Rear failed on a lone idle runner
+  (2026-11-22), and every "timing flake" before it was this.
 - The Garage has no home panel beside the car. Landscape Home aims 4 m left of the car to leave room for that
   panel, which clipped the car at the right edge of the Garage canvas on Dune, Frostbite and the rest
   (phone Rear view, desktop Front view). Centre the camera whenever the Garage preview is active, as the classic
