@@ -1,4 +1,4 @@
-<!-- source-sha256: 79f51fa543b00095c4af5537caa1828163c7d9983312dab79abf13e53f31c6da generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: c60d7df3d026f9838f3c92a9031f8cc20dcba8bd2b45905e45b0d52566b7c08d generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -218,7 +218,7 @@ HUD 使用共通的動態時序。速度表指針會隨速度平順移動；名�
 
 品牌與遊戲術語在兩種語言中皆保留英文：Skyline Rush、NITRO、FLY、BOOST 與對手名稱。字串存放於 `src/locales/`；`src/i18n.ts` 負責偵測、`t()` 與目前的語言。
 
-在地化圖片：`node scripts/capture-og-images.mjs` 會在 Chrome 中驅動真實的應用程式，並儲存 `public/og-image.en.jpeg` 與 `public/og-image.zh-TW.jpeg`（1440×900 的開始畫面），以及供繁體中文 README 使用的 `artifacts/{readme-start,readme-hero,mobile-flight,race-results}.zh-TW.jpeg`（`node scripts/capture-og-images.mjs og` 或 `readme` 只執行其中一半）。英文的 `artifacts/` 截圖絕不會被它動到。`public/manifest.webmanifest` 與應用程式圖示維持原樣：圖示不含文字，而 Web App Manifest 只有單一的名稱與描述、沒有各語言的變體，因此第二份 manifest 會破壞可安裝性。
+在地化圖片：`node scripts/capture-og-images.mjs` 會在 Chrome 中驅動真實的應用程式，並儲存 `public/og-image.jpeg`（1440×900 的英文啟動畫面），以及供繁體中文 README 使用的 `artifacts/{readme-start,readme-hero,mobile-flight,race-results}.zh-TW.jpeg`（`node scripts/capture-og-images.mjs og` 或 `readme` 只執行其中一半）。英文的 `artifacts/` 截圖絕不會被它動到。`public/manifest.webmanifest` 與應用程式圖示維持原樣：圖示不含文字，而 Web App Manifest 只有單一的名稱與描述、沒有各語言的變體，因此第二份 manifest 會破壞可安裝性。
 
 ## 驗證
 
@@ -261,7 +261,7 @@ make deploy                              # Deploy remote main manually through t
 
 CI（`.github/workflows/ci.yml`）會在推送到 `main`、`develop`、pull request、版本標籤推送（`v*`）與手動執行時，建置並執行單元測試與 Chrome 瀏覽器測試。瀏覽器與 World Tour 長時間執行的測試會以平行分片執行，依 `tests/ci-durations.json` 中實測的各測試耗時平衡分配（`scripts/ci-shards.mjs`），且只在 `main` 與 `develop` 上執行（除非提交訊息含有 `[full-regression]` 或手動執行要求，否則其他分支只執行單元測試與雲端存檔檢查），而對同一分支的較新推送會取消被取代的執行。CI 會重試一次失敗的瀏覽器測試；只在重試時才通過的測試仍會在該次執行上被標註，並視為需要修正的錯誤（`.claude/rules/browser-test-stability.md`）。在任何分支上，若推送或 pull request 只變更 `src/`、`public/`、`tests/`、`scripts/` 與 `.github/` 之外的 Markdown、文字、圖片、影片或 `Makefile`，且其父提交已在該分支通過 CI，就會略過所有測試套件（`scripts/ci-changes.mjs`）。手動執行會在所有檢查通過後發佈；版本標籤推送會重新執行單元測試、確認（`release-verified`）所標記的程式碼已在 `main` 上通過完整測試套件而不重跑瀏覽器測試套件，然後發佈並驗證公開網站。標記在 CI 從未在 `main` 上通過的提交上的標籤不會被部署。一般的分支推送與 pull request 只會執行檢查。推送到 `main` 時，若其中一個合併提交所合併的不是 `develop` 或 `hotfix/*`，`main-merge-source` 工作（`scripts/check-main-merges.sh`）也會失敗，而該紅燈執行會阻擋發佈。Pages 建置使用 `--base=/skyline-rush/`，讓腳本、樣式與字型從專案網址載入。GitHub Pages 必須使用 **GitHub Actions** 作為發佈來源。手動部署需要已驗證的 GitHub CLI（`gh auth login`）；請先推送你的提交，因為 `make deploy` 使用遠端的 `main`。部署不再依賴本機的 pre-push hook 或 Netlify 登入。當推送、標籤或手動執行時任何檢查或部署失敗，`notify-telegram` 工作會將失敗執行的連結傳送到 Telegram；它需要儲存庫密鑰 `TELEGRAM_BOT_TOKEN` 與 `TELEGRAM_CHAT_ID`（以 `gh secret set <NAME>` 各自設定，它會提示輸入值），缺少時則靜默略過。
 
-連結預覽圖片是 `public/og-image.jpeg`，為 `public/og-image.en.jpeg` 的副本；`node scripts/capture-og-images.mjs og` 會擷取兩種語言的封面並更新該副本。爬蟲無法切換語言，因此 `index.html` 只參照英文封面（搭配 `og:locale` `en_US` 與 `og:locale:alternate` `zh_TW`），而 `public/og-image.zh-TW.jpeg` 是供直接連結使用的中文版本。更換封面後，請提高 `index.html` 中 `og:image` 的 `?v=`，讓社群網站抓取新圖。
+連結預覽圖片是 `public/og-image.jpeg`，由 `node scripts/capture-og-images.mjs og` 在啟動畫面就緒後擷取，不含按鈕。爬蟲無法切換語言，因此 `index.html` 只參照這張英文封面（搭配 `og:locale` `en_US` 與 `og:locale:alternate` `zh_TW`）。`public/og-image.en.jpeg` 與 `public/og-image.zh-TW.jpeg` 是封存的 0.21.0 新功能圖片。更換封面後，請提高 `index.html` 中 `og:image` 的 `?v=`，讓社群網站抓取新圖。
 
 ## 專案結構
 
