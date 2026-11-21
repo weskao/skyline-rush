@@ -1,27 +1,237 @@
 /* Freeze: its screen edge, centre card and speedometer. Shared files (player-hit-screen.css, PlayerHitCenter.vue,
    RaceSpeedometer.vue) only route here. `#player-hit-screen[data-hit]` names the hit that takes precedence (EMP over
-   Freeze); whatever must show while both are live goes on `[data-hit-layer="freeze"]`. */
-:root { --freeze-hit-color: #99e4ff; }
-
-#player-hit-screen[data-hit="freeze"] { --hit-rgb: 107 210 255; }
-#player-hit-screen[data-hit="freeze"]::before {
-  --hit-edge-detail:
-    repeating-conic-gradient(from -17deg at top left, rgb(231 250 255 / .22) 0deg 2deg, transparent 3deg 19deg),
-    repeating-conic-gradient(from 11deg at bottom right, rgb(231 250 255 / .16) 0deg 2deg, transparent 3deg 24deg);
+   Freeze); whatever must show while both are live goes on `[data-hit-layer="freeze"]`.
+   Every animation sits behind the reduced-motion query and a non-calm HUD; the still look is complete without them. */
+:root {
+  --freeze-hit-color: #99e4ff;
+  --freeze-cut: 8px;
+  --freeze-chamfer: polygon(var(--freeze-cut) 0, calc(100% - var(--freeze-cut)) 0, 100% var(--freeze-cut),
+    100% calc(100% - var(--freeze-cut)), calc(100% - var(--freeze-cut)) 100%, var(--freeze-cut) 100%,
+    0 calc(100% - var(--freeze-cut)), 0 var(--freeze-cut));
 }
 
-.player-hit-center .player-hit-card[data-debuff="freeze"] { --hit-accent: var(--freeze-hit-color); }
+/* Screen edge: a cold rim instead of the shared flat tint; the frost itself is FreezeScreen.vue. */
+#player-hit-screen[data-hit="freeze"] {
+  --hit-rgb: 107 210 255;
+  background:
+    linear-gradient(90deg, rgb(150 220 255 / .22), transparent 12% 88%, rgb(150 220 255 / .22)),
+    linear-gradient(0deg, rgb(150 220 255 / .16), transparent 14% 86%, rgb(150 220 255 / .22));
+  box-shadow: inset 0 0 0 1px rgb(220 246 255 / .5), inset 0 0 36px rgb(150 220 255 / .32);
+}
+#player-hit-screen[data-hit="freeze"]::before { --hit-edge-detail: none; }
 
+.freeze-screen {
+  position: absolute;
+  inset: 0;
+  mask-image: radial-gradient(ellipse at center, transparent 34%, rgb(0 0 0 / .65) 58%, #000 80%); /* the centre stays clear */
+}
+.freeze-flash {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: radial-gradient(ellipse at center, transparent 30%, rgb(236 250 255 / .8) 88%);
+}
+.freeze-frost {
+  position: absolute;
+  width: clamp(120px, 34vmin, 330px);
+  height: clamp(120px, 34vmin, 330px); /* explicit: a global svg rule would otherwise set the height */
+  overflow: visible;
+  transform-origin: 0 0; /* the art's corner sits on the screen corner; it grows from there */
+  background: radial-gradient(circle at 0 0, rgb(228 247 255 / .5), rgb(150 215 255 / .2) 36%, transparent 68%);
+  fill: none;
+  stroke-linecap: round;
+}
+.freeze-frost[data-corner="tl"] { left: 0; top: 0; }
+.freeze-frost[data-corner="tr"] { left: 100%; top: 0; transform: scaleX(-1); }
+.freeze-frost[data-corner="br"] { left: 100%; top: 100%; transform: scale(-1); }
+.freeze-frost[data-corner="bl"] { left: 0; top: 100%; transform: scaleY(-1); }
+.freeze-frost path { vector-effect: non-scaling-stroke; }
+.freeze-frost-glow { stroke: rgb(150 220 255 / .22); stroke-width: 5px; }
+.freeze-frost-fine { stroke: rgb(222 246 255 / .45); stroke-width: .8px; }
+.freeze-frost-fern { stroke: rgb(242 252 255 / .78); stroke-width: 1.2px; }
+.freeze-crack { stroke: rgb(255 255 255 / .5); stroke-width: 1px; opacity: .45; }
+.freeze-snow {
+  position: absolute;
+  inset: -120px 0 0;
+  background-image:
+    radial-gradient(circle, rgb(255 255 255 / .85) 0 1.2px, transparent 1.9px),
+    radial-gradient(circle, rgb(228 247 255 / .65) 0 .9px, transparent 1.5px);
+  background-size: 97px 120px, 61px 120px;
+  background-position: 13px 17px, 41px 66px;
+}
+.freeze-snow-near {
+  background-image: radial-gradient(circle, rgb(255 255 255 / .9) 0 2px, transparent 2.8px);
+  background-size: 173px 120px;
+  background-position: 70px 40px;
+}
+.freeze-flake {
+  position: absolute;
+  width: calc(22px * var(--flake));
+  height: calc(22px * var(--flake));
+  translate: -50% -50%;
+  fill: none;
+  stroke: #eafaff;
+  stroke-width: 1.4px;
+  stroke-linecap: round;
+  opacity: .8;
+  filter: drop-shadow(0 0 3px rgb(140 215 255 / .8));
+}
+/* Recovery, still: the cracks show and the frost fades. Motion adds the thaw below. */
+[data-hit-layer="freeze"][data-phase="recovery"] .freeze-crack { opacity: 1; stroke-width: 1.4px; }
+[data-hit-layer="freeze"][data-phase="recovery"] .freeze-frost-fern,
+[data-hit-layer="freeze"][data-phase="recovery"] .freeze-frost-glow { opacity: .55; }
+
+/* Centre card: a frosted-glass hex panel. The card's own fill is cut at the corners (alpha stays under .78), the
+   decor adds the hex pattern, the sheen, the cyan edge and the icicles behind the copy. */
+.player-hit-center .player-hit-card[data-debuff="freeze"] {
+  --hit-accent: var(--freeze-hit-color);
+  isolation: isolate;
+  border-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  background:
+    linear-gradient(135deg, transparent 5.7px, rgb(14 38 60 / .74) 5.7px) top left,
+    linear-gradient(225deg, transparent 5.7px, rgb(14 38 60 / .74) 5.7px) top right,
+    linear-gradient(315deg, transparent 5.7px, rgb(8 22 38 / .76) 5.7px) bottom right,
+    linear-gradient(45deg, transparent 5.7px, rgb(8 22 38 / .76) 5.7px) bottom left;
+  background-size: 51% 51%;
+  background-repeat: no-repeat;
+  background-origin: border-box;
+}
+.player-hit-card[data-debuff="freeze"] .player-hit-decor { z-index: -1; }
+.freeze-panel {
+  position: absolute;
+  inset: -1px;
+  display: block;
+  filter: drop-shadow(0 0 4px rgb(110 215 255 / .7));
+}
+.freeze-panel-fill,
+.freeze-panel-edge {
+  position: absolute;
+  inset: 0;
+  clip-path: var(--freeze-chamfer);
+}
+.freeze-panel-fill {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='24'%3E%3Cpath d='M7 0l7 4v8l-7 4-7-4V4zM7 16v8' fill='none' stroke='%23bdf0ff' stroke-opacity='.2' stroke-width='.8'/%3E%3C/svg%3E") 0 0 / 14px 24px,
+    linear-gradient(180deg, rgb(200 240 255 / .2), transparent 46%, rgb(120 210 255 / .12));
+}
+.freeze-panel-fill::before,
+.freeze-panel-fill::after { content: ""; position: absolute; inset: 0; }
+.freeze-panel-fill::before { background: rgb(236 250 255 / .6); opacity: 0; } /* the impact flash */
+.freeze-panel-fill::after { /* the sheen, parked off the panel until it sweeps */
+  background: linear-gradient(105deg, transparent 36%, rgb(236 250 255 / .28) 48%, transparent 60%);
+  transform: translateX(-110%);
+}
+.freeze-panel-edge {
+  --freeze-edge: 1.5px;
+  background: linear-gradient(100deg, #7fe0ff, #effcff 30%, #4fb8ff 62%, #cdf6ff);
+  clip-path: polygon(evenodd, var(--freeze-cut) 0, calc(100% - var(--freeze-cut)) 0, 100% var(--freeze-cut),
+    100% calc(100% - var(--freeze-cut)), calc(100% - var(--freeze-cut)) 100%, var(--freeze-cut) 100%,
+    0 calc(100% - var(--freeze-cut)), 0 var(--freeze-cut), var(--freeze-cut) 0,
+    calc(var(--freeze-cut) + .6px) var(--freeze-edge), var(--freeze-edge) calc(var(--freeze-cut) + .6px),
+    var(--freeze-edge) calc(100% - var(--freeze-cut) - .6px), calc(var(--freeze-cut) + .6px) calc(100% - var(--freeze-edge)),
+    calc(100% - var(--freeze-cut) - .6px) calc(100% - var(--freeze-edge)), calc(100% - var(--freeze-edge)) calc(100% - var(--freeze-cut) - .6px),
+    calc(100% - var(--freeze-edge)) calc(var(--freeze-cut) + .6px), calc(100% - var(--freeze-cut) - .6px) var(--freeze-edge),
+    calc(var(--freeze-cut) + .6px) var(--freeze-edge));
+}
+.freeze-panel-icicles {
+  position: absolute;
+  left: 9%;
+  top: calc(100% - 1px);
+  width: 82%;
+  height: 9px;
+  transform-origin: 50% 0;
+  background: linear-gradient(rgb(233 251 255 / .92), rgb(127 212 255 / .25));
+  mask-size: 100% 100%;
+}
+.player-hit-card[data-debuff="freeze"][data-phase="recovery"] .freeze-panel-icicles { opacity: .35; }
+.player-hit-card[data-debuff="freeze"][data-phase="recovery"] .freeze-panel-edge { opacity: .6; }
+
+/* Speedometer: icy digits, frost beads on the arc; it whitens as the ice thaws. */
 .speedometer[data-debuff="freeze"] {
   --speed-color: var(--freeze-hit-color);
-  --speed-line: linear-gradient(90deg, #39a0ec, #c4f6ff 64%, transparent);
+  --speed-line: linear-gradient(90deg, #39a0ec, #e6f8ff 64%, transparent);
 }
+.speedometer[data-debuff="freeze"][data-phase="recovery"] { --speed-color: #dcf4ff; }
+.speedometer[data-debuff="freeze"] .speed-number > strong {
+  text-shadow: 0 0 6px rgb(120 215 255 / .7), 0 1px 2px #06121f;
+  transition: color .4s ease-out;
+}
+.speedometer[data-debuff="freeze"] .speed-hit-arc {
+  opacity: .9;
+  stroke: #e6f8ff;
+  stroke-width: 2.4px;
+  stroke-linecap: round;
+  stroke-dasharray: .4 1.6;
+}
+.speedometer[data-debuff="freeze"][data-phase="recovery"] .speed-hit-arc { opacity: .4; }
+.speedometer[data-debuff="freeze"] .speed-dial { filter: drop-shadow(0 0 3px rgb(120 215 255 / .75)); }
+
 @media (prefers-reduced-motion: no-preference) {
+  #player-hit-screen[data-calm="false"] [data-hit-layer="freeze"] .freeze-flash {
+    animation: freeze-flash .45s ease-out both;
+  }
+  #player-hit-screen[data-calm="false"] [data-hit-layer="freeze"] .freeze-frost {
+    animation: freeze-frost-grow .65s cubic-bezier(.2, .8, .3, 1) both, freeze-shimmer 2.6s ease-in-out .65s infinite alternate;
+  }
+  #player-hit-screen[data-calm="false"] [data-hit-layer="freeze"] .freeze-snow {
+    animation: freeze-snow-fall 6s linear infinite;
+  }
+  #player-hit-screen[data-calm="false"] [data-hit-layer="freeze"] .freeze-snow-near {
+    animation-duration: 3.4s;
+  }
+  #player-hit-screen[data-calm="false"] [data-hit-layer="freeze"] .freeze-flake {
+    animation: freeze-flake-drift 5.4s ease-in-out var(--flake-delay) infinite alternate;
+  }
+  #player-hit-screen[data-calm="false"] [data-hit-layer="freeze"][data-phase="recovery"] .freeze-frost {
+    animation: freeze-thaw .5s ease-in both;
+  }
+  .player-hit-center[data-calm="false"] .player-hit-card[data-debuff="freeze"] .freeze-panel-fill::before {
+    animation: freeze-flash .4s ease-out both;
+  }
+  .player-hit-center[data-calm="false"] .player-hit-card[data-debuff="freeze"] .freeze-panel-fill::after {
+    animation: freeze-sheen 2.8s ease-in-out .65s infinite;
+  }
+  .player-hit-center[data-calm="false"] .player-hit-card[data-debuff="freeze"] .freeze-panel-edge {
+    animation: freeze-shimmer 2.4s ease-in-out infinite alternate;
+  }
+  .player-hit-center[data-calm="false"] .player-hit-card[data-debuff="freeze"] .freeze-panel-icicles {
+    animation: freeze-icicles-grow .5s cubic-bezier(.2, .8, .3, 1) .15s both;
+  }
+  .player-hit-center[data-calm="false"] .player-hit-card[data-debuff="freeze"][data-phase="recovery"] .freeze-panel-icicles {
+    animation: freeze-icicles-drop .5s ease-in both;
+  }
   .speedometer[data-debuff="freeze"][data-calm="false"] .speed-number::after {
     animation: speed-frost 620ms var(--ease-out) both;
   }
+  .speedometer[data-debuff="freeze"][data-calm="false"] .speed-hit-arc {
+    animation: speed-frost-form .65s ease-out both, speed-frost-pulse 2.4s ease-in-out .65s infinite alternate;
+  }
+  .speedometer[data-debuff="freeze"][data-calm="false"][data-phase="recovery"] .speed-hit-arc {
+    animation: speed-frost-thaw .5s ease-in both;
+  }
 }
+
+body[data-vfx-enabled="false"] .freeze-screen *,
+body[data-vfx-enabled="false"] .freeze-panel *,
+body[data-vfx-enabled="false"] .freeze-panel-fill::before,
+body[data-vfx-enabled="false"] .freeze-panel-fill::after,
+body[data-vfx-enabled="false"] .speedometer[data-debuff="freeze"] * { animation: none !important; }
+
+@keyframes freeze-flash { from { opacity: 1; } to { opacity: 0; } }
+@keyframes freeze-frost-grow { from { scale: .3; opacity: 0; } to { scale: 1; opacity: 1; } }
+@keyframes freeze-shimmer { from { opacity: 1; } to { opacity: .72; } }
+@keyframes freeze-snow-fall { from { transform: translateY(0); } to { transform: translateY(120px); } }
+@keyframes freeze-flake-drift { from { transform: translateY(-6px) rotate(0deg); } to { transform: translateY(10px) rotate(50deg); } }
+@keyframes freeze-thaw { from { scale: 1; opacity: 1; } to { scale: .9; opacity: .2; } }
+@keyframes freeze-sheen { from { transform: translateX(-110%); } 55%, to { transform: translateX(110%); } }
+@keyframes freeze-icicles-grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes freeze-icicles-drop { from { transform: translateY(0); opacity: .9; } to { transform: translateY(8px); opacity: 0; } }
 @keyframes speed-frost {
   from { transform: scaleX(.15); opacity: .35; }
   to { transform: scaleX(1); opacity: 1; }
 }
+@keyframes speed-frost-form { from { opacity: 0; } to { opacity: .9; } }
+@keyframes speed-frost-pulse { from { opacity: .9; } to { opacity: .5; } }
+@keyframes speed-frost-thaw { from { opacity: .9; } to { opacity: 0; } }
