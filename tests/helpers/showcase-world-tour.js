@@ -8,25 +8,25 @@ export async function openWorldTour(page, viewport) {
 
 // The player is compared to the real original course preview rendered by the same world, geometry and camera.
 export const homePreview = (page, id) => page.evaluate(async id => {
-  const baseline = window.worldTourPreviewProbe('coast').actors[0];
+  const baseline = (await window.worldTourPreviewProbe('coast')).actors[0];
   await new Promise(requestAnimationFrame);
-  const first = window.worldTourPreviewProbe(id).actors;
+  const first = (await window.worldTourPreviewProbe(id)).actors;
   await new Promise(resolve => setTimeout(resolve, 200));
-  const later = window.worldTourPreviewProbe(id).actors;
+  const later = (await window.worldTourPreviewProbe(id)).actors;
   return { baseline, first, later };
 }, id);
 
-export const previewLandmark = (page, id, kind) => page.evaluate(([id, kind]) => {
-  let probe; for (let i = 0; i < 3; i++) probe = window.worldTourPreviewProbe(id);
+export const previewLandmark = (page, id, kind) => page.evaluate(async ([id, kind]) => {
+  let probe; for (let i = 0; i < 3; i++) probe = await window.worldTourPreviewProbe(id);
   return probe.landmarks.find(entry => entry.kind === kind);
 }, [id, kind]);
 
-export const airflowAngles = (page, id) => page.evaluate(id => {
-  const flying = window.worldTourPreviewProbe(id, { airflow: false, view: 'drive' }).actors[0];
-  const grounded = window.worldTourPreviewProbe(id, { airflow: true, view: 'drive' }, 24).actors[0];
+export const airflowAngles = (page, id) => page.evaluate(async id => {
+  const flying = (await window.worldTourPreviewProbe(id, { airflow: false, view: 'drive' })).actors[0];
+  const grounded = (await window.worldTourPreviewProbe(id, { airflow: true, view: 'drive' }, 24)).actors[0];
   const angles = {};
   for (const view of ['drive', 'front', 'rear', 'left', 'right', 'orbit']) {
-    angles[view] = window.worldTourPreviewProbe(id, { airflow: true, view }, 18).actors[0];
+    angles[view] = (await window.worldTourPreviewProbe(id, { airflow: true, view }, 18)).actors[0];
   }
   return { flying, grounded, angles };
 }, id);

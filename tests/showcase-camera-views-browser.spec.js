@@ -158,9 +158,10 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
   test(`Garage retains home camera distance and a visible car at ${viewport.width}px`, async ({ page }) => {
     await openProbe(page, viewport);
     for (const id of TRACKS) for (const view of ['drive', ...Object.keys(FIXED), 'orbit']) {
-      const [home, garage] = await page.evaluate(([id, view]) => [
-        window.showcaseCameraProbe(id, view, { airflow: true }),
-        window.showcaseCameraProbe(id, view, { airflow: true, garage: true }),
+      // One probe at a time: both share the live world and wait for its first drawn frame.
+      const [home, garage] = await page.evaluate(async ([id, view]) => [
+        await window.showcaseCameraProbe(id, view, { airflow: true }),
+        await window.showcaseCameraProbe(id, view, { airflow: true, garage: true }),
       ], [id, view]);
       expect.soft(garage.range, `${id}/${view}: retain scenery around the vehicle`).toBeGreaterThanOrEqual(home.range * .95);
       expectWholeCar(garage, `${id}/${view}/garage`);

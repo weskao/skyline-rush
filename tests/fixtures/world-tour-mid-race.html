@@ -7,6 +7,7 @@
 <script type="module">
   import * as THREE from 'three';
   import { createWorld } from '../../src/world.js';
+  import { untilDrawn } from './showcase-probe-draw.js';
   // Detailed WebGL diagnostic: Three.js often surfaces an unhelpful
   // "reading visible" error if ANY visible scene mesh has no material.
   const originalRender=THREE.WebGLRenderer.prototype.render;
@@ -65,9 +66,10 @@
     world.render(race,1/60,0,{throttle:true,steer:0});
     return world.inspectShowcase().map(a=>({name:a.name,visible:a.visible}));
   };
-  window.worldTourPreviewProbe=(id, options=null, frames=60)=>{
+  window.worldTourPreviewProbe=async(id, options=null, frames=60)=>{
     if(options) world.configureVFX({quality:'low',enabled:true,bloom:0,...options});
     const race=createRace(id);
+    await untilDrawn(()=>world.render(race,1/60,2,{}));
     // Default to one second of frames so the 50° preview FOV settles; focused
     // viewpoint coverage may explicitly choose fewer frames once warmed up.
     for(let i=0;i<frames;i++)world.render(race,1/60,2+i/60,{});
