@@ -6,6 +6,22 @@
 - [x] `npm test` 有 3,756 項通過、4 項跳過。雲端存檔首輪 16 項通過，雙裝置同步逾時，單獨重跑通過。Firestore 規則 5 項全數通過。
 - [ ] 完整瀏覽器與 World Tour 套件，以及修正提交的 GitHub `quality-gate`。本機 `make verify` 跑到瀏覽器階段時，Chrome 在沙盒內啟動即中止。前一輪 GitHub CI 也已有其他瀏覽器測試失敗。
 
+# Freeze / EMP cinematic debuff VFX (2026-11-21, `feature/debuff-cinematic-vfx`)
+
+- [x] Shared seam: each effect owns `src/debuff/<effect>/` (CSS, screen layer, panel decor, shell GLSL chunk, particle/mesh fx); shared HUD and status files only route. Guard `tests/debuff-seam.test.js`, RED before the split.
+- [x] The status shell follows each car's measured silhouette (24 slices in a float `DataTexture`, one program, one draw). Guard `tests/rival-status-tint.test.js` (*the shell hugs each car*), RED on the ellipsoid.
+- [x] HUD phases (`impact` / `spread` / `active` / `recover`, `src/debuff/timeline.ts`) on the card, speedometer and screen layer; new en and zh-TW copy with a decimal countdown.
+- [x] Seam gates: `npm test` 3733 pass / 0 fail; module-size, typecheck, build pass; `player-debuff`, `black-frame`, `item-feedback`, `motion`, `race-halfway`, `race-hud-overlap`, `foldable-layout` browser specs 56/56.
+- [ ] `tests/shader-warmup-browser.spec.js` on High fails on this branch and on its base `6cdb4d3b` alike (Roadster 101 → 103): the rain preset compiles the sky and ground programs mid-race. Not caused by this feature; needs its own fix.
+- [x] Freeze look (`864211da`, merged `ab2ea7df`): crystal clusters on the measured sills, arches, roof edges, wing and bumper icicles; frost-fern shell; corner frost feathers, cracks and snow with a clear centre; frosted hex card with icicles; icy speedometer that thaws. Guards `tests/freeze-debuff-fx.test.js`, `tests/freeze-debuff-hud.test.js`, `tests/freeze-hud-browser.spec.js`.
+- [x] EMP look (`389ed49d`, merged `ed69d018`): thin golden arcs crawling over the shell (no solid glowing car), instanced discharges, edge lightning over a hex pattern with an RGB glitch only on impact and rarely after, dark hex glass card with a border spark (title on one line), gold speedometer sweep. Guards `tests/emp-debuff-fx.test.js`, `tests/emp-debuff-browser.spec.js`.
+- [x] Freeze and EMP active together: HUD stacking with the 50% card, speedometer precedence, both vehicle effects (`a163cebf` hook, `tests/debuff-overlap-browser.spec.js` desktop / portrait / landscape 3/3).
+- [x] Merged gates on `ab2ea7df`: `npm test` 3752 pass / 0 fail; 78 focused unit tests; typecheck, build pass; 10 browser specs 66/66.
+- [ ] The player's own EMP arcs mostly hide under the body from the chase camera (only a halo and discharges read); needs a player hull fitted outside the body or arcs without depth test in `src/rival-status-tint.ts`.
+- [ ] `FxFrame` has no Medium tier, remaining-time or disabled-VFX flag: 3D Medium = High, the 3D thaw shatters at expiry rather than over the last 0.5 s, and disabled VFX only calms the HUD.
+- [ ] The portrait card stays inside the 190 × 48 px guard, smaller than the reference hex panel; enlarging it needs a decision on that limit.
+- [x] Real WebGL captures on `ab2ea7df` (Crimson GT and Roadster; desktop, phone portrait and landscape; Freeze, EMP and both; impact / active / recovery) looked at and sent, with a desktop and a portrait timeline MP4 (`DEBUFF_VIDEO=1` in `tests/debuff-capture-browser.spec.js`). The lofted hull follows the body on every capture.
+
 # 下拉選單與設定分頁（2026-11-21）
 
 - [x] 756×265 手機橫向 WebGL 畫面重現氣候選單的雨天和霧景落在畫面外。改用共用浮動選單後，六個選項同時可點，點選霧景成功。另在縮放且可捲動的瀏覽器對話框驗證 44 px 選項、動態新增選項、Enter 與 Escape。

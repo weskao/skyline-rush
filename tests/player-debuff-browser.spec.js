@@ -58,11 +58,11 @@ for (const [name, width, height, hasTouch, locale] of [
     await expect(emp).toBeHidden();
     await page.evaluate(() => window.debuffHud.hit('freeze', 220));
 
-    const detail = locale === 'en' ? 'SPEED REDUCED' : '速度受限';
-    await expect(freeze).toContainText(locale === 'en' ? 'FROZEN' : '車輛冰凍');
-    await expect(freeze).toContainText(detail);
+    await expect(freeze).toContainText(locale === 'en' ? 'FROZEN!' : '冰凍！');
+    await expect(freeze).toContainText(locale === 'en' ? 'HANDLING SLUGGISH' : '操控暫時變遲緩');
+    await expect(freeze).toHaveAttribute('data-phase', 'impact');
     await expectArtwork(freeze, 'freeze');
-    await expect(freeze.locator('time')).toHaveText(locale === 'en' ? '2s' : '2 秒');
+    await expect(freeze.locator('time')).toHaveText(locale === 'en' ? '2.0s' : '2.0 秒');
     await expect(freeze).toHaveCSS('pointer-events', 'none');
     await expect(freeze).toHaveCSS('animation-name', ['desktop', 'foldable'].includes(name) ? /^player-hit-in/ : 'none');
     const centre = await freeze.evaluate(card => {
@@ -78,8 +78,11 @@ for (const [name, width, height, hasTouch, locale] of [
       const { race, hit } = window.debuffHud;
       hit('emp', race.length / 2 + 1);
     });
-    await expect(emp).toContainText(locale === 'en' ? 'EMP HIT' : '遭受電擊');
-    await expect(emp).toContainText(detail);
+    await expect(emp).toContainText(locale === 'en' ? 'EMP SHOCK!' : 'EMP 電擊！');
+    await expect(emp).toContainText(locale === 'en' ? 'HANDLING DISRUPTED' : '操控暫時受干擾');
+    await expect(emp.locator('time')).toHaveText(locale === 'en' ? '1.5s' : '1.5 秒');
+    // Both hits are live: each keeps its own screen layer, on its own timeline.
+    for (const layer of ['freeze', 'emp']) await expect(page.locator(`#player-hit-screen [data-hit-layer="${layer}"]`)).toHaveAttribute('data-phase', 'impact');
     await expectArtwork(emp, 'emp');
     await expect(freeze).toBeVisible();
     const separation = await (await page.waitForFunction(() => {
@@ -95,7 +98,9 @@ for (const [name, width, height, hasTouch, locale] of [
       update();
     });
     await expect(emp).toBeHidden();
-    await expect(freeze.locator('time')).toHaveText(locale === 'en' ? '1s' : '1 秒');
+    await expect(page.locator('#player-hit-screen [data-hit-layer="emp"]')).toHaveCount(0);
+    await expect(freeze.locator('time')).toHaveText(locale === 'en' ? '0.5s' : '0.5 秒');
+    await expect(freeze).toHaveAttribute('data-phase', 'recovery');
     await page.evaluate(() => {
       window.debuffHud.race.phase = 'paused';
       window.debuffHud.update();
@@ -141,6 +146,7 @@ test('speed feedback follows the active debuff and keeps a steady tint with redu
 
   await page.evaluate(() => window.debuffHud.hit('freeze', 220));
   await expect(speedometer).toHaveAttribute('data-debuff', 'freeze');
+  await expect(speedometer).toHaveAttribute('data-phase', 'impact');
   await expect(speed).toHaveCSS('color', 'rgb(153, 228, 255)');
   expect(await motion()).toMatch(/^speed-frost/);
   await page.evaluate(() => window.debuffHud.hit('emp', 230));

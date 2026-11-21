@@ -1,6 +1,7 @@
 import { shallowReactive } from 'vue';
 import type { BonusCar } from './bonus-gates.ts';
-import { itemHit, useHeldItem, type PlayerItemRace } from './item-attacks.ts';
+import { itemHit, useHeldItem, type ItemAttack, type PlayerItemRace } from './item-attacks.ts';
+import { debuffPhase, type DebuffPhase } from './debuff/timeline.ts';
 import { ACTIVE_ITEMS, type ActiveItem } from './active-items.ts';
 import { EFFECT_TIMES } from './ring-layout.ts';
 import { t } from './i18n.ts';
@@ -13,7 +14,8 @@ export interface ItemRace extends PlayerItemRace {
 interface ItemSettings { itemRules?: unknown; activeItems?: unknown }
 export const itemRuleValue = (rules: ItemSettings): string => typeof rules.itemRules === 'string' ? rules.itemRules : rules.activeItems ? 'all' : 'classic';
 
-export const playerHitView = shallowReactive({ emp: 0, freeze: 0, calm: false });
+/** Incoming hits for the HUD: seconds left in tenths (0 = none) and where each stands on its timeline. */
+export const playerHitView = shallowReactive({ emp: 0, freeze: 0, empPhase: '' as DebuffPhase | '', freezePhase: '' as DebuffPhase | '', calm: false });
 
 export function setupItemUI({ getRace, cue, calm = () => false }: { getRace: () => ItemRace; cue: (name: string) => void; calm?: () => boolean }) {
   const screen = document.getElementById('player-hit-screen')!;
@@ -29,6 +31,16 @@ export function setupItemUI({ getRace, cue, calm = () => false }: { getRace: () 
   let wasCooling = false;
   let lastBonus: BonusCar['lastBonus'];
   let warned: ItemRace['rings'][number] | undefined;
+  const hitUntil = { emp: 0, freeze: 0 }, hitSince = { emp: 0, freeze: 0 };
+  function updateHit(attack: ItemAttack, until: number, elapsed: number, shown: boolean): void {
+    // A new or repeated hit moves `until` and replays the impact; a pause stops the race clock, so it replays nothing.
+    if (until !== hitUntil[attack]) { hitUntil[attack] = until; hitSince[attack] = elapsed; }
+    const left = shown ? until - elapsed : 0;
+    const seconds = Math.max(0, Math.ceil(left * 10 - 1e-9) / 10); // tenths: at most ten reactive writes a second
+    const phase = seconds > 0 ? debuffPhase(attack, elapsed - hitSince[attack], left) : '';
+    if (playerHitView[attack] !== seconds) playerHitView[attack] = seconds;
+    if (playerHitView[`${attack}Phase`] !== phase) playerHitView[`${attack}Phase`] = phase;
+  }
   function updateBonus(race: ItemRace): void {
     const car = race.player;
     const ahead = race.rings.find(ring => !ring.hit && (ring.downUntil ?? 0) <= race.elapsed &&
@@ -46,10 +58,8 @@ export function setupItemUI({ getRace, cue, calm = () => false }: { getRace: () 
       if (screen.dataset.calm !== calmValue) screen.dataset.calm = calmValue;
     }
     setHiddenIfChanged(screen, !screenHit);
-    const emp = screenHit ? Math.max(0, Math.ceil((car.empUntil ?? 0) - race.elapsed)) : 0;
-    const freeze = screenHit ? Math.max(0, Math.ceil((car.freezeUntil ?? 0) - race.elapsed)) : 0;
-    if (playerHitView.emp !== emp) playerHitView.emp = emp;
-    if (playerHitView.freeze !== freeze) playerHitView.freeze = freeze;
+    updateHit('emp', car.empUntil ?? 0, race.elapsed, !!screenHit);
+    updateHit('freeze', car.freezeUntil ?? 0, race.elapsed, !!screenHit);
     setHiddenIfChanged(bonus, race.phase === 'ready' || !(hit || active || recent || near));
     if (hit) {
       const until = hit === 'emp' ? car.empUntil! : car.freezeUntil!;

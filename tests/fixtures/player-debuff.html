@@ -6,14 +6,13 @@
   <title>Skyline Rush player debuff HUD fixture</title>
 </head>
 <body data-phase="racing">
-  <div id="player-hit-screen" aria-hidden="true" hidden></div>
   <main id="app"></main>
   <script type="module">
     import { createApp, h } from 'vue';
     import '../../src/style.css';
     import '../../src/race-lobby.css';
-    import '../../src/player-hit-screen.css';
     import ItemSlot from '../../src/ItemSlot.vue';
+    import PlayerHitScreen from '../../src/PlayerHitScreen.vue';
     import RaceHalfway from '../../src/RaceHalfway.vue';
     import RaceSpeedometer from '../../src/RaceSpeedometer.vue';
     import { createRace } from '../../src/game.js';
@@ -26,7 +25,7 @@
 
     setLocale(new URLSearchParams(location.search).get('locale'));
     refreshFoldableViewport();
-    createApp({ render: () => [h(ItemSlot), h(RaceHalfway), h('footer', { class: 'telemetry' }, [h(RaceSpeedometer)])] }).mount('#app');
+    createApp({ render: () => [h(PlayerHitScreen), h(ItemSlot),h(RaceHalfway), h('footer', { class: 'telemetry' }, [h(RaceSpeedometer)])] }).mount('#app');
     const race = createRace('coast', { mode: 'custom', itemRules: 'all', rivals: 2, traffic: 'off' });
     Object.assign(race, { phase: 'racing', elapsed: 13 });
     const itemUI = setupItemUI({ getRace: () => race, cue: () => {} });
