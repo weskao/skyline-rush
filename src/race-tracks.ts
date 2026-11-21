@@ -90,7 +90,7 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
     shapeOdds: PROFILE_RING_SHAPES,
     sections: [
       { from: 850, to: 1350, type: 'tunnel' }, { from: 2450, to: 2950, type: 'shortcut', x: 7.5, altitude: 6 },
-      { from: 4880, to: 5300, type: 'tunnel' }, { from: 8460, to: 8860, type: 'boost-tunnel' },
+      { from: 4880, to: 5520, type: 'boost-tunnel' }, { from: 8220, to: 8900, type: 'boost-tunnel' },
     ],
   },
   alpine: {

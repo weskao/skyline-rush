@@ -2586,3 +2586,7 @@ body[data-phase="finished"] .overlay-actions:has(#choose-track[data-primary-acti
   .race-clock-icon { width: 14px; height: 14px; }
   .race-clock-readout { font-size: 14px; letter-spacing: 0; }
 }
+
+/* Tokyo's powered-road feedback is peripheral and static, including reduced-motion mode. */
+body.tokyo-charge-zone #fuel-meter { box-shadow: 0 0 0 1px rgba(85, 198, 215, .55), 0 0 12px rgba(85, 198, 215, .22); }
+body.tokyo-charge-zone #fuel-caption { color: #b6f5ff; text-shadow: 0 0 8px rgba(85, 198, 215, .35); }

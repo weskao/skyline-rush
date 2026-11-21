@@ -71,6 +71,10 @@ export function createTunnelKit(sceneryKit) {
         if(index%2===0)add(g,'#8f8398',side*13.4,10,0,.35,1.2,6);
       }
       add(g,'#59627c',0,16.1,0,30,1.5,24);
+      if(variant==='charged')for(const side of [-1,1]){
+        add(g,side<0?'#36c9d9':'#e482bd',side*12.5,.22,0,.25,.13,23);
+        if(index%3===0)add(g,'#81b7c6',side*14.2,10,0,.2,3,.8);
+      }
     }else if(id==='coastal'){
       for(const side of [-1,1]){
         add(g,'#a3a090',side*15.4,6,0,1.8,12,2);
@@ -96,7 +100,7 @@ export function createTunnelKit(sceneryKit) {
       const from=Math.max(start,section.from),to=Math.min(end,section.to);
       if(to<=from)continue;
       const phase=filtered.indexOf(section);
-      const variant=id==='alpine'?['stone','concrete','rock'][phase%3]:id;
+      const variant=id==='alpine'?['stone','concrete','rock'][phase%3]:id==='tokyo'&&section.type==='boost-tunnel'?'charged':id;
       // Use the section's absolute 24 m rhythm. Re-starting at each
       // streamed 120 m chunk created discontinuities at chunk boundaries.
       for(let d=section.from+12;d<section.to;d+=24){
@@ -114,6 +118,10 @@ export function createTunnelKit(sceneryKit) {
           if(id==='alpine')add(post,'#b0a38b',side*13.9,9,.8,.35,1.6,1);
         }
         add(post,TUNNEL_CHARACTER[id].walls,0,17.2,0,32,2,4);
+        if(id==='tokyo'&&section.type==='boost-tunnel'){
+          for(const side of [-1,1])add(post,side<0?'#36c9d9':'#e482bd',side*12.7,8,1,.28,14,2);
+          add(post,'#8ccbd4',0,16.3,1,25,.35,2);
+        }
         sceneryKit.place(post,id,section.from,0,0);
         root.add(post);
       }
