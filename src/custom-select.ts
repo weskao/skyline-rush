@@ -1,5 +1,6 @@
 // Draws a native <select> as a page listbox (no OS popup); the hidden select keeps value and input/change events for existing callers.
 import { trackDropdown } from './dropdown.ts';
+import { placeDropdown } from './dropdown-position.ts';
 
 let count = 0;
 const refreshers: Array<() => void> = [];
@@ -23,14 +24,26 @@ export function customSelect(select: HTMLSelectElement): () => void {
   Object.assign(list, { id: `${id}-list`, hidden: true });
   list.setAttribute('role', 'listbox');
   list.setAttribute('aria-label', name);
-  const options = [...select.options].map((option, i) => {
-    const item = document.createElement('li');
-    Object.assign(item, { id: `${id}-${i}`, textContent: option.text });
-    if (option.lang) item.lang = option.lang; // an empty lang would mark the option "unknown language" and drop its :lang(zh-TW) styling
-    item.setAttribute('role', 'option');
-    return item;
-  });
-  list.append(...options);
+  const floats = typeof list.showPopover === 'function';
+  if (floats) list.popover = 'manual';
+  const options: HTMLLIElement[] = [];
+  const syncOptions = (): void => {
+    while (options.length > select.options.length) options.pop()?.remove();
+    for (const [i, option] of [...select.options].entries()) {
+      let item = options[i];
+      if (!item) {
+        item = document.createElement('li');
+        item.id = `${id}-${i}`;
+        item.setAttribute('role', 'option');
+        list.append(item);
+        options.push(item);
+      }
+      item.textContent = option.text;
+      if (option.lang) item.lang = option.lang;
+      else item.removeAttribute('lang');
+    }
+  };
+  syncOptions();
   box.append(button, list);
   select.after(box);
   select.hidden = true;
@@ -45,24 +58,42 @@ export function customSelect(select: HTMLSelectElement): () => void {
   const highlight = (i: number): void => {
     active = Math.max(0, Math.min(options.length - 1, i));
     options.forEach(item => item.classList.toggle('is-active', item === options[active]));
-    button.setAttribute('aria-activedescendant', options[active].id);
-    options[active].scrollIntoView({ block: 'nearest' });
+    const item = options[active];
+    if (!item) return;
+    button.setAttribute('aria-activedescendant', item.id);
+    // Scroll the list itself. scrollIntoView also moves Home and Settings behind the popup.
+    const start = item.offsetTop;
+    const end = start + item.offsetHeight;
+    if (start < list.scrollTop) list.scrollTop = start;
+    else if (end > list.scrollTop + list.clientHeight) list.scrollTop = end - list.clientHeight;
+  };
+  let followViewport: AbortController | undefined;
+  const reposition = (event: Event): void => {
+    if (event.target !== list) placeDropdown(button, list);
   };
   const toggle = (open: boolean): void => {
+    if (open === !list.hidden) return;
+    if (!open) {
+      followViewport?.abort();
+      if (floats) list.hidePopover();
+      button.removeAttribute('aria-activedescendant');
+    }
     list.hidden = !open;
     button.setAttribute('aria-expanded', String(open));
     trackDropdown(box, open, () => toggle(false));
-    if (open) {
-      // A picker near the bottom (Home camera dock) opens upward and every list fits the room on its side,
-      // so no option is cut off by the viewport. Home's zoom is <= 1, so screen px are a safe cap in CSS px.
-      const { top, bottom } = box.getBoundingClientRect();
-      const below = innerHeight - bottom - 8, above = top - 8;
-      const up = list.scrollHeight > below && above > below;
-      box.classList.toggle('opens-up', up);
-      list.style.setProperty('--list-room', `${Math.max(0, up ? above : below)}px`);
-      highlight(select.selectedIndex);
+    if (!open) return;
+    button.focus({ preventScroll: true });
+    if (floats) {
+      list.showPopover();
+      placeDropdown(button, list);
+      followViewport = new AbortController();
+      const { signal } = followViewport;
+      window.addEventListener('scroll', reposition, { capture: true, passive: true, signal });
+      window.addEventListener('resize', reposition, { signal });
+      window.visualViewport?.addEventListener('resize', reposition, { signal });
+      window.visualViewport?.addEventListener('scroll', reposition, { signal });
     }
-    else button.removeAttribute('aria-activedescendant');
+    highlight(select.selectedIndex);
   };
   const commit = (i: number): void => {
     toggle(false);
@@ -101,8 +132,12 @@ export function customSelect(select: HTMLSelectElement): () => void {
     const label = accessibleName();
     button.setAttribute('aria-label', label);
     list.setAttribute('aria-label', label);
-    options.forEach((item, i) => { item.textContent = select.options[i].text; });
+    syncOptions();
     sync();
+    if (!list.hidden) {
+      if (floats) placeDropdown(button, list);
+      highlight(active);
+    }
   };
   refreshers.push(refresh);
   return refresh;

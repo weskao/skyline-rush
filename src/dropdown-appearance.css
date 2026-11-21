@@ -39,14 +39,39 @@
 .history-filter .custom-select { width: min(240px, 100%); }
 .vfx-settings .custom-select { width: min(155px, 100%); }
 .race-mode-rule-grid .custom-select { width: 100%; }
-:root .custom-select > [role="listbox"] {
+.custom-select > [role="listbox"] {
   box-sizing: border-box;
-  max-width: min(340px, 84vw);
-  border-color: #6e9baa;
-  border-radius: 5px;
-  background-color: #102432;
+  position: relative;
+  width: 100%;
+  max-height: min(280px, 65dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin: 4px 0 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid #6e9baa;
+  border-radius: 6px;
+  background: #102432;
+  color: #dcf4ff;
+  box-shadow: 0 12px 28px #0009;
+  font: 600 13px/1.3 system-ui, sans-serif;
 }
-:root .custom-select [role="option"] { min-height: 44px; white-space: normal; }
+.custom-select > [popover] {
+  position: fixed;
+  inset: 0 auto auto 0;
+  margin: 0;
+  width: max-content;
+  min-width: var(--select-min-width, 152px);
+  max-width: var(--select-width, 350px);
+}
+.custom-select > [popover]:popover-open.is-two-column {
+  display: grid;
+  width: var(--select-width);
+  grid-auto-flow: column;
+  grid-template: repeat(var(--select-rows), auto) / repeat(2, minmax(0, 1fr));
+  column-gap: 4px;
+}
+:root .custom-select [role="option"] { min-height: 44px; gap: 8px; white-space: normal; overflow-wrap: anywhere; }
 .custom-select [role="option"][aria-selected="true"]::after {
   content: '';
   flex: none;
@@ -57,8 +82,11 @@
   border-width: 0 0 2px 2px;
   transform: translateX(-2px) rotate(-45deg);
 }
-:root .race-mode-rules .custom-select > [role="listbox"] {
-  position: static;
-  max-height: 176px;
-  margin-top: 4px;
+@media (prefers-reduced-motion: no-preference) {
+  body:not(.vfx-comfort) .custom-select > [role="listbox"]:not([hidden]) {
+    animation: overlay-in var(--dur-fast) var(--ease-out);
+  }
+  body:not(.vfx-comfort) .custom-select > button[role="combobox"] {
+    transition: border-color var(--dur-fast), background-color var(--dur-fast), filter var(--dur-base) var(--ease-spring);
+  }
 }

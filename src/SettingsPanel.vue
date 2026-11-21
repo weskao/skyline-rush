@@ -11,7 +11,8 @@ import HudSourceArtwork from './HudSourceArtwork.vue';
 import { panelsView } from './control-panels-view-state.ts';
 import { audioView } from './audio-view-state.ts';
 const sections = [
-  ['driving', 'settings.driving'], ['display', 'settings.display'], ['audio', 'audio.head'], ['language', 'settings.language'],
+  ['driving', 'settings.driving', 'assist'], ['display', 'settings.display', 'display'],
+  ['audio', 'audio.head', 'sound'], ['language', 'settings.language', 'globe'],
 ] as const;
 const AUDIO_CHANNELS = [{ kind: 'music', label: 'Music' }, { kind: 'sfx', label: 'Sound effects' }] as const;
 </script>
@@ -28,9 +29,12 @@ const AUDIO_CHANNELS = [{ kind: 'music', label: 'Music' }, { kind: 'sfx', label:
       </header>
       <div class="settings-layout">
         <nav class="settings-sections" :aria-label="tr('settings.game')">
-          <button v-for="[id, label] in sections" :key="id" type="button" :data-settings-section="id"
+          <button v-for="[id, label, glyph] in sections" :key="id" type="button" :data-settings-section="id"
             :id="id === 'driving' ? 'controls-button' : undefined" :aria-pressed="panelsView.section === id"
-            :aria-controls="'settings-' + id">{{ tr(label) }}</button>
+            :aria-controls="'settings-' + id">
+            <svg v-bind="ICON_ATTRS" v-html="icons[glyph]"></svg>
+            <span>{{ tr(label) }}</span>
+          </button>
         </nav>
         <div class="settings-content">
           <section id="settings-driving" :hidden="panelsView.section !== 'driving'"><slot name="assist" /><slot name="driving" /></section>
