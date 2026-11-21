@@ -44,10 +44,10 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
             poster: { en: 'whats-new/rival-fleet/rival-fleet.mobile.en.jpg', 'zh-TW': 'whats-new/rival-fleet/rival-fleet.mobile.zh-TW.jpg' }
           }
         },
-        title: { en: 'A varied motorsport field of rivals', 'zh-TW': '對手變成多樣賽車陣容' },
+        title: { en: 'A varied motorsport field of rivals', 'zh-TW': '對手賽車陣容更多樣' },
         description: {
           en: 'Rivals now race as sculpted motorsport cars, restyled and shuffled every race, so each starting grid looks different.',
-          'zh-TW': '對手換上全新雕塑的賽車外型，每場比賽重新洗牌，每次起跑的陣容都不一樣。'
+          'zh-TW': '對手換上全新賽車造型，每場重新配色洗牌，每次起跑的陣容都不一樣。'
         }
       },
       {
@@ -60,26 +60,28 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
       },
       {
         id: 'drift-trail-styles', kind: 'new', image: 'whats-new/drift-trail-styles/garage-drift-trails.webp',
-        title: { en: 'Five new drift trail styles', 'zh-TW': '五款全新甩尾痕跡' },
+        title: { en: 'Five new drift trail styles', 'zh-TW': '五款全新漂移痕跡' },
         description: {
           en: 'Preview and try Embercut, Prism Ribbon, Glacier Fracture, Voltage Arc and Nebula Dust for free in Garage Effects. Equip one to leave its trail on the road.',
-          'zh-TW': '到車庫「特效」即時預覽並免費試用熾焰、虹光流帶、裂冰晶痕、霓電弧與星雲微塵。裝備後，甩尾時就會在路面留下你選的痕跡。'
+          'zh-TW': '到車庫「特效」即時預覽並免費試用熾焰、虹光流帶、裂冰晶痕、霓電弧與星雲微塵。裝備後，漂移時就會在路面留下你選的痕跡。'
         }
       },
       {
-        id: 'rival-items', kind: 'new',
-        image: { en: 'whats-new/rival-items/debuffs.en.webp', 'zh-TW': 'whats-new/rival-items/debuffs.zh-TW.webp' },
-        responsiveImages: {
-          desktop: { en: 'whats-new/rival-items/debuffs.desktop.en.svg', 'zh-TW': 'whats-new/rival-items/debuffs.desktop.zh-TW.svg' },
-          tablet: { en: 'whats-new/rival-items/debuffs.tablet.en.svg', 'zh-TW': 'whats-new/rival-items/debuffs.tablet.zh-TW.svg' },
-          landscape: { en: 'whats-new/rival-items/debuffs.landscape.en.svg', 'zh-TW': 'whats-new/rival-items/debuffs.landscape.zh-TW.svg' },
-          portrait: { en: 'whats-new/rival-items/debuffs.portrait.en.svg', 'zh-TW': 'whats-new/rival-items/debuffs.portrait.zh-TW.svg' },
-          tabletPortrait: { en: 'whats-new/rival-items/debuffs.tablet-portrait.en.svg', 'zh-TW': 'whats-new/rival-items/debuffs.tablet-portrait.zh-TW.svg' }
+        id: 'rival-items', kind: 'new', image: null,
+        video: {
+          desktop: {
+            src: { en: 'whats-new/rival-items/rival-items.desktop.en.mp4', 'zh-TW': 'whats-new/rival-items/rival-items.desktop.zh-TW.mp4' },
+            poster: { en: 'whats-new/rival-items/rival-items.desktop.en.jpg', 'zh-TW': 'whats-new/rival-items/rival-items.desktop.zh-TW.jpg' }
+          },
+          mobile: {
+            src: { en: 'whats-new/rival-items/rival-items.mobile.en.mp4', 'zh-TW': 'whats-new/rival-items/rival-items.mobile.zh-TW.mp4' },
+            poster: { en: 'whats-new/rival-items/rival-items.mobile.en.jpg', 'zh-TW': 'whats-new/rival-items/rival-items.mobile.zh-TW.jpg' }
+          }
         },
         title: { en: 'Rivals fight back with Freeze and EMP', 'zh-TW': '對手也會用冰凍與 EMP' },
         description: {
-          en: 'Rivals can hit you with Freeze or EMP. A center countdown shows how long it lasts, while your speedometer lights up icy blue or gold.',
-          'zh-TW': '對手會用冰凍與 EMP 攻擊。中招時，畫面中央會顯示倒數，時速表也會亮起冰藍或金黃，直到效果解除。'
+          en: 'Rivals can hit you with Freeze or EMP. Your car frosts over or crackles with gold lightning, and a center countdown shows how long it lasts.',
+          'zh-TW': '對手會用冰凍或 EMP 攻擊你：車身結霜或竄出金色電弧，畫面中央也會倒數效果剩餘時間。'
         }
       },
       {
@@ -94,26 +96,26 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
             poster: { en: 'whats-new/sky-spiral/sky-spiral.mobile.en.jpg', 'zh-TW': 'whats-new/sky-spiral/sky-spiral.mobile.zh-TW.jpg' }
           }
         },
-        title: { en: 'A brighter Sky Spiral, alive with birds', 'zh-TW': '天際螺旋更明亮、更有生氣' },
+        title: { en: 'A brighter Sky Spiral', 'zh-TW': '天際螺旋更明亮' },
         description: {
-          en: 'Sky Spiral looks bright and sunny at every graphics setting. Medium quality and above also show cloud-sea landmarks, circling seabirds and a drifting airship.',
-          'zh-TW': '天際螺旋在各種畫質都呈現明亮白天；中等畫質以上還有雲海地標、盤旋海鳥與飛船。'
+          en: 'Sky Spiral now races under a bright day sky. Higher graphics settings add cloud-sea landmarks, circling seabirds and a drifting airship.',
+          'zh-TW': '天際螺旋換上明亮白天；較高畫質還有雲海地標、盤旋海鳥與飄浮飛船。'
         }
       },
       {
         id: 'lobby-refresh', kind: 'improvement', image: { en: 'whats-new/lobby/track-rail.en.webp', 'zh-TW': 'whats-new/lobby/track-rail.zh-TW.webp' },
         title: { en: 'A fresh look for lobby, Garage and podium', 'zh-TW': '大廳、車庫與頒獎台煥然一新' },
         description: {
-          en: 'New artwork across the race lobby, Garage and podium, easier track browsing, and all race options in one Settings page.',
-          'zh-TW': '賽事大廳、車庫與頒獎台換上新美術，選賽道更順手，賽事選項集中在同一個設定頁。'
+          en: 'New artwork across the race lobby, Garage and podium, easier track browsing, and all race options in one Settings page with clearer tabs.',
+          'zh-TW': '賽事大廳、車庫與頒獎台換上新美術，選賽道更順手，賽事選項集中在同一個設定頁，分頁也更清楚。'
         }
       },
       {
         id: 'garage-inspect', kind: 'improvement', image: { en: 'whats-new/garage-inspect/inspect.en.webp', 'zh-TW': 'whats-new/garage-inspect/inspect.zh-TW.webp' },
         title: { en: 'Inspect your car in the Garage', 'zh-TW': '在車庫近看愛車' },
         description: {
-          en: 'Tap the eye icon to look your car over up close. The camera follows the section you open: the exhaust for Effects, the flank for Paints.',
-          'zh-TW': '點眼睛圖示近距離檢視車子，鏡頭會跟著你開啟的分頁：特效看排氣口，車漆看車身側面。'
+          en: 'Open Inspect to look your car over up close. The camera follows the section you open: the exhaust for Effects, the flank for Paints.',
+          'zh-TW': '開啟檢視模式近看愛車，鏡頭會跟著你開啟的分頁：特效看排氣口，車漆看車身側面。'
         }
       },
       {
@@ -136,29 +138,35 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
         id: 'drift-brake', kind: 'improvement', image: null,
         title: { en: 'Smoother drift braking', 'zh-TW': '漂移煞車更順' },
         description: {
-          en: 'Braking mid-drift now eases you out of the slide, and phone braking is more deliberate, so your steering thumbs no longer clash.',
+          en: 'Braking mid-drift now eases you smoothly out of the slide. On phones, the brake is harder to hit by accident and stays clear of your steering thumbs.',
           'zh-TW': '漂移中煞車會平順收尾；手機煞車更不易誤觸，也不再干擾轉向拇指。'
         }
       },
-      { id: 'race-stopwatch', kind: 'new', image: null,
+      { id: 'race-stopwatch', kind: 'new', image: { en: 'whats-new/race-stopwatch/stopwatch.en.webp', 'zh-TW': 'whats-new/race-stopwatch/stopwatch.zh-TW.webp' },
         title: { en: 'Keep time with the new race clock', 'zh-TW': '全新賽事計時器' },
         description: { en: 'A stopwatch beside your position tracks every run, with clear cues for the start, pause and finish.', 'zh-TW': '名次旁新增碼錶，跑了多久一眼就能看見；起跑、暫停與完賽也有清楚提示。' }
       },
       { id: 'sprint-flames', kind: 'new', image: null,
+        video: {
+          desktop: {
+            src: { en: 'whats-new/sprint-flames/sprint-flames.desktop.en.mp4', 'zh-TW': 'whats-new/sprint-flames/sprint-flames.desktop.zh-TW.mp4' },
+            poster: { en: 'whats-new/sprint-flames/sprint-flames.desktop.en.jpg', 'zh-TW': 'whats-new/sprint-flames/sprint-flames.desktop.zh-TW.jpg' }
+          },
+          mobile: {
+            src: { en: 'whats-new/sprint-flames/sprint-flames.mobile.en.mp4', 'zh-TW': 'whats-new/sprint-flames/sprint-flames.mobile.zh-TW.mp4' },
+            poster: { en: 'whats-new/sprint-flames/sprint-flames.mobile.en.jpg', 'zh-TW': 'whats-new/sprint-flames/sprint-flames.mobile.zh-TW.jpg' }
+          }
+        },
         title: { en: 'Three ways to light up your thrusters', 'zh-TW': '三種加速尾焰，各有特色' },
         description: { en: 'BOOST, NITRO and both together now have distinct flames and race cues. Preview all three looks on your car in the Garage.', 'zh-TW': 'BOOST、NITRO 與兩者齊開都有專屬尾焰及提示；到車庫就能預覽三種效果。' }
       },
       { id: 'chasm-rescue', kind: 'improvement', image: null,
         title: { en: 'Bigger jumps, better recoveries', 'zh-TW': '斷崖更刺激，重返賽道更輕鬆' },
-        description: { en: 'Sky Spiral\'s wider gaps need a fast BOOST launch or flight. If you fall repeatedly at one gap, you\'ll get help past it.', 'zh-TW': '天際螺旋的寬闊斷崖需要高速 BOOST 或飛行才能通過；連續失足時也會協助你繼續前進。' }
+        description: { en: 'Sky Spiral\'s wider gaps need a fast BOOST launch or flight. Fall in and you return to safe ground; keep missing one gap and you get a lift past it.', 'zh-TW': '天際螺旋的寬闊斷崖需要高速 BOOST 或飛行才能通過；掉下去會回到安全路面，同一處連續失足還會助你越過。' }
       },
       { id: 'reward-quick-equip', kind: 'improvement', image: null,
         title: { en: 'Equip your rewards right away', 'zh-TW': '新獎勵，一鍵裝備' },
-        description: { en: 'When you earn something new, equip it straight from the reveal instead of hunting for it in the Garage.', 'zh-TW': '獲得新車或新裝備時，就能直接在獎勵畫面套用，不必再回車庫尋找。' }
-      },
-      { id: 'settings-fit', kind: 'improvement', image: null,
-        title: { en: 'Settings that fit your screen', 'zh-TW': '設定選單更好看、更順手' },
-        description: { en: 'Drop-down choices stay in view, with clearer tabs and smoother transitions even on small screens.', 'zh-TW': '下拉選單不再被畫面邊緣遮住，分頁更清楚；小螢幕切換也更流暢。' }
+        description: { en: 'When you earn a new car or item, equip it straight from the reveal instead of hunting for it in the Garage.', 'zh-TW': '獲得新車或新裝備時，就能直接在獎勵畫面套用，不必再回車庫尋找。' }
       },
       { id: 'first-frame-quality', kind: 'fix', image: null,
         title: { en: 'Your chosen graphics, right from the start', 'zh-TW': '一開跑就是選好的畫質' },

@@ -329,16 +329,16 @@ test('notes are drafted only from changes players can notice', () => {
   ]);
 });
 
-// The same artwork must be readable on desktop, tablets, folded layouts and phones.
-test('Freeze and EMP announcement bundles safe localized artwork for every device shape', () => {
+// Freeze and EMP are shown in real game footage, recorded for landscape screens and portrait phones.
+test('Freeze and EMP announcement bundles a real-game clip for every device shape and locale', () => {
   const entry = RELEASE_NOTES.find(release => release.highlights.some(item => item.id === 'rival-items'))
     ?.highlights.find(item => item.id === 'rival-items');
-  assert.ok(entry?.image && entry.responsiveImages);
-  for (const locale of ['en', 'zh-TW']) {
-    for (const variant of ['desktop', 'tablet', 'landscape', 'portrait', 'tabletPortrait']) {
-      const path = releaseImage(entry.responsiveImages[variant], locale);
-      assert.ok(path?.startsWith('whats-new/rival-items/debuffs.'), variant);
-      assert.ok(path?.endsWith('.svg'), variant);
+  assert.ok(entry?.video, 'rival-items ships a clip');
+  assert.equal(entry.responsiveImages, undefined, 'no illustration beside the clip');
+  for (const locale of ['en', 'zh-TW']) for (const shape of ['desktop', 'mobile']) {
+    for (const kind of ['src', 'poster']) {
+      const path = entry.video[shape][kind][locale];
+      assert.ok(path?.startsWith(`whats-new/rival-items/rival-items.${shape}.`), path);
       assert.ok(fs.existsSync(new URL('../public/' + path, import.meta.url)), path);
     }
   }

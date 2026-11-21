@@ -250,25 +250,16 @@ test('release cards drop their entry animation once it ends, so scrolling the no
     .filter(card => card.getAnimations().length || getComputedStyle(card).transform !== 'none').length), { timeout: ciTimeout(5000) }).toBe(0);
 });
 
-// The thumbnail and enlarged viewer must use the same, readable device-specific image.
-for (const [width, height, variant] of [
-  [1440, 900, 'desktop'], [1024, 768, 'tablet'], [844, 390, 'landscape'],
-  [390, 844, 'portrait'], [768, 1024, 'tablet-portrait'],
-]) {
-  test(`Freeze and EMP announcement uses ${variant} artwork at ${width}x${height}`, async ({ page }) => {
+// Landscape screens show the desktop recording of Freeze and EMP, portrait phones the mobile one.
+for (const [width, height, shape] of [[1440, 900, 'desktop'], [844, 390, 'desktop'], [390, 844, 'mobile']]) {
+  test(`Freeze and EMP announcement shows its ${shape} clip at ${width}x${height}`, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await page.goto('/');
     await page.locator('#whats-new-open').click();
     const entry = page.locator('.release-entry').filter({ hasText: 'Rivals fight back with Freeze and EMP' });
-    const button = entry.locator('button.release-zoom');
-    await button.scrollIntoViewIfNeeded();
-    const image = button.locator('img');
-    await expect.poll(() => image.evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
-    await expect.poll(() => image.evaluate(img => img.currentSrc)).toContain(`debuffs.${variant}.en.svg`);
-    await button.click();
-    const zoomed = page.locator('#release-media-viewer img');
-    await expect(zoomed).toBeVisible();
-    await expect(zoomed).toHaveAttribute('src', new RegExp(`debuffs\\.${variant}\\.en\\.svg$`));
-    await page.locator('.release-viewer-close').click();
+    const poster = entry.locator('button.release-play img');
+    await poster.scrollIntoViewIfNeeded();
+    await expect.poll(() => poster.evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
+    await expect(poster).toHaveAttribute('src', new RegExp(`rival-items\\.${shape}\\.en\\.jpg$`));
   });
 }
