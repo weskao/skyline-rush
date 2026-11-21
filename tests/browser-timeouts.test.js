@@ -189,6 +189,52 @@ test('a gesture or an absence branch after a page load waits for Home', () => {
   assert.deepEqual(offenders, [], 'Load with gotoHome(page): isVisible() does not wait and main.js listens after page.goto resolves (.claude/rules/browser-test-stability.md)');
 });
 
+// A tap after a raw page.goto lands before main.js attaches its input and diag listeners (diag-relay probe, develop CI 44946255115:
+// the 4.5 s probe poll starved on a cold Vite load). Between the goto and the tap the spec must call waitForHome.
+test('a touch tap after a raw page load waits for Home', () => {
+  const offenders = FILES.flatMap(file => {
+    const lines = readFileSync(new URL(file, import.meta.url), 'utf8').split('\n');
+    return lines.flatMap((line, i) => {
+      if (!/\btouchscreen\.tap\(/.test(line)) return [];
+      const from = lines.slice(0, i).findLastIndex(prev => /\bpage\.goto\(|\bgotoHome\(|\bwaitForHome\(/.test(prev));
+      return from >= 0 && /\bpage\.goto\(/.test(lines[from]) ? [`tests/${file}:${i + 1}: ${line.trim()}`] : [];
+    });
+  });
+  assert.deepEqual(offenders, [], 'Call waitForHome(page) after page.goto and before tapping (.claude/rules/browser-test-stability.md)');
+});
+
+// The wallet card (src/Wave3CurrencyStrip.vue) closes on any scroll. A click Playwright scrolls into view first lands its
+// scroll event a frame late under load and closes the card it just opened (756x265, develop CI 44946255115, 4/4 locally).
+test('a spec clicks a wallet currency only after scrolling it into view and a frame', () => {
+  const offenders = FILES.flatMap(file => {
+    const lines = readFileSync(new URL(file, import.meta.url), 'utf8').split('\n');
+    return lines.flatMap((line, i) => /data-currency=[^)]*\)\.click\(\)/.test(line) ? [`tests/${file}:${i + 1}: ${line.trim()}`] : []);
+  });
+  assert.deepEqual(offenders, [], 'Hold the locator, scrollIntoViewIfNeeded(), wait two animation frames, then click (.claude/rules/browser-test-stability.md)');
+});
+
+// A spec that samples the 3-2-1 in the page already records it per frame; polling the live phase for 'countdown' as well
+// misses it when a starved page spends the whole countdown inside click() (develop CI 44946255115: Received "racing" for 30 s).
+test('a spec that samples the countdown in the page does not also poll the live countdown phase', () => {
+  const offenders = FILES.flatMap(file => {
+    const lines = readFileSync(new URL(file, import.meta.url), 'utf8').split('\n');
+    if (!lines.some(line => line.includes('__countdownFrames'))) return [];
+    return lines.flatMap((line, i) => /toHaveAttribute\('data-phase', 'countdown'/.test(line) ? [`tests/${file}:${i + 1}: ${line.trim()}`] : []);
+  });
+  assert.deepEqual(offenders, [], 'Read window.__countdownFrames after the race starts instead (.claude/rules/browser-test-stability.md)');
+});
+
+// One test per map: a sweep of every track inside one test grows with each new course and hit the 180 s CI timeout
+// (Garage camera sweep: 2.3 m, 2.8 m, 3.1 m on software WebGL; develop runs 44925139371, 44946255115).
+test('a showcase camera spec loops over the tracks outside its tests', () => {
+  const offenders = FILES.filter(file => file.startsWith('showcase-camera')).flatMap(file =>
+    readFileSync(new URL(file, import.meta.url), 'utf8').split('\n').flatMap((line, i, lines) =>
+      // A sweep that sets its own budget with test.setTimeout within the four lines above is deliberate.
+      /^\s+for \(const id of (?:CAMERA_)?TRACKS\)/.test(line) && !lines.slice(Math.max(0, i - 4), i).some(prev => prev.includes('test.setTimeout('))
+        ? [`tests/${file}:${i + 1}: ${line.trim()}`] : []));
+  assert.deepEqual(offenders, [], 'Declare one test per track: for (const id of TRACKS) test(...) (.claude/rules/browser-test-stability.md)');
+});
+
 // `data-phase="ready"` precedes the first painted frame; until then #world is visibility:hidden and a press or hit-test lands on #app.
 test('a spec that drags the Home preview waits for the painted world frame', () => {
   const offenders = FILES.filter(file => {
@@ -429,6 +475,20 @@ test('a spec that holds an asset releases it before it waits for RACING', () => 
   assert.deepEqual(offenders, [], 'Wait for #countdown data-step="loading", then release the held asset (.claude/rules/browser-test-stability.md)');
 });
 
+// The same hold sits inside COUNTDOWN: #race-status reads COUNTDOWN while the grid loads, then the 3-2-1 runs. A RACING wait
+// shorter than the 10 s default budget measures the 3 s countdown only after the loading step is gone (countdown-slow-render,
+// main CI 44925164077: the race started just after the 12 s budget, both attempts).
+test('a short RACING wait starts after the grid has left its loading step', () => {
+  const offenders = FILES.flatMap(file => {
+    const lines = readFileSync(new URL(file, import.meta.url), 'utf8').split('\n');
+    return lines.flatMap((line, i) => {
+      const budget = /toHaveText\('RACING', \{ timeout: ciTimeout\((\d[\d_]*)\) \}\)/.exec(line)?.[1];
+      return budget && Number(budget.replaceAll('_', '')) < 10000 && !lines.slice(Math.max(0, i - 4), i).some(prev => /data-step/.test(prev)) ? [`tests/${file}:${i + 1}`] : [];
+    });
+  });
+  assert.deepEqual(offenders, [], 'Wait for #countdown to leave data-step="loading" first (.claude/rules/browser-test-stability.md)');
+});
+
 // A held model response on the gameplay (Vite dev) server must not race the loader's 15 s deadline on a slow runner.
 test('a gameplay-server spec that holds a model GLB widens the loader deadline (widenModelDeadline)', () => {
   const offenders = FILES.filter(file => file.endsWith('browser.spec.js')).flatMap(file => {
@@ -471,6 +531,15 @@ test('a spec reads a self-expiring element (halfway card, setting toast) in one 
     });
   });
   assert.deepEqual(offenders, [], 'find, read and measure it inside one page.waitForFunction (.claude/rules/browser-test-stability.md)');
+});
+
+// Trap (2026-11-21, main CI 44925164077): the swipe hint chip clears itself 6 s after it shows (track-swipe-ui.ts). The spec's
+// toggleAirflowPreview opens Settings, clicks and closes it; on CI that outlived the chip, so the live data-state read "" for
+// the whole 30 s (track-swipe-browser phone reload hint, red on both attempts). Record the hint with an observer instead.
+test('a spec records the self-clearing swipe hint with an observer, not its live data-state', () => {
+  const offenders = FILES.flatMap(file => readFileSync(new URL(file, import.meta.url), 'utf8').split('\n').flatMap(
+    (line, i) => /toHaveAttribute\(\s*'data-state',\s*'hint'\s*\)/.test(line) ? [`tests/${file}:${i + 1}`] : []));
+  assert.deepEqual(offenders, [], 'record the hint in a MutationObserver (watchHints, tests/track-swipe-browser.spec.js) (.claude/rules/browser-test-stability.md)');
 });
 
 // Trap (2026-11-20, CI 44674764907): hazard-captures and track-themes end on page.reload(), so the test ended while

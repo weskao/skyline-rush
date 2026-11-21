@@ -9,6 +9,21 @@ const trackOrder = async page => {
   return page.locator('[data-track]').evaluateAll(buttons => buttons.map(button => button.dataset.track));
 };
 const chip = page => page.locator('#track-swipe');
+// The hint chip clears itself 6 s after it shows, and the Settings toggle that raises it can outlast that on CI
+// (main 44925164077): record each hint in the tick that sets it, then assert on the record.
+const watchHints = page => chip(page).evaluate(element => {
+  window.__hints = [];
+  new MutationObserver(() => {
+    if (element.dataset.state !== 'hint') return;
+    const dot = element.querySelector('.swipe-gesture i');
+    window.__hints.push({
+      note: element.querySelector('#track-swipe-note').textContent,
+      animation: getComputedStyle(dot).animationName,
+      dotVisible: dot.getBoundingClientRect().width > 0,
+    });
+  }).observe(element, { attributes: true, attributeFilter: ['data-state'] });
+});
+const hints = page => page.evaluate(() => window.__hints);
 
 // Real touch input through CDP: start, a few moves, release; holdMs pauses before lifting (no flick).
 async function touchSwipe(page, from, to, y, { steps = 8, stepMs = 16, holdMs = 0 } = {}) {
@@ -60,11 +75,13 @@ test.describe('phone', () => {
         if (element.dataset.state === 'done') window.__sawSwipeDone = true;
       }).observe(element, { attributes: true, attributeFilter: ['data-state'] });
     });
+    await watchHints(page);
     await toggleAirflowPreview(page);
-    await expect(chip(page)).toHaveAttribute('data-state', 'hint');
-    await expect(chip(page)).toContainText('Swipe left or right to change track');
-    await expect(page.locator('.swipe-gesture i')).toBeVisible();
-    expect(await page.locator('.swipe-gesture i').evaluate(dot => getComputedStyle(dot).animationName)).toBe('swipe-gesture');
+    await expect.poll(() => hints(page)).toHaveLength(1);
+    const [hint] = await hints(page);
+    expect(hint.note).toContain('Swipe left or right to change track');
+    expect(hint.dotVisible).toBe(true);
+    expect(hint.animation).toBe('swipe-gesture');
     expect(await page.evaluate(() => document.elementFromPoint(195, 560)?.id)).toBe('world');
 
     await touchSwipe(page, 195, 165, 560, { stepMs: 30, holdMs: 150 });
@@ -90,10 +107,11 @@ test.describe('phone', () => {
     expect(await selected(page)).toBe(first);
 
     await page.reload();
+    await watchHints(page);
     await toggleAirflowPreview(page); // airflow was saved on: off, then on again
     await toggleAirflowPreview(page);
     await expect(page.locator('#airflow-toggle')).toHaveAttribute('aria-pressed', 'true');
-    await expect(chip(page)).toHaveAttribute('data-state', 'hint'); // each new page load gets one hint
+    await expect.poll(() => hints(page)).toHaveLength(1); // each new page load gets one hint
     expect(errors).toEqual([]);
   });
 
@@ -308,28 +326,19 @@ test.describe('phone reload hint', () => {
   test('swipe hint appears once per page load, even after a previous visit saved a hint marker', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('skyline-rush-swipe-hint', 'shown'));
   await page.goto('/');
-  const seen = () => page.evaluate(() => window.__hintCount);
-  const watch = () => chip(page).evaluate(element => {
-    window.__hintCount = 0;
-    new MutationObserver(() => {
-      if (element.dataset.state === 'hint') window.__hintCount++;
-    }).observe(element, { attributes: true, attributeFilter: ['data-state'] });
-  });
-  await watch();
+  await watchHints(page);
   await toggleAirflowPreview(page);
-  await expect(chip(page)).toHaveAttribute('data-state', 'hint');
-  await expect.poll(seen).toBe(1);
+  await expect.poll(() => hints(page)).toHaveLength(1);
   await toggleAirflowPreview(page);
   await toggleAirflowPreview(page);
-  expect(await seen(), 'toggle off/on again in same loaded page must not repeat hint').toBe(1);
+  expect(await hints(page), 'toggle off/on again in same loaded page must not repeat hint').toHaveLength(1); // settled: the observer already holds every hint set so far
 
   await page.reload();
-  await watch();
+  await watchHints(page);
   // Airflow setting persists; switch off then back on to trigger this page's first enable.
   await toggleAirflowPreview(page);
   await toggleAirflowPreview(page);
-  await expect(chip(page)).toHaveAttribute('data-state', 'hint');
-  await expect.poll(seen).toBe(1);
+  await expect.poll(() => hints(page)).toHaveLength(1);
   });
 });
 

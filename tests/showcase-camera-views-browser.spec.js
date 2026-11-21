@@ -154,10 +154,11 @@ for (const id of CAMERA_TRACKS) {
 }
 
 // Garage uses the same course and camera dock: preserve the home shot's scene context.
-for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
-  test(`Garage retains home camera distance and a visible car at ${viewport.width}px`, async ({ page }) => {
+// One test per map: all maps in one test took 2.3 m, 2.8 m, then 3.1 m on software WebGL and hit the 180 s CI timeout.
+for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) for (const id of TRACKS) {
+  test(`Garage retains home camera distance and a visible car: ${id} at ${viewport.width}px`, async ({ page }) => {
     await openProbe(page, viewport);
-    for (const id of TRACKS) for (const view of ['drive', ...Object.keys(FIXED), 'orbit']) {
+    for (const view of ['drive', ...Object.keys(FIXED), 'orbit']) {
       // One probe at a time: both share the live world and wait for its first drawn frame.
       const [home, garage] = await page.evaluate(async ([id, view]) => [
         await window.showcaseCameraProbe(id, view, { airflow: true }),

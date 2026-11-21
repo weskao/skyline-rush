@@ -171,6 +171,12 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   or weaken the shipped deadline: wait for the loading step, release, then expect RACING. A hold that outlasts a slow
   runner calls `widenModelDeadline(page)` (`tests/helpers/gameplay-browser.js`, Vite dev server only). Enforced by
   `tests/browser-timeouts.test.js` (*releases it before it waits for RACING*, *widens the loader deadline*).
+- **COUNTDOWN includes the loading hold.** `#race-status` reads COUNTDOWN while the grid waits for the car, scenery
+  and pickups (`#countdown[data-step="loading"]`), and the 3-2-1 only starts after it. A RACING wait under the 10 s
+  default budget therefore waits for `#countdown` to leave `data-step="loading"` first. Trap (2026-11-21, main CI
+  44925164077): `countdown-slow-render` gave RACING `ciTimeout(4000)` straight after COUNTDOWN and failed both attempts;
+  its screenshot shows the race starting just after the budget. Enforced by `tests/browser-timeouts.test.js`
+  (*a short RACING wait starts after the grid has left its loading step*).
 - **A route handler can outlive its test.** A spec that ends on a navigation leaves `route.fetch()` in flight;
   closing the context disposes the response and fails a passed test with "Response has been disposed"
   (hazard-captures, track-themes, 44674764907). The shared context fixture runs `unrouteAll` with
@@ -180,6 +186,12 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   `page.waitForFunction`, as for the halfway card; chained locator reads found it gone on CI (toggle-feedback,
   44674764907). Enforced by `tests/browser-timeouts.test.js` (*self-expiring element in one page tick*). A fixed
   sleep or an `isVisible()` check after a load is not readiness either; that guard rejects both.
+- **The swipe hint chip clears itself 6 s after it shows (`showSwipeChip`, `src/track-swipe-ui.ts`).** The Settings
+  toggle that raises it (`toggleAirflowPreview`: open, click, close) can outlast that on CI, so the live
+  `data-state` read `""` for the whole 30 s while AIRFLOW was already on (phone reload hint, red on both attempts,
+  main 44925164077). Record each hint in a `MutationObserver` installed before the toggle (`watchHints`,
+  `tests/track-swipe-browser.spec.js`) and assert on the record. Enforced by `tests/browser-timeouts.test.js`
+  (*records the self-clearing swipe hint with an observer*).
 - **Two tabs racing a store confirm depend on order.** Since `2a98ebde` a tab withdraws a confirmation another
   tab's commit made stale; hold the demo Web Lock until both tabs show `aria-busy`, then release it
   (`wave3-economy-transactions-browser.spec.js`).
@@ -293,3 +305,19 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
 - Run `make verify` and other long gates on a detached worktree pinned to the commit
   (`git worktree add --detach .claude/worktrees/<name> <sha>`, then `npm ci`), and record
   `git rev-parse HEAD` before and after the run.
+- A tap after a raw `page.goto` waits for Home first (`waitForHome`). The diag-relay probe tapped and then gave the 500 ms
+  flush only 4.5 s: on CI's cold Vite module load and CPU WebGL the page was starved and the poll timed out (develop run
+  44946255115; passed on retry, never reproduced locally). Guard: "a touch tap after a raw page load waits for Home" in
+  `tests/browser-timeouts.test.js`.
+- The Home wallet card closes on any scroll (`dismissOnScroll`, `src/Wave3CurrencyStrip.vue`). In a short landscape
+  viewport Playwright scrolls the currency button into view before its click, and the scroll event can land after the
+  click, closing the card it opened (756x265, develop run 44946255115, 4/4 locally under load). Scroll into view, wait two
+  frames, then click. Guard: "a spec clicks a wallet currency only after scrolling it into view and a frame".
+- The 3-2-1 is short-lived wall-clock state. `interactive-tutorial-browser.spec.js` polled `data-phase` for `countdown` after
+  `click()` and saw `racing` for the whole 30 s on CI (develop run 44946255115, both attempts; 4/4 pass locally). Record the
+  countdown in the page per frame (`window.__countdownFrames`) and assert it after the race starts. Guard: "a spec that
+  samples the countdown in the page does not also poll the live countdown phase".
+- A browser test never sweeps every track. The Garage camera sweep (`showcase-camera-views-browser.spec.js`) took 2.3 m,
+  2.8 m, then 3.1 m on CI's software WebGL and hit the 180 s timeout with each new course (develop runs 44925139371 and
+  44946255115). Declare one test per track; do not raise the timeout. Guard: "a showcase camera spec loops over the
+  tracks outside its tests".
