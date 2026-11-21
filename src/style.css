@@ -2522,7 +2522,7 @@ body[data-phase="finished"] .overlay-actions:has(#choose-track[data-primary-acti
 #touch-controls[data-pad-brake] .pad-knob { background: #ff907d; }
 
 /* Race chronograph: the single simulation timer; no extra RAF, listeners or clock intervals. */
-.race-clock {
+.position-stat > .race-clock {
   --clock-accent: #6bdbf6;
   display: inline-flex; align-items: center; gap: 8px; width: max-content; min-width: 171px;
   margin-top: 13px; padding: 7px 11px 7px 7px;
@@ -2541,19 +2541,25 @@ body[data-phase="finished"] .overlay-actions:has(#choose-track[data-primary-acti
 .race-clock[data-state="finished"] { --clock-accent: #a5efb1; border-color: rgb(145 237 183 / .44); }
 .race-clock[data-state="ready"] { --clock-accent: #aec6df; }
 @media (max-width: 760px) {
-  .race-clock { min-width: 0; gap: 5px; margin-top: 9px; padding: 5px 7px 5px 4px; border-left-width: 2px; border-radius: 7px 4px 7px 4px; }
+  .position-stat > .race-clock { min-width: 0; gap: 5px; margin-top: 9px; padding: 5px 7px 5px 4px; border-left-width: 2px; border-radius: 7px 4px 7px 4px; }
   .race-clock-icon { width: 25px; height: 25px; }
   .race-clock-state { font-size: 7px; letter-spacing: .8px; }
   .race-clock-readout { font-size: 17px; letter-spacing: .3px; }
 }
 @media (pointer: coarse) and (max-height: 500px) {
-  .race-clock { margin-top: 5px; padding: 3px 6px 3px 3px; gap: 4px; }
+  .position-stat > .race-clock { margin-top: 5px; padding: 3px 6px 3px 3px; gap: 4px; }
   .race-clock-icon { width: 22px; height: 22px; }
   .race-clock-state { font-size: 6px; letter-spacing: .65px; }
   .race-clock-readout { font-size: 16px; }
 }
 @media (max-width: 370px) {
-  .race-clock { gap: 3px; padding-right: 5px; }
+  .position-stat > .race-clock { gap: 3px; padding-right: 5px; }
   .race-clock-icon { width: 22px; height: 22px; }
   .race-clock-readout { font-size: 16px; }
+}
+@media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
+  /* The leaderboard begins at x=150px: keep the clock inside the left POSITION gutter. */
+  .position-stat > .race-clock { margin-top: 3px; padding: 2px 4px 2px 2px; gap: 3px; }
+  .race-clock-icon { width: 19px; height: 19px; }
+  .race-clock-readout { font-size: 14px; letter-spacing: 0; }
 }
