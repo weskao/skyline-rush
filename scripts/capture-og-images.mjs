@@ -1,10 +1,10 @@
 // Captures the bilingual link-preview and README images from the real app (never from mocks).
 //   node scripts/capture-og-images.mjs [og] [readme]   (default: both)
-//   og     -> public/og-image.en.jpeg + public/og-image.zh-TW.jpeg (1440x900 start screen), then copies the English one to
-//             public/og-image.jpeg, the single static og:image (crawlers cannot switch language)
+//   og     -> public/og-image.jpeg (1440x900 English startup screen), the single static og:image (crawlers cannot switch
+//             language). public/og-image.{en,zh-TW}.jpeg are the 0.21.0 release-notes images, kept as archived.
 //   readme -> artifacts/{readme-start,readme-hero,mobile-flight,race-results}{,.zh-TW}.jpeg (English, then zh-TW)
 // The zh-TW run uses Playwright locale zh-TW, so the app's own system-language detection picks the language.
-import { copyFile, mkdir } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
 import { createServer } from 'vite';
@@ -43,6 +43,16 @@ const shoot = async (page, path) => {
   await page.screenshot({ path, quality: 70, type: 'jpeg' });
   console.log(path);
 };
+// The link-preview cover: the startup screen once it is ready, still (reduced motion), without its buttons.
+const cover = async () => {
+  const context = await browser.newContext({ locale: 'en-US', viewport: DESKTOP, reducedMotion: 'reduce' });
+  const page = await context.newPage();
+  await page.goto(url);
+  await page.locator('#startup[data-stage="3"]').waitFor({ timeout: 120000 });
+  await page.addStyleTag({ content: '#startup-enter, #startup-music { visibility: hidden }' });
+  await shoot(page, `${root}public/og-image.jpeg`);
+  await context.close();
+};
 const startRace = async page => {
   await page.locator('#start-button').click();
   await page.locator('#countdown').waitFor({ state: 'visible' });
@@ -50,20 +60,17 @@ const startRace = async page => {
 };
 
 try {
-  await mkdir(new URL('artifacts/', `file://${root}`), { recursive: true });
+  if (targets.includes('og')) await cover();
+  if (targets.includes('readme')) await mkdir(new URL('artifacts/', `file://${root}`), { recursive: true });
   for (const [locale, system] of LOCALES) {
-    const suffix = locale === 'en' ? 'en' : locale;
+    if (!targets.includes('readme')) break;
     const readme = name => `${root}artifacts/${name}${locale === 'en' ? '' : `.${locale}`}.jpeg`;
-    if (targets.includes('og') || targets.includes('readme')) {
-      const page = await open(system, DESKTOP);
-      // The scrollable intro panel is a few px too short at 1440x900, so the footnote tip is cut mid-sentence; keep it out of the cover.
-      await page.addStyleTag({ content: '.flight-tip { display: none }' });
-      await page.locator('#settings-button').click();
-      if (targets.includes('og')) await shoot(page, `${root}public/og-image.${suffix}.jpeg`);
-      if (targets.includes('readme')) await shoot(page, readme('readme-start'));
-      await page.context().close();
-    }
-    if (!targets.includes('readme')) continue;
+    const page = await open(system, DESKTOP);
+    // The scrollable intro panel is a few px too short at 1440x900, so the footnote tip is cut mid-sentence; keep it out of the shot.
+    await page.addStyleTag({ content: '.flight-tip { display: none }' });
+    await page.locator('#settings-button').click();
+    await shoot(page, readme('readme-start'));
+    await page.context().close();
     // In flight: hold W to speed, then hold Space once above the lift-off speed.
     const hero = await open(system, DESKTOP);
     await startRace(hero);
@@ -97,4 +104,3 @@ try {
   await browser.close();
   await server.close();
 }
-if (targets.includes('og')) await copyFile(`${root}public/og-image.en.jpeg`, `${root}public/og-image.jpeg`);
