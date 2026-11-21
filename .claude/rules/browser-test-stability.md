@@ -156,6 +156,13 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   locators to Home (`#intro-title`): the startup h1 stays in the DOM. Enforced by the same test file
   (*gesture or absence branch after a page load*). `page.reload()` resolves before `main.js` runs too: take a
   storage or state baseline only after `waitForHome(page)`.
+- **`data-phase="ready"` is not a painted preview.** `#world` keeps `data-frame-loading` (`visibility:hidden`,
+  `src/race-loading.css`, set in `src/world.js`) until its first frame paints, and again after each race rebuild, so
+  `document.elementFromPoint` returns `#app` and a mouse press on the preview never starts a drag. Trap (develop CI
+  44892040873, since `820f9038`): four desktop `track-swipe-browser` tests failed; the trackpad ones passed because they
+  dispatch the wheel on the canvas element itself. Call `waitForWorldFrame(page)` (`tests/helpers/test.js`) after
+  `waitForHome` before any real mouse press or hit-test on the preview. Enforced by `tests/browser-timeouts.test.js`
+  (*waits for the painted world frame*).
 - **A route handler can outlive its test.** A spec that ends on a navigation leaves `route.fetch()` in flight;
   closing the context disposes the response and fails a passed test with "Response has been disposed"
   (hazard-captures, track-themes, 44674764907). The shared context fixture runs `unrouteAll` with

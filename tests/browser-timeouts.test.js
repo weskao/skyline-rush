@@ -189,6 +189,15 @@ test('a gesture or an absence branch after a page load waits for Home', () => {
   assert.deepEqual(offenders, [], 'Load with gotoHome(page): isVisible() does not wait and main.js listens after page.goto resolves (.claude/rules/browser-test-stability.md)');
 });
 
+// `data-phase="ready"` precedes the first painted frame; until then #world is visibility:hidden and a press or hit-test lands on #app.
+test('a spec that drags the Home preview waits for the painted world frame', () => {
+  const offenders = FILES.filter(file => {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    return /#track-swipe/.test(source) && /\bmouse\.down\(\)|elementFromPoint/.test(source) && !/\bwaitForWorldFrame\(/.test(source);
+  });
+  assert.deepEqual(offenders, [], 'Call waitForWorldFrame(page) before pressing the preview: #world is hidden until its first frame (.claude/rules/browser-test-stability.md)');
+});
+
 test('CI retries a failed browser test once and still reports it; local runs never retry', () => {
   for (const ci of ['1', undefined]) {
     const env = { ...process.env };

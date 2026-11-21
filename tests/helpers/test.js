@@ -60,6 +60,10 @@ export const waitForHome = async page => {
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
 };
 
+// `data-phase="ready"` lands before the first frame: #world stays visibility:hidden (data-frame-loading, src/world.js)
+// until it paints, and is hit-testable only then. A mouse press or elementFromPoint on the preview before that hits #app.
+export const waitForWorldFrame = page => expect(page.locator('#world')).not.toHaveAttribute('data-frame-loading', /.*/);
+
 export const gotoHome = async (page, url = '/') => {
   await page.goto(url);
   await waitForHome(page);

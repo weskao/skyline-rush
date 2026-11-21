@@ -1,10 +1,11 @@
 import { clickLobbyOption } from './helpers/home-lobby.js';
 import { toggleAirflowPreview } from './helpers/settings-browser.js';
-import { test, expect, waitForHome } from './helpers/test.js';
+import { test, expect, waitForHome, waitForWorldFrame } from './helpers/test.js';
 
 const selected = page => page.locator('[data-track][aria-pressed="true"]').getAttribute('data-track');
 const trackOrder = async page => {
   await waitForHome(page);
+  await waitForWorldFrame(page);
   return page.locator('[data-track]').evaluateAll(buttons => buttons.map(button => button.dataset.track));
 };
 const chip = page => page.locator('#track-swipe');

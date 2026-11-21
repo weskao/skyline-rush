@@ -2,6 +2,7 @@ import { clickLobbyOption } from './helpers/home-lobby.js';
 import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
+import { waitForWorldFrame } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { recordTrackId } from '../src/record-layout.ts';
 
@@ -135,6 +136,7 @@ test('canceling a real track swipe preserves the selected atmosphere and current
   await clickLobbyOption(page, 'button[data-race-mode="custom"]');
   await page.locator('#race-mode-rules > summary').click();
   await choosePreset(page, 'Night');
+  await waitForWorldFrame(page);
   await page.mouse.move(1150, 600);
   await page.mouse.down();
   await page.mouse.move(1120, 600, { steps: 4 });
