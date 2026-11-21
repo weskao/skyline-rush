@@ -5,6 +5,7 @@ import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ciTimeout } from './helpers/ci.js';
+import { waitForHome } from './helpers/test.js';
 
 // Boots its own VITE_DIAG=1 dev server: the shared config serves the production preview, which has no relay by design.
 // A fixed default once equalled PLAYWRIGHT_PORT: --strictPort made this Vite exit and every request hit the preview.
@@ -48,6 +49,8 @@ test('a phone diag session streams device, beat, input, console and pagehide ent
   expect(device.session).toMatch(/^[0-9a-f]{12}$/);
   expect(device.peer).toMatch(/127\.0\.0\.1|::1/);
 
+  // The beat comes from the relay module alone; Home's cold dev-server module load and CPU WebGL can still starve the 500 ms flush.
+  await waitForHome(page);
   await page.touchscreen.tap(195, 420);
   await page.evaluate(() => console.error('relay probe'));
   const sent = Date.now();
