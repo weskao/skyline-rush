@@ -62,7 +62,8 @@ for (const track of ['canyon', 'spiral']) test(`${track}: gap half-way boundary 
 
 for (const track of ['spiral', 'canyon']) test(`${track}: third failure rescues without awarding rewards`, () => {
   const race = racing(track), car = race.player, gap = RACE_TRACKS[track].sections.find(section => section.type === 'gap');
-  race.rivals = race.traffic = race.rings = race.pickups = [];
+  race.rivals = race.traffic = race.pickups = [];
+  race.rings = [{ distance: gap.to + 8, x: 0, altitude: 0, radius: 2, type: 'nitro', group: 0, groupSize: 1 }];
   const snapshot = [car.score, car.rings, car.nitro, car.fuel];
   const before = race.elapsed;
   for (let attempt = 1; attempt <= 3; attempt++) {
@@ -77,6 +78,7 @@ for (const track of ['spiral', 'canyon']) test(`${track}: third failure rescues 
   assert.equal(car.falls, 3);
   assert.equal(car.distance, gap.to + 18);
   assert.deepEqual([car.score, car.rings, car.nitro, car.fuel], snapshot);
+  assert.ok(!race.rings[0].hit, 'rescue does not sweep the far-side ring');
   tick(race);
   assert.equal(car.gapFallStreak, null, 'the safe far side clears the consecutive-fall streak');
 });
@@ -98,6 +100,18 @@ test('manual R does not increment consecutive falls; crossing solid road resets 
   Object.assign(car, { distance: gap.from + 1, speed: 0 });
   tick(race);
   assert.equal(car.gapFallStreak.count, 1, 'passing the gap prevents stale rescue credit');
+});
+
+test('mid-gap rescue cannot credit a checkpoint or its score', () => {
+  const race = racing('canyon', { mode: 'checkpoint' }), car = race.player;
+  const gap = RACE_TRACKS.canyon.sections.find(section => section.type === 'gap');
+  race.rivals = race.traffic = race.rings = race.pickups = [];
+  const original = { score: car.score, passed: race.checkpoint.passed, missed: race.checkpoint.missed };
+  Object.assign(car, { distance: (gap.from + gap.to) / 2 + 1, altitude: 0, verticalSpeed: 0, speed: 0 });
+  tick(race);
+  assert.ok(car.recovery.seat.distance > gap.to);
+  finishRecovery(race);
+  assert.deepEqual({ score: car.score, passed: race.checkpoint.passed, missed: race.checkpoint.missed }, original);
 });
 
 test('manual recovery stays in the same race, pauses cleanly and never sweeps rewards', () => {
