@@ -34,13 +34,14 @@ test('layout versions track the current road and item layouts', () => {
   assert.equal(recordTrackId('neon'), 'neon@7');
   assert.equal(layoutVersion(CIRCUIT_ID), 4);
   assert.equal(layoutVersion('aurora'), 6);
-  for (const id of WORLD_TOUR) assert.equal(layoutVersion(id), 4, id);
+  for (const id of WORLD_TOUR) assert.equal(layoutVersion(id), id === 'tokyo' ? 5 : 4, id);
   assert.equal(layoutVersion('nowhere'), 1);
   assert.equal(recordTrackId('coast'), 'coast@6');
   assert.equal(recordTrackId(CIRCUIT_ID), CIRCUIT_ID + '@4');
   assert.equal(recordTrackId('aurora'), 'aurora@6');
   assert.deepEqual(recordTrackIds('coast'), ['coast', 'coast@2', 'coast@3', 'coast@4', 'coast@5', 'coast@6']);
   assert.deepEqual(recordTrackIds('taipei'), ['taipei', 'taipei@2', 'taipei@3', 'taipei@4']);
+  assert.deepEqual(recordTrackIds('tokyo'), ['tokyo', 'tokyo@2', 'tokyo@3', 'tokyo@4', 'tokyo@5']);
   assert.ok(Object.keys(RACE_TRACKS).every(id => recordTrackId(id).includes('@')), 'every track records under a new id');
 });
 

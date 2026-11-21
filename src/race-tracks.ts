@@ -85,7 +85,7 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
     ],
   },
   tokyo: {
-    name: 'Tokyo Afterdark', length: profileLength('tokyo'), trafficDensity: 1.4, seed: 7007, layoutVersion: 4,
+    name: 'Tokyo Afterdark', length: profileLength('tokyo'), trafficDensity: 1.4, seed: 7007, layoutVersion: 5,
     itemDensity: profileLength('tokyo') / 6800, ringDensity: .96,
     shapeOdds: PROFILE_RING_SHAPES,
     sections: [

@@ -19,8 +19,12 @@ landmarks · `src/world.js` lighting · `src/route-map.js` + `src/style.css` rou
   minimap skin. Shared placement/streaming is fine; shared-looking scenery is not.
 - Roadside props are keyed by absolute `trackId + chunkIndex`, never modulo-cycled near the
   player; mountain/coastal terrain joins exactly at chunk boundaries.
-- `src/game.js` owns `boost-tunnel` reward/collision state: one use per race, visual trigger
-  volumes never grant rewards per frame.
+- `src/game.js` owns `boost-tunnel` rewards: one claim **per authored section** per race,
+  keyed by section start; visual trigger volumes never grant repeated frame rewards.
+- Tokyo's two well-separated, 640/680 m Hyperdrive sections add only +4 charge/sec while
+  grounded and moving >=20 m/s. BOOST retains net drain. Render the **nearby** sector in
+  every graphics tier, with subdued roadside lighting; never reuse the first sector at
+  all distances or make stopped/airborne cars farm charge.
 - Collectibles and particles use `trackLocalPosition` (no hovering pickups / buried effects on
   elevated or curved roads). Minimap never reveals shortcuts.
 - Keep bloom, emissive and mirror asphalt subdued in the centre sightline; put subdued lights on
