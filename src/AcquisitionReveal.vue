@@ -1,14 +1,14 @@
 <script setup lang="ts">
+import CollectibleIcon from './CollectibleIcon.vue';
+import { acquisitionItemIcon } from './collectible-icons.ts';
 import { computed, inject, onMounted, onUnmounted, shallowRef, ref, watchPostEffect } from 'vue';
-import { acquisitionReveal, type AcquisitionActionFor, type AcquisitionBatch, type AcquisitionItem, type AcquisitionKind } from './acquisition-reveal.ts';
+import { acquisitionReveal, type AcquisitionActionFor, type AcquisitionBatch, type AcquisitionItem } from './acquisition-reveal.ts';
 import { getLocale, onLocaleChange } from './i18n.ts';
 import { dialogNavigation } from './dialog-navigation.ts';
-import { icons, ICON_ATTRS } from './icons.ts';
 import { ACQUISITION_SOUNDS } from './feedback-sounds.ts';
 import AcquisitionCarStage from './AcquisitionCarStage.vue';
 import type { CarRevealShot } from './acquisition-car-camera.ts';
 import { carArtwork, isCar } from './car-catalog.ts';
-import { GARAGE_POSE_ART } from './lobby-art.ts';
 import './acquisition-reveal.css';
 import './acquisition-motion.css';
 
@@ -28,10 +28,6 @@ const labels = {
     wear: ['立即穿戴', '已穿戴'], use: ['立即使用', '已使用'], trackAction: ['前往賽道', ''],
     applying: '套用中…', unavailable: '目前無法套用此獎勵。' },
 } as const;
-const glyph: Record<AcquisitionKind, string> = {
-  car: `<path d="${GARAGE_POSE_ART.car}"/>`, track: icons.flag, paint: icons.nitro,
-  equipment: icons.airflow, clothing: icons.star, item: icons.star, medal: icons.star, currency: icons.star,
-};
 const cue = inject<(name: string) => void>('game-audio-cue', () => {});
 const garageAction = inject<() => AcquisitionActionFor | undefined>('acquisition-garage', () => undefined);
 const dialog = ref<HTMLDialogElement>();
@@ -191,7 +187,7 @@ function continueGame(): void {
             <div v-if="!car" class="acquisition-accents"></div>
             <img v-if="art && failedArt !== art" :src="art" class="acquisition-art" alt="" @error="failedArt = art ?? ''" />
             <div v-else class="acquisition-emblem">
-              <svg v-bind="ICON_ATTRS" v-html="glyph[item.kind]"></svg>
+              <CollectibleIcon :name="acquisitionItemIcon(item)" />
             </div>
             <div class="acquisition-scan"></div>
           </div>
@@ -207,21 +203,18 @@ function continueGame(): void {
             <button v-for="(reward, index) in active.items" :key="reward.kind + ':' + reward.id" type="button"
               :aria-pressed="index === selected" :aria-label="reward.name[locale]"
               :disabled="actionState === 'pending'" @click="selectReward(index)">
-              <svg v-bind="ICON_ATTRS" v-html="glyph[reward.kind]"></svg><span>{{ reward.name[locale] }}</span>
+              <CollectibleIcon :name="acquisitionItemIcon(reward)" /><span>{{ reward.name[locale] }}</span>
             </button>
           </div>
           <div class="acquisition-controls">
             <div class="acquisition-actions">
               <button ref="primary" class="acquisition-continue" type="button" @click="continueGame">
-                {{ copy.continue }} <svg v-if="!action" v-bind="ICON_ATTRS" v-html="icons.arrow"></svg>
+                {{ copy.continue }} <CollectibleIcon name="continue" />
               </button>
               <button v-if="action" class="acquisition-apply" type="button" :data-action="action.kind"
                 :data-applied="applied || undefined" :aria-disabled="applied || actionState === 'pending' || undefined"
                 :aria-busy="actionState === 'pending' || undefined" @click="applyReward">
-                <svg v-bind="ICON_ATTRS">
-                  <path v-if="applied" d="m5 12 4 4L19 6" />
-                  <g v-else v-html="glyph[item.kind]"></g>
-                </svg>
+                <CollectibleIcon :name="applied ? 'check' : actionState === 'pending' ? 'pending' : action.kind === 'use' ? 'use' : item.kind" />
                 {{ actionLabel }}
               </button>
             </div>

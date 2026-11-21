@@ -17,6 +17,7 @@
 }
 
 #garage-screen .garage-mode-controls button {
+  --collectible-gap: 0px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -40,20 +41,8 @@
   border-color: #79d9f4;
   background: linear-gradient(155deg, #24465d, #102637);
 }
-#garage-screen #garage-pose-action svg {
-  width: 17px;
-  height: 17px;
-  flex: none;
-  fill: none;
-  stroke: #92ebff;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-#garage-screen .garage-camera-controls button > svg {
+#garage-screen .garage-camera-controls button > .collectible-icon {
   display: block;
-  width: 19px;
-  height: 19px;
   margin-inline: auto;
 }
 @media (hover: hover) {
@@ -110,8 +99,12 @@
   border-radius: 5px; min-height: 34px; color: #b5c9da;
 }
 #garage-screen #garage-pose-action > [data-active="true"] { background: #205068; color: #fff; }
-#garage-screen #garage-pose-action svg { width: 26px; height: 18px; stroke: currentColor; }
 @media (max-width: 380px) {
   #garage-screen #garage-pose-action > span { padding-inline: 2px; }
-  #garage-screen #garage-pose-action svg { width: 21px; }
 }
+
+
+#showcase-camera-dock button > .collectible-icon { display: none; }
+#garage-screen #showcase-camera-dock button > .collectible-icon { display: inline-block; }
+#garage-screen #showcase-camera-dock .showcase-dock-glyph { display: none; }
+#garage-screen #garage-pose-action > span .collectible-icon { flex: none; }

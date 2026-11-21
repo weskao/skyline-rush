@@ -226,3 +226,10 @@ body[data-fold-axis="horizontal"] #garage-screen .garage-layout[data-demo-catalo
   grid-template: minmax(0, 1fr) / minmax(0, 1fr) minmax(0, 65%);
   gap: 8px;
 }
+
+
+#garage-screen .garage-section-nav button > .collectible-icon { margin-inline-end: 4px; }
+#garage-screen .garage-section-nav button > span { vertical-align: middle; }
+@media (max-width: 480px) {
+  #garage-screen .garage-section-nav button > .collectible-icon { margin-inline-end: 2px; }
+}

@@ -127,7 +127,6 @@
   transform: rotate(-8deg);
   animation: acquisition-trophy 650ms cubic-bezier(.18,.7,.2,1) both;
 }
-.acquisition-emblem svg { width: 48%; height: 48%; }
 .acquisition-copy { padding: clamp(20px, 5vw, 38px); }
 .acquisition-status {
   display: flex;
@@ -164,6 +163,7 @@
   scrollbar-width: thin;
 }
 .acquisition-reveal button {
+  --collectible-gap: 0px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -179,7 +179,7 @@
   font-size: .8rem;
   font-weight: 750;
 }
-.acquisition-reveal button svg { width: 16px; height: 16px; flex: none; }
+.acquisition-reveal button .collectible-icon { margin-inline-end: 0; }
 .acquisition-rewards button { flex: none; white-space: nowrap; }
 .acquisition-rewards button[aria-pressed="true"] { border-color: var(--reveal-cyan); color: #e2f9ff; background: #1e4359; }
 .acquisition-reveal button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
@@ -219,7 +219,7 @@
   border-color: #61ae91;
   box-shadow: none;
 }
-.acquisition-apply[data-applied] svg { animation: acquisition-confirm 260ms ease-out both; }
+.acquisition-apply[data-applied] .collectible-icon { animation: acquisition-confirm 260ms ease-out both; }
 .acquisition-action-status:not([data-error]) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .acquisition-action-status[data-error] { display: block; margin-top: 6px; color: #ffc1b8; font-size: .78rem; }
 @keyframes acquisition-confirm { from { opacity: .45; transform: scale(.7); } }
