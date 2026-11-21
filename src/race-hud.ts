@@ -2,7 +2,7 @@ import { setTextIfChanged as setHudText, setHiddenIfChanged as setHudHidden, cre
 import { trackProgressBottom } from './hud-progress-offset.ts';
 import { t, interpolate, getLocale, CATALOGS } from './i18n.ts';
 import { icon } from './icons.ts';
-import { timeString } from './time-format.ts';
+import { raceClockState, raceClockTime } from './race-clock.ts';
 import { racePosition, sprintGaps, gapChargeWarning, MAX_SPEED, driftTier } from './game.js';
 import { ghostAt, type GhostRun } from './ghost.ts';
 import { createCallouts } from './callouts.ts';
@@ -56,6 +56,8 @@ export function createRaceHud(options: HudOptions) {
   trackProgressBottom($('.race-progress'));
   const countdownNumber = $('#countdown-number');
   const countdownLabel = $('#countdown-label');
+  const raceClock = $('#race-clock');
+  const raceClockStatus = $('#race-clock-state');
   const speedTicks = [...document.querySelectorAll<HTMLElement>('.speed-ticks i')];
   let leaderboardRows: HTMLElement[] = [];
   let roster = '';
@@ -130,7 +132,10 @@ export function createRaceHud(options: HudOptions) {
     if (calm || race.phase !== 'racing') for (const element of [ui.position!, positionChange]) element.getAnimations().forEach(animation => animation.cancel());
   }
   function updateProgress(race: HudRace, car: HudRace): void {
-    setHudText(ui.timer!, timeString(race.elapsed));
+    const clockState = raceClockState(race.phase);
+    if (raceClock.dataset.state !== clockState) raceClock.dataset.state = clockState;
+    setHudText(raceClockStatus, L[`race.clock.${clockState}`]!);
+    setHudText(ui.timer!, raceClockTime(race.elapsed));
     setHudText(ui.distance!, (car.distance / 1000).toFixed(2));
     setHudText(hudNodes['race-length']!, race.endless ? '∞' : (race.length / 1000).toFixed(2));
     const timeGhost = race.mode === 'time' && getControlPrefs().ghost ? options.timeTrialGhost(race) : null;

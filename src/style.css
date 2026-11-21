@@ -139,7 +139,7 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
 #position-change[data-direction="lost"], #position[data-direction="lost"] { color: #ff9b93; }
 .vfx-comfort #speed-needle { transition: none; }
 @media (prefers-reduced-motion: reduce) { #speed-needle { transition: none !important; } }
-.time { display: block; margin-top: 17px; font-size: 13px; letter-spacing: 1px; font-variant-numeric: tabular-nums; }
+
 .race-progress { width: 300px; padding-top: 4px; position: absolute; left: 50%; transform: translateX(-50%); }
 .progress-labels { display: flex; justify-content: space-between; color: #e4e4e0; font-size: 8px; letter-spacing: 1.3px; }
 .leaderboard { width: 175px; }
@@ -260,7 +260,7 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
   .position-stat strong { font-size: 47px; }
   .position-stat > div { gap: 5px; }
   .position-stat > div > span { font-size: 11px; }
-  .time { font-size: 10px; margin-top: 12px; }
+  
   .race-progress { top: 103px; width: 100%; }
   .progress-labels { font-size: 7px; letter-spacing: .9px; }
   .leaderboard { width: 103px; }
@@ -311,7 +311,7 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
   .leaderboard { width: 125px; }
   .racer { height: 23px; font-size: 8px; }
   .race-progress { width: 250px; }
-  .time { font-size: 10px; margin-top: 10px; }
+  
   .countdown { top: 30%; font-size: 85px; }
   .race-overlay { inset: 70px 0 0; }
   .overlay-content h2 { font-size: 48px; margin-top: 12px; }
@@ -463,7 +463,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
   .leaderboard { position: fixed; left: 150px; top: 82px; width: clamp(96px, calc(50vw - 284px), 130px); padding: 4px 6px; }
   .racer { gap: 5px; }
   /* POSITION ended flush on the speed readout, so a home-indicator inset (it lifts the gauges) made them overlap */
-  .time, .style-score { margin-top: 5px; }
+  .style-score { margin-top: 5px; }
 }
 /* Landscape Safari with its toolbar showing leaves ~340px: lift the race info and drop secondary lines so blocks stay apart. */
 @media (pointer: coarse) and (max-height: 380px) and (orientation: landscape) {
@@ -479,7 +479,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
   .speed-number > strong { font-size: 36px; }
   /* sits between the AIRFLOW/VFX bar and the NITRO button */
   body:not([data-phase="ready"]) .telemetry .flight-telemetry { transform: translateY(-36px); }
-  .time, .style-score { margin-top: 3px; }
+  .style-score { margin-top: 3px; }
   .racer { height: 21px; }
 }
 @media (pointer: coarse) and (min-width: 761px) and (max-height: 380px) {
@@ -2520,3 +2520,40 @@ body[data-phase="finished"] .overlay-actions:has(#choose-track[data-primary-acti
 }
 #touch-controls[data-pad-brake] .pad-ring { border-color: #ff907d; }
 #touch-controls[data-pad-brake] .pad-knob { background: #ff907d; }
+
+/* Race chronograph: the single simulation timer; no extra RAF, listeners or clock intervals. */
+.race-clock {
+  --clock-accent: #6bdbf6;
+  display: inline-flex; align-items: center; gap: 8px; width: max-content; min-width: 171px;
+  margin-top: 13px; padding: 7px 11px 7px 7px;
+  background: linear-gradient(115deg, rgb(10 33 59 / .95), rgb(7 17 38 / .87));
+  border: 1px solid rgb(117 188 234 / .38); border-left: 3px solid var(--clock-accent);
+  border-radius: 10px 5px 10px 5px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .13), 0 7px 23px rgb(0 7 24 / .35);
+  backdrop-filter: blur(7px); text-shadow: none;
+}
+.race-clock-icon { width: 34px; height: 34px; flex: none; object-fit: contain; filter: drop-shadow(0 2px 4px rgb(0 6 18 / .35)); }
+.race-clock-content { display: grid; gap: 2px; min-width: 0; }
+.race-clock-state { color: var(--clock-accent); font: 700 8px/1.2 'Avenir Next', sans-serif; letter-spacing: 1.5px; white-space: nowrap; }
+.race-clock-readout { color: #f8fbff; font: 700 22px/1 'Barlow Condensed', sans-serif; font-variant-numeric: tabular-nums; letter-spacing: .6px; white-space: nowrap; }
+.race-clock[data-state="paused"] { --clock-accent: #ffd078; border-color: rgb(255 199 114 / .5); }
+.race-clock[data-state="paused"] .race-clock-readout { color: #ffe2b5; }
+.race-clock[data-state="finished"] { --clock-accent: #a5efb1; border-color: rgb(145 237 183 / .44); }
+.race-clock[data-state="ready"] { --clock-accent: #aec6df; }
+@media (max-width: 760px) {
+  .race-clock { min-width: 0; gap: 5px; margin-top: 9px; padding: 5px 7px 5px 4px; border-left-width: 2px; border-radius: 7px 4px 7px 4px; }
+  .race-clock-icon { width: 25px; height: 25px; }
+  .race-clock-state { font-size: 7px; letter-spacing: .8px; }
+  .race-clock-readout { font-size: 17px; letter-spacing: .3px; }
+}
+@media (pointer: coarse) and (max-height: 500px) {
+  .race-clock { margin-top: 5px; padding: 3px 6px 3px 3px; gap: 4px; }
+  .race-clock-icon { width: 22px; height: 22px; }
+  .race-clock-state { font-size: 6px; letter-spacing: .65px; }
+  .race-clock-readout { font-size: 16px; }
+}
+@media (max-width: 370px) {
+  .race-clock { gap: 3px; padding-right: 5px; }
+  .race-clock-icon { width: 22px; height: 22px; }
+  .race-clock-readout { font-size: 16px; }
+}
