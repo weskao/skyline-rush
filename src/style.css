@@ -1731,7 +1731,8 @@ body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
 .release-kind { display: inline-block; margin-bottom: 6px; padding: 3px 8px; border-radius: 999px; color: var(--kind); background: rgb(255 255 255 / .07); font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
 .release-entry strong { display: block; font-size: 15px; line-height: 1.45; color: #eefbff; }
 .release-entry p { margin: 5px 0 0; font-size: 13px; line-height: 1.6; color: #bfd0dc; overflow-wrap: anywhere; }
-.release-screen[open] .release-entry { animation: release-card-in var(--dur-slow) var(--ease-out) both; }
+/* backwards, never both: a forward fill keeps each card a GPU layer while open, and scrolling them under the sticky bar/footer flickers. */
+.release-screen[open] .release-entry { animation: release-card-in var(--dur-slow) var(--ease-out) backwards; }
 .release-screen[open] .release-entry:nth-child(2) { animation-delay: 50ms; }
 .release-screen[open] .release-entry:nth-child(3) { animation-delay: 100ms; }
 .release-screen[open] .release-entry:nth-child(n+4) { animation-delay: 150ms; }
