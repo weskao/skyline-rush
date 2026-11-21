@@ -96,7 +96,8 @@ service cloud.firestore {
       && math.abs(times[56] - 302400) < 302400
       && math.abs(times[57] - 302400) < 302400
       && math.abs(times[58] - 302400) < 302400
-      && math.abs(times[59] - 302400) < 302400;
+      && math.abs(times[59] - 302400) < 302400
+      && math.abs(times[60] - 302400) < 302400;
   }
 
   function validMedals(medals) {
