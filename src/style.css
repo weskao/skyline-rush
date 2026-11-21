@@ -1484,6 +1484,10 @@ body[data-race-mode="free"] .race-mode-rule-grid label:has([data-race-rule="diff
  .race-mode-heading { margin-bottom: 2px; }
  .intro-controls > div { gap: 4px; white-space: nowrap; }
 }
+@media (min-width: 1001px) and (min-height: 501px) and (max-height: 700px) {
+ /* Six hints overran the 620px intro at 1804x504; R stays on the HUD Reset button. */
+ .intro-controls > [data-i18n-title="hint.resetTip"] { display: none; }
+}
 /* Phones and short landscape: 10A put the mode tabs and rules row above Start, and a 191px-tall landscape panel cannot
    hold mode + track cards + Start at full size. The tabs swipe in one row like the track strip, and Start + Garage
    stay pinned to the panel's bottom edge while the rest scrolls (user-approved, 2026-10-29). The actions box dissolves
@@ -2575,8 +2579,10 @@ body[data-phase="finished"] .overlay-actions:has(#choose-track[data-primary-acti
   .race-clock-readout { font-size: 16px; }
 }
 @media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
-  /* The leaderboard begins at x=150px: keep the clock inside the left POSITION gutter. */
-  .position-stat > .race-clock { min-width: 0; margin-top: 3px; padding: 2px 4px 2px 2px; gap: 3px; }
-  .race-clock-icon { width: 19px; height: 19px; }
+  /* The leaderboard begins at x=150px: keep the clock inside the left POSITION gutter.
+     Flat icon + readout: the boxed panel pushed STYLE into the speedometer at 844x390. */
+  .position-stat > .race-clock { display: flex; min-width: 0; margin-top: 2px; padding: 0; gap: 3px; background: none; border: 0; box-shadow: none; backdrop-filter: none; }
+  .race-clock-state { display: none; }
+  .race-clock-icon { width: 14px; height: 14px; }
   .race-clock-readout { font-size: 14px; letter-spacing: 0; }
 }
