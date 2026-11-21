@@ -5,6 +5,7 @@ import GaragePlaytestEquip from '#garage-playtest-equip';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import GarageDriftPreview from './GarageDriftPreview.vue';
 import GarageSkinCardFace from './GarageSkinCardFace.vue';
+import Wave3DemoArt from './Wave3DemoArt.vue';
 import { currencyIcon, skinCategoryIcon } from './collectible-icons.ts';
 import Wave3CurrencyAmount from './Wave3CurrencyAmount.vue';
 import Wave3DemoShortfall from './Wave3DemoShortfall.vue';
@@ -97,6 +98,7 @@ const redeemState = computed(() => selected.value ? redemptionState(selected.val
 const hasActionReason = (state: DemoRedeemState) => state === 'unavailable' || state.startsWith('insufficient-demo-');
 const secondaryWallet = computed(() => (['coins', 'diamonds'] as const).map(currency => ({
   currency, value: demoBalance(snapshot.value, currency), label: currencyLabel(currency),
+  art: currency === 'coins' ? 'wallet-coin' as const : 'wallet-diamond' as const,
 })));
 const selectedBalance = computed(() => selected.value?.currency ? demoBalance(snapshot.value, selected.value.currency) : null);
 const statusFor = (id: SkinId) => {
@@ -266,11 +268,11 @@ async function confirmRedemption(): Promise<void> {
       <slot name="navigation" />
       <div class="demo-wallet-grid" role="status" aria-live="polite">
         <div class="demo-wallet demo-wallet-cell" data-demo-balance="points">
-          <CollectibleIcon :name="currencyIcon.points" />
+          <Wave3DemoArt id="demo-points" :size="26" />
           <span><strong>{{ snapshot.demoPoints.toLocaleString(locale) }}</strong> {{ currencyLabel('points') }}</span>
         </div>
         <div v-for="row in secondaryWallet" :key="row.currency" class="demo-wallet-cell" :data-demo-balance="row.currency">
-          <CollectibleIcon :name="currencyIcon[row.currency]" />
+          <Wave3DemoArt :id="row.art" :size="26" />
           <span><strong>{{ row.value.toLocaleString(locale) }}</strong> {{ row.label }}</span>
         </div>
       </div>

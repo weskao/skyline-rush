@@ -61,9 +61,10 @@ for (const [name, viewport, locale] of [
       await page.locator('#garage-button').click();
       await settled(page.locator('#garage-screen'));
       await page.locator('#garage-studio-open').click();
-      await expect(page.locator('#garage-auto-rotate > svg')).toBeVisible();
+      // f947f938 replaced the Studio's line icons with illustrated collectible artwork.
+      await expect(page.locator('#garage-auto-rotate > .collectible-icon')).toBeVisible();
       const pose = page.locator('#garage-pose-action');
-      await expect(pose.locator('svg')).toHaveCount(2);
+      await expect(pose.locator('.collectible-icon')).toHaveCount(2);
       await expect(pose).toHaveAttribute('aria-checked', 'false');
       await pose.click();
       await expect(pose).toHaveAttribute('aria-checked', 'true');

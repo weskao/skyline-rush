@@ -24,7 +24,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     await expect(control).toHaveAttribute('aria-pressed', 'true');
     const loadout = page.locator('[data-loadout-category="drift-trail"]');
     await expect(loadout).toHaveAttribute('data-equipped-skin', 'drift-trail-basic');
-    const img = rainbow.locator('img');
+    const img = rainbow.locator('.garage-vfx-art img');
     await expect(img).toHaveJSProperty('naturalWidth', 288);
     await rainbow.locator('.garage-skin-action').click();
     await expect(loadout).toHaveAttribute('data-equipped-skin', 'drift-trail-rainbow');

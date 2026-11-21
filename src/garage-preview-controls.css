@@ -91,6 +91,8 @@
 
 @media (max-width: 360px) {
   #garage-screen .garage-mode-controls button { padding-inline: 4px; font-size: 11px; }
+  /* 24 px icons pushed the third mode button onto its own row and squeezed the 320 px Studio preview below 31% of the height. */
+  #garage-screen .garage-mode-controls button .collectible-icon { inline-size: 16px; block-size: 16px; flex-basis: 16px; }
 }
 
 #garage-screen #garage-pose-action { padding-inline: 3px; gap: 2px; }

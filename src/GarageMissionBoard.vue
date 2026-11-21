@@ -256,6 +256,8 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
 .period-reward,.period-claim{grid-column:1/-1;min-width:0}
 .period-reward{display:flex;flex-wrap:wrap;gap:2px 8px}
 .period-chip{display:inline-flex;align-items:center;gap:3px}
+/* Chips and the claimed check keep the 16 px art size so period cards stay compact. */
+.period-chip :deep(.collectible-icon),.period-status :deep(.collectible-icon){inline-size:16px;block-size:16px;flex-basis:16px}
 .period-claim{flex-direction:row;justify-content:center;gap:6px;padding:4px 8px;font-size:12px;line-height:1.25;text-align:left}
 .period-claim > span:last-child{min-width:0;overflow-wrap:anywhere}
 /* The 72px claim art would fill a 150px card; same downsizing as the wallet strip. */

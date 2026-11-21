@@ -73,13 +73,13 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
     const errors = await openNotes(page, gameplayURL);
     const thumb = page.locator('#release-items .release-zoom:not(.release-play)').first(); // clip cards sort first and play instead
     await thumb.scrollIntoViewIfNeeded();
-    const thumbBox = await thumb.boundingBox(), thumbSrc = await thumb.locator('img').getAttribute('src');
+    const thumbBox = await thumb.boundingBox(), thumbSrc = await thumb.locator('img').evaluate(img => img.currentSrc || img.src); // the viewer opens the srcset pick
     const viewer = page.locator('#release-media-viewer'), shown = viewer.locator('img');
     await watchFades(page);
     await press(thumb, touch);
     await expect(viewer).toBeVisible();
     expect(await fades(page), 'the picture and its backdrop fade in').toEqual(['view', '::backdrop']);
-    await expect(shown).toHaveAttribute('src', thumbSrc);
+    await expect(shown).toHaveJSProperty('src', thumbSrc);
     await expect.poll(() => shown.evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
     const box = await shown.boundingBox();
     expect(onScreen(box, width, height), `the whole picture is on screen: ${JSON.stringify(box)}`).toBe(true);
@@ -198,7 +198,7 @@ test.describe('hero picture and animated pictures', () => {
     const viewer = page.locator('#release-media-viewer'), shown = viewer.locator('img');
     const hero = page.locator('#release-hero-zoom');
     await press(hero, touch);
-    await expect(shown).toHaveAttribute('src', await page.locator('#release-hero').getAttribute('src'));
+    await expect(shown).toHaveJSProperty('src', await page.locator('#release-hero').evaluate(img => img.currentSrc || img.src));
     await expect.poll(() => shown.evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
     const box = await shown.boundingBox();
     expect(onScreen(box, width, height) && uncropped(box, await naturalSize(shown)), `hero picture whole and on screen: ${JSON.stringify(box)}`).toBe(true);

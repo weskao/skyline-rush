@@ -19,9 +19,11 @@
 .demo-wallet { --wallet-edge: #62d1dc; }
 .demo-wallet-cell[data-demo-balance="coins"] { --wallet-edge: #dba258; }
 .demo-wallet-cell[data-demo-balance="diamonds"] { --wallet-edge: #a5a1ff; }
-.demo-wallet-cell > span { min-width: 0; overflow-wrap: anywhere; }
+.demo-wallet-cell > span:not(.wave3-demo-art) { min-width: 0; overflow-wrap: anywhere; }
 .demo-wallet-cell strong { display: block; margin-bottom: 2px; color: #f1f8ff; font-size: 18px;
   line-height: 1.12; font-variant-numeric: tabular-nums; }
+.demo-wallet-cell :deep(.wave3-demo-art) { width: 26px; min-width: 26px; height: 26px; padding: 0; }
+.demo-wallet-cell :deep(.artwork-img) { display: block; min-width: 0; min-height: 0; }
 .demo-concept-art { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; margin: 10px 0;
   scrollbar-width: thin; }
 .demo-concept-icon { box-sizing: border-box; display: grid; place-items: center; flex: 0 0 88px;
@@ -108,6 +110,9 @@ button:not(.store-action-button):disabled { cursor: not-allowed; opacity: .55; }
   .demo-detail-copy p { display: none; }
   .demo-actions button:not(.store-action-button) { padding-inline: 6px; font-size: 11px; }
   .demo-wallet-cell { gap: 4px; }
+  /* The img carries an inline 26 px height (GarageArtworkImage size); cap it with the box or it squashes. */
+  .demo-wallet-cell :deep(.wave3-demo-art) { width: 21px; min-width: 21px; height: 21px; }
+  .demo-wallet-cell :deep(.artwork-img) { max-height: 21px; }
 }
 @media (max-width: 360px) and (orientation: portrait) {
   .demo-header { gap: 6px; }
@@ -128,4 +133,17 @@ button:not(.store-action-button):disabled { cursor: not-allowed; opacity: .55; }
 }
 @media (orientation: landscape) and (max-height: 500px) {
   .demo-filters button > .collectible-icon { display: block; margin: 0 auto 1px; }
+}
+/* Narrow portrait keeps the filter and action rows at their pre-icon height: icon inline, not stacked. */
+@media (max-width: 600px) and (orientation: portrait) {
+  .demo-filters button > .collectible-icon, .demo-actions button > .collectible-icon {
+    display: inline-block; margin: 0 3px 0 0; vertical-align: middle;
+  }
+  /* Same compact size as the sibling actions, or the 24 px icon squeezes "Demo redeem" into broken syllables. */
+  .demo-actions .store-action-button { gap: 3px; padding-inline: 6px; font-size: 11px; }
+  .demo-actions .store-action-button :deep(.collectible-icon) { inline-size: 16px; block-size: 16px; flex-basis: 16px; }
+}
+/* At 320-360 px even inline 24 px icons wrap the filter labels and push the first offer below the fold. */
+@media (max-width: 360px) and (orientation: portrait) {
+  .demo-filters button > .collectible-icon, .demo-actions button > .collectible-icon { inline-size: 16px; block-size: 16px; }
 }

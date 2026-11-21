@@ -233,3 +233,7 @@ body[data-fold-axis="horizontal"] #garage-screen .garage-layout[data-demo-catalo
 @media (max-width: 480px) {
   #garage-screen .garage-section-nav button > .collectible-icon { margin-inline-end: 2px; }
 }
+/* At 320-360 px a 24 px icon wraps "Demo Store" onto a second line and pushes the Store offers below the fold. */
+@media (max-width: 360px) {
+  #garage-screen .garage-section-nav button > .collectible-icon { inline-size: 16px; block-size: 16px; flex-basis: 16px; }
+}

@@ -58,11 +58,13 @@ test('reward tabs distinguish demo coins, points and diamonds with their own ico
     presentAcquisition({ id: 'icon-check', items });
   });
   const reveal = page.getByRole('dialog', { name: 'Reward reveal' });
-  for (const [label, name] of [['Demo coins', 'currency'], ['Demo points', 'price'], ['Demo diamonds', 'diamond']]) {
+  // Demo currencies keep the approved A-03 Wave 3 artwork.
+  for (const [label, name, art] of [['Demo coins', 'wallet-coin', 'wallet-coin'], ['Demo points', 'demo-points', 'demo-points'], ['Demo diamonds', 'diamond', 'wallet-diamond']]) {
     const reward = reveal.getByRole('button', { name: label, exact: true });
     await reward.click();
     await expect(reward).toHaveAttribute('aria-pressed', 'true');
     await expect(reward.locator('img')).toHaveAttribute('data-collectible-icon', name);
+    await expect(reward.locator('img')).toHaveAttribute('src', new RegExp(`/feature-assets/wave3-demo/raster/${art}@3x\\.webp$`));
   }
   const diamondArt = /\/feature-assets\/wave3-demo\/raster\/wallet-diamond@3x\.webp$/;
   await expect(reveal.getByRole('button', { name: 'Demo diamonds' }).locator('img')).toHaveAttribute('src', diamondArt);

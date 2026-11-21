@@ -62,7 +62,7 @@ test('failed GIF falls back to source WebP without changing equipped state', asy
   await page.locator('#garage-button').click();
   await openGarageSection(page, 'effects');
   const skin = page.locator('[data-skin="thruster-ion"]');
-  const icon = skin.locator('img');
+  const icon = skin.locator('.garage-vfx-art img');
   await icon.scrollIntoViewIfNeeded();
   await expect(icon).toHaveAttribute('data-animation-active', 'false');
   await expect(icon).toHaveAttribute('src', /raster\/thruster-ion@3x\.webp$/);

@@ -92,5 +92,11 @@ const returnToRace = () => document.querySelector<HTMLButtonElement>('#garage-cl
   font-family: inherit; font-size: 12px; font-weight: 700; line-height: 1.2; }
 .wave3-demo-back { margin-bottom: 10px; }
 .wave3-demo-entry button:focus-visible { outline: 3px solid #89f5ff; outline-offset: 2px; }
+/* The icon widened the one-line back button until the Store title wrapped and the offers dropped below a 320 px fold;
+   capped, the label wraps instead and the title keeps its pre-icon height. */
+@media (max-width: 360px) and (orientation: portrait) {
+  .wave3-store-back { max-width: 130px; }
+  .wave3-store-back :deep(.collectible-icon) { inline-size: 16px; block-size: 16px; flex-basis: 16px; }
+}
 </style>
 <style src="./wave3-demo-results.css"></style>

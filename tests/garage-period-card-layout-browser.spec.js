@@ -69,7 +69,9 @@ for (const locale of ['en', 'zh-TW']) {
       await expect(card('mission-race:daily').locator('.period-reward')).toContainText('+40');
       const coins = card('mission-race:daily').getByRole('img', { name: locale === 'en' ? '+40 Demo coins' : '+40 試玩金幣' });
       await expect(coins).toHaveCount(1);
-      await expect(coins.locator('img')).toHaveJSProperty('naturalWidth', 72);
+      // Coins use the approved A-03 wave3 wallet-coin@3x art (144 px native).
+      await expect(coins.locator('img')).toHaveAttribute('src', /\/wave3-demo\/raster\/wallet-coin@3x\.webp$/);
+      await expect(coins.locator('img')).toHaveJSProperty('naturalWidth', 144);
       await board.locator('.garage-period-grid').screenshot({ path: test.info().outputPath('period-grid.png') });
     });
   }

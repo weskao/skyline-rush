@@ -28,7 +28,7 @@ test('selected artwork animates at original 3x dimensions while retaining WebP f
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
   await openGarageSection(page, 'effects');
-  const ion = page.locator('[data-skin="thruster-ion"] img');
+  const ion = page.locator('[data-skin="thruster-ion"] .garage-vfx-art img');
   await ion.scrollIntoViewIfNeeded();
   await expect(ion).toHaveAttribute('data-static-src', /raster\/thruster-ion@3x\.webp$/);
   await expect(ion).toHaveAttribute('src', /garage-animated\/thruster-ion@3x\.gif$/);
@@ -46,7 +46,7 @@ test('Comfort uses static NITRO card art on High while the same card animates in
     localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'high', comfortable }));
     localStorage.setItem('skyline-rush-music', 'off');
   });
-  const trail = page.locator('[data-skin="nitro-trail-gold"] img');
+  const trail = page.locator('[data-skin="nitro-trail-gold"] .garage-vfx-art img');
   for (const url of ['/', '/?test-comfort']) {
     await page.goto(url);
     await openGarage(page);
@@ -75,7 +75,7 @@ test('unavailable GIF and original WebP fall back to category SVG, without grant
   await openGarageSection(page, 'effects');
   const ion = page.locator('[data-skin="thruster-ion"]');
   await ion.scrollIntoViewIfNeeded(); // lazy art loads (and can fail) only once scrolled in
-  await expect(ion.locator('img')).toHaveAttribute('src', /thruster\.svg$/);
+  await expect(ion.locator('.garage-vfx-art img')).toHaveAttribute('src', /thruster\.svg$/);
   await expect(ion).toHaveAttribute('data-state', 'trial');
   await expect(page.locator('#garage-equip')).toBeDisabled();
 });

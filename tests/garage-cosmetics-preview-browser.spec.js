@@ -95,7 +95,7 @@ test('new original Gold/Crimson/Cyan/Magenta/White launch flares and Purple trai
     await page.locator(`[data-skin="${id}"]`).getByRole('button', { name: /preview|預覽/i }).click();
     await expect(preview).toHaveAttribute(name, mode);
     await expect(page.locator(`[data-skin="${id}"]`)).toHaveAttribute('data-preview-active', 'true');
-    const img = page.locator(`[data-skin="${id}"] img`);
+    const img = page.locator(`[data-skin="${id}"] .garage-vfx-art img`);
     await expect(img).toHaveJSProperty('naturalWidth', 288);
     if (id.startsWith('launch-flare-')) await expect(preview).toHaveAttribute('data-launch-preview-active', 'true');
   }
@@ -111,7 +111,7 @@ test('four airflow appearances have distinct 3x image sources and live car rende
   for(const [mode,id] of ['airflow-basic','airflow-slipstream','airflow-vortex','airflow-prism'].entries()){
     await openGarageSection(page, 'effects');
     const card=page.locator(`#garage-vfx-catalog [data-skin="${id}"]`);
-    const img=card.locator('img');
+    const img=card.locator('.garage-vfx-art img');
     await expect(img).toHaveAttribute('data-static-src',new RegExp(`raster/${id}@3x\\.png$`));
     await img.scrollIntoViewIfNeeded();
     await expect(img).toHaveAttribute('src',new RegExp(`garage-animated/${id}@3x\\.gif$`));
