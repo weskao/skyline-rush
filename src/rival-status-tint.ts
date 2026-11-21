@@ -20,7 +20,7 @@ const FIT = 1.2; // shell unit = the car's half extents x FIT, so the body ends 
 const SLICES = 24; // airflow-geometry.ts sections
 const OVER = 1.03; // the hull runs just past the bumpers
 
-// Per instance `status` = (kind: 1 EMP / 0 Freeze, seconds since the hit, seed, fade level). `rim` doubles as the
+// Per instance `status` = (kind: 2 EMP over Freeze / 1 EMP / 0 Freeze, seconds since the hit, seed, fade level). `rim` doubles as the
 // detail switch (0 on Low). `hull` holds one row per car: per slice (centre x, half width, roof y) in shell units.
 const VERTEX = `attribute vec4 status;uniform highp sampler2D hull;
   varying vec3 vColor,vNormal,vView,vLocal;varying vec4 vStatus;
@@ -46,7 +46,9 @@ const FRAGMENT = `uniform float rim,time;varying vec3 vColor,vNormal,vView,vLoca
   ${EMP_SHELL.glsl}
   void main(){float facing=clamp(abs(dot(vNormal/max(length(vNormal),1e-4),vView/max(length(vView),1e-4))),0.,1.);
     float body=.14*smoothstep(0.,.5,facing);float edge=pow(max(0.,1.-facing),3.);vec3 col;
-    if(vStatus.x>.5)col=empShell(vLocal,vColor,body,edge,vStatus.y,vStatus.z,vStatus.w);
+    if(vStatus.x>1.5)col=empShell(vLocal,vColor,body,edge,vStatus.y,vStatus.z,vStatus.w)
+      +.6*freezeShell(vLocal,vec3(${FREEZE_SHELL.color.join(',')})*vStatus.w,body,edge,9.,vStatus.z,vStatus.w); // EMP over a Freeze
+    else if(vStatus.x>.5)col=empShell(vLocal,vColor,body,edge,vStatus.y,vStatus.z,vStatus.w);
     else col=freezeShell(vLocal,vColor,body,edge,vStatus.y,vStatus.z,vStatus.w);
     gl_FragColor=vec4(col,1.);}`;
 
@@ -113,7 +115,7 @@ export function createRivalStatusTint(capacity: number) {
   }
   const fit = (pose: THREE.Object3D): THREE.Matrix4 => hullOf(pose).fit;
   const frame: FxFrame = {
-    status: null, age: 0, isPlayer: false, pose: undefined, rival: undefined, fit, profile: pose => hullOf(pose).profile,
+    status: null, hits: { freeze: false, emp: false }, age: 0, isPlayer: false, pose: undefined, rival: undefined, fit, profile: pose => hullOf(pose).profile,
     dt: 0, low: false, reducedMotion: false, emit: null, thin: 1, on: false, began: false, ended: false,
   };
 
@@ -145,6 +147,8 @@ export function createRivalStatusTint(capacity: number) {
         levels[i] = THREE.MathUtils.damp(levels[i]!, now ? 1 : 0, now ? 14 : 8, dt);
         const visible = levels[i]! >= 0.01 && (isPlayer ? !!target : !!pose);
         const age = time - since[i]!;
+        frame.hits.emp = now === 'emp'; // a Freeze holds under an EMP
+        frame.hits.freeze = now === 'freeze' || (now === 'emp' && ((driver!.freezeUntil ?? 0) > race.elapsed || (!isPlayer && (race.player.effects?.freeze ?? 0) > 0)));
         frame.status = now; frame.age = age; frame.isPlayer = isPlayer; frame.pose = target; frame.rival = driver;
         frame.emit = target ? emit : null;
         fx.rival(i, frame);
@@ -155,7 +159,7 @@ export function createRivalStatusTint(capacity: number) {
         const flicker = isPlayer || reducedMotion ? 1 : shell.flicker(time, i);
         const strength = levels[i]! * (isPlayer ? 0.68 : 1);
         mesh.setColorAt(i, color.setRGB(shell.color[0], shell.color[1], shell.color[2]).multiplyScalar(strength * flicker));
-        status.setXYZW(i, shell === EMP_SHELL ? 1 : 0, age, isPlayer ? -1 : i * 0.37, strength);
+        status.setXYZW(i, shell === EMP_SHELL ? (frame.hits.freeze ? 2 : 1) : 0, age, isPlayer ? -1 : i * 0.37, strength);
 
         pose!.updateWorldMatrix(true, false);
         const car = hullOf(pose!);

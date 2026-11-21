@@ -25,7 +25,7 @@ export function createRivalStatusFx(capacity: number) {
   group.add(waves, ...effects.freeze.objects, ...effects.emp.objects);
 
   const held: RivalStatus[] = new Array(capacity).fill(null), waveOf: RivalStatus[] = new Array(capacity).fill(null);
-  const hitAt = new Float64Array(capacity).fill(-1e9);
+  const hitAt = new Float64Array(capacity).fill(-1e9), worn = new Uint8Array(capacity); // worn: bit 1 Freeze, bit 2 EMP
   const matrix = new THREE.Matrix4(), local = new THREE.Matrix4(), point = new THREE.Vector3(), scale = new THREE.Vector3();
   const spin = new THREE.Quaternion(), center = new THREE.Vector3(), half = new THREE.Vector3();
   let time = 0, anyWaves = false;
@@ -51,14 +51,15 @@ export function createRivalStatusFx(capacity: number) {
     begin(dt: number) { time += dt; anyWaves = false; for (const kind of KINDS) effects[kind].begin(dt); },
     /** One car's frame, filled by rival-status-tint.ts; `f.emit` is set only while the race runs. */
     rival(i: number, f: FxFrame) {
-      const was = held[i], now = f.status;
+      const was = held[i], now = f.status, wore = worn[i]!;
       if (now && now !== was) { hitAt[i] = time; waveOf[i] = now; }
       f.thin = (f.low ? 0.5 : 1) * (f.reducedMotion ? 0.3 : f.isPlayer ? 0.75 : 1);
       for (const kind of KINDS) {
-        f.on = now === kind; f.began = f.on && was !== kind; f.ended = was === kind && !f.on;
+        const bit = kind === 'emp' ? 2 : 1;
+        f.on = f.hits[kind]; f.began = f.on && !(wore & bit); f.ended = !!(wore & bit) && !f.on;
         effects[kind].car(i, f);
       }
-      held[i] = now;
+      held[i] = now; worn[i] = (f.hits.freeze ? 1 : 0) | (f.hits.emp ? 2 : 0);
       anyWaves = poseWave(i, f) || anyWaves;
     },
     end() {
@@ -68,7 +69,7 @@ export function createRivalStatusFx(capacity: number) {
       waves.instanceColor!.needsUpdate = true;
     },
     reset() {
-      held.fill(null); hitAt.fill(-1e9);
+      held.fill(null); hitAt.fill(-1e9); worn.fill(0);
       for (const kind of KINDS) effects[kind].reset();
       for (let i = 0; i < waves.count; i++) waves.setMatrixAt(i, PARKED);
       waves.visible = false;

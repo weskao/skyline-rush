@@ -274,3 +274,19 @@ test('the shell hugs each car: its hull takes the measured width and roof of eve
   assert.ok(Math.abs(slice(2).halfWidth - 0.5 / 1.32) < 1e-4 && Math.abs(slice(2).top + 0.15 / 0.78) < 1e-4, `nose ${JSON.stringify(slice(2))}`);
   assert.match(tint.material.vertexShader, /texelFetch\(hull/, 'the vertex shader lofts the shell through the slices');
 });
+
+test('a car under Freeze and EMP at once wears both: the shell draws both surfaces and the crystals stay through the EMP', t => {
+  const { race, frame, tint, vehicles } = setup(t);
+  const shards = shardsOf(vehicles[0].parent), per = shards.count / tint.count, status = tint.geometry.attributes.status;
+  race.rivals[1].freezeUntil = race.elapsed + 3;
+  for (let i = 0; i < 10; i++) frame();
+  assert.equal(shownInstances(shards, per, 2 * per), per, 'frozen: crystals on');
+  race.rivals[1].empUntil = race.elapsed + 1;
+  for (let i = 0; i < 10; i++) frame();
+  assert.equal(status.getX(1), 2, 'both kinds: EMP over Freeze');
+  assert.equal(shownInstances(shards, per, 2 * per), per, 'the crystals hold under the EMP');
+  race.elapsed += 1.1; // effects.update does not step the race clock
+  for (let i = 0; i < 4; i++) frame();
+  assert.equal(status.getX(1), 0, 'the EMP ends, the Freeze stays');
+  assert.equal(shownInstances(shards, per, 2 * per), per, 'no thaw while still frozen');
+});

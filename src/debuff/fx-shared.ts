@@ -13,7 +13,8 @@ export type FxRival = { distance?: number; x?: number; altitude?: number; pace?:
 
 /** One car's frame. A single object is reused for every car and frame: read it, never keep it. */
 export type FxFrame = {
-  status: RivalStatus; age: number; isPlayer: boolean;
+  /** The status that takes precedence (EMP over Freeze); `hits` names every one live on the car. */
+  status: RivalStatus; hits: { freeze: boolean; emp: boolean }; age: number; isPlayer: boolean;
   pose: THREE.Object3D | undefined; rival: FxRival | undefined;
   /** The car's box in pose coordinates: centre, and half extents x 1.2 as the scale. Cached per displayed model. */
   fit: (pose: THREE.Object3D) => THREE.Matrix4;
