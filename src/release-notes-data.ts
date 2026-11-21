@@ -96,8 +96,8 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
         },
         title: { en: 'A brighter Sky Spiral, alive with birds', 'zh-TW': '天際螺旋更明亮、更有生氣' },
         description: {
-          en: 'Sky Spiral now races under a day sky above a sea of clouds, with landmarks, circling seabirds and a drifting airship (Medium quality and above).',
-          'zh-TW': '天際螺旋換上晴朗天空與雲海，沿途有地標、盤旋的海鳥和緩緩飄過的飛船（中等畫質以上）。'
+          en: 'Sky Spiral looks bright and sunny at every graphics setting. Medium quality and above also show cloud-sea landmarks, circling seabirds and a drifting airship.',
+          'zh-TW': '天際螺旋在各種畫質都呈現明亮白天；中等畫質以上還有雲海地標、盤旋海鳥與飛船。'
         }
       },
       {
@@ -139,6 +139,34 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
           en: 'Braking mid-drift now eases you out of the slide, and phone braking is more deliberate, so your steering thumbs no longer clash.',
           'zh-TW': '漂移中煞車會平順收尾；手機煞車更不易誤觸，也不再干擾轉向拇指。'
         }
+      },
+      { id: 'race-stopwatch', kind: 'new', image: null,
+        title: { en: 'Keep time with the new race clock', 'zh-TW': '全新賽事計時器' },
+        description: { en: 'A stopwatch beside your position tracks every run, with clear cues for the start, pause and finish.', 'zh-TW': '名次旁新增碼錶，跑了多久一眼就能看見；起跑、暫停與完賽也有清楚提示。' }
+      },
+      { id: 'sprint-flames', kind: 'new', image: null,
+        title: { en: 'Three ways to light up your thrusters', 'zh-TW': '三種加速尾焰，各有特色' },
+        description: { en: 'BOOST, NITRO and both together now have distinct flames and race cues. Preview all three looks on your car in the Garage.', 'zh-TW': 'BOOST、NITRO 與兩者齊開都有專屬尾焰及提示；到車庫就能預覽三種效果。' }
+      },
+      { id: 'chasm-rescue', kind: 'improvement', image: null,
+        title: { en: 'Bigger jumps, better recoveries', 'zh-TW': '斷崖更刺激，重返賽道更輕鬆' },
+        description: { en: 'Sky Spiral's wider gaps need a fast BOOST launch or flight. If you fall repeatedly at one gap, you'll get help past it.', 'zh-TW': '天際螺旋的寬闊斷崖需要高速 BOOST 或飛行才能通過；連續失足時也會協助你繼續前進。' }
+      },
+      { id: 'reward-quick-equip', kind: 'improvement', image: null,
+        title: { en: 'Equip your rewards right away', 'zh-TW': '新獎勵，一鍵裝備' },
+        description: { en: 'When you earn something new, equip it straight from the reveal instead of hunting for it in the Garage.', 'zh-TW': '獲得新車或新裝備時，就能直接在獎勵畫面套用，不必再回車庫尋找。' }
+      },
+      { id: 'settings-fit', kind: 'improvement', image: null,
+        title: { en: 'Settings that fit your screen', 'zh-TW': '設定選單更好看、更順手' },
+        description: { en: 'Drop-down choices stay in view, with clearer tabs and smoother transitions even on small screens.', 'zh-TW': '下拉選單不再被畫面邊緣遮住，分頁更清楚；小螢幕切換也更流暢。' }
+      },
+      { id: 'first-frame-quality', kind: 'fix', image: null,
+        title: { en: 'Your chosen graphics, right from the start', 'zh-TW': '一開跑就是選好的畫質' },
+        description: { en: 'Tracks, cars and effects now appear in your selected quality from the first race view, without flashing a lower-quality scene.', 'zh-TW': '賽道、車子與特效從第一個比賽畫面就使用你選的畫質，不再先閃出低畫質場景。' }
+      },
+      { id: 'phone-audio-return', kind: 'fix', image: null,
+        title: { en: 'Sound returns after interruptions', 'zh-TW': '手機中斷後，聲音回來了' },
+        description: { en: 'Alarms, calls and notifications no longer leave your race silent. Tap back into the game to bring music and sound effects back.', 'zh-TW': '鬧鐘、來電或通知打斷遊戲後，返回並點一下畫面，就能繼續聽見音樂與音效。' }
       },
       {
         id: 'finished-rivals', kind: 'fix', image: null,
