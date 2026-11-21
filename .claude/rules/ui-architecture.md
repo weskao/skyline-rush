@@ -24,9 +24,11 @@ controls. Move the event-driven UI to Vue gradually; keep the hot paths plain JS
 - **Existing panels migrate one per commit**, move-only first: release notes, history, garage,
   settings, tutorial. Each migration keeps its element ids or updates every test selector it
   breaks, and passes `make verify` on its own.
-- **Every panel/dialog closes with `src/CloseButton.vue`**: the round × with the panel's name as
-  its required `label` (aria-label), never a "Close/關閉" text button or a hand-rolled ×.
-  Labelled actions ("Got it", "BACK", "Back to game") stay text. Guards:
+- **All standalone × controls reuse `src/CloseButton.vue`**, matching the Garage round ×.
+  A panel/dialog close uses the panel's name as its required `label` (aria-label); an × that
+  removes a row uses an action-specific `label` and retains its own disabled state and handler.
+  Never hand-roll an × button or duplicate its border/hover/focus CSS. Labelled navigation
+  and acknowledgements ("Got it", "BACK", "Back to game") remain text buttons. Guards:
   `tests/close-button.test.js`, `tests/close-button-browser.spec.js`.
 - **`src/main.js` does not grow.** A new feature lands in its own module; a fix inside `main.js`
   is fine. Splitting existing code out is move-only with no behavior change in the same commit.
