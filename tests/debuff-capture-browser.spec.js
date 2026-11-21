@@ -5,7 +5,7 @@ import { seedGtCareer } from './helpers/gt-progress.js';
 import { ciTimeout } from './helpers/ci.js';
 
 // Real WebGL captures of Freeze and EMP on the player and a rival just ahead (DEBUFF_CAPTURE=1 only).
-// DEBUFF_CARS=roadster,crimson-gt  DEBUFF_VIEWS=desktop,portrait,landscape  DEBUFF_QUALITY=high
+// DEBUFF_CARS=roadster,crimson-gt  DEBUFF_VIEWS=desktop,portrait,landscape  DEBUFF_QUALITY=high  DEBUFF_VIDEO=1
 const VIEWS = { desktop: [1440, 900, false], portrait: [390, 844, true], landscape: [844, 390, true] };
 const cars = (process.env.DEBUFF_CARS ?? 'roadster').split(',');
 const views = (process.env.DEBUFF_VIEWS ?? 'desktop').split(',');
@@ -14,6 +14,8 @@ const hits = (process.env.DEBUFF_HITS ?? 'freeze,emp,both').split(',');
 const times = (process.env.DEBUFF_TIMES ?? '1.2').split(',').map(Number);
 
 test.skip(!process.env.DEBUFF_CAPTURE, 'capture run only');
+// DEBUFF_VIDEO=1 also records each run as a WebM (timeline review); Playwright scales it to the viewport.
+test.use({ video: process.env.DEBUFF_VIDEO ? 'on' : 'off' });
 
 for (const car of cars) for (const view of views) test.describe(`${car} ${view}`, () => {
   const [width, height, hasTouch] = VIEWS[view];
