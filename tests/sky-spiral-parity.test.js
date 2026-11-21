@@ -18,12 +18,12 @@ test('Sky Spiral keeps its length, helix, launches and shortcut', () => {
   assert.deepEqual({ length, seed, layoutVersion }, { length: 10000, seed: 5005, layoutVersion: 7 });
   assert.equal(SKY_LENGTH, 10000);
   assert.deepEqual({ start: SKY_SPIRAL.start, end: SKY_SPIRAL.end, rise: SKY_SPIRAL.rise }, { start: 1850, end: 3250, rise: 104 });
-  assert.deepEqual(SKY_JUMPS.map(j => [j.rampFrom, j.rampTo, j.gapFrom, j.gapTo]), [[4650, 4720, 4720, 4785], [5550, 5625, 5625, 5690], [6350, 6430, 6430, 6500]]);
+  assert.deepEqual(SKY_JUMPS.map(j => [j.rampFrom, j.rampTo, j.gapFrom, j.gapTo]), [[4650, 4720, 4720, 4880], [5550, 5625, 5625, 5790], [6350, 6430, 6430, 6600]]);
   assert.deepEqual(sections, [
     { from: 1850, to: 3250, type: 'spiral' },
-    { from: 4650, to: 4720, type: 'launch' }, { from: 4720, to: 4785, type: 'gap' },
-    { from: 5550, to: 5625, type: 'launch' }, { from: 5625, to: 5690, type: 'gap' },
-    { from: 6350, to: 6430, type: 'launch' }, { from: 6430, to: 6500, type: 'gap' },
+    { from: 4650, to: 4720, type: 'launch' }, { from: 4720, to: 4880, type: 'gap' },
+    { from: 5550, to: 5625, type: 'launch' }, { from: 5625, to: 5790, type: 'gap' },
+    { from: 6350, to: 6430, type: 'launch' }, { from: 6430, to: 6600, type: 'gap' },
     { from: 7220, to: 7720, type: 'shortcut', x: -7.5, altitude: 6 },
   ]);
 });
@@ -34,16 +34,16 @@ test('the Sky Spiral road frame is where it was: point and axes every 50 m', () 
     const { point, forward, right, up } = skyFrame(d);
     frame.push([point.x, point.y, point.z].map(v => +v.toFixed(3)), [...forward, ...right, ...up].map(v => +v.toFixed(5)));
   }
-  assert.equal(sha(frame), '0581b1d0e3c5d6f9');
+  assert.equal(sha(frame), '3f0c8d126b9ee6e2');
 });
 
 test('a Sky Spiral race has the same four lanes, rings and pickups', () => {
   const race = createRace('spiral');
   assert.deepEqual([...new Set(race.traffic.map(car => car.homeX))].sort((a, b) => a - b), [-7.5, -2.5, 2.5, 7.5]);
-  assert.equal(race.rings.length, 147);
-  assert.equal(sha(race.rings.map(r => [r.distance, r.x, r.altitude, r.radius, r.type])), '3138d7e9c493ea38', 'ring layout');
+  assert.equal(race.rings.length, 142);
+  assert.equal(sha(race.rings.map(r => [r.distance, r.x, r.altitude, r.radius, r.type])), 'ec1e4f9fdc94f3b3', 'ring layout');
   assert.equal(race.pickups.length, 273);
-  assert.equal(sha(race.pickups.map(p => [p.distance, p.x, p.altitude, p.tier])), 'a1fb530330e4d974', 'pickup layout');
+  assert.equal(sha(race.pickups.map(p => [p.distance, p.x, p.altitude, p.tier])), 'f4e5cebe1d1be02d', 'pickup layout');
 });
 
 test('the Sky Spiral gameplay props stay put: hoops, barriers and gates', () => {

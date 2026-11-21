@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, startRace, stepRace, RACE_TRACKS } from '../src/game.js';
-import { launchImpulse } from '../src/launch-ramps.ts';
+import { launchImpulse, SKY_GAP_LAUNCH_MIN_SPEED } from '../src/launch-ramps.ts';
 import * as lab from '../src/event-lab.ts';
 
 const ALL = new Set(Object.keys(RACE_TRACKS));
@@ -22,16 +22,17 @@ function flight(race, dt) {
   return { impulse, air };
 }
 const ready = race => { startRace(race); race.phase = 'racing'; race.countdown = 0; return race; };
+const SKY_LAUNCH = SKY_GAP_LAUNCH_MIN_SPEED + 4; // Sky Spiral ramps launch only at BOOST-range speed
 
 test('Sky Spiral launch sections keep their impulse and landing at 30/60/120 FPS', () => {
   const section = RACE_TRACKS.spiral.sections.find(s => s.type === 'launch');
   const results = FPS.map(fps => {
     const race = ready(createRace('spiral', { mode: 'custom', rivals: 0, traffic: 'off' }));
-    Object.assign(race.player, { distance: section.to - 6, x: 0, speed: 50, altitude: 0, verticalSpeed: 0 });
+    Object.assign(race.player, { distance: section.to - 6, x: 0, speed: SKY_LAUNCH, altitude: 0, verticalSpeed: 0 });
     return flight(race, 1 / fps);
   });
   for (const { impulse, air } of results) {
-    assert.ok(Math.abs(impulse - launchImpulse(50)) < 1.5, `Spiral impulse ${impulse}`);
+    assert.ok(Math.abs(impulse - launchImpulse(SKY_LAUNCH)) < 1.5, `Spiral impulse ${impulse}`);
     assert.ok(air > .5 && air < 8, `Spiral car lands (airborne ${air}s)`);
   }
   assert.ok(Math.max(...results.map(r => r.air)) - Math.min(...results.map(r => r.air)) < .25, 'airtime is frame-rate independent');

@@ -36,7 +36,7 @@ test('the plan is fixed data: known nodes, finite numbers, counts inside the kit
     for (const key of ['x', 'y', 'z', 'yaw', 'scale']) assert.ok(Number.isFinite(p[key]), `${p.node} ${key}`);
     assert.ok(p.scale >= .8 && p.scale <= 1.3, `${p.node} scale ${p.scale}`);
   }
-  assert.deepEqual({ ...counts, cloud_a: 0, cloud_b: 0, cloud_c: 0 }, { strut: 16, platform_a: 12, platform_b: 12, station: 12, chevron_sign: 20, gap_marker: 12, cloud_a: 0, cloud_b: 0, cloud_c: 0, peak: 8 });
+  assert.deepEqual({ ...counts, cloud_a: 0, cloud_b: 0, cloud_c: 0 }, { strut: 16, platform_a: 12, platform_b: 12, station: 12, chevron_sign: 21, gap_marker: 12, cloud_a: 0, cloud_b: 0, cloud_c: 0, peak: 8 });
   for (const [run, endless] of RUNS) {
     const sea = clouds(spiralSceneryPlan(run, endless)).length;
     assert.ok(sea >= 60 && sea <= 90, `${sea} clouds on run ${run}`);

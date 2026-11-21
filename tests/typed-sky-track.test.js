@@ -7,7 +7,7 @@ test('Sky Spiral path geometry has a single typed source and frame math stays co
   assert.equal(existsSync(new URL('../src/sky-track.js', import.meta.url)), false);
   const { skyPoint, skyFrame, skyPosition, skyGapAt, SKY_JUMPS, SKY_LENGTH } = await import('../src/sky-track.ts');
   const expected = SKY_JUMPS.map(x => [x.gapFrom, x.gapTo]);
-  assert.deepEqual(expected, [[4720, 4785], [5625, 5690], [6430, 6500]]);
+  assert.deepEqual(expected, [[4720, 4880], [5625, 5790], [6430, 6600]]);
   for (let d = 0; d < SKY_LENGTH; d += 41) {
     const frame = skyFrame(d);
     for (const v of [frame.right, frame.up, frame.forward]) {

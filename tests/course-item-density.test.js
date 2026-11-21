@@ -49,7 +49,7 @@ for (const id of Object.keys(COURSE_TRACKS)) {
 test('classic tracks use their current layout and item density', () => {
   const counts = Object.fromEntries(classic.map(r => [r.trackId, [r.rings.length, r.pickups.length]]));
   assert.deepEqual(counts, {
-    coast: [121, 152], neon: [233, 375], canyon: [139, 229], aurora: [120, 256], spiral: [147, 273], // first five: itemDensity 1.4 (user, 2026-11-13)
+    coast: [121, 152], neon: [233, 375], canyon: [134, 229], aurora: [120, 256], spiral: [142, 273], // first five: itemDensity 1.4 (user, 2026-11-13)
     // Neon layout 7 (2026-11-14): one tunnel of 220 m instead of three of 1600 m frees ring slots, hence 69 → 98.
     // Owner brief, 2026-11-15: five authored sector lines (34 rings) replace the random rings across their spans, 98 → 67.
     // Owner, 2026-11-15: one 10 km lap, 2.5 times the slots: 67 → 190 rings, 163 → 375 pickups. Seven authored lines

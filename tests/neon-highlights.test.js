@@ -247,7 +247,7 @@ test('the highlight lines are Neon only: pin the independent ring layouts of the
     return [id, [race.rings.length, sha(race.rings.map(r => [r.distance, r.x, r.altitude, r.radius, r.type]))]];
   }));
   assert.deepEqual(rings, {
-    coast: [121, '1f623acf6557f0a6'], canyon: [139, '07cb51c82f0b274a'], aurora: [120, '6df3e001eb49c8f5'], spiral: [147, '3138d7e9c493ea38'],
+    coast: [121, '1f623acf6557f0a6'], canyon: [134, 'adf6a9aa31b97b07'], aurora: [120, '6df3e001eb49c8f5'], spiral: [142, 'ec1e4f9fdc94f3b3'],
     taipei: [92, '7f42c4f5989d9487'], tokyo: [80, '08f42dd22c43924a'], alpine: [76, '0db439a247a2cfe3'], coastal: [107, '762fce018fe5fd9e'], cosmic: [85, '0bd0c08e5745f9a6'],
   });
 });
