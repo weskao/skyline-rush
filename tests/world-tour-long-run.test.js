@@ -25,7 +25,7 @@ test('all five World Tour tracks complete past every shortcut and boost tunnel w
     assert.ok(iterations<30000,id+' cannot get stuck indefinitely');
     assert.ok(claimedAt!==null,id+' should cross its boost tunnel');
     assert.ok(claimedAt>=tunnel.from&&claimedAt<tunnel.to,id+' tunnel claim position');
-    assert.equal(race.player.boostTunnelClaimed.length,1,id+' reward must not loop');
+    assert.deepEqual(race.player.boostTunnelClaimed, race.sections.filter(s=>s.type==='boost-tunnel').map(s=>s.from), id+' must claim each sector exactly once');
   }
 });
 
