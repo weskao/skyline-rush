@@ -25,7 +25,7 @@ npm run build
 | `released` | Same as `=0` | Wave 3 with Firestore | Wave 3 excluded |
 | `coming-soon` | Wave 3 excluded | Configuration error | Wave 3 excluded |
 
-GitHub Pages and Netlify production builds set only `GARAGE_VFX_RELEASE_MODE=trial`, so they ship without Firestore preview storage. A deployment that needs it must set `VITE_WAVE3_FIRESTORE_PREVIEW=1` in its build environment after the Firebase Rules and indexes are deployed; those are deployed separately.
+From 0.33.0 the GitHub Pages deploy (`.github/workflows/ci.yml`) and `make deploy-netlify` build with `GARAGE_VFX_RELEASE_MODE=trial` and `VITE_WAVE3_FIRESTORE_PREVIEW=1`, so signed-in players' trial wallets sync through Firestore. Every other build keeps the switch off. Any other deployment that turns it on must first deploy the Firebase Rules and indexes; they are deployed separately.
 
 ```sh
 VITE_WAVE3_FIRESTORE_PREVIEW=1 make dev
@@ -41,6 +41,21 @@ GARAGE_VFX_RELEASE_MODE=released VITE_WAVE3_FIRESTORE_PREVIEW=0 npm run build
 - The Firestore adapter stages gameplay mutations inside a transaction using the server document and publishes the new state after commit. Keeping the balances, rewards and replay IDs together allows a retry to recognize a previously recorded completion. The client ignores checkpoints after seven days without a saved operation. Firestore retains the physical document until deletion.
 - When a signed-in browser comes back online, the trial wallet reads the latest confirmed checkpoint. A failed read keeps the last confirmed balance and collection. Redemption retries use the current server balance and inventory inside the transaction. A cosmetic already unlocked in another tab costs nothing on retry.
 - The cloud-save delete action removes the preview document in every build, including builds with the preview off, so data written by an earlier preview build does not survive. It first commits the `saves`, `modeBests` and `accounts` batch, then deletes `wave3PreviewEconomy/{uid}` on its own (`src/cloud-delete.ts`). A `permission-denied` result there is ignored because a project without the preview rule cannot hold that document; any other error is reported. For a full cleanup, turn off the flag and remove the preview write rule, then delete `wave3PreviewEconomy` in the intended project. The ordinary `saves`, `modeBests` and `accounts` collections do not hold Wave 3 balances. Keep the preview data out of the formal Go economy when that launches.
+
+### Reset at the public 1.0.0
+
+The 0.33.0 → 1.0.0 builds are a dress rehearsal: the store, purchases and sync run as they will at
+launch, and 1.0.0 only restarts every balance from zero.
+
+- Keep both deploy settings. Switching to `released` is a separate decision: it also locks the
+  non-default catalog skins (`docs/garage-release-policy.md`), and `released` without `=1` drops
+  Wave 3 entirely.
+- Delete the preview data right before the 1.0.0 tag goes live, after the user confirms (it cannot
+  be undone):
+  `npx -y firebase-tools@15.34.1 firestore:delete wave3PreviewEconomy --recursive --project skyline-rush-weskao --force`
+- Guest wallets live on each device (`skyline-rush-wave3-demo:v1:guest`) and Firestore cannot reach
+  them. They expire after seven days without play; zeroing them on launch day needs a one-time
+  client change in the 1.0.0 release (for example a new storage key), with its own test.
 
 ## Account data and safe progress restore
 
