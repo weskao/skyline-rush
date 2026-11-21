@@ -309,3 +309,15 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   flush only 4.5 s: on CI's cold Vite module load and CPU WebGL the page was starved and the poll timed out (develop run
   44946255115; passed on retry, never reproduced locally). Guard: "a touch tap after a raw page load waits for Home" in
   `tests/browser-timeouts.test.js`.
+- The Home wallet card closes on any scroll (`dismissOnScroll`, `src/Wave3CurrencyStrip.vue`). In a short landscape
+  viewport Playwright scrolls the currency button into view before its click, and the scroll event can land after the
+  click, closing the card it opened (756x265, develop run 44946255115, 4/4 locally under load). Scroll into view, wait two
+  frames, then click. Guard: "a spec clicks a wallet currency only after scrolling it into view and a frame".
+- The 3-2-1 is short-lived wall-clock state. `interactive-tutorial-browser.spec.js` polled `data-phase` for `countdown` after
+  `click()` and saw `racing` for the whole 30 s on CI (develop run 44946255115, both attempts; 4/4 pass locally). Record the
+  countdown in the page per frame (`window.__countdownFrames`) and assert it after the race starts. Guard: "a spec that
+  samples the countdown in the page does not also poll the live countdown phase".
+- A browser test never sweeps every track. The Garage camera sweep (`showcase-camera-views-browser.spec.js`) took 2.3 m,
+  2.8 m, then 3.1 m on CI's software WebGL and hit the 180 s timeout with each new course (develop runs 44925139371 and
+  44946255115). Declare one test per track; do not raise the timeout. Guard: "a showcase camera spec loops over the
+  tracks outside its tests".

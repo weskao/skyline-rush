@@ -62,7 +62,11 @@ for (const viewport of [{ width: 568, height: 320 }, { width: 756, height: 265 }
     await resources.click();
     await expect(wallet.locator('[data-currency="coins"] strong')).toHaveText('0');
     await expect(wallet.locator('[data-currency="demo-points"] strong')).toBeVisible();
-    await wallet.locator('[data-currency="coins"]').click();
+    // The card closes on any scroll; Playwright's own scroll-into-view fires its scroll event a frame after the click under load.
+    const coins = wallet.locator('[data-currency="coins"]');
+    await coins.scrollIntoViewIfNeeded();
+    await page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
+    await coins.click();
     await expect(page.getByRole('region', { name: 'Demo coins' })).toBeVisible();
   });
 }

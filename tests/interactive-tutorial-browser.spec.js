@@ -113,20 +113,25 @@ test('practice opens with the race countdown, stands still at GO, and THROTTLE t
   await toggleSettingsSection(page, 'driving');
   // The 3-2-1 runs on wall clock (3 s) while a slow runner spends that long on two expects: sample it in the page, per frame.
   await page.evaluate(() => {
-    const seen = window.__countdownFrames = { frames: 0, guide: 0 };
+    const seen = window.__countdownFrames = { frames: 0, guide: 0, shown: false };
     const sample = () => {
-      if (document.body.dataset.phase === 'countdown') { seen.frames++; if (document.querySelector('#tutorial-guide')) seen.guide++; }
+      if (document.body.dataset.phase === 'countdown') {
+        seen.frames++;
+        if (document.querySelector('#tutorial-guide')) seen.guide++;
+        if (document.querySelector('#countdown')?.getClientRects().length) seen.shown = true;
+      }
       if (document.body.dataset.phase !== 'racing') requestAnimationFrame(sample);
     };
     requestAnimationFrame(sample);
   });
   await page.locator('#tutorial-open').click();
-  await expect(page.locator('body')).toHaveAttribute('data-phase', 'countdown');
-  await expect(page.locator('#countdown')).toBeVisible();
+  // Never poll the live phase for 'countdown': a starved page can spend the whole 3-2-1 inside click() (develop CI 44946255115,
+  // both attempts: Received "racing" for 30 s). The in-page sampler above records it per frame.
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(6000) });
   // The forward arrow waits for GO (user, 2026-11-08): none during 3-2-1, then it appears with the throttle cue.
   const counted = await page.evaluate(() => window.__countdownFrames);
   expect(counted.frames).toBeGreaterThan(0);
+  expect(counted.shown).toBe(true);
   expect(counted.guide).toBe(0);
   // Practice has no GO roll (user, 2026-11-08): the car waits for THROTTLE, and the cue says so.
   await expect(page.locator('#speed')).toHaveText('0');
