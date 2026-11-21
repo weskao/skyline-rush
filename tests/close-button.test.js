@@ -26,3 +26,11 @@ test('the shared close button shows × and requires an accessible name', () => {
   assert.ok(uses.some(use => use.includes('id="leave-close"')), 'the leave-race dialog has its accessible close control');
   for (const use of uses) assert.match(use, /\blabel=|:label=/, use);
 });
+
+test('all standalone × buttons reuse the garage CloseButton instead of hand-rolling a glyph', () => {
+  const rogue = markup.flatMap(([file, text]) => [...text.matchAll(/<button\\b[^>]*>\\s*[×✕✖]\\s*<\\/button>/g)]
+    .map(() => file));
+  assert.deepEqual(rogue, [], 'inline × buttons must be rendered through CloseButton.vue');
+  const eventLab = readFileSync(new URL('EventLabPanel.vue', src), 'utf8');
+  assert.match(eventLab, /<CloseButton\\b[^>]*:label="\\x60\\$\\{text\\('remove'\\)\\} \\$\\{index \\+ 1\\}\\x60"/);
+});
