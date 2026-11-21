@@ -518,14 +518,16 @@ test('audio initialization failure leaves the silent game playable and retryable
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(30);
   await page.locator('#pause-button').click();
   await page.locator('#settings-button').click();
-  await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
-  // Playback may be unavailable, but user choices must remain togglable and persist for a later retry.
-  await audioSwitch(page, 'Sound effects').click();
-  await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'true');
-  await expect.poll(() => stored(page, 'skyline-rush-sound')).toBe('on');
-  await audioSwitch(page, 'Music').click();
-  await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'true');
-  await expect.poll(() => stored(page, 'skyline-rush-music')).toBe('on');
+  // A failed engine never turns the player's (default on) choices off; they stay togglable and persist for a later retry.
+  for (const [name, key] of [['Sound effects', 'skyline-rush-sound'], ['Music', 'skyline-rush-music']]) {
+    await expect(audioSwitch(page, name)).toHaveAttribute('aria-checked', 'true');
+    await audioSwitch(page, name).click();
+    await expect(audioSwitch(page, name)).toHaveAttribute('aria-checked', 'false');
+    await expect.poll(() => stored(page, key)).toBe('off');
+    await audioSwitch(page, name).click();
+    await expect(audioSwitch(page, name)).toHaveAttribute('aria-checked', 'true');
+    await expect.poll(() => stored(page, key)).toBe('on');
+  }
   expect(errors).toEqual([]);
 });
 
