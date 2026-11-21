@@ -28,6 +28,7 @@ import { RACE_DRIVER_IDS, startingGrid } from './race-grid.ts';
 import { raceCompletion } from './race-objectives.ts'; import { riskRules } from './risk-lines.ts'; import { spawnCatchUp } from './catch-up-items.ts';
 import { createRaceSessionContract } from './race-session.ts';
 import { skyJumpGap, SKY_JUMPS } from './sky-track.ts'; import { startRoadRecovery, advanceRoadRecovery, RESET_BACKTRACK, stepDeck, stepSpan, SHORTCUT_HALF_WIDTH, SHORTCUT_TOLERANCE } from './road-falls.ts';
+import { planGapRecovery, clearGapFallStreak } from './gap-recovery-seat.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 
 import { RACE_TRACKS, raceTrack, assertTrackMode, itemScale } from './race-tracks.ts';
@@ -171,6 +172,7 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
       nearMiss: null, nearMisses: 0, combo: 0, scrape: null, scrapeCooldown: 0, flyBuffer: 0,
       poweredFlightTime: 0, flightBoosted: false,
       section: null, inShortcut: false, falls: 0, fall: null, span: false,
+      gapFallStreak: /** @type {import('./gap-recovery-seat.ts').GapFallStreak | null} */ (null),
       nitro: 0, nitroTime: 0, nitroHeld: false, nitroUses: 0, nitroBurst: 0, nitroChain: 0, longestCombo: 0,
       slipstream: { time: 0, active: false, paid: false },
       driftHold: /** @type {import('./player-drift.ts').DriftHold | null} */ (null),
@@ -254,6 +256,7 @@ export function stepRace(race, input, dt) {
   }
   streamEndless(race); spawnCatchUp(race);
   const car = race.player, wasSlowed = itemHit(race, car) !== null;
+  if (car.gapFallStreak) car.gapFallStreak = clearGapFallStreak(car.gapFallStreak, car.distance);
   race.elapsed += dt;
   const hitSpeed = itemHit(race, car) ? ITEM_HIT_SPEED : 1;
   if (wasSlowed && hitSpeed === 1) car.speed /= ITEM_HIT_SPEED; // lift the penalty, preserving braking and impacts
@@ -381,7 +384,11 @@ export function stepRace(race, input, dt) {
   if (gapNow && car.altitude < GAP_CLEARANCE && !(skyGap && car.altitude > 0 && car.verticalSpeed > 0)) {
     const from = skyGap ? skyGap.gapFrom : gapNow.from;
     const approach = skyGap ? skyGap.rampFrom - SKY_GAP_RECOVERY_RUNUP : from - 72;
-    startRoadRecovery(car, { distance: safeRoadDistance(race, approach) }, from, race.elapsed, GAP_SLOWDOWN);
+    const plan = planGapRecovery({ from, to: skyGap ? skyGap.gapTo : gapNow.to }, car.distance,
+      safeRoadDistance(race, approach), race.length, car.gapFallStreak);
+    car.gapFallStreak = plan.streak;
+    startRoadRecovery(car, { distance: plan.distance }, from, race.elapsed, GAP_SLOWDOWN);
+    if (car.recovery) car.recovery.assisted = plan.assisted;
   }
   if (!car.recovery) {
     if (previousAltitude > 0 && car.altitude === 0) {

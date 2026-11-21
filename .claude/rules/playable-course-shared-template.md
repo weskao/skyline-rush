@@ -175,11 +175,23 @@ reuse or transpose another course's loop.
   jump launch requiring **94 m/s (338 km/h)**, above the normal throttle cap
   of 88 m/s but attainable with BOOST (102 m/s cap). Players can also use FLY
   at lower speed; a supported flight must stay physically airborne until the
-  landing road. Failed gaps return **180 m before the launch ramp** for a new
-  BOOST run-up. This threshold does not apply to Event Lab ramps (32 m/s).
+  landing road. First-half failures return **180 m before the launch ramp** for
+  a new BOOST run-up. This threshold does not apply to Event Lab ramps (32 m/s).
 - Canyon Skyway has **160 m** of missing deck and no automatic jump launch;
   powered flight is its intended crossing. Do not invent one global threshold
   for other CourseGraph and flight-only routes without measuring their run-ups.
+- On **classic** gaps, compare the actual fall position with the gap's midpoint:
+  first half (including exactly 50%) recovers on the approach, past 50% recovers
+  on solid road **18 m beyond the far lip**. After **three consecutive falls at
+  the same gap**, an early failure also rescues at the far side; failures at
+  different gaps start a new streak. Clear the streak on successful progress
+  beyond that gap. R/manual reset does not count toward rescue or move the car
+  beyond the chasm. Never place a car beyond FINISH or in another gap.
+- Rescue is not a win: retain fall count, speed slowdown, lost combo and normal
+  running clock/rival movement, and skip rings, pickups, hazard/checkpoint sweeps
+  during relocation. Use a short bilingual rescue cue; do not cover the road.
+  Preserve CourseGraph's authored split/recovery-edge/checkpoint rules rather
+  than applying simple linear-distance teleportation to flight-only branches.
 - Guard tests: throttle-only failure, BOOST and FLY success, failed recovery
   and reset, all three Sky Spiral gaps, Canyon FLY, 30/60/120 FPS, Low/high
   geometry parity and enough acceleration distance. Endless/Elimination still
