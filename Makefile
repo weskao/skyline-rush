@@ -135,7 +135,7 @@ deploy: ## `make deploy`: trigger CI checks and GitHub Pages deployment of remot
 	gh workflow run ci.yml --ref main
 
 # Deploys the current checkout straight from this Mac; needs `npx netlify-cli login` once per machine.
-# GARAGE_VFX_RELEASE_MODE matches the Pages deploy pin in ci.yml. The site has Netlify visitor access protection
+# GARAGE_VFX_RELEASE_MODE and VITE_WAVE3_FIRESTORE_PREVIEW match the Pages deploy pins in ci.yml. The site has Netlify visitor access protection
 # (anonymous requests get 401), so the live check asks the Netlify API which deploy is published instead of curl.
 # The Telegram line goes through tg-send.sh when it exists (bot type deploy-done; default bot until that exists).
 NETLIFY := npx --yes netlify-cli@27.16.2
@@ -150,7 +150,7 @@ deploy-netlify: node_modules ## `make deploy-netlify`: production build of this 
 	  | jq -e --arg d "$(NETLIFY_SITE).netlify.app" '.authorizedDomains | any(. == $$d)' >/dev/null || { \
 	  echo "Google sign-in would fail: $(NETLIFY_SITE).netlify.app is not a confirmed Firebase Auth authorized domain."; \
 	  echo "Add it: Firebase console > Authentication > Settings > Authorized domains > Add domain"; exit 1; }
-	GARAGE_VFX_RELEASE_MODE=trial $(NPM) run build
+	GARAGE_VFX_RELEASE_MODE=trial VITE_WAVE3_FIRESTORE_PREVIEW=1 $(NPM) run build
 	@out=$$($(NETLIFY) deploy --prod --no-build --dir=dist --site $(NETLIFY_SITE) --json \
 	  --message "local deploy $$(git describe --tags --always)") || { echo "$$out"; exit 1; }; \
 	id=$$(echo "$$out" | jq -r .deploy_id); unique=$$(echo "$$out" | jq -r .deploy_url); \

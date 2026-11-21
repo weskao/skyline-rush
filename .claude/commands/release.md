@@ -91,9 +91,18 @@ The tag's CI always publishes GitHub Pages. Ask with `AskUserQuestion` where els
    `! npx --yes netlify-cli@27.16.2 login` and wait. A failed Netlify deploy does not roll back
    the release; report its result in the final report and the Telegram notice.
 
+## Phase W — Wave 3 preview data (1.0.0 only, before Phase B)
+
+From 0.33.0 the Pages and Netlify deploys build with `GARAGE_VFX_RELEASE_MODE=trial` and
+`VITE_WAVE3_FIRESTORE_PREVIEW=1` (`ci.yml`, `Makefile`), so releases before 1.0.0 skip this phase.
+For 1.0.0, follow "Reset at the public 1.0.0" in `docs/cloud-save.md`: keep both settings, ship the
+guest-wallet reset in the release, and ask with `AskUserQuestion` (first option "Reset Wave 3 preview
+data now (Recommended)"; `-y` never skips it) before deleting `wave3PreviewEconomy`. Report the
+result in the final report and the Telegram notice.
+
 ## Phases T, A and B
 
-Follow Phases T and A, then Phases F and D above, then Phase B and the final report of
+Follow Phases T and A, then Phases F, D and W above, then Phase B and the final report of
 `$HOME/.claude/commands/release.md` unchanged.
 `RELEASE_SCRIPT` resolves to this project's `scripts/release.sh`, whose `scripts/release-gate.sh`
 re-runs the notes check first, then requires `main` = `origin/main`, a green CI run and
