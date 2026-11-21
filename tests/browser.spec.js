@@ -444,11 +444,22 @@ test('a first visit starts music on the first gesture and leaves audio preferenc
 test('countdown lights, automatic accelerator and brake work without holding the gas', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#assist-button')).toHaveAttribute('aria-pressed', 'true'); // on by default, desktop too
+  // The 3-2-1 can end before a later expect reads #speed on CI (278 km/h, run 44892040873): sample every countdown frame.
+  await page.evaluate(() => {
+    const seen = window.__countdownSpeeds = [];
+    const sample = () => {
+      if (document.body.dataset.phase === 'countdown') seen.push(document.querySelector('#speed').textContent);
+      if (document.body.dataset.phase !== 'racing') requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  });
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
   await expect(page.locator('.start-lights')).toBeVisible();
-  await expect(page.locator('#speed')).toHaveText('0');
   await saveArtifact(page, { path: 'artifacts/countdown-polish.jpeg', quality: 70 });
   await expect(page.locator('#race-status')).toHaveText('RACING');
+  const countdownSpeeds = await page.evaluate(() => window.__countdownSpeeds);
+  expect(countdownSpeeds.length, 'countdown frames were sampled').toBeGreaterThan(0);
+  expect(new Set(countdownSpeeds), 'the car holds still on the grid through the countdown').toEqual(new Set(['0']));
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(80);
   await page.keyboard.down('s');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeLessThan(10);
@@ -1192,7 +1203,8 @@ for (const sizes of [[[390, 844], [320, 740]], [[844, 390]]]) {
           await expect(page.locator('#touch-controls')).toBeVisible();
           await eachSize(page, async (width, height, size) => {
             const bounds = await visibleBounds(page);
-            const touchButtons = bounds.filter(bound => !bound.pad && !/Auto|Audio|camera|Pause|Restart|Controls/i.test(bound.name));
+            // Toolbar buttons (7f1eddc0 put Reset vehicle beside Pause once racing) keep the onscreen/44px checks below.
+            const touchButtons = bounds.filter(bound => !bound.pad && !/Auto|Audio|camera|Pause|Restart|Reset vehicle|Controls/i.test(bound.name));
             // The HUD owns NITRO's accessible state label; geometry checks should not depend on charge timing.
             const names = touchButtons.map(bound => bound.name.replace(/^NITRO .+$/, 'NITRO')).sort();
             expect(names, `${size} ${mode} ${touchSize}`).toEqual((mode === 'slide'

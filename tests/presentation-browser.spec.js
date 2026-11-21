@@ -149,7 +149,9 @@ for (const [name, viewport, hasTouch, reducedMotion] of [
     await expect(page.locator('#race-overlay')).toBeVisible();
     await expect(page.locator('#next-button')).toBeFocused();
     await expect(page.locator('#new-best')).toBeVisible();
-    await expect.poll(() => page.locator('#result-stats > div:nth-child(2) strong').textContent()).toBe(await page.locator('#timer').textContent());
+    // The HUD chronograph shows MM:SS.mmm; results keep the MM:SS.hh race-clock format of the same official time.
+    const hudTime = await page.locator('#timer').textContent(), [hudMin, hudSec] = hudTime.split(':');
+    await expect.poll(() => page.locator('#result-stats > div:nth-child(2) strong').textContent()).toBe(`${hudMin}:${Number(hudSec).toFixed(2).padStart(5, '0')}`);
     const evidence = await page.evaluate(() => window.finishEvidence);
     if (reducedMotion === 'reduce') expect(evidence.revealedAt - evidence.finishedAt).toBeLessThan(200);
     else { expect(evidence.initiallyHidden).toBe(true); expect(evidence.revealedAt - evidence.finishedAt).toBeGreaterThan(450); }
