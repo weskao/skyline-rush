@@ -116,3 +116,13 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
   checkout sits above the catalog; `25ba5f90`'s `.demo-action-reason` box pushed the first offer below the fold
   (ratio 0.20 at 320×720). Hide it with `.demo-detail-copy` in that block. Guard:
   `tests/wave3-early-access-browser.spec.js` (first offer in view at 320×720).
+- **A block added to the portrait race HUD's left column pays for its own height and width.** `.race-progress` (mode
+  rows) is pinned 114px below `.race-info` and spans the width, the setting toast sits right of POSITION at y 156, and
+  the 320px competitive leaderboard flows beside it. The d0f2e37b chronograph (stacked state + readout) ran POSITION 10px
+  into `.race-progress` at 390x844, and a one-row variant widened it under the toast (CI 44892040873). Portrait phones
+  show icon + readout only, as short landscape does. Guards: `responsive-browser.spec.js` (race HUD),
+  `mode-coverage-browser.spec.js`, `toggle-feedback-browser.spec.js`, `race-hud-overlap-browser.spec.js`.
+- **24px collectible icons need the ≤360 px compaction.** CollectibleIcon (f947f938) put 24px art into Garage mode
+  buttons and Store filter/action rows; at 320 px the third mode button wrapped and the first offer fell below the fold.
+  ≤360 portrait shrinks them to 16px (`garage-preview-controls.css`, `wave3-demo-store.css`); 390 px keeps 24px.
+  Guards: `garage-dense-layout`, `wave3-early-access` and `collectible-ui` browser specs.

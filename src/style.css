@@ -2586,3 +2586,15 @@ body[data-phase="finished"] .overlay-actions:has(#choose-track[data-primary-acti
   .race-clock-icon { width: 14px; height: 14px; }
   .race-clock-readout { font-size: 14px; letter-spacing: 0; }
 }
+@media (max-width: 760px) and (orientation: portrait) {
+  /* .race-progress (mode rows) starts 114px below .race-info and spans the width: the stacked state + readout ran POSITION
+     10px into it at 390x844, and a state-beside-readout row widened POSITION under the toast and the 320px competitive
+     leaderboard. As in short landscape: icon + readout only (the accent border still marks the state), as a block box
+     with no inline line-box gap before STYLE. Guards: responsive / mode-coverage / toggle-feedback / race-hud-overlap specs. */
+  .position-stat > .race-clock { display: flex; margin-top: 4px; padding-block: 3px; }
+  .position-stat > .race-clock + .style-score { margin-top: 4px; }
+  .race-clock-icon { width: 20px; height: 20px; }
+  .race-clock-state { display: none; }
+}
+/* CJK stays at the 10px legibility floor (tests/i18n-browser.spec.js MIN_CJK_PX). */
+html[lang="zh-TW"] .race-clock-state { font-size: 10px; letter-spacing: .5px; }
