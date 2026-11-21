@@ -2559,7 +2559,7 @@ body[data-phase="finished"] .overlay-actions:has(#choose-track[data-primary-acti
 }
 @media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
   /* The leaderboard begins at x=150px: keep the clock inside the left POSITION gutter. */
-  .position-stat > .race-clock { margin-top: 3px; padding: 2px 4px 2px 2px; gap: 3px; }
+  .position-stat > .race-clock { min-width: 0; margin-top: 3px; padding: 2px 4px 2px 2px; gap: 3px; }
   .race-clock-icon { width: 19px; height: 19px; }
   .race-clock-readout { font-size: 14px; letter-spacing: 0; }
 }
