@@ -47,7 +47,7 @@ test('the authoritative race clock starts at GO, freezes on pause, resumes and f
 });
 
 test('the in-race clock uses one existing #timer source, with SVG art and translated state', () => {
-  const app = readFileSync(new URL('../src/App.vue', import.meta.url), 'utf8');
+  const app = readFileSync(new URL('../src/RaceInfo.vue', import.meta.url), 'utf8');
   const hud = readFileSync(new URL('../src/race-hud.ts', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8');
   assert.match(app, /id="race-clock"/);
