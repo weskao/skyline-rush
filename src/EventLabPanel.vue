@@ -166,7 +166,7 @@ const symbols: Record<CourseKind, string> = { barrier: '▰', cone: '▴', ramp:
             <strong>{{ symbols[object.kind] }} {{ text(object.kind) }}</strong>
             <label>{{ text('distance') }}<input type="number" :aria-label="`${text('distance')} ${index + 1}`" :value="object.distance" min="200" :max="maxDistance" step="10" :aria-invalid="objectError?.index === index && objectError.key === 'distance'" :aria-describedby="objectError?.index === index && objectError.key === 'distance' ? `lab-object-error-${index}` : undefined" @change="objectField(index, 'distance', $event)"></label>
             <label>{{ text('lane') }}<input data-lab-lane type="number" :aria-label="`${text('lane')} ${index + 1}`" :value="object.lane" :min="object.kind === 'ring' ? 1 : 0" :max="object.kind === 'ring' ? 2 : 3" step="1" :aria-invalid="objectError?.index === index && objectError.key === 'lane'" :aria-describedby="objectError?.index === index && objectError.key === 'lane' ? `lab-object-error-${index}` : undefined" @change="objectField(index, 'lane', $event)"></label>
-            <button type="button" :disabled="draft.objects.length === 1" :aria-label="`${text('remove')} ${index + 1}`" @click="attempt(() => commit({ ...draft, objects: draft!.objects.filter((_, i) => i !== index) }))">×</button>
+            <CloseButton :disabled="draft.objects.length === 1" :label="`${text('remove')} ${index + 1}`" @click="attempt(() => commit({ ...draft, objects: draft!.objects.filter((_, i) => i !== index) }))" />
             <p v-if="objectError?.index === index" :id="`lab-object-error-${index}`" class="lab-error" role="alert">{{ errorText }}</p>
           </li>
         </ol>

@@ -33,3 +33,29 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     });
   });
 }
+
+for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+  test.describe('Event Lab shared removal cross ' + viewport.width + 'x' + viewport.height, () => {
+    test.use({ viewport, hasTouch: viewport.width < 600 });
+    test('the remove cross matches Garage, removes an object, and keeps the editor open', async ({ gameplayPage: page }) => {
+      await clickLobbyOption(page, 'button[data-race-mode="eventlab"]');
+      const lab = page.locator('#event-lab-dialog');
+      await expect(lab).toBeVisible();
+      const objectTab = lab.locator('.lab-switch button').nth(1);
+      if (await objectTab.isVisible()) await objectTab.click();
+      const rows = lab.locator('#lab-objects > li');
+      const count = await rows.count();
+      expect(count).toBeGreaterThan(1);
+      const remove = rows.last().locator('button.close-button');
+      await expect(remove).toHaveAttribute('aria-label', /\S/);
+      const shape = await remove.evaluate(el => {
+        const style = getComputedStyle(el);
+        return { width: el.offsetWidth, height: el.offsetHeight, radius: style.borderRadius };
+      });
+      expect(shape).toEqual({ width: 44, height: 44, radius: '50%' });
+      await remove.click();
+      await expect(rows).toHaveCount(count - 1);
+      await expect(lab).toBeVisible();
+    });
+  });
+}

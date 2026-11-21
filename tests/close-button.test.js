@@ -28,3 +28,9 @@ test('the shared close button has a default × and keeps panel-specific artwork 
   assert.ok(uses.some(use => use.includes('id="leave-close"')), 'the leave-race dialog has its accessible close control');
   for (const use of uses) assert.match(use, /\blabel=|:label=/, use);
 });
+
+test('all visible cross glyph buttons reuse the shared garage component', () => {
+  const rogue = markup.flatMap(([file, source]) => [...source.matchAll(/>\s*[×✕✖]\s*<\/button>/g)]
+    .map(() => file));
+  assert.deepEqual(rogue, [], 'standalone × buttons must use CloseButton.vue');
+});
