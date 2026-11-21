@@ -726,9 +726,9 @@
     },
     {
       "id": "timer",
-      "tag": "span",
+      "tag": "output",
       "classes": [
-        "time"
+        "race-clock-readout"
       ]
     },
     {
