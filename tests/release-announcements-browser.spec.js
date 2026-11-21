@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import { test, expect } from './helpers/test.js';
+import { ciTimeout } from './helpers/ci.js';
 import { recentReleases, UPCOMING } from '../src/release-notes.ts';
 
 const { version } = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
@@ -235,6 +236,18 @@ test('scrolled notes slide under the dialog top edge, never over its gradient ba
     return document.elementFromPoint(r.left + r.width / 2, r.top + el.clientTop + 1.5) === el;
   });
   expect(hit).toBe(true);
+});
+
+// A forward-filling entry animation keeps every card on its own GPU layer for as long as the notes are open; scrolling
+// them under the sticky bar and footer then re-layers the dialog each frame, which phones show as flicker.
+test('release cards drop their entry animation once it ends, so scrolling the notes never flickers', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.locator('#whats-new-open').click();
+  const dialog = page.locator('#whats-new-screen');
+  await expect(dialog.locator('.release-entry')).not.toHaveCount(0);
+  await expect.poll(() => dialog.evaluate(el => [...el.querySelectorAll('.release-entry')]
+    .filter(card => card.getAnimations().length || getComputedStyle(card).transform !== 'none').length), { timeout: ciTimeout(5000) }).toBe(0);
 });
 
 // The thumbnail and enlarged viewer must use the same, readable device-specific image.
