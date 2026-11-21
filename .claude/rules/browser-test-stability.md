@@ -75,6 +75,12 @@ and the duplicate import failed all 16 browser shards. Enforced by `tests/browse
   once: called right after `page.goto` it found no button and expanded the Mode list on desktop, pushing
   the Cup recovery panel 82px past `#intro` (develop CI 44674764907). Guarded in the same test file.
 
+- **A Tab walk can end on the browser's own UI.** `assertTrapped` (`tests/responsive-focus-browser.spec.js`) presses
+  Tab past the dialog's last control; the page logs `browser` and `activeElement` is `<body>`. The Escape pressed next
+  goes to the address bar, so the dialog stays open and the test reads like a product close bug (Event Lab at 320x740,
+  red on attempt 1 and green on retry, develop CI 44892040873). The walk ends by focusing a control inside the dialog.
+  Enforced by `tests/browser-timeouts.test.js` (*a Tab-trap walk ends with focus back inside the dialog*).
+
 ## Catalog drift and deterministic physics
 
 - Home route-map checks cover both `RACE_TRACKS` and `UPCOMING_TRACKS`. Keep classic-only

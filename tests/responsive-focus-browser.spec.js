@@ -34,6 +34,9 @@ async function assertTrapped(page, selector, { quick = false } = {}) {
     expect(places.filter(place => place.startsWith('escaped')), `${key} never focuses the page behind ${selector}`).toEqual([]);
     expect(places.filter(place => place === 'inside').length, `${key} cycles back into ${selector}`).toBeGreaterThan(quick ? stops - 1 : stops * 2);
   }
+  // The walk may end on the browser's own UI, whose keys never reach the page: the Escape a caller presses next would
+  // go to the address bar and leave the dialog open (Event Lab, CI 44892040873). Hand focus back inside it.
+  await page.locator(`${selector} :is(a[href], button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):visible`).first().focus();
 }
 const fullyVisible = (box, width, height) => box && box.x >= 0 && box.y >= 0 && box.x + box.width <= width && box.y + box.height <= height;
 

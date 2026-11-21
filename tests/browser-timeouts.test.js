@@ -453,3 +453,17 @@ test('a route handler that fetches cannot outlive its test (unrouteAll ignoreErr
   }).map(file => `tests/${file}`);
   assert.deepEqual(offenders, [], "Take `test` from tests/helpers/test.js, or unrouteAll({ behavior: 'ignoreErrors' }) after each test");
 });
+
+// Trap (2026-11-21, develop CI 44892040873): at 320x740 the Event Lab walk (quick: one pass plus two Tabs) ended on the
+// browser's own UI (activeElement <body>), so the Escape pressed next went to the address bar, never to the page, and
+// #event-lab-dialog stayed open (red on attempt 1, green on retry). The walk hands focus back inside the dialog itself.
+test('a Tab-trap walk ends with focus back inside the dialog, so the next key reaches the page', () => {
+  const offenders = FILES.filter(file => file.endsWith('browser.spec.js')).flatMap(file => {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    const start = source.indexOf('async function assertTrapped(');
+    if (start < 0) return [];
+    const body = source.slice(start, source.indexOf('\n}\n', start));
+    return body.lastIndexOf('.focus(') > body.lastIndexOf('keyboard.press(key)') ? [] : [`tests/${file}`];
+  });
+  assert.deepEqual(offenders, [], 'End assertTrapped by focusing a control inside the dialog (.claude/rules/browser-test-stability.md)');
+});
