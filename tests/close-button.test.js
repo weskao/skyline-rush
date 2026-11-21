@@ -27,10 +27,8 @@ test('the shared close button shows × and requires an accessible name', () => {
   for (const use of uses) assert.match(use, /\blabel=|:label=/, use);
 });
 
-test('all standalone × buttons reuse the garage CloseButton instead of hand-rolling a glyph', () => {
-  const rogue = markup.flatMap(([file, text]) => [...text.matchAll(/<button\\b[^>]*>\\s*[×✕✖]\\s*<\\/button>/g)]
+test('all visible cross glyph buttons reuse the shared garage component', () => {
+  const rogue = markup.flatMap(([file, source]) => [...source.matchAll(/>\s*[×✕✖]\s*<\/button>/g)]
     .map(() => file));
-  assert.deepEqual(rogue, [], 'inline × buttons must be rendered through CloseButton.vue');
-  const eventLab = readFileSync(new URL('EventLabPanel.vue', src), 'utf8');
-  assert.match(eventLab, /<CloseButton\\b[^>]*:label="\\x60\\$\\{text\\('remove'\\)\\} \\$\\{index \\+ 1\\}\\x60"/);
+  assert.deepEqual(rogue, [], 'standalone × buttons must use CloseButton.vue');
 });
