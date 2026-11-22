@@ -1,0 +1,38 @@
+import type { TrackAssetPack, PackProgress, PackStatus } from './track-pack-store.ts';
+
+export interface BatchProgress {
+  completed: number; total: number; activeId: string | null;
+  fileDone: number; fileTotal: number; failed: number;
+}
+type PackWorker = {
+  status(pack: TrackAssetPack): Promise<PackStatus>;
+  download(pack: TrackAssetPack, progress?: (value: PackProgress) => void, signal?: AbortSignal): Promise<PackProgress>;
+};
+/** Download sequentially to avoid flooding mobile memory and the Cache Storage quota. */
+export async function downloadTrackPackBatch(
+  packs: readonly TrackAssetPack[], worker: PackWorker, progress: (state: BatchProgress) => void,
+  settled: (pack: TrackAssetPack, ok: boolean) => void, signal?: AbortSignal,
+): Promise<{ completed: number; total: number; failed: number }> {
+  let completed = 0, failed = 0;
+  const total = packs.length;
+  for (const pack of packs) {
+    signal?.throwIfAborted();
+    const emit = (fileDone: number, fileTotal = pack.assets.length) =>
+      progress({ completed, total, activeId: pack.trackId, fileDone, fileTotal, failed });
+    emit(0);
+    try {
+      if (await worker.status(pack) !== 'ready') {
+        await worker.download(pack, value => emit(value.done, value.total), signal);
+        if (await worker.status(pack) !== 'ready') throw new Error('Track pack incomplete: ' + pack.trackId);
+      }
+      settled(pack, true);
+    } catch (error) {
+      if (signal?.aborted) throw error;
+      failed++;
+      settled(pack, false);
+    }
+    completed++;
+    progress({ completed, total, activeId: null, fileDone: 0, fileTotal: 0, failed });
+  }
+  return { completed, total, failed };
+}
