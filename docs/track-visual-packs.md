@@ -19,3 +19,5 @@ The fullscreen fallback uses the selected track teaser and is hidden only after 
 ## 2026-11-22 compact track-download controls
 
 Each of the 16 cards is a separate selection button plus a sibling 42 CSS-pixel download action with an inline SVG ring. Never nest one button inside another. Selected pack versions stay in the dialog footer; one "Download all" button sequentially installs all nonready maps at the selected graphics tier (including preview-only teaser packs). Shared asset bytes are reused, completed maps are skipped, a failed map does not block the next, and the bulk control cancels via AbortSignal. Ring percentages show **file count**, not byte count. No separate PNG/WebP icon files are generated, to avoid extra download weight.
+
+Shared HDRI files without a published SHA-256 use an explicit `shared-hdri-v1` revision independent of each map's version. Bump this revision if any shared HDRI bytes change, so independently updating map artwork does not invalidate other maps or force redundant HDRI downloads.\n

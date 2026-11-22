@@ -94,3 +94,17 @@ test('map update frees unused old bytes without evicting assets shared by anothe
   await store.download({ ...pack('1.0.2', 'new-data'), trackId: 'spiral', signature: 'spiral:v2' });
   assert.equal(await cache.match(oldKey), undefined, 'old hash is unreferenced and reclaimed');
 });
+
+test('a shared unchecksummed HDRI is reused across independently updated map versions', async () => {
+  const storage = new MemoryStorage(), requests = [], store = create(storage, requests);
+  const shared = { url: 'environments/sky/shared.hdr', sha256: '', bytes: 10, revision: 'shared-hdri-v1' };
+  const coast = { ...pack(), assets: [shared], signature: 'coast-v1' };
+  const neon = { ...pack('2.0.0'), trackId: 'neon', assets: [shared], signature: 'neon-v2' };
+  await store.download(coast);
+  await store.download(neon);
+  assert.equal(requests.length, 1, 'independent map release does not re-download the shared HDRI');
+  assert.equal(await store.status(coast), 'ready');
+  assert.equal(await store.status(neon), 'ready');
+  const replaced = { ...neon, signature: 'neon-v3', assets: [{ ...shared, revision: 'shared-hdri-v2' }] };
+  assert.equal(await store.status(replaced), 'update', 'changing the shared resource revision invalidates the receipt');
+});

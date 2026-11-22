@@ -38,7 +38,7 @@ test('track chooser installs a versioned visual pack once, then reuses it after 
   await waitForHome(page);
   await page.locator('#lobby-tracks-toggle').click();
   await expect(card).toHaveAttribute('data-pack-state', 'ready', { timeout: ciTimeout(15000) });
-  await expect(download).toBeHidden();
+  await expect(download).toBeDisabled();
   await page.locator('#track-choose-confirm').click();
   await page.locator('#start-button').click();
   await expect(page.locator('#world')).toBeVisible({ timeout: ciTimeout(20000) });

@@ -295,7 +295,7 @@ test.describe('landscape track cards show the whole card', () => {
         await settled(page.locator('[data-track="coast"] .route-overview'));
         const { cards, footerTop } = await page.evaluate(() => {
           const box = el => el.getBoundingClientRect();
-          const cards = [...document.querySelectorAll('.track-select button')].slice(0, 2).map(button => {
+          const cards = [...document.querySelectorAll('.track-select .track-card-select')].slice(0, 2).map(button => {
             const card = box(button), sky = box(button.querySelector('.track-preview'));
             const route = box(button.querySelector('.track-route-map')), km = box(button.querySelector(':scope > span:last-child'));
             return { bottom: card.bottom, skyHeight: sky.height, cardHeight: card.height, routeHeight: route.height, km: km.bottom, kmHeight: km.height };

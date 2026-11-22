@@ -22,8 +22,9 @@ export function trackAssetPack(trackId: string, quality: 'low' | 'medium' | 'hig
   const version = TRACK_PACK_VERSIONS[trackId]!;
   const tier = ultra && quality === 'high' ? 'ultra' : quality;
   const entries = new Map<string, TrackPackAsset>();
-  const add = (url: string, sha256 = '', bytes = 0): void => {
-    if (url) entries.set(url, { url, sha256: /^[a-f0-9]{64}$/.test(sha256) && !/^0+$/.test(sha256) ? sha256 : '', bytes });
+  const add = (url: string, sha256 = '', bytes = 0, revision = ''): void => {
+    if (url) entries.set(url, { url, sha256: /^[a-f0-9]{64}$/.test(sha256) && !/^0+$/.test(sha256) ? sha256 : '', bytes,
+      ...(revision ? { revision } : {}) });
   };
   // Preview-only cards have independent illustration versions, but remain unplayable in release builds.
   const upcoming = Object.hasOwn(UPCOMING_TRACKS, trackId) ? UPCOMING_TRACKS[trackId as keyof typeof UPCOMING_TRACKS] : null;
@@ -40,7 +41,7 @@ export function trackAssetPack(trackId: string, quality: 'low' | 'medium' | 'hig
       const resolution = quality === 'medium' ? TIERS.medium : tier === 'ultra' ? TIERS.ultra : TIERS.high;
       for (const slot of ['road', 'ground', 'helix'] as const) {
         const id = look[slot];
-        const material = id && MATERIAL_MANIFEST[id];
+        const material = id ? MATERIAL_MANIFEST[id] : undefined;
         for (const file of material?.files ?? []) if (file.resolution === resolution) add(file.url, file.sha256, file.bytes);
       }
       // Include every advertised weather/lighting preset, so "downloaded" covers later weather changes.
@@ -50,7 +51,7 @@ export function trackAssetPack(trackId: string, quality: 'low' | 'medium' | 'hig
       }));
       for (const variant of variants) {
         const sky = COAST_ENV_VARIANTS[variant];
-        add(`environments/${sky.file}`);
+        add(`environments/${sky.file}`, '', 0, 'shared-hdri-v1');
         const files = COAST_SKY_MANIFEST.skies[variant].files;
         for (const file of files) if (file.width === 4096 || tier === 'ultra') add(file.url, file.sha256, file.bytes);
       }

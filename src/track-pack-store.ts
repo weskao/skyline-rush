@@ -3,7 +3,7 @@ export const ASSET_CACHE = 'skyline-rush:track-assets:v1';
 export const INDEX_CACHE = 'skyline-rush:track-asset-index:v1';
 export const PACK_CACHE = 'skyline-rush:track-pack-receipts:v1';
 
-export interface TrackPackAsset { url: string; sha256: string; bytes: number }
+export interface TrackPackAsset { url: string; sha256: string; bytes: number; revision?: string }
 export interface TrackAssetPack {
   trackId: string; version: string; tier: 'low' | 'medium' | 'high' | 'ultra'; preset: string;
   signature: string; assets: readonly TrackPackAsset[];
@@ -14,7 +14,7 @@ export interface PackProgress { done: number; total: number; downloaded: number;
 /** The runtime requests a canonical path; the service worker resolves it through INDEX_CACHE. */
 export function assetCacheKey(baseUrl: string, asset: TrackPackAsset, version: string): string {
   const url = new URL(asset.url, baseUrl);
-  url.searchParams.set('__srpack', asset.sha256 || version);
+  url.searchParams.set('__srpack', asset.sha256 || asset.revision || version);
   return url.href;
 }
 
@@ -59,7 +59,7 @@ export function createTrackPackStore({
         progress.reused++;
       } else {
         const url = new URL(asset.url, baseUrl);
-        url.searchParams.set('__srpack_download', asset.sha256 || pack.version);
+        url.searchParams.set('__srpack_download', asset.sha256 || asset.revision || pack.version);
         const response = await fetchAsset(url.href, { cache: 'reload', signal });
         if (response.status !== 200 || response.type === 'opaque') throw new Error(`Track asset download failed: ${asset.url} (${response.status})`);
         const bytes = await response.arrayBuffer();
