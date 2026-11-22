@@ -321,3 +321,7 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   2.8 m, then 3.1 m on CI's software WebGL and hit the 180 s timeout with each new course (develop runs 44925139371 and
   44946255115). Declare one test per track; do not raise the timeout. Guard: "a showcase camera spec loops over the
   tracks outside its tests".
+- Read the setting toast on the line after the action that raises it. The pill unmounts 1.8 s after it shows;
+  `toggle-feedback-browser.spec.js` asserted the settled switch state first and, on a starved CI page, those checks
+  outlived it (main run 44953782730, red on both attempts). Assert settled state after `expectToast`. Guard: "a spec
+  reads the setting toast straight after the action that raises it".
