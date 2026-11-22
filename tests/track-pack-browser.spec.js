@@ -164,3 +164,32 @@ test('download controls preserve mobile sightlines and accessible touch area', a
     await page.screenshot({ path: testInfo.outputPath(`track-download-compact-${width}x${height}.png`), animations: 'disabled', scale: 'css' });
   }
 });
+
+test('per-track icon stays bottom-right without covering distance on desktop and phones', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#startup-enter').click();
+  await waitForHome(page);
+  await page.locator('#lobby-tracks-toggle').click();
+  const action = page.locator('#lobby-track-options [data-pack-for="coast"]');
+  await expect(action).toBeVisible({ timeout: ciTimeout(12000) });
+  for (const [width, height] of [[320, 568], [390, 844], [844, 390], [1280, 720]]) {
+    await page.setViewportSize({ width, height });
+    const geometry = await page.evaluate(() => {
+      const card = document.querySelector('#lobby-track-options [data-track="coast"]');
+      const button = card.parentElement.querySelector('.track-pack-action');
+      const distance = card.querySelector(':scope > span:last-child');
+      const c = card.getBoundingClientRect(), b = button.getBoundingClientRect();
+      const d = distance.getBoundingClientRect();
+      return { right: c.right - b.right, bottom: c.bottom - b.bottom, width: b.width, height: b.height,
+        availableDistanceRight: d.right - parseFloat(getComputedStyle(distance).paddingRight), actionLeft: b.left };
+    });
+    expect(geometry.right, `right gap at ${width}x${height}`).toBeGreaterThanOrEqual(0);
+    expect(geometry.right, `right gap at ${width}x${height}`).toBeLessThanOrEqual(10);
+    expect(geometry.bottom, `bottom gap at ${width}x${height}`).toBeGreaterThanOrEqual(0);
+    expect(geometry.bottom, `bottom gap at ${width}x${height}`).toBeLessThanOrEqual(10);
+    expect(geometry.width).toBeGreaterThanOrEqual(44);
+    expect(geometry.height).toBeGreaterThanOrEqual(44);
+    expect(geometry.availableDistanceRight, `distance overlaps icon at ${width}x${height}`)
+      .toBeLessThanOrEqual(geometry.actionLeft + 1);
+  }
+});

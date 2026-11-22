@@ -191,6 +191,8 @@
 .track-chooser .track-select button[aria-current="true"] small { color: var(--track-current); }
 .track-chooser .track-select button[aria-pressed="true"] small { color: var(--track-accent); }
 .track-chooser .track-select button.is-locked small { color: #d3b5a9; }
+/* Keep the KM row clear of the bottom-right download/update touch target. */
+.track-chooser .track-select .track-card-select > span:last-child { padding-inline-end: 44px; }
 
 .track-chooser-footer {
   border-top: 1px solid var(--track-divider);
@@ -272,7 +274,7 @@ body[data-fold-axis] #track-chooser .track-select {
 .track-chooser .track-card-select { width: 100%; height: 100%; }
 .track-chooser .track-select .track-pack-action {
   position: absolute;
-  top: 6px; left: 6px; z-index: 4;
+  right: 6px; bottom: 6px; z-index: 4;
   display: grid; place-items: center;
   width: 44px; height: 44px; min-height: 0; padding: 4px;
   border: 1px solid #a1d8ee99; border-radius: 50%;
@@ -321,7 +323,7 @@ body[data-fold-axis] #track-chooser .track-select {
 #track-choose-download-all:disabled { opacity: .68; cursor: default; }
 @media (max-width: 760px), (max-height: 500px) {
   .track-chooser .track-card-shell { min-height: 88px; }
-  .track-chooser .track-select .track-pack-action { width: 44px; height: 44px; top: 5px; left: 5px; }
+  .track-chooser .track-select .track-pack-action { width: 44px; height: 44px; right: 5px; bottom: 5px; }
   .track-chooser-footer { flex-wrap: wrap; }
   #track-choose-pack-summary { margin-inline-start: auto; }
 }
