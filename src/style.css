@@ -127,8 +127,8 @@ kbd { display: inline-flex; align-items: center; justify-content: center; font: 
 .bottomline > span { display: flex; align-items: center; gap: 8px; }
 .bottomline > span:last-child { grid-column: 3; justify-self: end; }
 .bottomline i { width: 4px; height: 4px; display: inline-block; border-radius: 50%; background: var(--accent); }
-.build-version { grid-column: 2; grid-row: 1; text-align: center; font-size: 11px; letter-spacing: 1.5px; color: #a5b2bd; font-variant-numeric: tabular-nums; display: none; }
-body[data-phase="ready"] .build-version { display: block; }
+.build-version { grid-column: 2; grid-row: 1; display: none; align-items: center; justify-content: center; gap: 8px; text-align: center; font-size: 11px; letter-spacing: .07em; color: #d3e4f0; font-variant-numeric: tabular-nums; }
+body[data-phase="ready"] .build-version { display: flex; }
 body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bottom, 0px)); }
 .race-info { position: fixed; z-index: 3; inset: 135px 40px auto; display: flex; justify-content: flex-start; gap: 35px; pointer-events: none; }
 .position-stat > div { display: flex; align-items: baseline; gap: 9px; margin-top: 6px; }
@@ -1686,10 +1686,21 @@ body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
 
 
 /* Release notes reuse the native History dialog and the existing version-label slot. */
-.build-version { min-height: 44px; padding: 0 10px; border: 0; background: transparent; pointer-events: auto; }
-.build-version:hover { color: #f4f0e9; }
-.release-unread { display: none; width: 6px; height: 6px; margin-left: 6px; border-radius: 50%; background: var(--accent); vertical-align: middle; }
-.build-version.has-update .release-unread { display: inline-block; }
+/* One unobtrusive home footer action: the installed version and its existing release history. */
+.build-version { position: relative; min-height: 44px; padding: 0 15px; border: 1px solid rgb(150 227 255 / .28); border-radius: 999px; background: rgb(7 21 35 / .84); box-shadow: 0 4px 18px rgb(0 8 18 / .35); backdrop-filter: blur(10px); pointer-events: auto; white-space: nowrap; }
+.build-version-number { color: #f4faff; font-weight: 800; }
+.build-version-separator { width: 1px; height: 14px; background: rgb(181 213 230 / .34); }
+.build-version-caption { color: #aedceb; font-size: 11px; font-weight: 650; }
+.build-version-arrow { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+@media (hover: hover) { .build-version:hover { border-color: rgb(150 227 255 / .7); background: rgb(18 41 58 / .95); color: #fff; } }
+.build-version.has-update { border-color: rgb(255 137 102 / .75); }
+.release-unread { display: none; position: absolute; top: 5px; right: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px rgb(255 137 102 / .7); }
+.build-version.has-update .release-unread { display: block; }
+/* Ultra-short landscape already reserves exactly 64px between pinned Home rails. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .build-version-caption, .build-version-separator, .build-version-arrow { display: none; }
+  .build-version { gap: 0; padding-inline: 4px; font-size: 10px; letter-spacing: .02em; box-shadow: 0 2px 8px rgb(0 8 18 / .4); }
+}
 .release-screen {
   --rp: 24px;
   --top: max(12px, var(--safe-top)); --right: max(12px, var(--safe-right));
