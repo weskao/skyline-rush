@@ -130,7 +130,7 @@ if (mode === 'phone') {
   };
   for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(signal, () => stop(signal));
 } else {
-  const { chromium } = await import('playwright');
+  const { chromium } = await import('@playwright/test');
   const browser = await chromium.launch({ channel: 'chrome' });
   const runs = [];
   for (let round = 1; round <= +opts.rounds; round++) for (const build of builds) {
