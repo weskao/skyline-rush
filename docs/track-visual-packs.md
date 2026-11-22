@@ -1,0 +1,11 @@
+# Track visual packs and zero-black-frame loading
+
+Each classic playable track is registered in `src/track-asset-packs.ts` with its own independently bumped semantic version. These are **optional visual downloads**, not standalone offline playable map binaries. Compiled track physics, code and race rules still ship with the application. A version bump to a map's art must change only that map's `TRACK_PACK_VERSIONS` entry; tests ensure every playable classic card has an entry. Do not change simulation `layoutVersion` merely to update art.
+
+Assets are derived from the existing model, material, sky and sea manifests. SHA-256 from those manifests is used as a content-addressed cache key and verified on download. HDRI/teaser files without published checksums use the map pack version; bump it when changing those files. The file signature is included in the pack receipt, so changing a registered asset invalidates a receipt even before a manual semantic version bump.
+
+The `public/track-asset-sw.js` service worker only intercepts same-origin `models/`, `materials/`, `environments/`, and `track-teasers/` GET requests under the deployment scope. It checks the current Cache Storage index, returns a verified cached response when present, and otherwise uses the original network request. The download fetch uses a distinct query parameter to bypass the worker. Assets never bypass the existing Three.js asset loader, decoder, quality gates, or shader warmup.
+
+A track's `ready` status requires the matching pack receipt, every referenced cache response, and every active index pointer. Cache eviction, failed checksum, interrupted download or newly published map assets must never appear as `ready`. Downloaded assets are still subject to browser storage quotas and eviction; online play remains available without predownloads. User data, progress and save keys are untouched. Shared filenames/sha reuse the same cached bytes.
+
+Verification: `node --test tests/track-asset-packs.test.js tests/track-pack-store.test.js`; `npm test`; `npm run typecheck`; `npm run build`; browser tests for Coast, Neon, Spiral, orientation, High/Ultra, rapid map changes, forced missing assets, service-worker activation and unchanged countdown gating. Require exact-HEAD CI and real WebGL screenshots before marking release-ready.
