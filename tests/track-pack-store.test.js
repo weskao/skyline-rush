@@ -81,3 +81,16 @@ test('different maps share the same verified file without a second network trans
   assert.equal(await store.status(one), 'ready');
   assert.equal(await store.status(two), 'ready');
 });
+
+test('map update frees unused old bytes without evicting assets shared by another map', async () => {
+  const storage = new MemoryStorage(), requests = [], store = create(storage, requests);
+  const original = pack(), shared = { ...pack(), trackId: 'spiral', signature: 'spiral:v1' };
+  await store.download(original);
+  await store.download(shared);
+  await create(storage, requests, 'new-data').download(pack('1.0.1', 'new-data'));
+  const cache = await storage.open(ASSET_CACHE);
+  const oldKey = assetCacheKey('https://game.example/skyline-rush/', original.assets[0], original.version);
+  assert.ok(await cache.match(oldKey), 'older bytes still belong to the second map');
+  await store.download({ ...pack('1.0.2', 'new-data'), trackId: 'spiral', signature: 'spiral:v2' });
+  assert.equal(await cache.match(oldKey), undefined, 'old hash is unreferenced and reclaimed');
+});

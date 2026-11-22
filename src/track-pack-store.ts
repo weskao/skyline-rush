@@ -78,8 +78,26 @@ export function createTrackPackStore({
     // Publish each canonical path only after its verified body exists; commit the receipt last.
     for (const asset of pack.assets) await index.put(sourceKey(asset), new Response(key(pack, asset)));
     const receipts = await storage.open(PACK_CACHE);
-    await receipts.put(receiptKey(pack), new Response(JSON.stringify({ signature: pack.signature, version: pack.version })));
+    await receipts.put(receiptKey(pack), new Response(JSON.stringify({ signature: pack.signature, version: pack.version,
+      keys: pack.assets.map(asset => key(pack, asset)) })));
     return progress;
+  }
+
+  /** Reclaim only unreferenced bytes. Each installed pack retains shared content used by another map. */
+  async function pruneUnused(): Promise<void> {
+    if (!storage) return;
+    const receipts = await storage.open(PACK_CACHE), assets = await storage.open(ASSET_CACHE);
+    const referenced = new Set<string>();
+    for (const request of await receipts.keys()) {
+      const saved = await (await receipts.match(request))?.json() as { keys?: string[] } | undefined;
+      for (const key of saved?.keys ?? []) referenced.add(key);
+    }
+    for (const request of await assets.keys()) if (!referenced.has(request.url)) await assets.delete(request);
+    const index = await storage.open(INDEX_CACHE);
+    for (const request of await index.keys()) {
+      const mapped = await (await index.match(request))?.text();
+      if (!mapped || !referenced.has(mapped)) await index.delete(request);
+    }
   }
 
   return {
@@ -87,7 +105,10 @@ export function createTrackPackStore({
     download(pack: TrackAssetPack, onProgress?: (state: PackProgress) => void, signal?: AbortSignal): Promise<PackProgress> {
       const existing = working.get(pack.signature);
       if (existing) return existing;
-      const task = install(pack, onProgress, signal).finally(() => { if (working.get(pack.signature) === task) working.delete(pack.signature); });
+      const task = install(pack, onProgress, signal).finally(async () => {
+        if (working.get(pack.signature) === task) working.delete(pack.signature);
+        if (!working.size) await pruneUnused().catch(error => console.warn('Track cache cleanup skipped:', error));
+      });
       working.set(pack.signature, task);
       return task;
     },
