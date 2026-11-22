@@ -1,56 +1,64 @@
-# Temporary one-shot migration runner. Remove after verified lockfile lands and all regression gates pass.
+# Temporary, one-shot repair runner. Removes itself only after focused browser gates pass.
 name: Bootstrap pnpm lockfile (temporary)
 on:
   push:
     branches: ['feature/pnpm-migration']
     paths: ['.github/workflows/pnpm-lock-bootstrap.yml']
-concurrency:
-  group: pnpm-lock-bootstrap-final-20261122
-  cancel-in-progress: true
 permissions:
   contents: write
-  actions: write
 jobs:
-  generate:
+  repair:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install pinned pnpm
+          cache: pnpm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Restore the original wallet coin's transparent safe margin
         run: |
-          corepack enable
-          corepack prepare pnpm@11.28.13 --activate
-          pnpm --version
-      - name: Import old lockfile, verify clean install, and run smoke gates
-        run: |
-          git fetch --quiet origin feature/pnpm-migration
-          git checkout -B feature/pnpm-migration origin/feature/pnpm-migration
-          pnpm import
-          pnpm install --lockfile-only
-          pnpm install --frozen-lockfile
-          git rm package-lock.json
-          pnpm test
-          pnpm run typecheck
-          pnpm run build
-      - name: Commit validated lockfile migration
+          python -m pip install --disable-pip-version-check Pillow==11.3.0
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+
+          path = Path('public/feature-assets/wave3-demo/raster/wallet-coin@3x.webp')
+          with Image.open(path) as opened:
+              original = opened.convert('RGBA')
+          assert original.size == (144, 144), original.size
+          def margin(image):
+              width, height = image.size
+              pixels = image.load()
+              return min(min(x, y, width - 1 - x, height - 1 - y)
+                         for y in range(height) for x in range(width)
+                         if pixels[x, y][3] > 16)
+          before = margin(original)
+          assert before == 9, f'Unexpected source margin: {before}'
+          repaired = Image.new('RGBA', original.size, (0, 0, 0, 0))
+          repaired.paste(original.resize((140, 140), Image.Resampling.LANCZOS), (2, 2))
+          repaired.save(path, 'WEBP', lossless=True, method=6)
+          with Image.open(path) as verified:
+              after = margin(verified.convert('RGBA'))
+          assert after >= 10, f'Coin margin still too small: {after}'
+          print(f'144px native wallet coin: transparent border {before} -> {after}px')
+          PY
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      - run: pnpm exec playwright install ffmpeg
+      - name: Verify original RED regression cases are GREEN
+        run: pnpm exec playwright test --config=playwright.config.js tests/collectible-ui-browser.spec.js tests/race-hud-overlap-browser.spec.js --grep 'collectible controls have complete|vertical fold 844x390'
+      - name: Commit repaired artwork and remove temporary runner
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add pnpm-lock.yaml
-          git diff --cached --quiet && exit 1
-          git commit -m 'chore: finish pnpm lockfile migration [pnpm-lock-generated]'
-          for attempt in 1 2 3; do
-            git fetch origin feature/pnpm-migration
-            git rebase origin/feature/pnpm-migration || exit 1
-            if git push origin HEAD:feature/pnpm-migration; then exit 0; fi
-          done
-          exit 1
-      - name: Trigger full regression on the final migration commit
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run ci.yml --ref feature/pnpm-migration -f full_regression=true
+          git add public/feature-assets/wave3-demo/raster/wallet-coin@3x.webp
+          git rm .github/workflows/pnpm-lock-bootstrap.yml
+          git commit -m 'fix: restore coin safe border and fold pause layout [full-regression]'
+          git push origin HEAD:feature/pnpm-migration

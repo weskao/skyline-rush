@@ -156,6 +156,14 @@ body[data-fold-axis="vertical"][data-phase] .race-progress {
   transform: none;
   width: min(200px, calc(var(--fold-home-width) - var(--fold-gap-left) - 8px));
 }
+/* A paused race can reveal the mode/items row. Keep it in the upper-right of the
+   home pane, above flight telemetry and speed readout, rather than at y=230. */
+body[data-fold-axis="vertical"][data-phase="paused"] .race-progress {
+  top: max(84px, calc(var(--safe-top) + 74px));
+  left: calc(var(--fold-pane-left-end) - 10px);
+  transform: translateX(-100%);
+  width: clamp(80px, calc(var(--fold-home-width) - 180px), 190px);
+}
 body[data-fold-axis="vertical"] .race-info .race-route-map {
   top: max(130px, calc(var(--safe-top) + 112px));
   bottom: auto;
