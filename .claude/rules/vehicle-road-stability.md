@@ -80,9 +80,27 @@ Keep the arcade driving feel; do not replace it with a new physics engine.
 
 - Drift tuning lives only in `src/drive-rules.ts` (`DRIFT_*`, `driftTier`) and the shared
   `stepRace` drift block; a track or course never adds its own drift constants or rules.
-- Any track-specific lateral force (like `classicCornerPush`) skips the car while `drifting`, so a
-  drift slides at exactly `DRIFT_LATERAL` x the steering rate on every road. Only hazards that push
-  every car (crosswind sections) still act during a drift.
+- Any lateral road force skips the car while `drifting`, so a drift slides at exactly
+  `DRIFT_LATERAL` x the steering rate on every road. Only hazards that push every car (crosswind
+  sections) still act during a drift.
+
+## Corner push and AUTO's edge guard (all tracks)
+
+Owner brief, 2026-11-22: cornering needs real steering, with a forgiving assist.
+- One corner force for every track, in `src/corner-force.ts` (`roadDrift`). It pushes a grounded car
+  outward, `clamp(-turn*.25*max(0, speed-35)^2, ±2.8)` m/s. Road ids read `trackFrame`, graph courses
+  read the car's own edge (`currentEdgeId`, `localS`), and Endless on a long-form id reads the shared
+  highway. Curvature is cached lazily per 4 m cell; track geometry is immutable, so a cell is never
+  invalidated. Never add a per-track push or a second curvature table.
+- Off while airborne, drifting, in tutorial practice, on a Frostbite span, inside a shortcut corridor,
+  and during a knock's 1.5 s grace, so a car is never pressed back into what it hit (clamp -> shove).
+- AUTO (`laneAssist`) never centres the car. Within 3 m of the rail it fades outward environmental
+  force (corner and crosswind) to zero at 0.5 m inside it. It only removes force: never a pull toward
+  the centre, never against the player's steering. AUTO keeps auto-throttle.
+- Forks read the lane the driver chose: `forkLateral(x, cornerDrift)` discounts what the corners
+  carried. An inward move (rail clamp, a placed lane, steering back) shrinks it; steering outward
+  clears it. Guard: `tests/corner-force.test.js` (all 17 tracks, AUTO on and off, a lane keeper at
+  88 m/s and NITRO, 30/60/120 FPS, forks, guard, knock grace).
 - Guard: `tests/drift-all-tracks.test.js` iterates `RACE_TRACKS`, `COURSE_TRACKS`, the circuit and
   Endless, so a newly registered track is checked without edits; a track it cannot cover is a gap
   to fix in the test, not a skip.

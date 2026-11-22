@@ -86,6 +86,16 @@ test('console errors and warnings are relayed and still printed', () => {
   assert.deepEqual([emitted[1].level, emitted[1].message], ['warn', '[object Object]']);
 });
 
+test('a console error flushes the queued message without waiting for a heartbeat', () => {
+  const events = [], con = {
+    error: message => events.push('printed:' + message),
+    warn: message => events.push('printed:' + message),
+  };
+  captureConsole(con, entry => events.push('queued:' + entry.message), () => events.push('flushed'));
+  con.error('relay probe');
+  assert.deepEqual(events, ['queued:relay probe', 'printed:relay probe', 'flushed']);
+});
+
 test('user agents summarize into device class, OS version and browser version', () => {
   const iphone = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1';
   assert.deepEqual(summarizeUserAgent(iphone, 5), { device: 'iPhone', os: 'iOS 18.1', browser: 'Safari 18.1' });

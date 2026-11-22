@@ -29,10 +29,10 @@ const formatArg = (arg: unknown): string => {
 };
 
 /** Relays console.error / console.warn and still prints them. */
-export function captureConsole(con: Pick<Console, 'error' | 'warn'>, emit: DiagEmit): void {
+export function captureConsole(con: Pick<Console, 'error' | 'warn'>, emit: DiagEmit, requestFlush: () => void = () => {}): void {
   for (const level of ['error', 'warn'] as const) {
     const original = con[level].bind(con);
-    con[level] = (...args: unknown[]) => { emit({ kind: 'console', level, message: args.map(formatArg).join(' ').slice(0, 2000) }); original(...args); };
+    con[level] = (...args: unknown[]) => { emit({ kind: 'console', level, message: args.map(formatArg).join(' ').slice(0, 2000) }); original(...args); requestFlush(); };
   }
 }
 
@@ -88,13 +88,13 @@ export function startDiag(win: Window & typeof globalThis, storage: Storage, ele
       win.fetch(RELAY_PATH, { method: 'POST', body, keepalive: true, signal: AbortSignal.timeout?.(4000) })
         .then(response => { if (response.ok) { lastOk = Date.now(); lastError = undefined; } else lastError = String(response.status); },
           () => { lastError = 'network'; })
-        .finally(() => { inFlight = false; });
+        .finally(() => { inFlight = false; relay?.flush(); });
     },
   }) : undefined;
   if (relay) {
     relay.emit({ kind: 'device', page: win.location.pathname, ...describeDevice(win) });
     void deviceHints(win).then(hints => hints && relay.emit({ kind: 'device-hints', ...hints }));
-    captureConsole(win.console, relay.emit);
+    captureConsole(win.console, relay.emit, () => { if (!inFlight) relay.flush(); });
     let resized: ReturnType<typeof setTimeout> | undefined;
     win.setTimeout(() => relay.emit({ kind: 'viewport', ...viewportOf(win) }), 2000); // after the intro fade settles
     win.addEventListener('resize', () => { clearTimeout(resized); resized = setTimeout(() => relay.emit({ kind: 'viewport', ...viewportOf(win) }), 300); });

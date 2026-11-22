@@ -338,7 +338,7 @@ test('neutral tutorial controls do not pull left and wrong-step steering still o
   const startX = car.x;
   const advance = (action = {}) => {
     const input = { ...action, laneAssist: true };
-    prepareTutorialInput(input, session.step);
+    prepareTutorialInput(input, true);
     assert.equal(input.laneAssist, false, 'practice must not add unrequested steering');
     stepRace(session.race, input, DT);
     session.update(input, DT);
