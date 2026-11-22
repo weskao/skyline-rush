@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+ <defs><radialGradient id="disk" cx="32%" cy="25%" r="86%"><stop stop-color="#145d75"/><stop offset=".38" stop-color="#082f48"/><stop offset="1" stop-color="#06111d"/></radialGradient>
+ <linearGradient id="metal" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#bfe5ed"/><stop offset=".24" stop-color="#40ddff"/><stop offset=".58" stop-color="#23394a"/><stop offset="1" stop-color="#31eaff"/></linearGradient>
+ <filter id="halo" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter></defs>
+ <circle cx="96" cy="96" r="73" fill="none" stroke="#65fcff" stroke-opacity=".95" stroke-width="10" filter="url(#halo)"/>
+ <circle cx="96" cy="96" r="76" fill="#071522" stroke="url(#metal)" stroke-width="7"/>
+ <circle cx="96" cy="96" r="66" fill="url(#disk)" stroke="#40ddff" stroke-opacity=".85" stroke-width="2"/>
+ <path d="M41 66a60 60 0 0 1 70-30" stroke="#edfaff" stroke-opacity=".35" stroke-width="8" fill="none" stroke-linecap="round"/>
+ <path d="M62 37a68 68 0 0 1 70 0M35 121a68 68 0 0 0 20 28M143 149a68 68 0 0 0 18-30" fill="none" stroke="#31eaff" stroke-width="8" stroke-linecap="round"/>
+ <g fill="none" stroke="#65fcff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" opacity=".64" filter="url(#halo)"><path d="M96 43v60M72 80l24 25 24-25M56 113v19q0 8 8 8h64q8 0 8-8v-19"/></g>
+ <g fill="none" stroke="#f3fbff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M96 43v60M72 80l24 25 24-25M56 113v19q0 8 8 8h64q8 0 8-8v-19"/></g>
+ </svg>

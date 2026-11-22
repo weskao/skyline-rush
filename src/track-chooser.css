@@ -354,3 +354,26 @@ body[data-fold-axis] #track-chooser .track-select {
 }
 #track-required-update button:disabled { opacity: .65; cursor: progress; }
 #track-required-update button:focus-visible { outline: 2px solid #f7fbff; outline-offset: 3px; }
+
+/* ImageGen art direction rendered as deployable, independent transparent SVGs.
+   Hover swaps to the brighter asset without moving the 44px touch target. */
+.track-chooser .track-pack-action[data-pack-state="missing"],
+.track-chooser .track-pack-action[data-pack-state="error"],
+.track-chooser .track-pack-action[data-pack-state="update"] {
+  padding: 0; border: 0; background-color: transparent; box-shadow: none;
+  background-position: center; background-repeat: no-repeat; background-size: contain;
+}
+.track-chooser .track-pack-action[data-pack-state="missing"] { background-image: url('./assets/track-download.svg'); }
+.track-chooser .track-pack-action:is([data-pack-state="update"], [data-pack-state="error"]) { background-image: url('./assets/track-update.svg'); }
+.track-chooser .track-pack-action:is([data-pack-state="missing"], [data-pack-state="update"], [data-pack-state="error"]) > svg { visibility: hidden; }
+@media (hover: hover) and (pointer: fine) {
+  .track-chooser .track-pack-action[data-pack-state="missing"]:hover { background-image: url('./assets/track-download-hover.svg'); }
+  .track-chooser .track-pack-action:is([data-pack-state="update"], [data-pack-state="error"]):hover { background-image: url('./assets/track-update-hover.svg'); }
+  .track-chooser .track-pack-action:not(:disabled):hover { filter: brightness(1.15); transform: scale(1.06); }
+  #track-choose-download-all:not(:disabled):hover { filter: brightness(1.13); box-shadow: 0 0 14px #70ddff55; }
+}
+.track-chooser .track-pack-action[data-pack-state="missing"]:focus-visible { background-image: url('./assets/track-download-hover.svg'); }
+.track-chooser .track-pack-action:is([data-pack-state="update"], [data-pack-state="error"]):focus-visible { background-image: url('./assets/track-update-hover.svg'); }
+@media (prefers-reduced-motion: no-preference) {
+  .track-chooser .track-pack-action, #track-choose-download-all { transition: transform 160ms ease-out, filter 160ms ease-out, box-shadow 160ms ease-out; }
+}

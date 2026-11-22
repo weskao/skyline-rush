@@ -118,3 +118,23 @@ test('old downloaded map opens mandatory update dialog and cannot enter until up
   await expect(gate).toBeHidden({ timeout: ciTimeout(15000) });
   await expect(page.locator('#intro')).toBeHidden({ timeout: ciTimeout(20000) });
 });
+
+test('image assets switch on mouse hover and remain within fixed card action bounds', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#startup-enter').click();
+  await waitForHome(page);
+  await page.locator('#lobby-tracks-toggle').click();
+  const action = page.locator('#lobby-track-options [data-pack-for="coast"]');
+  await expect(action).toBeVisible({ timeout: ciTimeout(12000) });
+  const before = await action.boundingBox();
+  await expect.poll(async () => action.evaluate(node => getComputedStyle(node).backgroundImage)).toContain('track-download');
+  await action.hover();
+  await expect.poll(async () => action.evaluate(node => getComputedStyle(node).backgroundImage)).toContain('track-download-hover');
+  await action.evaluate(node => { node.dataset.packState = 'update'; });
+  await expect.poll(async () => action.evaluate(node => getComputedStyle(node).backgroundImage)).toContain('track-update-hover');
+  await page.mouse.move(0, 0);
+  await expect.poll(async () => action.evaluate(node => getComputedStyle(node).backgroundImage)).toContain('track-update.svg');
+  const after = await action.boundingBox();
+  expect(after.width).toBe(before.width);
+  expect(after.height).toBe(before.height);
+});
