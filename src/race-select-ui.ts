@@ -1,4 +1,5 @@
 import { focusLobbyTrack, refreshCopiedRouteMaps, renderLobbyTrackArt, setupLobbyPickers } from './race-lobby-ui.ts';
+import { setupTrackPackUI } from './track-pack-ui.ts';
 import { CIRCUIT_ID } from './circuit-track.ts';
 import { homeTrackStatus, isUpcomingTrack, upcomingTrackInfo, upcomingTrackName, type PreviewTrackId, type UpcomingTrackId } from './upcoming-tracks.ts';
 import { stage2PreviewRequest } from './stage2-tracks.ts';
@@ -39,6 +40,7 @@ interface RaceSelectOptions {
   clearControls(): void;
   cueUi(): void;
   reducedMotion: MediaQueryList;
+  getGraphics(): { quality: 'low' | 'medium' | 'high'; ultra: boolean };
   showUpcoming3D(id: PreviewTrackId | null): boolean;
   /** Local all-unlocked server only: a Coming Soon card whose race runtime is finished starts like a playable track. */
   isUpcomingEnterable(id: string): boolean;
@@ -270,7 +272,8 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     if (upcoming) options.refreshPhase();
     options.cueUi();
   }
-  setupLobbyPickers(applyTrack, () => upcomingSelection ?? getRace().trackId);
+  const packs = setupTrackPackUI(options.getGraphics);
+  setupLobbyPickers(applyTrack, () => upcomingSelection ?? getRace().trackId, packs.stage);
   for (const button of document.querySelectorAll<HTMLElement>('button[data-race-mode]')) button.addEventListener('click', () => {
     if (button.dataset.raceMode === 'eventlab') { eventLab.open(); return; }
     upcomingSelection = null;

@@ -196,7 +196,7 @@ const raceSelect = setupRaceSelectUI({
   refreshPhase: () => phaseUI(),
   clearControls: () => controls.clear(),
   cueUi: () => sound.cue('ui'),
-  reducedMotion, showUpcoming3D: id => world?.setUpcomingTrack(id) ?? false, isUpcomingEnterable,
+  reducedMotion, getGraphics: () => ({ quality: vfx.settings().quality, ultra: vfx.settings().ultra }), showUpcoming3D: id => world?.setUpcomingTrack(id) ?? false, isUpcomingEnterable,
 });
 const { applyTrack, selectedRace, cupCount, focusLobbyTrack } = raceSelect;
 const cupRecovery = setupCupRecovery({ unlocked: () => [...unlockedTracks], cue: () => sound.cue('ui'),

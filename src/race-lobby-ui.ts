@@ -10,7 +10,7 @@ function copyRouteMap(slot: HTMLElement, card: Element | undefined | null, track
   slot.dataset.theme = track;
 }
 
-export function setupLobbyPickers(applyTrack: (id: string) => void, getTrack: () => string): void {
+export function setupLobbyPickers(applyTrack: (id: string) => void, getTrack: () => string, onStage: (id: string | null) => void = () => {}): void {
   const mode = document.querySelector<HTMLButtonElement>('#lobby-modes-toggle')!;
   const opener = trackOpener();
   const dialog = chooser();
@@ -34,6 +34,7 @@ export function setupLobbyPickers(applyTrack: (id: string) => void, getTrack: ()
     state.textContent = card?.querySelector('small')?.textContent ?? '';
     copyRouteMap(map, card, card ? trackId(card) : '');
     confirm.disabled = !card;
+    onStage(card ? trackId(card) : null);
   }
   mode.addEventListener('click', () => mode.setAttribute('aria-expanded', String(mode.getAttribute('aria-expanded') !== 'true')));
   document.getElementById('intro')!.addEventListener('keydown', event => {

@@ -263,3 +263,49 @@ body[data-fold-axis] #track-chooser .track-select {
   .intro .lobby-race-heading #lobby-hero-map { width: 36px; height: 36px; }
   .intro .lobby-race-heading { padding-inline-start: 8px; gap: 6px; min-height: 55px; }
 }
+
+/* The indicator belongs to the selected track, not a nested interactive control. */
+.track-chooser .track-select button > .track-pack-badge {
+  position: absolute;
+  z-index: 2;
+  top: 7px;
+  left: 7px;
+  grid-column: auto;
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border: 1px solid #b6e0f7a0;
+  border-radius: 7px;
+  background: #061524d9;
+  color: #f1f9ff;
+  font: 800 17px/1 system-ui, sans-serif;
+  text-shadow: 0 1px 3px #001;
+}
+.track-chooser button[data-pack-state="ready"] > .track-pack-badge { color: #a7f4c7; border-color: #76dca2; }
+.track-chooser button[data-pack-state="update"] > .track-pack-badge { color: #ffd7aa; border-color: #f4a366; }
+.track-chooser button[data-pack-state="unavailable"] > .track-pack-badge { display: none; }
+#track-choose-pack-version { opacity: .8; font-variant-numeric: tabular-nums; }
+#track-choose-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: none;
+  min-height: 44px;
+  padding: 6px 10px;
+  border: 1px solid #8dd8f0;
+  border-radius: 6px;
+  background: #14364f;
+  color: #e7faff;
+  font: 750 12px/1.2 system-ui, sans-serif;
+}
+#track-choose-download[hidden] { display: none; }
+#track-choose-download > svg { width: 17px; height: 17px; }
+#track-choose-download:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+#track-choose-download:disabled { opacity: .7; cursor: progress; }
+@media (max-width: 400px) {
+  .track-chooser-footer { flex-wrap: wrap; }
+  .track-chooser-footer > div { flex: 1 1 100%; }
+  #track-choose-download, #track-choose-confirm { flex: 1 1 auto; }
+}

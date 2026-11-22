@@ -15,6 +15,7 @@ export const icons = {
   zoomOut: '<circle cx="10" cy="10" r="6"/><path d="m14 14 6 6M7 10h6"/>',
   undo: '<path d="M4 10h10a5 5 0 0 1 0 10h-3M4 10l5-5m-5 5 5 5"/>',
   redo: '<path d="M20 10H10a5 5 0 0 0 0 10h3m7-10-5-5m5 5-5 5"/>',
+  download: '<path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/>',
   arrow: '<path d="M4 12h16m-6-6 6 6-6 6"/>',
   sound: '<path d="m11 5-6 4H2v6h3l6 4V5Z"/><path d="M16 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/>',
   mute: '<path d="m11 5-6 4H2v6h3l6 4V5Z"/><path d="m16 9 6 6m0-6-6 6"/>',
