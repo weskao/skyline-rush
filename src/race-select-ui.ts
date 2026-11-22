@@ -165,13 +165,17 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
       button.disabled = false; // All unlocked tracks are eligible for Endless.
       button.classList.toggle('is-locked', locked);
       button.setAttribute('aria-pressed', String(!upcomingSelection && id === race.trackId));
-      button.querySelector('small')!.textContent = t(locked ? 'track.locked' : !upcomingSelection && id === race.trackId ? 'track.selected' : 'track.open');
+      const status = locked ? 'locked' : !upcomingSelection && id === race.trackId ? 'selected' : 'available';
+      button.dataset.trackState = status;
+      button.querySelector('small')!.textContent = t(status === 'available' ? 'track.open' : `track.${status}`);
       const previous = Object.keys(RACE_TRACKS)[Object.keys(RACE_TRACKS).indexOf(id) - 1]!;
       button.title = button.disabled ? t('mode.description.endless') : locked ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) : t(`track.note.${id}`);
     }
     for (const button of upcomingButtons()) {
       const id = button.dataset.upcomingTrack as UpcomingTrackId;
       const entered = options.isUpcomingEnterable(id);
+      button.disabled = false; // Even preview-only maps can be selected for the Home showcase.
+      button.dataset.trackState = entered ? 'available' : 'preview';
       button.setAttribute('aria-pressed', String(entered && !upcomingSelection ? id === race.trackId : id === upcomingSelection));
       button.querySelector('small')!.textContent = t(entered ? 'track.open' : 'lobby.preview');
       button.title = t('track.comingSoonInfo', { track: upcomingTrackName(id, getLocale()) });

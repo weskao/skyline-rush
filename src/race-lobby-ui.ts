@@ -1,4 +1,5 @@
 import { dialogNavigation, dialogTabIndex } from './dialog-navigation.ts';
+import { t } from './i18n.ts';
 
 const trackId = (card: HTMLButtonElement): string => card.dataset.track ?? card.dataset.upcomingTrack ?? '';
 const chooser = (): HTMLDialogElement => document.querySelector<HTMLDialogElement>('#track-chooser')!;
@@ -19,6 +20,7 @@ export function setupLobbyPickers(applyTrack: (id: string) => void, getTrack: ()
   const map = dialog.querySelector<HTMLElement>('#track-choose-map')!;
   const selection = dialog.querySelector<HTMLElement>('#track-choose-selection')!;
   const state = dialog.querySelector<HTMLElement>('#track-choose-state')!;
+  const actionLabel = confirm.querySelector<HTMLElement>('span')!;
   const navigation = dialogNavigation(dialog);
   let pending: HTMLButtonElement | undefined;
 
@@ -32,6 +34,11 @@ export function setupLobbyPickers(applyTrack: (id: string) => void, getTrack: ()
     }
     selection.textContent = card?.querySelector('strong')?.textContent ?? '';
     state.textContent = card?.querySelector('small')?.textContent ?? '';
+    state.dataset.trackState = card?.dataset.trackState ?? '';
+    const previewOnly = ['locked', 'preview'].includes(state.dataset.trackState);
+    confirm.dataset.previewOnly = String(previewOnly);
+    actionLabel.dataset.i18n = previewOnly ? 'track.previewConfirm' : 'track.confirm';
+    actionLabel.textContent = t(actionLabel.dataset.i18n);
     copyRouteMap(map, card, card ? trackId(card) : '');
     confirm.disabled = !card;
   }
