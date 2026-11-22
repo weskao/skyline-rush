@@ -16,16 +16,17 @@ const RING: Keyframe[] = [
 ];
 
 function readyFlame(button: HTMLButtonElement | undefined) {
-  const effect = button?.querySelector('.sprint-ready-effect');
+  // NITRO carries a second flame (.sprint-ready-twin) that shows only while the button is wide.
+  const effects = [...(button?.querySelectorAll('.sprint-ready-effect') ?? [])];
   let animations: Animation[] = [];
   const cancel = () => { for (const animation of animations) animation.cancel(); animations = []; };
   return {
     play() {
       cancel();
-      if (effect) animations = [
+      animations = effects.flatMap(effect => [
         effect.animate(BURST, { duration: 900, easing: 'ease-out', pseudoElement: '::before' }),
         effect.animate(RING, { duration: 560, easing: 'ease-out', pseudoElement: '::after' }),
-      ];
+      ]);
     },
     cancel,
   };

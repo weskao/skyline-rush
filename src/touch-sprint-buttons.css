@@ -223,3 +223,35 @@ body[data-sprint-tier] #touch-controls :is([data-nitro-state="active"], [data-bo
 @media (forced-colors: active), (prefers-reduced-motion: reduce) {
   #touch-controls [data-flame] > .sprint-ready-effect { display: none; }
 }
+
+/* AUTO on: main.js holds the throttle, so GAS is idle. It hides (visibility keeps its grid cell and the offsetWidth applyControls reads)
+   and NITRO takes the top row: [NITRO NITRO] over [BOOST][FLY]. BOOST and FLY keep their rects, so one thumb still slides across them.
+   shortcut: body:not([data-tutorial="active"]) keeps GAS for the tutorial's first lesson until feature/tutorial-auto-lesson is integrated; remove it then.
+   A button the player dragged (.is-positioned) keeps its place and size; layout editing always shows GAS and the 2x2. */
+body:not([data-tutorial="active"], .layout-editing):has(#assist-button[aria-pressed="true"]) #touch-controls .touch-pedals > .touch-gas { visibility: hidden; }
+
+body:not([data-tutorial="active"], .layout-editing):has(#assist-button[aria-pressed="true"]) #touch-controls .touch-actions > .touch-nitro:not(.is-positioned) {
+  grid-column: 2 / 4;
+  width: auto;
+  max-width: none; /* buttons steering caps every button at --compact-key-width, which would stop the stretch */
+}
+
+/* The wide NITRO burns two normal-sized flames side by side (the second is .sprint-ready-twin): one strip mask stretched over the
+   wide box would double every tongue. The effect box reaches --flame-side of one cell past each end, and the ring hugs the button. */
+.sprint-ready-twin, .sprint-ready-twin::after { display: none; }
+body:not([data-tutorial="active"], .layout-editing):has(#assist-button[aria-pressed="true"]) #touch-controls .touch-actions > .touch-nitro:not(.is-positioned) > .sprint-ready-effect {
+  /* One button's padding box: 1px borders sit outside the box the flame is sized on, and buttons steering caps a button at --compact-key-width. */
+  --cell: calc(min(var(--touch-cell) * var(--touch-scale, 1), var(--compact-key-width, 999px)) - 2px);
+  inset: calc(var(--flame-top) * -100%) calc(var(--flame-side) * var(--cell) * -1) calc(var(--flame-bottom) * -100%);
+}
+body:not([data-tutorial="active"], .layout-editing):has(#assist-button[aria-pressed="true"]) #touch-controls .touch-actions > .touch-nitro:not(.is-positioned) > .sprint-ready-effect::before {
+  inset: 0 auto 0 0;
+  width: calc(var(--cell) * (1 + 2 * var(--flame-side)));
+}
+body:not([data-tutorial="active"], .layout-editing):has(#assist-button[aria-pressed="true"]) #touch-controls .touch-actions > .touch-nitro:not(.is-positioned) > .sprint-ready-twin::before { inset: 0 0 0 auto; }
+body:not([data-tutorial="active"], .layout-editing):has(#assist-button[aria-pressed="true"]) #touch-controls .touch-actions > .touch-nitro:not(.is-positioned) > .sprint-ready-effect::after {
+  inset: var(--button-top) calc(var(--flame-side) * var(--cell)) calc(var(--flame-bottom) / var(--flame-box) * 100%);
+}
+@media (prefers-reduced-motion: no-preference) and (forced-colors: none) {
+  body:not([data-tutorial="active"], .layout-editing):has(#assist-button[aria-pressed="true"]) #touch-controls .touch-actions > .touch-nitro:not(.is-positioned)[data-flame="on"] > .sprint-ready-twin { display: block; }
+}

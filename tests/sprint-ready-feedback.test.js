@@ -8,10 +8,10 @@ function fixture(t, preferences) {
   Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: storage });
   t.after(() => previous ? Object.defineProperty(globalThis, 'localStorage', previous) : delete globalThis.localStorage);
   const events = [];
-  const button = name => ({ dataset: {}, style: { writes: [], setProperty(property, value) { this.writes.push([property, value]); } }, querySelector: () => ({ animate: (_keyframes, { pseudoElement }) => {
+  const button = name => ({ dataset: {}, style: { writes: [], setProperty(property, value) { this.writes.push([property, value]); } }, querySelectorAll: () => [{ animate: (_keyframes, { pseudoElement }) => {
     events.push(`${name}${pseudoElement}`);
     return { cancel: () => events.push(`${name}${pseudoElement}:cancel`) };
-  } }) });
+  } }] });
   const nitro = button('nitro'), boost = button('boost');
   const feedback = createSprintReadyFeedback(nitro, boost, (...args) => events.push(args));
   const car = { nitro: .8, fuel: 0, boosting: false, braking: false };
