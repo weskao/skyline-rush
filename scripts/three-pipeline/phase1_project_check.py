@@ -18,13 +18,13 @@ from phase1_device_check import ROOT, busy_runs, run  # sibling module; stdlib o
 
 STEPS = {
     "P0": ("sync with remote (rebase pull, local edits autostashed)", ["git", "pull", "--rebase", "--autostash"]),
-    "P1": ("clean install from the lockfile", ["npm", "ci"]),
+    "P1": ("clean install from the lockfile", ["pnpm", "install", "--frozen-lockfile"]),
     "P2": ("three-version contract GREEN", ["node", "--test", "tests/three-version-contract.test.js"]),
-    "P3": ("typecheck", ["npm", "run", "typecheck"]),
-    "P4": ("unit tests", ["npm", "test"]),
-    "P5": ("production build", ["npm", "run", "build"]),
+    "P3": ("typecheck", ["pnpm", "run", "typecheck"]),
+    "P4": ("unit tests", ["pnpm", "test"]),
+    "P5": ("production build", ["pnpm", "run", "build"]),
 }
-COMMIT = ("git add package.json package-lock.json && "
+COMMIT = ("git add package.json pnpm-lock.yaml pnpm-workspace.yaml && "
           "git commit -m 'build(deps): upgrade three to 0.186.1 + @types/three 0.186.0' && git push")
 
 
