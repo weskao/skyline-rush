@@ -13,6 +13,18 @@
 - [x] Removed the countdown-only visibility suppression; existing HUD data paths remain unchanged.
 - [ ] Finish exact-HEAD CI and verify no overlap in mobile portrait/landscape or on a real phone before merging.
 
+# Tutorial AUTO accelerator lesson (2026-11-22, `feature/tutorial-auto-lesson`)
+
+- [x] AUTO (F2) toggles in every lesson; tutorial throttle follows the race rule (AUTO on and not braking); `laneAssist` stays false. Lesson 1 (`throttle`) switches copy and clear rule by AUTO state; AUTO on needs speed > 5 and a 3 s read.
+- [x] Phone path: Settings is reachable from the paused tutorial at 390x844 and 844x390, so touch copy names Pause → Game settings → Driving controls → AUTO; the coach label stays text (no F2 on touch).
+- [x] RED on old code: `tests/tutorial-auto-off-completion.test.js` (AUTO off never holds the accelerator) and `tests/tutorial-auto-lesson.test.js` (missing `tutorialAutoStatus` export). GREEN after.
+- [x] `node --test tests/module-size.test.js`, `npm run typecheck`, `npm test` (3,836: 3,832 pass, 0 fail, 4 skipped), `npm run test:layout` (38 + 23 passed), `npm run build`.
+- [x] Browser: `tests/tutorial-auto-browser.spec.js` 8/8 (keyboard all 11 lessons, 3 s read, AUTO off hold, pause/resume, touch Settings path en/zh-TW portrait and landscape). `tutorial-hand-layout` and the 320x568 paused/slide practice cases 14/14 after the coach label moved into the progress row.
+- [x] GitHub `quality-gate` green on `fd2485bb` (run 45015432467).
+- [x] 844x390 touch: the coach ended 2.9 px over the slide pad (RED in `tests/tutorial-auto-browser.spec.js`); landscape meter margin trimmed in `src/TutorialCoach.vue`, coach bottom 211 vs pad 215. `tutorial-auto`, `tutorial-hand-layout`, `interactive-tutorial` 35/35 serial.
+- [ ] Final rerun of `mobile-guide`, `guide`, `i18n`, `first-visit-start-parity` browser specs and the GitHub `quality-gate` for the pushed HEAD.
+- Known flake, not from this branch: `tests/audio.test.js` reveal/premiere cues drop under heavy load (`CLOCK_STALL_MS` in `src/audio-context-health.ts` vs a mock clock that never advances); reproduced with a 40x `performance.now` shim.
+
 # Develop shader warmup in rain (2026-11-21)
 
 - [x] RED on `5f0e321e`: switching Coast from day to rain after GO compiled two extra programs on High for the Roadster (104 → 106) and Crimson GT (108 → 110). Both Low cases passed.

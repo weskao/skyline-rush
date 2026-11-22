@@ -40,8 +40,10 @@ for (const [width, height] of [[390, 844], [844, 390]]) {
       test.use({ viewport: { width, height }, hasTouch: true, isMobile: true });
       test('tutorial hints never cover a visible control', async ({ page, context }, testInfo) => {
         test.setTimeout(ciTimeout(120000));
-        await page.addInitScript(prefs => localStorage.setItem('skyline-rush-controls', JSON.stringify(prefs)),
-          { version: 1, mode, hand: 'right', size: 'L' });
+        await page.addInitScript(prefs => {
+          localStorage.setItem('skyline-rush-controls', JSON.stringify(prefs));
+          localStorage.setItem('skyline-rush-auto', 'off'); // the GAS cue and its hint show only with AUTO off
+        }, { version: 1, mode, hand: 'right', size: 'L' });
         await page.goto('/');
         await toggleSettingsSection(page, 'driving');
         await page.locator('#tutorial-open').click();
@@ -74,6 +76,9 @@ for (const [width, height] of [[390, 844], [844, 390]]) {
           label.textContent = shown;
         }, longest);
         await hold('[data-control="throttle"]', 'left');
+        // The one-thumb steering holds below need the car rolling without GAS: AUTO back on, as the old forced throttle did.
+        await page.keyboard.press('F2');
+        await expect(page.locator('#tutorial-auto-status')).toHaveText(/ on$/);
         await page.screenshot({ path: testInfo.outputPath('left.png') });
         await hold(slide ? '.touch-pad' : '[data-control="left"]', 'right', slide ? -55 : 0);
         await hold(slide ? '.touch-pad' : '[data-control="right"]', 'brake', slide ? 55 : 0);

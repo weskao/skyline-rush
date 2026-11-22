@@ -57,6 +57,8 @@ export interface TutorialCoachView {
   step: string;
   title: string;
   instruction: string;
+  /** "Auto accelerator on · F2"; no F2 on touch. */
+  autoStatus: string;
   completeActionsHidden: boolean;
   assistHidden: boolean;
   hintKeys: string;

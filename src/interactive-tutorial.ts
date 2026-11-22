@@ -23,13 +23,17 @@ const driftProgress = (time: number): number => driftTier(time) ? 1 : time / DRI
 // m behind the car a collected gate ring stays in race.rings: audio and effects read hits after the step.
 const SPENT_RING_METERS = 60;
 
-export function prepareTutorialInput(input: TutorialInput, step: TutorialStep | string): TutorialInput {
-  if (step !== 'throttle' && !input.brake) input.throttle = true;
+// AUTO passes lesson 1 by itself, so its copy stays up this long first.
+const AUTO_READ_SECONDS = 3;
+
+/** The race's AUTO rule without its lane assist: lessons never steer for the player. */
+export function prepareTutorialInput(input: TutorialInput, autoOn: boolean): TutorialInput {
+  if (autoOn && !input.brake) input.throttle = true;
   input.laneAssist = false;
   return input;
 }
 
-export function createInteractiveTutorial() {
+export function createInteractiveTutorial(isAuto: () => boolean = () => false) {
   // The legacy JS engine infers its optional config as null; use a typed adapter
   // until createRace itself is converted, without changing the runtime call.
   const tutorialRace = createRace as unknown as (
@@ -41,7 +45,7 @@ export function createInteractiveTutorial() {
   // The Endless Highway road without its encounters: the practice road never runs out.
   (race as typeof race & { endless?: EndlessState }).endless = { chunk: 0, milestones: 0, practice: true };
   race.sections.length = 0;
-  (race as typeof race & { standingStart?: boolean }).standingStart = true; // GO does not roll the car: THROTTLE does
+  (race as typeof race & { standingStart?: boolean }).standingStart = true; // GO does not roll the car: THROTTLE does, held or from AUTO
   const rings = race.rings = [] as GateRing[] as typeof race.rings;
   race.rivals = [];
   race.traffic = [];
@@ -52,6 +56,7 @@ export function createInteractiveTutorial() {
   let gate: GateRing[] | null = null, retryReason: string | null = null, drifted = false, finishing = false;
   let stretch: { start: number; end: number } | null = null, enteredAt: number | null = null;
   let maneuver: ReturnType<typeof createTutorialManeuverState> | null = null;
+  let autoRead = 0, throttleHeld = false, brakeHeld = false;
   const snapshot = (): ManeuverSnapshot => ({
     altitude: car.altitude, thrusting: car.thrusting, flightBoosted: car.flightBoosted,
     poweredFlightTime: car.poweredFlightTime, flick: car.flick,
@@ -146,6 +151,7 @@ export function createInteractiveTutorial() {
     get step() { return TUTORIAL_STEPS[index] ?? null; },
     get progress() {
       if (index === TUTORIAL_STEPS.length || finishing) return 1;
+      if (TUTORIAL_STEPS[index] === 'throttle' && isAuto()) return Math.min(1, autoRead / AUTO_READ_SECONDS);
       if (TUTORIAL_STEPS[index] !== 'drift') return maneuver?.progress ?? Math.min(1, held / .4);
       const drift = (car as unknown as { drift: { time: number } | null }).drift ?? car.driftHold?.reward;
       return driftProgress(drift?.time ?? 0);
@@ -171,7 +177,7 @@ export function createInteractiveTutorial() {
     /** Live toast: the next control and its timing, read from the engine state. */
     get cue() {
       return tutorialCue({ step: TUTORIAL_STEPS[index] ?? null, phase: this.coachPhase, car, countdown: countdown(),
-        stretchEntered: enteredAt !== null, driftEntry: DRIFT_ENTRY });
+        stretchEntered: enteredAt !== null, driftEntry: DRIFT_ENTRY, auto: isAuto(), throttleHeld, brakeHeld });
     },
     /** Applied on the next racing tick, so completion still flows through update(). */
     skip(): void { if (index < TUTORIAL_STEPS.length) skipRequested = true; },
@@ -194,7 +200,13 @@ export function createInteractiveTutorial() {
       // Display-only: the praise stays up briefly, but input during it still counts toward the next lesson.
       if (celebrate > 0) celebrate -= Math.min(dt, .05);
       let valid = false;
-      if (step === 'throttle') valid = controls.throttle === true && car.speed > 5;
+      if (step === 'throttle') {
+        const auto = isAuto();
+        autoRead = auto ? autoRead + Math.min(dt, .05) : 0; // turning AUTO back on shows its copy afresh
+        throttleHeld = controls.throttle === true;
+        brakeHeld = controls.brake === true;
+        valid = car.speed > 5 && (auto ? autoRead >= AUTO_READ_SECONDS : throttleHeld);
+      }
       else if (isGateStep(step)) valid = judgeGateStep(step);
       else if (step === 'boost') valid = judgeStretch();
       else if (step === 'drift') {
@@ -218,7 +230,7 @@ export function createInteractiveTutorial() {
         }
       }
       held = valid ? held + Math.min(dt, .05) : 0;
-      if (valid && (held >= .4 || !HELD_STEPS.includes(step))) {
+      if (valid && (held >= .4 || step === 'throttle' && isAuto() || !HELD_STEPS.includes(step))) {
         if (effectRunning()) finishing = true;
         else advance(true);
       }

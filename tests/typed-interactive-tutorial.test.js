@@ -9,12 +9,12 @@ test('interactive tutorial uses one typed state controller without a duplicate l
 });
 test('guided input only supplies safe auto-throttle and never invents steering', () => {
   const input = { steer: 0, brake: false, throttle: false, laneAssist: true };
-  assert.equal(prepareTutorialInput(input, 'left'), input);
+  assert.equal(prepareTutorialInput(input, true), input);
   assert.equal(input.steer, 0);
   assert.equal(input.throttle, true);
   assert.equal(input.laneAssist, false);
   const braking = { steer: 0, brake: true, throttle: false };
-  prepareTutorialInput(braking, 'left');
+  prepareTutorialInput(braking, true);
   assert.equal(braking.throttle, false);
   const session = createInteractiveTutorial();
   assert.equal(session.step, 'throttle');
