@@ -32,14 +32,32 @@ test('BOOST and FLY are not restyled by AUTO', () => {
   assert.doesNotMatch(css, /assist-button[^{]*\.touch-(boost|fly)\b[^{]*\{/);
 });
 
-test('the wide NITRO keeps one centred flame at one button\'s size, never a stretched mask or a twin', () => {
-  // Real frames showed two flames with a dip between them, unlike BOOST's single fire (twin removed).
+test('the wide NITRO\'s fire follows its width with one-button flames, never a stretched mask or a twin', () => {
+  // Real frames: a stretched mask fattens every tongue, and two flames side by side dip in the centre (twin removed).
   assert.doesNotMatch(app, /sprint-ready-twin/);
   assert.doesNotMatch(css, /sprint-ready-twin/);
-  assert.doesNotMatch(feedback, /querySelectorAll/);
-  const body = rule(`${AUTO} .touch-actions > .touch-nitro:not(.is-positioned) > .sprint-ready-effect::before`);
-  assert.ok(body, 'wide flame rule');
-  assert.match(body, /width:\s*calc\(var\(--cell\)/);
-  assert.match(body, /left:\s*50%/);
-  assert.match(body, /translate:\s*-50%/);
+  // Each copy keeps one button's size; the centre one covers the gap between the flanks.
+  const centre = rule(`${AUTO} .touch-actions > .touch-nitro:not(.is-positioned) > .sprint-ready-effect::before`);
+  assert.ok(centre, 'wide flame rule');
+  assert.match(centre, /width:\s*calc\(var\(--cell\)/);
+  assert.match(centre, /left:\s*50%/);
+  assert.match(centre, /translate:\s*-50%/);
+  // Two flank copies reach the wide button's corners, only on NITRO.
+  const nitro = app.match(/<button class="touch-nitro"[\s\S]*?<\/button>/)[0];
+  const boost = app.match(/<button class="touch-boost"[\s\S]*?<\/button>/)[0];
+  assert.equal(nitro.match(/class="sprint-ready-effect sprint-ready-flank"/g)?.length, 2, 'NITRO carries two flank flames');
+  assert.doesNotMatch(boost, /sprint-ready-flank/);
+  const flank = side => rule(`${AUTO} .touch-actions > .touch-nitro:not(.is-positioned) > .sprint-ready-flank[data-side="${side}"]::before`);
+  assert.match(flank('start') ?? '', /left:\s*0/);
+  assert.match(flank('end') ?? '', /right:\s*0/);
+  for (const side of ['start', 'end']) {
+    assert.match(flank(side) ?? '', /translate:\s*none/, `${side} flank is anchored, not centred`);
+    // Same frame in all three copies repeats one fire three times.
+    assert.match(flank(side) ?? '', /animation-delay:\s*calc\(var\(--flame-loop, 1\.15s\) \* -/, `${side} flank runs out of phase`);
+  }
+  // Hidden unless the button is wide; Reduced Motion and forced colours keep every flame off.
+  assert.match(rule('#touch-controls [data-flame] > .sprint-ready-flank') ?? '', /display:\s*none/);
+  assert.match(css, /@media \(prefers-reduced-motion: no-preference\) and \(forced-colors: none\) \{\s*body:not[^{]*\[data-flame="on"\] > \.sprint-ready-flank \{ display: block; \}/);
+  assert.match(rule('#touch-controls .sprint-ready-flank::after') ?? '', /content:\s*none/, 'one shock ring, on the button outline');
+  assert.match(feedback, /querySelectorAll\('\.sprint-ready-effect'\)/, 'the readiness burst plays on every copy');
 });

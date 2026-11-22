@@ -33,8 +33,12 @@ const snapshot = page => page.evaluate(controls => {
     const { x, y, width, height } = element.getBoundingClientRect();
     const rect = { x, y, width, height };
     const centre = document.elementFromPoint(x + width / 2, y + height / 2);
-    return { rect, visibility: getComputedStyle(element).visibility, hit: element.contains(centre),
-      flame: getComputedStyle(element.querySelector('.sprint-ready-effect') ?? element, '::before').width };
+    const flanks = [...element.querySelectorAll('.sprint-ready-flank')].map(flank => {
+      const before = getComputedStyle(flank, '::before');
+      return { side: flank.dataset.side, display: getComputedStyle(flank).display, left: before.left, right: before.right, width: before.width };
+    });
+    return { rect, visibility: getComputedStyle(element).visibility, hit: element.contains(centre), flameOn: element.dataset.flame,
+      flame: getComputedStyle(element.querySelector('.sprint-ready-effect') ?? element, '::before').width, flanks };
   };
   return Object.fromEntries(controls.map(action => [action, read(action)]));
 }, CONTROLS);
@@ -75,6 +79,15 @@ test.describe('GAS hides while AUTO is on', () => {
         expect(on.nitro.hit, `${tag} NITRO takes the touch`).toBe(true);
         // The flame keeps one button's proportions: its box does not stretch with the wide button.
         expect(parseFloat(on.nitro.flame), `${tag} NITRO flame width`).toBeCloseTo(parseFloat(off.nitro.flame), 0);
+        // The fire follows the wide button: flank flames of the same size reach both of its corners.
+        expect(on.nitro.flameOn, `${tag} NITRO flame on`).toBe('on');
+        expect(off.nitro.flanks.map(flank => flank.display), `${tag} no flanks on the normal NITRO`).toEqual(['none', 'none']);
+        expect(on.nitro.flanks.map(flank => flank.side), `${tag} flank sides`).toEqual(['start', 'end']);
+        for (const flank of on.nitro.flanks) {
+          expect(flank.display, `${tag} ${flank.side} flank shown`).toBe('block');
+          expect(parseFloat(flank.width), `${tag} ${flank.side} flank width`).toBeCloseTo(parseFloat(off.nitro.flame), 0);
+          expect(parseFloat(flank.side === 'start' ? flank.left : flank.right), `${tag} ${flank.side} flank at the corner`).toBeCloseTo(0, 0);
+        }
       }
     });
   }

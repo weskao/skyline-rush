@@ -43,8 +43,14 @@ paths:
 - **AUTO on hides GAS and widens NITRO** (last block of `touch-sprint-buttons.css`). Traps found building it:
   - `buttons` steering caps every button at `--compact-key-width`, so the wide NITRO needs `max-width: none`.
   - The flame box is relative to the padding box (1px borders sit outside): `--cell` is one button minus 2px.
-  - **One flame, never a twin.** Two flames side by side showed a dip and two fires in the centre, unlike BOOST's
-    single fire. The wide NITRO keeps one centred flame at one button's size; its ring hugs the wide button.
+  - **The fire follows the width at one button's flame size, never a twin or a stretched mask.** Two flames side by
+    side showed a dip and two fires in the centre; one centred flame left the wide button's ends bare; stretching the
+    strip mask doubles every tongue. The wide NITRO shows the centred flame plus two `.sprint-ready-flank` copies
+    (`data-side="start"`/`"end"`, anchored to each end, phase-offset by a third of `--flame-loop`), so the three read
+    as one fire. Flanks are `display: none` except under AUTO, and that show rule sits inside the
+    `prefers-reduced-motion: no-preference` / `forced-colors: none` media so it never outranks the flame-off rule.
+    Flanks have no ring (`::after` `content: none`); the one ring hugs the wide button. `sprint-ready-feedback.ts`
+    bursts every `.sprint-ready-effect` (`querySelectorAll`). Cost: three masked layers instead of one, AUTO only.
   - Hiding is `visibility: hidden` (layout and `offsetWidth` stay). A spec that reads or presses GAS starts with
     AUTO off (`skyline-rush-auto` = `off`), never with a weaker assertion.
   - Guards: `tests/touch-gas-auto-layout.test.js`, `tests/touch-gas-auto-layout-browser.spec.js`. The tutorial
