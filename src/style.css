@@ -919,24 +919,26 @@ body.layout-editing #touch-controls { display: grid; }
 .guide-screen .tutorial-start:hover { background: #ffa487; }
 .guide-screen .tutorial-start:hover::after { transform: translateX(4px); }
 .guide-screen .tutorial-start:focus-visible { outline: 2px solid #f4f0e9; outline-offset: 3px; }
-.tutorial-coach { position: fixed; z-index: 12; top: max(84px, calc(var(--safe-top) + 64px)); left: max(12px, var(--safe-left)); width: min(400px, calc(100vw - 24px)); padding: 12px; border: 1px solid #899eaf; border-radius: 12px; color: #f4f0e9; background: #142334; box-shadow: 0 8px 24px rgb(0 9 22 / .3); }
+.tutorial-coach { position: fixed; z-index: 12; top: max(84px, calc(var(--safe-top) + 64px)); left: max(12px, var(--safe-left)); width: min(340px, calc(100vw - 24px)); padding: 10px; border: 1px solid rgb(150 190 219 / .65); border-radius: 10px; color: #f4f0e9; background: rgb(20 35 52 / .78); box-shadow: 0 6px 18px rgb(0 9 22 / .24); }
+.tutorial-coach:not([hidden]) { display: flex; flex-direction: column; }
 .tutorial-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.tutorial-heading strong { font-size: 15px; line-height: 1.4; }
+.tutorial-heading strong { min-width: 0; font-size: 14px; line-height: 1.3; }
 .tutorial-actions { display: flex; gap: 6px; flex-shrink: 0; }
 .tutorial-actions button { min-width: 44px; min-height: 44px; width: auto; padding: 8px; margin: 0; }
-.tutorial-coach progress { width: 100%; height: 6px; margin: 10px 0 6px; accent-color: #96e3ff; }
-.tutorial-copy { max-height: calc(55dvh - 174px); overflow: auto; overscroll-behavior: contain; }
-.tutorial-copy p { margin: 4px 0 10px; line-height: 1.5; font-size: 14px; }
-.tutorial-copy small { display: block; margin-top: 10px; color: #c3d0dc; font-size: 11px; line-height: 1.4; }
-#tutorial-input { font-weight: 700; font-size: 14px; color: var(--key, #96e3ff); }
+.tutorial-coach progress { width: 100%; height: 4px; margin: 6px 0 4px; flex-shrink: 0; accent-color: #96e3ff; }
+.tutorial-copy { min-height: 0; max-height: calc(55dvh - 174px); overflow: auto; overscroll-behavior: contain; }
+.tutorial-copy p { margin: 2px 0 5px; line-height: 1.4; font-size: 13px; }
+.tutorial-copy small { display: block; margin-top: 4px; color: #c3d0dc; font-size: 10px; line-height: 1.3; }
+#tutorial-input { font-weight: 700; font-size: 13px; line-height: 1.35; color: var(--key, #96e3ff); }
 #tutorial-input kbd { display: inline-block; min-width: 32px; padding: 5px 8px; margin: 2px; border: 1px solid var(--key, #96e3ff); border-bottom-width: 3px; border-radius: 5px; background: #20364b; text-align: center; }
 .tutorial-target { outline: 3px solid #96e3ff; outline-offset: 4px; }
 .touch-pad.tutorial-target { outline-offset: -5px; background: rgb(150 227 255 / .08); }
 body[data-tutorial] :is(#race-route-map, #leaderboard, #practice-hud, #sprint-stage, #stunt-hud, #checkpoint-hud, #clean-trial-hud) { visibility: hidden; }
 body[data-tutorial] .tutorial-coach { pointer-events: auto; }
-/* Narrow portrait: the full-width card starts under the AIRFLOW/VFX row (top 70px + 30px), not over it. */
-@media (max-width: 760px) and (min-height: 501px) { .tutorial-coach { top: calc(var(--safe-top) + 108px); } }
-@media (max-height: 500px) and (orientation: landscape) { .tutorial-coach { top: 70px; width: min(410px, calc(50vw - 24px)); padding: 8px; } .tutorial-copy { max-height: calc(55dvh - 154px); } .tutorial-copy small { display: none; } .tutorial-coach progress { margin: 4px 0; } .tutorial-copy p { margin: 2px 0 4px; font-size: 12px; } }
+/* Compact portrait card stays under AIRFLOW/VFX but frees the road; long lessons scroll inside. */
+@media (max-width: 760px) and (min-height: 501px) { .tutorial-coach { top: calc(var(--safe-top) + 108px); width: min(310px, calc(100vw - 24px)); max-height: min(220px, 32dvh); } }
+/* Narrow left-side coach leaves the racing sightline and right-hand cue open on short landscapes. */
+@media (max-height: 500px) and (orientation: landscape) { .tutorial-coach { top: 70px; width: min(320px, calc(42vw - 16px)); max-height: calc(100dvh - 90px); padding: 8px 10px; } .tutorial-copy { max-height: none; } .tutorial-coach progress { margin: 4px 0; } .tutorial-copy p { margin: 2px 0 4px; font-size: 13px; } }
 @media (max-width: 540px) { .guide-keys > div { grid-template-columns: 1fr; gap: 6px; } }
 @media (max-width: 760px) { .guide-header { top: -20px; } }
 .history-screen[open] { animation: history-in var(--dur-base) var(--ease-out); }
@@ -1998,7 +2000,7 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 #touch-controls .tutorial-target { animation: tutorial-target-ripple 1s ease-out infinite; }
 @media (prefers-reduced-motion: reduce) { #touch-controls .tutorial-target { animation: none; } }
 /* Live lesson cue (tutorial-cues.ts): what to press or release now; kbd chips show the bound desktop key. */
-.tutorial-cue { position: fixed; z-index: 13; top: 30%; left: 50%; box-sizing: border-box; width: max-content; max-width: calc(100vw - 32px); display: flex; align-items: center; gap: 10px; padding: 10px 18px; border: 2px solid #96e3ff; border-radius: 14px; background: rgb(20 35 52 / .92); color: #f4f0e9; font-size: 18px; text-align: center; pointer-events: none; transform: translate(-50%, -50%); box-shadow: 0 0 0 6px rgb(150 227 255 / .14), 0 10px 32px rgb(0 9 22 / .45); animation: cue-in .35s var(--ease-spring) both, cue-pulse 1.2s ease-in-out .35s infinite; }
+.tutorial-cue { position: fixed; z-index: 13; top: 30%; left: 50%; box-sizing: border-box; width: max-content; max-width: calc(100vw - 32px); display: flex; align-items: center; gap: 8px; padding: 8px 14px; border: 2px solid #96e3ff; border-radius: 12px; background: rgb(20 35 52 / .84); color: #f4f0e9; font-size: 16px; text-align: center; pointer-events: none; transform: translate(-50%, -50%); box-shadow: 0 0 0 4px rgb(150 227 255 / .12), 0 8px 24px rgb(0 9 22 / .35); animation: cue-in .35s var(--ease-spring) both, cue-pulse 1.2s ease-in-out .35s infinite; }
 .tutorial-cue[data-cue*="Release"], .tutorial-cue[data-cue*="driftMax"] { border-color: #ffd27a; --cue-glow: rgb(255 210 122 / .22); box-shadow: 0 0 0 6px var(--cue-glow), 0 10px 32px rgb(0 9 22 / .45); }
 .tutorial-cue-keys { display: flex; gap: 4px; }
 .tutorial-cue kbd { min-width: 28px; padding: 3px 8px; border: 1px solid #96e3ff; border-bottom-width: 3px; border-radius: 6px; background: #0d1a28; color: #96e3ff; font-family: inherit; font-size: 14px; font-weight: 700; }
@@ -2007,10 +2009,10 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 @keyframes cue-pulse { 50% { box-shadow: 0 0 0 11px var(--cue-glow, rgb(150 227 255 / .14)), 0 10px 32px rgb(0 9 22 / .45); } }
 @media (max-width: 760px) and (min-height: 501px) { .tutorial-cue { top: calc(var(--tutorial-coach-bottom, 300px) + 40px); font-size: 15px; } } /* below the phone coach card */
 /* Landscape: below the AIRFLOW/VFX row and right of the coach card; long copy wraps rather than reaching either. */
-@media (max-height: 500px) and (orientation: landscape) { .tutorial-cue { top: 34%; left: 79%; max-width: calc(42vw - 32px); padding: 6px 12px; font-size: 14px; } }
+@media (max-height: 500px) and (orientation: landscape) { .tutorial-cue { top: 34%; left: 79%; max-width: calc(42vw - 32px); padding: 6px 10px; font-size: 13px; } }
 @media (prefers-reduced-motion: reduce) { .tutorial-cue { animation: none; } }
 /* Pass toast: holds the cue's place while a cleared lesson's praise is up (CLEARED_SECONDS). */
-.tutorial-pass { position: fixed; z-index: 13; top: 30%; left: 50%; box-sizing: border-box; width: max-content; max-width: calc(100vw - 32px); display: flex; align-items: center; gap: 10px; padding: 10px 18px; border: 2px solid #91f0c5; border-radius: 14px; background: rgb(20 35 52 / .94); color: #f4f0e9; font-size: 18px; pointer-events: none; transform: translate(-50%, -50%); box-shadow: 0 0 0 6px rgb(145 240 197 / .18), 0 10px 32px rgb(0 9 22 / .45); animation: cue-in .35s var(--ease-spring) both; }
+.tutorial-pass { position: fixed; z-index: 13; top: 30%; left: 50%; box-sizing: border-box; width: max-content; max-width: calc(100vw - 32px); display: flex; align-items: center; gap: 8px; padding: 8px 14px; border: 2px solid #91f0c5; border-radius: 12px; background: rgb(20 35 52 / .84); color: #f4f0e9; font-size: 16px; pointer-events: none; transform: translate(-50%, -50%); box-shadow: 0 0 0 4px rgb(145 240 197 / .14), 0 8px 24px rgb(0 9 22 / .35); animation: cue-in .35s var(--ease-spring) both; }
 .tutorial-pass-badge { display: grid; place-items: center; width: 30px; height: 30px; flex: none; border-radius: 50%; background: #91f0c5; animation: celebrate-pop .5s var(--ease-spring) .1s both; }
 .tutorial-pass-badge svg { width: 18px; height: 18px; fill: none; stroke: #142333; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
 /* NITRO rewards in coach copy and toasts: colour and glow only, so the text wraps exactly as before. */
@@ -2020,7 +2022,7 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 body[data-tutorial-reward="nitro"] #nitro-meter, body[data-tutorial-reward="nitro"] #touch-controls [data-control="nitro"] { outline: 2px solid var(--nitro); outline-offset: 3px; animation: reward-meter .7s ease-in-out 2; }
 @keyframes reward-meter { 50% { outline-offset: 7px; filter: drop-shadow(0 0 10px rgb(255 210 122 / .9)); } }
 @media (max-width: 760px) and (min-height: 501px) { .tutorial-pass { top: calc(var(--tutorial-coach-bottom, 300px) + 40px); font-size: 15px; } }
-@media (max-height: 500px) and (orientation: landscape) { .tutorial-pass { top: 34%; left: 79%; max-width: calc(42vw - 32px); padding: 6px 12px; font-size: 14px; } }
+@media (max-height: 500px) and (orientation: landscape) { .tutorial-pass { top: 34%; left: 79%; max-width: calc(42vw - 32px); padding: 6px 10px; font-size: 13px; } }
 @media (prefers-reduced-motion: reduce) { .tutorial-pass, .tutorial-pass-badge, .tutorial-reward, body[data-tutorial-reward] #nitro-meter { animation: none; } }
 /* Paused practice: the coach keeps its full lesson and progress (Exit is its only button) and the shared
    pause screen starts below it on phones, right of it in landscape; neither covers the other. */
@@ -2222,8 +2224,6 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
   body[data-phase="finished"]:not([data-tutorial]) .result-style { margin: 0; gap: 2px 10px; }
   body[data-phase="finished"]:not([data-tutorial]) .wave3-demo-results { margin-top: 0; }
 }
-/* Phone landscape: the coach card grows to show the whole lesson text (EN/中文). */
-@media (max-height: 500px) and (orientation: landscape) { .tutorial-coach { width: min(520px, calc(58vw - 24px)); } .tutorial-copy { max-height: none; overflow: visible; } }
 /* Reserve both Large thumb-control rows, including mirrored hands; long lessons scroll inside the card. */
 @media (max-height: 500px) and (orientation: landscape) and (pointer: coarse) {
   .tutorial-coach { display: flex; flex-direction: column; max-height: calc(100dvh - 70px - max(var(--thumb-lift), var(--safe-bottom)) - 2 * var(--touch-cell) * 1.15 - 20px); }
