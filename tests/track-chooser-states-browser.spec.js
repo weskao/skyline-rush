@@ -1,4 +1,5 @@
 import { test, expect } from './helpers/test.js';
+import { ciTimeout } from './helpers/ci.js';
 import { RACE_TRACKS } from '../src/game.js';
 import { UPCOMING_TRACKS } from '../src/upcoming-tracks.ts';
 
@@ -45,11 +46,11 @@ test('race availability colors stay distinct from pending selection and the conf
 });
 
 test('every playable, locked and upcoming card can select its own Home map without unlocking races', async ({ page }) => {
-  test.setTimeout(120_000);
+  test.setTimeout(ciTimeout(120_000));
   await page.goto('/');
   const ids = [...Object.keys(RACE_TRACKS), ...Object.keys(UPCOMING_TRACKS)];
   await page.locator('#lobby-tracks-toggle').click();
-  await expect(page.locator('#track-chooser .track-select > button')).toHaveCount(ids.length);
+  await expect(page.locator('#track-chooser .track-select .track-card-select')).toHaveCount(ids.length);
   for (const id of ids) {
     const card = page.locator('#track-chooser').locator(`[data-track="${id}"], [data-upcoming-track="${id}"]`);
     await expect(card).toBeEnabled();

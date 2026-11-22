@@ -10,7 +10,7 @@ const MAX_LINES = 400;
 const LEGACY_CEILINGS = {
   'src/main.js': 662,
   'src/world.js': 936,
-  'src/game.js': 459,
+  'src/game.js': 458,
   'src/world-tour-scene.js': 453,
   'src/CollectiblesGuide.vue': 437,
   'src/locales/ui.ts': 1141, // ratchet down after extracting tutorial strings; never raise this limit

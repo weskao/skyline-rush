@@ -64,7 +64,7 @@ const scene = computed(() => SCENES[mode.value] ?? 'grid');
 .home-mode-preview[data-mode="gauntlet"], .home-mode-preview[data-mode="elimination"] { --mode-accent: #ff9c9c; }
 .home-mode-preview[data-mode="stunt"], .home-mode-preview[data-mode="eventlab"] { --mode-accent: #d7b0ff; }
 .home-mode-preview[data-mode="cup"], .home-mode-preview[data-mode="circuit"] { --mode-accent: #ffdf8e; }
-:global(body:not([data-phase="ready"])) .home-mode-preview { display: none; }
+:global(body:not([data-phase="ready"]) .home-mode-preview) { display: none; }
 .home-mode-preview__heading { display: flex; align-items: center; gap: 9px; }
 .home-mode-preview__heading svg { width: 28px; height: 28px; flex: none; color: var(--mode-accent); }
 .home-mode-preview__heading > div { min-width: 0; display: grid; gap: 2px; }

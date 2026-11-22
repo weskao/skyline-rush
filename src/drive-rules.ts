@@ -22,6 +22,15 @@ export function pressNitro(car: { nitro: number; nitroTime: number; nitroUses: n
 }
 export const FLY_DRAIN = 15; // fuel/s while thrusting (Phase 1: more room to fly while preserving ground recharge)
 export const BOOST_DRAIN = 10; // fuel/s while boosting on the road
+export const TOKYO_HYPERDRIVE_REGEN = 4; // fuel/s while moving on Tokyo's powered road; BOOST still has a net drain
+/** Fuel after this frame's BOOST drain, then Tokyo's powered-road regen (order matters for replay determinism). */
+export function boostFuel(trackId: string, car: { fuel: number; thrusting: boolean; section?: string; altitude: number; speed: number }, boost: boolean, dt: number): number {
+  let fuel = car.fuel;
+  // AIR DASH: combined drain is 18/s (15 FLY + 3 BOOST), rather than adding 10/s to FLY.
+  if (boost) fuel = Math.max(0, fuel - (car.thrusting ? 3 : BOOST_DRAIN) * dt);
+  if (trackId === 'tokyo' && car.section === 'boost-tunnel' && car.altitude < .1 && car.speed >= 20) fuel = Math.min(100, fuel + TOKYO_HYPERDRIVE_REGEN * dt);
+  return fuel;
+}
 /** Every mini-boost source goes through here: refresh the boost (never shortened) and record one event for the
  * start cue (mini-boost-cue.ts). `tier`: the drift tier that paid (1-3), 0 for the other sources. */
 export function grantMiniBoost(car: { miniBoost: number; miniBoostEvent: unknown }, seconds: number, time: number, tier = 0): void {

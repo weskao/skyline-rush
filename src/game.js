@@ -34,7 +34,7 @@ import { planGapRecovery, clearGapFallStreak } from './gap-recovery-seat.ts';
 import { RACE_TRACKS, raceTrack, assertTrackMode, itemScale } from './race-tracks.ts';
 export { RACE_TRACKS } from './race-tracks.ts';
 export const RACE_LENGTH = RACE_TRACKS.coast.length;
-import { MAX_SPEED, NITRO_TIME, pressNitro, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, BOOST_DRAIN, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_LATERAL, grantMiniBoost } from './drive-rules.ts';
+import { MAX_SPEED, NITRO_TIME, pressNitro, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, boostFuel, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_LATERAL, grantMiniBoost } from './drive-rules.ts';
 export { MAX_SPEED, NITRO_TIME, NITRO_EXTEND, FLY_DRAIN, GLIDE_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_REWARDS, driftTier } from './drive-rules.ts';
 export const ROAD_LIMIT = 10.2;
 export const LANES = [-7.5, -2.5, 2.5, 7.5];
@@ -52,8 +52,7 @@ export const CROSSWIND_SPEED = 4; // m/s sideways push
 export const ICE_RAMP_FACTOR = 4; // steering takes this many times longer to respond on ice
 
 export const NITRO_FUEL_PER_CHARGE = 32; // overflow conversion: each 0.25 charge = 8 fuel
-export const NITRO_FUEL_BONUS = 20;
-const TOKYO_HYPERDRIVE_REGEN = 4; // fuel/s while moving on Tokyo's powered road; BOOST still has a net drain // fuel per charge banked below the cap: each 0.25 charge = 5 fuel
+export const NITRO_FUEL_BONUS = 20; // fuel per charge banked below the cap: each 0.25 charge = 5 fuel
 
 // AIR TRICK: a steer press opposite to one begun moments earlier, while flying, is a barrel roll; landing it pays nitro.
 export const TRICK_FLICK_WINDOW = 0.3; // s between the starts of the two presses
@@ -355,9 +354,7 @@ export function stepRace(race, input, dt) {
   } else if (!flyInput && !boost) {
     car.fuel = Math.min(100, car.fuel + (car.section === 'uphill' ? UPHILL_FUEL_REGEN : GROUND_FUEL_REGEN) * dt);
   }
-  // AIR DASH: combined drain is 18/s (15 FLY + 3 BOOST), rather than adding 10/s to FLY.
-  if (boost) car.fuel = Math.max(0, car.fuel - (car.thrusting ? 3 : BOOST_DRAIN) * dt);
-  if (race.trackId === 'tokyo' && car.section === 'boost-tunnel' && car.altitude < .1 && car.speed >= 20) car.fuel = Math.min(100, car.fuel + TOKYO_HYPERDRIVE_REGEN * dt);
+  car.fuel = boostFuel(race.trackId, car, boost, dt);
   const previousAltitude = car.altitude;
   // Sky Spiral launch ramps impart momentum automatically; FLY can extend the jump.
   if (car.altitude === 0 && ((race.trackId === 'spiral' && car.speed >= SKY_GAP_LAUNCH_MIN_SPEED && car.section === 'launch' &&
