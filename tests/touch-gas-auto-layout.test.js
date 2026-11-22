@@ -44,3 +44,21 @@ test('the wide NITRO keeps one centred flame at one button\'s size, never a stre
   assert.match(body, /left:\s*50%/);
   assert.match(body, /translate:\s*-50%/);
 });
+
+test('the wide NITRO flame box stays inside the button sideways, so it never widens #touch-controls', () => {
+  // NITRO now reaches the cluster's right edge: a sideways reach overflowed #touch-controls by 10px (i18n phone race HUD, 352>342).
+  const box = rule(`${AUTO} .touch-actions > .touch-nitro:not(.is-positioned) > .sprint-ready-effect`);
+  assert.match(box, /inset:\s*calc\(var\(--flame-top\) \* -100%\) 0 calc\(var\(--flame-bottom\) \* -100%\)/);
+  const ring = rule(`${AUTO} .touch-actions > .touch-nitro:not(.is-positioned) > .sprint-ready-effect::after`);
+  assert.match(ring, /inset:\s*var\(--button-top\) 0 /, 'the ring hugs the button');
+});
+
+test('HUD overlap checks that list GAS skip a visibility:hidden button, as a player sees it', () => {
+  // AUTO hides GAS with visibility (layout kept), and the wide NITRO covers its cell: checkVisibility() alone still counts it.
+  const files = ['mode-coverage-browser.spec.js', 'helpers/responsive-hud.js', 'helpers/responsive-map.js', 'i18n-browser.spec.js'];
+  for (const file of files) {
+    const src = readFileSync(new URL(`./${file}`, import.meta.url), 'utf8');
+    assert.match(src, /'throttle'\]\.map/, `${file} lists GAS`);
+    for (const call of src.match(/checkVisibility\([^)]*\)/g)) assert.match(call, /visibilityProperty:\s*true/, `${file}: ${call}`);
+  }
+});

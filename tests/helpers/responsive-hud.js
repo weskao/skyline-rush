@@ -51,7 +51,7 @@ export const readHudBoxes = page => page.evaluate(selectors => {
   Object.assign(arrow, { hidden: false, textContent: '↓' });
   const rects = selectors.flatMap(selector => {
     const el = document.querySelector(selector);
-    if (!el || !el.checkVisibility({ opacityProperty: true })) return [];
+    if (!el || !el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) return [];
     const { x, y, width, height } = el.getBoundingClientRect();
     return [[selector, { x, y, width, height }]];
   });

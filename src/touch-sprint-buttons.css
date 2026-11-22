@@ -241,7 +241,8 @@ body:not(.layout-editing):has(#assist-button[aria-pressed="true"]) #touch-contro
 body:not(.layout-editing):has(#assist-button[aria-pressed="true"]) #touch-controls .touch-actions > .touch-nitro:not(.is-positioned) > .sprint-ready-effect {
   /* One button's padding box: 1px borders sit outside the box the flame is sized on, and buttons steering caps a button at --compact-key-width. */
   --cell: calc(min(var(--touch-cell) * var(--touch-scale, 1), var(--compact-key-width, 999px)) - 2px);
-  inset: calc(var(--flame-top) * -100%) calc(var(--flame-side) * var(--cell) * -1) calc(var(--flame-bottom) * -100%);
+  /* No sideways reach: this NITRO ends at the cluster's right edge and the centred flame fits inside it. */
+  inset: calc(var(--flame-top) * -100%) 0 calc(var(--flame-bottom) * -100%);
 }
 body:not(.layout-editing):has(#assist-button[aria-pressed="true"]) #touch-controls .touch-actions > .touch-nitro:not(.is-positioned) > .sprint-ready-effect::before {
   inset: 0 auto 0 auto;
@@ -250,5 +251,5 @@ body:not(.layout-editing):has(#assist-button[aria-pressed="true"]) #touch-contro
   width: calc(var(--cell) * (1 + 2 * var(--flame-side)));
 }
 body:not(.layout-editing):has(#assist-button[aria-pressed="true"]) #touch-controls .touch-actions > .touch-nitro:not(.is-positioned) > .sprint-ready-effect::after {
-  inset: var(--button-top) calc(var(--flame-side) * var(--cell)) calc(var(--flame-bottom) / var(--flame-box) * 100%);
+  inset: var(--button-top) 0 calc(var(--flame-bottom) / var(--flame-box) * 100%);
 }
