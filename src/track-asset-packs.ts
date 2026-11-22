@@ -1,5 +1,6 @@
 // Optional downloadable visuals, not an offline copy of the game. Each track's release version is independent.
 import { RACE_TRACKS } from './race-tracks.ts';
+import { UPCOMING_TRACKS } from './upcoming-tracks.ts';
 import { trackLook } from './track-look.ts';
 import { coastEnvPlan, COAST_ENV_VARIANTS } from './coast-lighting.ts';
 import { COAST_SKY_MANIFEST } from './coast-sky-manifest.ts';
@@ -11,19 +12,23 @@ import type { TrackAssetPack, TrackPackAsset } from './track-pack-store.ts';
 export const TRACK_PACK_VERSIONS: Readonly<Record<string, string>> = Object.freeze({
   coast: '1.0.0', neon: '1.0.0', canyon: '1.0.0', aurora: '1.0.0', spiral: '1.0.0',
   taipei: '1.0.0', tokyo: '1.0.0', alpine: '1.0.0', coastal: '1.0.0', cosmic: '1.0.0',
+  'dune-tempest': '1.0.0', 'monsoon-ruins': '1.0.0', 'skyfall-archipelago': '1.0.0',
+  'volcanic-crown': '1.0.0', 'stormline-megacity': '1.0.0', 'frostbite-canyon': '1.0.0',
 });
 
 /** Every published playable card has a per-map version. Adding a new map requires registering its pack here. */
 export function trackAssetPack(trackId: string, quality: 'low' | 'medium' | 'high', ultra = false, preset = 'track'): TrackAssetPack | null {
-  if (!Object.hasOwn(TRACK_PACK_VERSIONS, trackId) || !Object.hasOwn(RACE_TRACKS, trackId)) return null;
+  if (!Object.hasOwn(TRACK_PACK_VERSIONS, trackId) || !Object.hasOwn(RACE_TRACKS, trackId) && !Object.hasOwn(UPCOMING_TRACKS, trackId)) return null;
   const version = TRACK_PACK_VERSIONS[trackId]!;
   const tier = ultra && quality === 'high' ? 'ultra' : quality;
   const entries = new Map<string, TrackPackAsset>();
   const add = (url: string, sha256 = '', bytes = 0): void => {
     if (url) entries.set(url, { url, sha256: /^[a-f0-9]{64}$/.test(sha256) && !/^0+$/.test(sha256) ? sha256 : '', bytes });
   };
-  // Teaser is always available first. Low has no heavyweight detailed materials or models.
-  add(`track-teasers/${trackId}.jpg`);
+  // Preview-only cards have independent illustration versions, but remain unplayable in release builds.
+  const upcoming = Object.hasOwn(UPCOMING_TRACKS, trackId) ? UPCOMING_TRACKS[trackId as keyof typeof UPCOMING_TRACKS] : null;
+  add(upcoming?.image ?? `track-teasers/${trackId}.jpg`);
+  if (upcoming) add(upcoming.route);
   if (quality !== 'low') {
     const look = trackLook(trackId);
     if (look) {

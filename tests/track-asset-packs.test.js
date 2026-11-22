@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { trackAssetPack, TRACK_PACK_VERSIONS } from '../src/track-asset-packs.ts';
 import { RACE_TRACKS } from '../src/race-tracks.ts';
+import { UPCOMING_TRACKS } from '../src/upcoming-tracks.ts';
 
 test('every released classic map owns an independently updatable asset version', () => {
   for (const id of Object.keys(RACE_TRACKS)) {
@@ -47,5 +48,15 @@ test('all installed asset entries have a stable URL, size and optional verified 
         if (asset.sha256) assert.match(asset.sha256, /^[0-9a-f]{64}$/);
       }
     }
+  }
+});
+
+test('every Coming Soon concept card owns an independent preview asset version but no false 3D download', () => {
+  for (const [id, card] of Object.entries(UPCOMING_TRACKS)) {
+    const pack = trackAssetPack(id, 'high');
+    assert.ok(pack, id);
+    assert.equal(pack.version, TRACK_PACK_VERSIONS[id]);
+    assert.deepEqual(pack.assets.map(asset => asset.url), [card.image, card.route]);
+    assert.ok(pack.assets.every(asset => asset.url.startsWith('track-teasers/')));
   }
 });
