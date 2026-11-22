@@ -1,4 +1,5 @@
 import { ciTimeout } from './helpers/ci.js';
+import { openSettingsSection } from './helpers/settings-browser.js';
 import { expect, test, waitForHome } from './helpers/test.js';
 
 for (const reducedMotion of ['no-preference', 'reduce']) {
@@ -14,7 +15,7 @@ for (const reducedMotion of ['no-preference', 'reduce']) {
 
     let release;
     const held = new Promise(resolve => { release = resolve; });
-    await page.route('**/models/roadster2/roadster2-low.glb', async route => {
+    await page.route('**/materials/coast-asphalt/asphalt_basecolor_2k.ktx2', async route => {
       await held;
       await route.continue();
     });
@@ -26,6 +27,9 @@ for (const reducedMotion of ['no-preference', 'reduce']) {
     try {
       await page.goto('/');
       await waitForHome(page);
+      await openSettingsSection(page, 'display');
+      await page.locator('select[data-vfx="quality"]').selectOption('high', { force: true });
+      await page.locator('#settings-close').click();
       await page.locator('#start-button').click();
       await expect(countdown).toHaveAttribute('data-step', 'loading');
       await expect(canvas).toBeHidden();
