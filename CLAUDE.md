@@ -103,7 +103,7 @@ without explicit user approval.
 
 | Command | Purpose |
 | --- | --- |
-| `make setup` | Install pnpm dependencies (Crucible included) and enable the git hooks |
+| `make setup` | Install frozen-lockfile pnpm dependencies (Crucible included) and enable the git hooks |
 | `make` / `make dev` | Vite dev server, saved progression respected |
 | `make dev-unlocked` / `make test-unlocked` | Local Vite playtest server with all catalog cars, paints and equipment available |
 | `make dev-feature <name>` | Worktree of `origin/feature/<name>`, all-unlocked, HTTPS |
@@ -112,7 +112,7 @@ without explicit user approval.
 | `make dev-diag` / `make phone-diag [name]` | Same servers with the diagnostic banner (`VITE_DIAG=1`) |
 | `pnpm test` | Node unit tests |
 | `pnpm run build` | Production build + release-bundle lock assertion |
-| `pnpm run test:browser` | Playwright suite (pretest builds production assets) |
+| `pnpm run test:browser` | Playwright suite (explicit trial build before browser tests) |
 | `pnpm run test:layout` | Home-screen layout browser tests |
 | `make verify` | Full local gate: unit, build, browser, World Tour long-run |
 | `make deploy` | Trigger CI GitHub Pages deploy of remote `main` |
