@@ -4,19 +4,17 @@ import { readFileSync } from 'node:fs';
 
 const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8');
 const landscape = '@media (max-height: 500px) and (orientation: landscape)';
-const lastRule = selector => css.split('\n').filter(line => line.startsWith(landscape) && line.includes(selector)).at(-1) ?? '';
+const landscapeCSS = css.slice(css.lastIndexOf(landscape));
 
 test('phone-landscape coach stays narrow without clipping long localized instructions', () => {
-  const rule = lastRule('.tutorial-coach {');
-  const coach = rule.match(/\.tutorial-coach\s*\{([^}]*)\}/)?.[1] ?? '';
+  const coach = landscapeCSS.match(/\.tutorial-coach\s*\{([^}]*)\}/)?.[1] ?? '';
   assert.match(coach, /width:\s*min\(320px,\s*calc\(42vw\s*-\s*16px\)\)/, 'protect at least 58% of the road width');
   assert.match(coach, /max-height:\s*calc\(100dvh/, 'bound the coach above thumb controls');
 
-  const last = lastRule('.tutorial-copy {');
-  const copy = last.match(/\.tutorial-copy\s*\{([^}]*)\}/)?.[1] ?? '';
+  const copy = landscapeCSS.match(/\.tutorial-copy\s*\{([^}]*)\}/)?.[1] ?? '';
   assert.match(copy, /overflow:\s*auto/, 'long English/Chinese lessons must scroll rather than clip or widen the card');
   assert.match(copy, /min-height:\s*0/, 'the flex item must be allowed to shrink within the card');
-  assert.doesNotMatch(rule, /width:\s*min\(520px,\s*calc\(58vw/, 'the effective landscape rule must never restore the oversized coach');
+  assert.doesNotMatch(landscapeCSS, /width:\s*min\(520px,\s*calc\(58vw/, 'the effective landscape rule must never restore the oversized coach');
 });
 
 test('compact coach preserves readable prompt and full-size action targets', () => {
