@@ -1,0 +1,83 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { createTrackPackStore, assetCacheKey, ASSET_CACHE } from '../src/track-pack-store.ts';
+
+class MemoryCache {
+  values = new Map();
+  url(key) { return typeof key === 'string' ? key : key.url; }
+  async match(key) { return this.values.get(this.url(key))?.clone(); }
+  async put(key, response) { this.values.set(this.url(key), response.clone()); }
+  async delete(key) { return this.values.delete(this.url(key)); }
+}
+class MemoryStorage {
+  caches = new Map();
+  async open(name) { if (!this.caches.has(name)) this.caches.set(name, new MemoryCache()); return this.caches.get(name); }
+}
+const sha = text => createHash('sha256').update(text).digest('hex');
+const pack = (version = '1.0.0', payload = 'track-data') => ({
+  trackId: 'coast', version, tier: 'high', preset: 'track', signature: `${version}:${sha(payload)}`,
+  assets: [{ url: 'models/coast-scenery/coast-scenery.glb', sha256: sha(payload), bytes: payload.length }],
+});
+const create = (storage, requests, payload = 'track-data') => createTrackPackStore({ storage,
+  baseUrl: 'https://game.example/skyline-rush/',
+  fetchAsset: async request => {
+    requests.push(String(request));
+    return new Response(payload, { status: 200, headers: { 'content-type': 'model/gltf-binary' } });
+  },
+});
+
+test('download once, verify real Cache Storage bytes and reuse after reload', async () => {
+  const storage = new MemoryStorage(), requests = [], bundle = pack();
+  const store = create(storage, requests);
+  assert.equal(await store.status(bundle), 'missing');
+  const progress = [];
+  await store.download(bundle, item => progress.push(item));
+  assert.equal(requests.length, 1);
+  assert.equal(await store.status(bundle), 'ready');
+  assert.deepEqual(progress.map(item => item.done), [1]);
+  await create(storage, requests).download(bundle);
+  assert.equal(requests.length, 1, 'already verified assets are reused');
+  const cache = await storage.open(ASSET_CACHE);
+  await cache.delete(assetCacheKey('https://game.example/skyline-rush/', bundle.assets[0], bundle.version));
+  assert.equal(await store.status(bundle), 'missing', 'evicted files are not reported as downloaded');
+});
+
+test('changing only map version reuses checksummed assets without network', async () => {
+  const storage = new MemoryStorage(), requests = [], store = create(storage, requests);
+  await store.download(pack());
+  assert.equal(await store.status(pack('1.0.1')), 'update');
+  await store.download(pack('1.0.1'));
+  assert.equal(requests.length, 1);
+  assert.equal(await store.status(pack('1.0.1')), 'ready');
+});
+
+test('new bytes at an old URL never reuse a stale hash', async () => {
+  const storage = new MemoryStorage(), requests = [];
+  await create(storage, requests).download(pack());
+  const changed = pack('1.0.1', 'new-data');
+  assert.equal(await create(storage, requests).status(changed), 'update');
+  await create(storage, requests, 'new-data').download(changed);
+  assert.equal(requests.length, 2);
+  assert.equal(await create(storage, requests).status(changed), 'ready');
+  assert.equal(await create(storage, requests).status(pack()), 'update');
+});
+
+test('invalid content or interrupted network cannot mark pack ready', async () => {
+  const storage = new MemoryStorage(), requests = [], bundle = pack();
+  const broken = create(storage, requests, 'wrong-data');
+  await assert.rejects(broken.download(bundle), /checksum/i);
+  assert.equal(await broken.status(bundle), 'missing');
+  await create(storage, requests).download(bundle);
+  assert.equal(await broken.status(bundle), 'ready');
+});
+
+test('different maps share the same verified file without a second network transfer', async () => {
+  const storage = new MemoryStorage(), requests = [], store = create(storage, requests);
+  const one = pack(), two = { ...pack(), trackId: 'spiral', signature: 'spiral:one' };
+  await store.download(one);
+  await store.download(two);
+  assert.equal(requests.length, 1);
+  assert.equal(await store.status(one), 'ready');
+  assert.equal(await store.status(two), 'ready');
+});
