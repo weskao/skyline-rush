@@ -58,7 +58,7 @@ test('CI unit gate executes the locked production build and refuses unpublished 
   const { readFileSync } = await import('node:fs');
   const ci = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
   const unit = ci.slice(ci.indexOf('  unit-tests:'), ci.indexOf('  browser-tests:'));
-  assert.match(unit, /- run: npm run build/);
+  assert.match(unit, /- run: pnpm run build/);
   const locked = readFileSync(new URL('../src/GarageSkinComingSoon.vue', import.meta.url), 'utf8');
   assert.doesNotMatch(locked, /GarageSkinCatalog|@click|equipGarageSkin|thruster-ion|nitro-trail-cyan/);
 });
@@ -109,7 +109,7 @@ test('public deploys sync the Wave 3 preview store to Firestore until the public
   const deploy = workflow.slice(workflow.indexOf('  deploy:'), workflow.indexOf('  # Failure-only pager'));
   assert.match(deploy, /VITE_WAVE3_FIRESTORE_PREVIEW:\s*'1'/);
   const makefile = readFileSync(new URL('../Makefile', import.meta.url), 'utf8');
-  assert.match(makefile, /GARAGE_VFX_RELEASE_MODE=trial VITE_WAVE3_FIRESTORE_PREVIEW=1 \$\(NPM\) run build/);
+  assert.match(makefile, /GARAGE_VFX_RELEASE_MODE=trial VITE_WAVE3_FIRESTORE_PREVIEW=1 \$\(PNPM\) run build/);
   assert.equal(selectGarageReleaseBuild('production', 'trial', '1').wave3FirestoreEnabled, true);
 });
 
