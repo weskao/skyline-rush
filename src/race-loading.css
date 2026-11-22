@@ -13,7 +13,7 @@
   pointer-events: none;
   visibility: hidden;
 }
-#world[data-frame-loading] + #race-frame-still { visibility: visible; }
+#world[data-frame-loading] ~ #race-frame-still { visibility: visible; }
 
 .race-loading-rail { display: none; }
 

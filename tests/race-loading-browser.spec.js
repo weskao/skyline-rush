@@ -29,6 +29,7 @@ for (const reducedMotion of ['no-preference', 'reduce']) {
       await page.locator('#start-button').click();
       await expect(countdown).toHaveAttribute('data-step', 'loading');
       await expect(canvas).toBeHidden();
+      await expect(page.locator('#track-swipe-scenes')).toHaveCount(1);
       await expect(still).toBeVisible();
       await expect(still).toHaveAttribute('src', /track-teasers\/coast\.jpg/);
       await expect(still).toHaveCSS('object-fit', 'cover');
