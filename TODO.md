@@ -5,7 +5,9 @@
 - [x] RED on old code: `tests/tutorial-auto-off-completion.test.js` (AUTO off never holds the accelerator) and `tests/tutorial-auto-lesson.test.js` (missing `tutorialAutoStatus` export). GREEN after.
 - [x] `node --test tests/module-size.test.js`, `npm run typecheck`, `npm test` (3,836: 3,832 pass, 0 fail, 4 skipped), `npm run test:layout` (38 + 23 passed), `npm run build`.
 - [x] Browser: `tests/tutorial-auto-browser.spec.js` 8/8 (keyboard all 11 lessons, 3 s read, AUTO off hold, pause/resume, touch Settings path en/zh-TW portrait and landscape). `tutorial-hand-layout` and the 320x568 paused/slide practice cases 14/14 after the coach label moved into the progress row.
-- [ ] Final rerun of `interactive-tutorial`, `mobile-guide`, `guide`, `i18n`, `tutorial-auto`, `first-visit-start-parity` browser specs and the GitHub `quality-gate` for the pushed HEAD.
+- [x] GitHub `quality-gate` green on `fd2485bb` (run 45015432467).
+- [x] 844x390 touch: the coach ended 2.9 px over the slide pad (RED in `tests/tutorial-auto-browser.spec.js`); landscape meter margin trimmed in `src/TutorialCoach.vue`, coach bottom 211 vs pad 215. `tutorial-auto`, `tutorial-hand-layout`, `interactive-tutorial` 35/35 serial.
+- [ ] Final rerun of `mobile-guide`, `guide`, `i18n`, `first-visit-start-parity` browser specs and the GitHub `quality-gate` for the pushed HEAD.
 - Known flake, not from this branch: `tests/audio.test.js` reveal/premiere cues drop under heavy load (`CLOCK_STALL_MS` in `src/audio-context-health.ts` vs a mock clock that never advances); reproduced with a 40x `performance.now` shim.
 
 # Develop shader warmup in rain (2026-11-21)
