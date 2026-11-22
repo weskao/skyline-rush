@@ -97,7 +97,7 @@ Custom 與 Free Drive 提供 **Off / Classic Mystery Rings / Active Items / All 
 
 ## 在本機執行
 
-需要 Node.js 22.12 或更新版本，以及支援 WebGL 2 並啟用硬體加速的瀏覽器。
+需要 Node.js 22.12 或更新版本、pnpm 11.28.13，以及支援 WebGL 2 並啟用硬體加速的瀏覽器。先執行 `corepack enable` 以使用專案鎖定的 pnpm 版本（或安裝 `pnpm@11.28.13`），接著執行 `make setup`。
 
 ```sh
 cd skyline-rush   # From the directory containing your clone
