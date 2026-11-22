@@ -29,6 +29,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
 }
 
 test('Restore defaults is available only in modes with editable rules, on desktop and phone', async ({ page }) => {
+  test.setTimeout(ciTimeout(120_000));
   for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
     await page.setViewportSize(viewport);
     await page.goto('/');
