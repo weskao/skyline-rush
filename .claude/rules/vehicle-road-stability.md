@@ -92,6 +92,10 @@ Owner brief, 2026-11-22: cornering needs real steering, with a forgiving assist.
   read the car's own edge (`currentEdgeId`, `localS`), and Endless on a long-form id reads the shared
   highway. Curvature is cached lazily per 4 m cell; track geometry is immutable, so a cell is never
   invalidated. Never add a per-track push or a second curvature table.
+- A force derived from `Math.sin/cos/atan2` is snapped before it enters the simulation (`TURN_STEPS`,
+  2^-30 rad/m). Engines differ in the last bit of trig results: unsnapped, the push passed on a Mac
+  (Node 24, arm64) and broke 9 legacy replay hashes on CI (Node 22, x64). A local run on any Node
+  cannot prove portability; only CI can. Guard: the last-bit trig test in `tests/corner-force.test.js`.
 - Off while airborne, drifting, in tutorial practice, on a Frostbite span, inside a shortcut corridor,
   and during a knock's 1.5 s grace, so a car is never pressed back into what it hit (clamp -> shove).
 - AUTO (`laneAssist`) never centres the car. Within 3 m of the rail it fades outward environmental
