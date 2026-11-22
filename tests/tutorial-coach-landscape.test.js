@@ -16,7 +16,7 @@ test('phone-landscape coach stays narrow without clipping long localized instruc
   const copy = last.match(/\.tutorial-copy\s*\{([^}]*)\}/)?.[1] ?? '';
   assert.match(copy, /overflow:\s*auto/, 'long English/Chinese lessons must scroll rather than clip or widen the card');
   assert.match(copy, /min-height:\s*0/, 'the flex item must be allowed to shrink within the card');
-  assert.doesNotMatch(css, /width:\s*min\(520px,\s*calc\(58vw/, 'never restore the oversized coach');
+  assert.doesNotMatch(rule, /width:\s*min\(520px,\s*calc\(58vw/, 'the effective landscape rule must never restore the oversized coach');
 });
 
 test('compact coach preserves readable prompt and full-size action targets', () => {
