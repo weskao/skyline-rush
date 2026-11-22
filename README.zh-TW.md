@@ -91,7 +91,7 @@ Custom 與 Free Drive 提供 **Off / Classic Mystery Rings / Active Items / All 
 
 ### 真實遊戲截圖與驗證
 
-用來檢視這些模式的截圖是**從執行中的瀏覽器遊戲**擷取，而非概念圖。[下載實際的 Playwright 擷取圖組](https://github.com/weskao/skyline-rush/actions/runs/39742666980/artifacts/12410172411)（Custom 單人、Free Drive、Time Attack、Obstacle Run、Extreme 障礙、Checkpoint Rush 與行動版模式選單）。GitHub Actions 的成品可能需要登入且會過期；若要在本機重新產生，請執行 `npx playwright test tests/race-modes-browser.spec.js` 並開啟 `test-results/race-mode-*.png`。CI 截圖以軟體渲染並降低解析度，不代表最終裝置上的畫質。
+用來檢視這些模式的截圖是**從執行中的瀏覽器遊戲**擷取，而非概念圖。[下載實際的 Playwright 擷取圖組](https://github.com/weskao/skyline-rush/actions/runs/39742666980/artifacts/12410172411)（Custom 單人、Free Drive、Time Attack、Obstacle Run、Extreme 障礙、Checkpoint Rush 與行動版模式選單）。GitHub Actions 的成品可能需要登入且會過期；若要在本機重新產生，請執行 `pnpm exec playwright test tests/race-modes-browser.spec.js` 並開啟 `test-results/race-mode-*.png`。CI 截圖以軟體渲染並降低解析度，不代表最終裝置上的畫質。
 
 **驗證：** 每項功能的測試與完整閘門紀錄都列在 `TODO.md` 中。實體 iPhone 與 Android 的檢查仍待進行。
 
@@ -108,7 +108,7 @@ make         # Installs dependencies on first run, then starts the Vite + Vue de
 
 `make` 與 `make dev-unlocked` 也會啟動本機的 Firebase Auth/Firestore 模擬器（需要 Java 21+），因此雲端存檔的 Google 登入可搭配假的測試帳號運作，且絕不會動到真實存檔。雲端存檔操作，以及專案擁有者的 Spark 額度檢查，請見 `docs/cloud-save.md`。
 
-`make dev-diag` 與 `make phone-diag` 會提供相同的建置，並編入畫面上的診斷橫幅（影格計數、頁面生命週期，以及觸控事件與其命中目標，外加跨重新載入保留的最近未捕捉錯誤），用於在真實手機上追查凍結或按鈕失效的問題。正式建置絕不包含它：`npm run build` 會拒絕含有診斷模組的打包檔。
+`make dev-diag` 與 `make phone-diag` 會提供相同的建置，並編入畫面上的診斷橫幅（影格計數、頁面生命週期，以及觸控事件與其命中目標，外加跨重新載入保留的最近未捕捉錯誤），用於在真實手機上追查凍結或按鈕失效的問題。正式建置絕不包含它：`pnpm run build` 會拒絕含有診斷模組的打包檔。
 
 `make phone` 會開啟終端機選單，用來啟動、檢查或停止手機可連線的開發伺服器（透過 Tailscale 或同一個 Wi-Fi），並在伺服器回應後印出手機網址。選單會列出此 checkout、其他 worktree 與最近的分支，也可輸入分支名稱；`make phone <name>` 會直接前往該分支（或 `feature/<name>`），必要時在 `.claude/worktrees/` 下建立其 worktree，`make phone off` 會停止它啟動的所有伺服器（就像 `/phone-dev off`），而 `y=1`（例如 `make phone y=1 <name>`）會略過選單：每個問題都採用其 Recommended 選項，並印出每次的選擇。當某個連接埠已被本專案先前啟動的伺服器佔用（任何 worktree 皆然），重用該連接埠是 Recommended 的答案：舊伺服器會被停止，網址維持不變；`make dev`、`make dev-diag`、`make dev-unlocked`（5173）與 `make dev-feature`（5443）會不經詢問直接這麼做，並且不動其他專案的伺服器。它提供一般的鎖定版建置；`make phone-unlocked [name]` 是相同的選單，但所有賽道與塗裝皆已解鎖，是唯一手機可連線的全解鎖伺服器（`make dev-unlocked` 與 `make dev-feature` 仍僅限桌機）。除了已加入 `src/upcoming-tracks.ts` 中 `PLAYABLE_PREVIEW_IDS` 的 id（只有在其真實比賽執行環境已加入 `RACE_TRACKS` 時才可加入）之外，Coming Soon 卡片在每個建置中都維持僅供預覽；`make dev-unlocked` 與 `make phone-unlocked` 此時會讓該卡片可以開始，正式環境則絕不會。它需要個人的 `phone-dev` Claude Code 技能（`/phone-dev` 會詢問相同的選單），且不啟動模擬器，因此手機上的雲端存檔登入使用的是真實專案。
 
@@ -223,22 +223,22 @@ HUD 使用共通的動態時序。速度表指針會隨速度平順移動；名�
 ## 驗證
 
 ```sh
-npm test                 # Deterministic simulation, input lifecycle and geometry
-npm run build           # Production assets in dist/
-npm run test:browser    # Real Chrome: desktop, mobile, graphics errors, full race
-npm run test:layout     # Home-screen fit, top bar and touch targets (runs on pre-push)
+pnpm test                 # Deterministic simulation, input lifecycle and geometry
+pnpm run build           # Production assets in dist/
+pnpm run test:browser    # Real Chrome: desktop, mobile, graphics errors, full race
+pnpm run test:layout     # Home-screen fit, top bar and touch targets (runs on pre-push)
 make run                # All three (test:browser builds first)
 make deploy             # Trigger CI checks + GitHub Pages deployment of remote main
 make help               # List every make command with its options
 ```
 
-瀏覽器測試使用已安裝的 Google Chrome，並允許 SwiftShader 進行無頭渲染。僅有 CPU 的 CI 使用 0.25 的裝置縮放比例，讓 3D 場景保持流暢，同時維持相同的 CSS 視窗尺寸與遊戲斷言；本機測試則以完整解析度渲染。一般遊玩使用瀏覽器可用的 GPU。英文 README 的截圖僅在檔案不存在時，或使用 `UPDATE_ARTIFACTS=1 npm run test:browser` 時，才會以 JPEG（品質 70）寫入 `artifacts/`，因為即時 3D 場景每次執行都不同；測試追蹤／結果則會被忽略。完整的衝刺測試在快速的機器上大約需要一分鐘，軟體渲染拖慢模擬時則更久。
+瀏覽器測試使用已安裝的 Google Chrome，並允許 SwiftShader 進行無頭渲染。僅有 CPU 的 CI 使用 0.25 的裝置縮放比例，讓 3D 場景保持流暢，同時維持相同的 CSS 視窗尺寸與遊戲斷言；本機測試則以完整解析度渲染。一般遊玩使用瀏覽器可用的 GPU。英文 README 的截圖僅在檔案不存在時，或使用 `UPDATE_ARTIFACTS=1 pnpm run test:browser` 時，才會以 JPEG（品質 70）寫入 `artifacts/`，因為即時 3D 場景每次執行都不同；測試追蹤／結果則會被忽略。完整的衝刺測試在快速的機器上大約需要一分鐘，軟體渲染拖慢模擬時則更久。
 
 ```sh
-npm run preview         # Serve the production build after npm run build
+pnpm run preview         # Serve the production build after pnpm run build
 ```
 
-若要在手機上檢查，請在你的網路上提供該建置（`npx vite preview --host 0.0.0.0`），並以 `?perf` 開啟（例如 `http://<computer-ip>:4173/?perf`）。頂端會出現一條顯示最近 20 秒比賽影格時間的列：中位數（p50）、第 95 百分位（p95）、平均 fps 與取樣長度。沒有 `?perf` 時，不會量測也不會顯示任何東西。
+若要在手機上檢查，請在你的網路上提供該建置（`pnpm exec vite preview --host 0.0.0.0`），並以 `?perf` 開啟（例如 `http://<computer-ip>:4173/?perf`）。頂端會出現一條顯示最近 20 秒比賽影格時間的列：中位數（p50）、第 95 百分位（p95）、平均 fps 與取樣長度。沒有 `?perf` 時，不會量測也不會顯示任何東西。
 
 ```sh
 make perf BASE=main         # A/B in Chrome at 412×915, CPU throttled 6× (RATE=20 for a low-end phone), 3 alternating rounds
@@ -293,7 +293,7 @@ CI（`.github/workflows/ci.yml`）會在推送到 `main`、`develop`、pull requ
 - `src/audio-settings.ts`：從 `localStorage` 讀取已儲存的音樂／音效開關與音量，以及滑桿的靜音保留音量規則。
 - `tests/`：單元與瀏覽器行為測試。`tests/module-size.test.js` 讓每個原始碼模組維持在 400 行以內（較舊的大型檔案有上限，且上限只會往下調）。
 - `docs/design.md`、`docs/verification.md`：範圍與驗證證據。
-- `README.zh-TW.md`：本檔案的繁體中文翻譯，由 `scripts/readme-zh.mjs` 保持最新（`check`、以 `claude -p` 翻譯的 `sync`，以及手動編輯後的 `stamp`）。當某次提交變更 README.md 時，`.githooks/pre-commit` hook 會重新產生它（以 `SKIP_README_ZH=1` 可略過一次），而 `.githooks/pre-push` 會在被推送的提交變更 `src/`、`tests/`、`scripts/` 或 `package.json` 時執行 `npm test`，接著在觸及首頁（`index.html`、`src/App.vue`、`src/main.js`、`src/style.css`、`src/locales/`；以 `SKIP_LAYOUT_GATE=1` 可略過一次）時執行 `npm run test:layout`，而 `.githooks/main-merge-guard`（由 `pre-merge-commit` 與 `pre-commit` 執行）會拒絕將 `develop` 或 `hotfix/*` 以外的任何分支合併進 `main`（fast-forward 不會執行任何 hook，因此請使用 `--no-ff`；以 `ALLOW_MAIN_MERGE=1` 可略過一次）；`make` 會以 `git config core.hooksPath .githooks` 啟用這些 hook。`.claude/settings.json` 中的 Claude Code Stop hook，會在某一回合編輯了 README.md 卻沒有同步更新它時，讓 Claude 回頭更新。
+- `README.zh-TW.md`：本檔案的繁體中文翻譯，由 `scripts/readme-zh.mjs` 保持最新（`check`、以 `claude -p` 翻譯的 `sync`，以及手動編輯後的 `stamp`）。當某次提交變更 README.md 時，`.githooks/pre-commit` hook 會重新產生它（以 `SKIP_README_ZH=1` 可略過一次），而 `.githooks/pre-push` 會在被推送的提交變更 `src/`、`tests/`、`scripts/` 或 `package.json` 時執行 `pnpm test`，接著在觸及首頁（`index.html`、`src/App.vue`、`src/main.js`、`src/style.css`、`src/locales/`；以 `SKIP_LAYOUT_GATE=1` 可略過一次）時執行 `pnpm run test:layout`，而 `.githooks/main-merge-guard`（由 `pre-merge-commit` 與 `pre-commit` 執行）會拒絕將 `develop` 或 `hotfix/*` 以外的任何分支合併進 `main`（fast-forward 不會執行任何 hook，因此請使用 `--no-ff`；以 `ALLOW_MAIN_MERGE=1` 可略過一次）；`make` 會以 `git config core.hooksPath .githooks` 啟用這些 hook。`.claude/settings.json` 中的 Claude Code Stop hook，會在某一回合編輯了 README.md 卻沒有同步更新它時，讓 Claude 回頭更新。
 
 所有車輛／景物的幾何與特效都由程式碼產生。Barlow Condensed 依其 SIL Open Font License 隨附於 `public/fonts/OFL.txt`。Three.js、Vue、Vite 與 Playwright 保留其各自的套件授權。
 
