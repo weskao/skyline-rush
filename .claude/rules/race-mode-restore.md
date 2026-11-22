@@ -19,3 +19,9 @@ on desktop, mobile portrait or landscape. When changing modes, update this state
 
 Guard new modes and future option changes with desktop/mobile browser tests for visibility,
 and verify that clicking Restore defaults actually resets each mode-specific control.
+
+All gameplay modes (including an accepted Event Lab course) keep the existing live Three.js Home
+showcase and a localized, mode-specific HUD preview. Update the shared race-presentation view
+only when Home setup changes, not every animation frame. Preserve the selected Coming Soon
+map across normal mode changes; only Circuit forces its fixed Harbor course. Preview must not
+unlock a race, modify mode progression or add a separate WebGL renderer.

@@ -15,7 +15,7 @@ import { createRouteMap, hasStreamingRouteMap } from './route-map.ts';
 import { timeString } from './time-format.ts';
 import { setupEventLabUI } from './event-lab-ui.ts';
 import type { GhostRun } from './ghost.ts';
-import { racePresentationFor, updateRaceSetup } from './race-presentation-ui.ts';
+import { racePresentationFor, racePresentationView, updateRaceSetup } from './race-presentation-ui.ts';
 import type { VisualPreset } from './race-session.ts';
 import { backHomeHref, bootHomeTrack, lastHomeTrack, rememberLastHomeTrack, restoreHomeTrack, withoutRacedQuery } from './last-home-track.ts';
 
@@ -243,6 +243,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     if (options.getDaily() || selectedMode === 'circuit') upcomingSelection = null;
     const race = getRace();
     updateRaceSetup(race);
+    racePresentationView.lobbyMode = selectedMode;
     document.body.dataset.raceMode = race.mode;
     renderModeRules();
     renderTrackButtons(race);
@@ -280,8 +281,8 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   setupLobbyPickers(applyTrack, () => upcomingSelection ?? getRace().trackId);
   for (const button of document.querySelectorAll<HTMLElement>('button[data-race-mode]')) button.addEventListener('click', () => {
     if (button.dataset.raceMode === 'eventlab') { eventLab.open(); return; }
-    upcomingSelection = null;
     selectedMode = button.dataset.raceMode!;
+    if (selectedMode === 'circuit') upcomingSelection = null; // The circuit mode has its own fixed course.
     changeRaceSelection();
   });
   for (const button of document.querySelectorAll<HTMLElement>('[data-race-preset]')) button.addEventListener('click', () => {
