@@ -1,3 +1,10 @@
+# Countdown HUD visible before GO (2026-11-22, `fix/countdown-telemetry-visible`)
+
+- [x] Found the root cause: `src/style.css` hid `.telemetry` during countdown on touch devices.
+- [x] Added browser regression assertions for charge, BOOST and NITRO on desktop, 390×844, 320×740 and 844×390 during countdown.
+- [x] Removed the countdown-only visibility suppression; existing HUD data paths remain unchanged.
+- [ ] Finish exact-HEAD CI and verify no overlap in mobile portrait/landscape or on a real phone before merging.
+
 # Develop shader warmup in rain (2026-11-21)
 
 - [x] RED on `5f0e321e`: switching Coast from day to rain after GO compiled two extra programs on High for the Roadster (104 → 106) and Crimson GT (108 → 110). Both Low cases passed.
