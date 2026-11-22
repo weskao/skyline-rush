@@ -167,7 +167,9 @@ setup: node_modules ## `make setup`: install pnpm dependencies (crucible include
 # A worktree that links node_modules to another checkout keeps the link while both lockfiles match:
 # a checkout only bumps the lockfile's mtime, and pnpm install would replace the link with a full copy.
 node_modules: package.json pnpm-workspace.yaml pnpm-lock.yaml
-	@if [ -L $@ ] && cmp -s pnpm-lock.yaml "$$(readlink $@)/../pnpm-lock.yaml"; then \
+	@if [ -L $@ ] && cmp -s pnpm-lock.yaml "$(readlink $@)/../pnpm-lock.yaml" \
+	  && cmp -s package.json "$(readlink $@)/../package.json" \
+	  && cmp -s pnpm-workspace.yaml "$(readlink $@)/../pnpm-workspace.yaml"; then \
 	  echo "node_modules: shared via $$(readlink $@), lockfile unchanged; skipping pnpm install"; \
 	else $(PNPM) install --frozen-lockfile; fi
 	@git config core.hooksPath .githooks
