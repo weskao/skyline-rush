@@ -1,6 +1,6 @@
 import { panelsView, updatePanelsView } from './control-panels-view-state.ts';
 
-export const canOpenControlsPanel = (phase: string): boolean => phase === 'ready' || phase === 'paused';
+export const canOpenControlsPanel = (phase: string): boolean => phase === 'ready' || phase === 'paused' || phase === 'finished';
 
 interface ControlPanelDependencies {
   getRacePhase: () => string;
@@ -26,8 +26,7 @@ export function setupControlPanels({
     }
     const phase = getRacePhase();
     driving.disabled = !canOpenControlsPanel(phase);
-    if (dialog.open || (driving.disabled && phase !== 'finished') || document.querySelector('dialog[open]')) return;
-    if (driving.disabled && panelsView.section === 'driving') updatePanelsView({ section: 'audio' });
+    if (dialog.open || driving.disabled || document.querySelector('dialog[open]')) return;
     hidePerformanceNotice();
     clearControls();
     updatePanelsView({ settingsOpen: true });

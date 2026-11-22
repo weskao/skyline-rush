@@ -47,6 +47,30 @@ for (const [name, viewport, hasTouch] of [
     await expect(page.locator('#error-message')).toBeHidden();
   });
 
+  test('Driving Controls stays enabled and clickable on finished results', async ({ gameplayPage: page }) => {
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await finishRace(page);
+    await page.locator('#settings-button').click();
+    const dialog = page.locator('#settings-panel');
+    const driving = dialog.locator('#controls-button');
+    await expect(dialog).toBeVisible();
+    await expect(driving).toBeEnabled();
+    await driving.click();
+    await expect(driving).toHaveAttribute('aria-pressed', 'true');
+    await expect(dialog.locator('#controls-panel')).toBeVisible();
+    await dialog.locator('[data-settings-section="audio"]').click();
+    await expect(dialog.locator('#mute-all')).toBeVisible();
+    await driving.click();
+    await expect(dialog.locator('#controls-panel')).toBeVisible();
+    await page.locator('#settings-close').click();
+    await expect(dialog).toBeHidden();
+    await expect(page.locator('#race-overlay')).toBeVisible();
+    await page.locator('#again-button').click();
+    await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
+    expect(errors).toEqual([]);
+  });
+
   test('Race again is a full touch target on pause and results', async ({ gameplayPage: page }) => {
     test.skip(!hasTouch, 'mouse layouts keep the compact link');
     await page.locator('#start-button').click();

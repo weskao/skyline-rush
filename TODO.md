@@ -1,3 +1,11 @@
+# Finished race Driving Controls settings (2026-11-22, `fix/finished-driving-settings-enable`)
+
+- [x] Root cause: `canOpenControlsPanel('finished')` returned false; `toggleSettings` disabled the Driving tab and switched to Audio.
+- [x] RED reproduced in isolated Node test using GitHub-exact source blobs (policy `aa11a9df`), expected true vs actual false for `finished`.
+- [x] Allow `ready` / `paused` / `finished`, retain restrictions during `racing` / `countdown`, and remove unreachable finished-only fallback.
+- [x] Browser regression tests added to exercise actual settings/tab clicks, Audio→Driving, closure and Race Again at 1440×900, 390×844 and 844×390.
+- [ ] Verify focused unit GREEN, full test/typecheck/build/browser checks and exact-HEAD CI; real phone portrait/landscape confirmation remains separate.
+
 # Countdown HUD visible before GO (2026-11-22, `fix/countdown-telemetry-visible`)
 
 - [x] Found the root cause: `src/style.css` hid `.telemetry` during countdown on touch devices.
