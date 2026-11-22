@@ -8,12 +8,12 @@ import { join } from 'node:path';
 const VERSION = '4.5.1';
 const root = new URL('..', import.meta.url).pathname;
 const run = (cmd, args) => execFileSync(cmd, args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
-const cli = (...args) => run('npx', ['--no-install', 'gltf-transform', ...args]);
+const cli = (...args) => run('pnpm', ['exec', 'gltf-transform', ...args]);
 
 const installed = () => { try { return cli('--version').trim(); } catch { return ''; } };
 if (installed() !== VERSION) {
   console.log(`Installing @gltf-transform/cli@${VERSION} (project devDependency, exact pin)`);
-  run('npm', ['install', '-D', '--save-exact', `@gltf-transform/cli@${VERSION}`]);
+  run('pnpm', ['add', '-D', '--save-exact', `@gltf-transform/cli@${VERSION}`]);
 }
 const version = installed();
 if (version !== VERSION) throw new Error(`gltf-transform --version = "${version}", expected ${VERSION}`);
