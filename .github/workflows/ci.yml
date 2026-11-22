@@ -208,6 +208,13 @@ jobs:
             test-results/**/real-3d-pickups-*.png
             test-results/**/pickup-collect-*.png
           if-no-files-found: ignore
+      - name: Upload actual per-track download UI screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: track-download-ui-${{ matrix.shard }}
+          path: test-results/**/track-download-*.png
+          if-no-files-found: ignore
       # No layout rerun here: the layout script's specs are part of this suite already (playwright.config.js matches
       # every *browser.spec.js), so rerunning them added 30 minutes to one shard. The pre-push hook keeps it locally.
 

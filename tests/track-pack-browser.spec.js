@@ -3,7 +3,7 @@ import { ciTimeout } from './helpers/ci.js';
 
 test.use({ startupSeen: false });
 
-test('track chooser installs a versioned visual pack once, then reuses it after reload', async ({ page }) => {
+test('track chooser installs a versioned visual pack once, then reuses it after reload', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => {
     localStorage.setItem('skyline-rush-music', 'off');
@@ -23,6 +23,7 @@ test('track chooser installs a versioned visual pack once, then reuses it after 
   await download.click();
   await expect(card).toHaveAttribute('data-pack-state', 'ready', { timeout: ciTimeout(15000) });
   await expect(download).toBeDisabled();
+  await page.screenshot({ path: testInfo.outputPath('track-download-mobile.png'), animations: 'disabled', scale: 'css' });
   const cachedImage = await card.locator('.track-preview img').getAttribute('src');
   await page.context().setOffline(true);
   let offlineCached = false;
@@ -45,7 +46,7 @@ test('track chooser installs a versioned visual pack once, then reuses it after 
   await expect(page.locator('#world')).toHaveAttribute('data-race-load-ms', /^\d+\.\d$/);
 });
 
-test('track download indicator stays legible on a wide chooser', async ({ page }) => {
+test('track download indicator stays legible on a wide chooser', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', comfortable: true })));
   await page.goto('/');
@@ -56,6 +57,8 @@ test('track download indicator stays legible on a wide chooser', async ({ page }
   const buttons = page.locator('#lobby-track-options .track-card-select');
   await expect(buttons.first()).toHaveAttribute('data-pack-state', /^(checking|missing|ready|update|unavailable)$/);
   await expect(page.locator('#track-choose-confirm')).toBeVisible();
+  await expect(page.locator('#lobby-track-options [data-pack-for="coast"]')).toBeVisible({ timeout: ciTimeout(12000) });
+  await page.screenshot({ path: testInfo.outputPath('track-download-desktop.png'), animations: 'disabled', scale: 'css' });
 });
 
 test('each track owns a separate circular download action and download-all skips cached packs', async ({ page }) => {
