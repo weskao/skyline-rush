@@ -26,7 +26,9 @@ test('main CSS contract remains byte-identical while Wave 1 NITRO and Wave 2 Fol
 
 test('the bottom strip contains the version button without decorative captions', () => {
   const app = readFileSync(new URL('../src/App.vue', import.meta.url), 'utf8');
-  const footer = app.match(/<div class="bottomline">([\s\S]*?)<\/div>/)?.[1];
+  assert.match(app, /<ReleaseOpenButton :locale="homeWalletLocale" \/>/);
+  const opener = readFileSync(new URL('../src/ReleaseOpenButton.vue', import.meta.url), 'utf8');
+  const footer = opener.match(/<div class="bottomline">([\s\S]*?)<\/div>/)?.[1];
   assert.ok(footer);
   assert.doesNotMatch(footer, /data-i18n="footer\.(?:tagline|genre)"/);
   assert.match(footer, /<button\b[^>]*\bid="whats-new-open"/);
