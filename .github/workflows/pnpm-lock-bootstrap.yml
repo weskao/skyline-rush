@@ -1,0 +1,33 @@
+name: Bootstrap pnpm lockfile (temporary)
+on:
+  push:
+    branches: ['feature/pnpm-migration']
+permissions:
+  contents: write
+jobs:
+  generate:
+    if: "!contains(github.event.head_commit.message, '[pnpm-lock-generated]')"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enable pinned pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.22.0 --activate
+          pnpm --version
+      - name: Import npm lock and verify dependency install
+        run: |
+          pnpm import
+          pnpm install --frozen-lockfile
+      - name: Commit generated lockfile
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pnpm-lock.yaml
+          git diff --cached --quiet && exit 1
+          git commit -m 'chore: generate pnpm lockfile [pnpm-lock-generated]'
+          git push origin HEAD:feature/pnpm-migration
