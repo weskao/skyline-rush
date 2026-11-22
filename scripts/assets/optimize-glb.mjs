@@ -53,7 +53,7 @@ async function main() {
   const raw = rawGlbPath(entry.id);
   requireFile(raw, `Run: node scripts/assets/export-glb.mjs ${entry.id}`);
   const out = optGlbPath(lod ? `${entry.id}-${lod}` : entry.id);
-  for (const step of optimizeSteps(entry, raw, out, { lod })) run('npx', ['--no-install', 'gltf-transform', ...step]);
+  for (const step of optimizeSteps(entry, raw, out, { lod })) run('pnpm', ['exec', 'gltf-transform', ...step]);
   console.log(`optimized GLB -> ${out}`);
 }
 
