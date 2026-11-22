@@ -827,8 +827,13 @@ on every tier. Low / VFX Off = tail light + flash; Reduced Motion = no flicker, 
 - [x] Rings unchanged (layout identical, take ±0.4); pickups and rival gaps near baseline.
 - [x] Replay fixture re-recorded (`RECORD_REPLAY=1`); Frostbite balance tests rewritten to the new
   contract (hands-free place ≤ 8, mean ≤ 186.6 s), owner's pick.
-- [ ] `make verify` and WebGL corner captures (desktop, phone portrait/landscape).
-- [ ] Not run: physical phone, exact-HEAD GitHub `quality-gate` (not committed).
+- [x] WebGL corner captures, hands-free with AUTO at 88 m/s: Neon desktop, Coast phone portrait, Aurora
+  phone landscape. Outward drift 4.4 / 3.0 / 1.4 m over 2.5 s, no rail contact, car on the road surface.
+- [ ] `make verify`: unit, typecheck and build pass; browser 1453 passed / 4 failed / 88 skipped, so the
+  World Tour long run did not start. `rival-drive-vfx` and the 1024x768 tilt tutorial pass when re-run alone
+  (load timing). `collectible-ui` (`wallet-coin@3x.webp` 9 < 10) and `hero-roadster-equipment` launch-flare
+  glow fail the same way on develop `5f5d11d7`: pre-existing, not from this branch.
+- [ ] Not run: physical phone, World Tour long run, exact-HEAD GitHub `quality-gate`.
 
 ## Wave 3 trial review fixes (2026-11-19, `fix/wave3-review-experience`)
 
