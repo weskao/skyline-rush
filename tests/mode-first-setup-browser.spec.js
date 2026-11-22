@@ -28,6 +28,36 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
   });
 }
 
+test('Restore defaults is available only in modes with editable rules, on desktop and phone', async ({ page }) => {
+  for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    await closeMusicPrompt(page);
+    const restore = page.locator('#rules-restore');
+    await expect(restore).toBeHidden();
+    for (const [mode, visible] of [
+      ['custom', true], ['free', true], ['time', true], ['gauntlet', true],
+      ['cup', true], ['stunt', true], ['checkpoint', true], ['circuit', true],
+      ['elimination', false], ['endless', false], ['classic', false],
+    ]) {
+      await clickLobbyOption(page, `button[data-race-mode="${mode}"]`);
+      await expect(restore, `Restore defaults in ${mode} at ${viewport.width}px`)[visible ? 'toBeVisible' : 'toBeHidden']();
+      expect(await restore.getAttribute('hidden'), `hidden attribute in ${mode}`).toBe(visible ? null : '');
+    }
+  }
+});
+
+test('Restore defaults resets circuit laps as well as the existing per-mode settings', async ({ page }) => {
+  await page.goto('/');
+  await closeMusicPrompt(page);
+  await clickLobbyOption(page, 'button[data-race-mode="circuit"]');
+  await page.locator('#circuit-laps').selectOption('5', { force: true });
+  await expect(page.locator('#circuit-laps')).toHaveValue('5');
+  await page.locator('#rules-restore').click();
+  await expect(page.locator('#circuit-laps')).toHaveValue('3');
+  await expect(page.locator('#mode-rules-summary')).toContainText('3');
+});
+
 test('rules row summarises, explains eligibility and restores defaults with real clicks', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -126,6 +156,7 @@ test('setup controls show a visible keyboard focus ring and readable contrast', 
   for (const selector of ['#race-rules-step', '#mode-rules-summary', '#mode-eligibility']) expect(await contrast(page, selector), selector).toBeGreaterThanOrEqual(4.5);
   await clickLobbyOption(page, 'button[data-race-mode="elimination"]');
   expect(await contrast(page, '#mode-conflicts'), '#mode-conflicts').toBeGreaterThanOrEqual(4.5);
+  await clickLobbyOption(page, 'button[data-race-mode="custom"]');
   for (const [from, to] of [['button[data-race-mode="classic"]', 'button[data-race-mode="custom"]'], ['#rules-restore', null]]) {
     await page.locator(from).focus();
     if (to) await page.keyboard.press('Tab');
@@ -144,6 +175,7 @@ for (const [name, viewport, safe] of [['phone notch', { width: 390, height: 844 
     await closeMusicPrompt(page);
     await page.evaluate(values => { for (const [side, value] of Object.entries(values)) document.documentElement.style.setProperty(`--safe-${side}`, `${value}px`); }, safe);
     if (!await page.locator('button[data-race-mode="classic"]').isVisible()) await page.locator('#lobby-modes-toggle').tap();
+    await clickLobbyOption(page, 'button[data-race-mode="custom"]', 'tap');
     for (const selector of ['button[data-race-mode="classic"]', '#rules-restore', '#start-button']) {
       await page.locator(selector).scrollIntoViewIfNeeded();
       const box = await page.locator(selector).boundingBox();
