@@ -4,14 +4,12 @@ import { readFileSync } from 'node:fs';
 
 const root = new URL('../', import.meta.url);
 const pkg = JSON.parse(readFileSync(new URL('package.json', root), 'utf8'));
-const lock = JSON.parse(readFileSync(new URL('package-lock.json', root), 'utf8'));
+const lock = readFileSync(new URL('pnpm-lock.yaml', root), 'utf8');
 
-test('Playwright stays on the exact locked version during npm install in typecheck', () => {
+test('Playwright stays on the exact locked version during frozen pnpm installs', () => {
   const declared = pkg.devDependencies['@playwright/test'];
-  assert.equal(declared, lock.packages['node_modules/@playwright/test'].version,
-    'A semver range can update to a partially published Playwright release');
-  assert.equal(lock.packages[''].devDependencies['@playwright/test'], declared,
-    'Root package-lock declaration must match package.json');
-  assert.equal(lock.packages['node_modules/playwright'].version, declared);
-  assert.equal(lock.packages['node_modules/playwright-core'].version, declared);
+  assert.match(declared, /^\\d+\\.\\d+\\.\\d+$/, 'Playwright must use an exact version');
+  for (const name of ['@playwright/test', 'playwright', 'playwright-core']) {
+    assert.ok(lock.includes(`${name}@${declared}`), `pnpm lock must pin ${name}@${declared}`);
+  }
 });
