@@ -1,4 +1,4 @@
-# One-shot migration runner. Deletes itself after a verified lockfile is committed.
+# Temporary one-shot migration runner. Remove via GitHub after the verified lockfile lands.
 name: Bootstrap pnpm lockfile (temporary)
 on:
   push:
@@ -37,12 +37,11 @@ jobs:
           pnpm test
           pnpm run typecheck
           pnpm run build
-      - name: Commit final lock and remove this one-shot workflow
+      - name: Commit validated lockfile migration
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add pnpm-lock.yaml
-          git rm .github/workflows/pnpm-lock-bootstrap.yml
           git diff --cached --quiet && exit 1
           git commit -m 'chore: finish pnpm lockfile migration [pnpm-lock-generated]'
           for attempt in 1 2 3; do
