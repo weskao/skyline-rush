@@ -1,0 +1,14 @@
+# Single-package project: dependency policy lives here in pnpm 11.
+# Keep transitive Three.js on the same version as the directly installed renderer.
+overrides:
+  '@grpc/grpc-js': ^1.14.6
+  three: 0.186.1
+
+# pnpm 11 never runs unapproved dependency lifecycle scripts.
+# These decisions preserve the previous package.json allowScripts policy.
+allowBuilds:
+  '@codepawlhq/crucible': true
+  '@firebase/util': false
+  esbuild: true
+  fsevents: false
+  protobufjs: false
