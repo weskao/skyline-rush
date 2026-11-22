@@ -200,3 +200,21 @@ test('Endless on every track stays finite on the road, across mirrored runs', ()
     }
   }
 });
+
+// CI (Node 22, x64) and a Mac (arm64) can disagree in the last bit of Math.sin/cos/atan2; the legacy replay hashes must not.
+test('the corner push ignores last-bit trig differences between engines', async () => {
+  const samples = async tag => {
+    const { cornerPush } = await import(`../src/corner-force.ts?${tag}`); // fresh curvature cache per engine
+    return Object.keys(RACE_TRACKS).flatMap(id =>
+      Array.from({ length: Math.ceil(RACE_TRACKS[id].length / 4) }, (_, i) => cornerPush(id, i * 4 + 2, 88)));
+  };
+  const reference = await samples('reference');
+  const real = { sin: Math.sin, cos: Math.cos, atan: Math.atan, atan2: Math.atan2 };
+  const nudge = value => value + Math.abs(value) * Number.EPSILON; // about one unit in the last place
+  Object.assign(Math, { sin: x => nudge(real.sin(x)), cos: x => nudge(real.cos(x)), atan: x => nudge(real.atan(x)),
+    atan2: (y, x) => nudge(real.atan2(y, x)) });
+  let other;
+  try { other = await samples('other-engine'); } finally { Object.assign(Math, real); }
+  const differ = reference.filter((push, i) => push !== other[i]).length;
+  assert.equal(differ, 0, `${differ} of ${reference.length} samples changed`);
+});

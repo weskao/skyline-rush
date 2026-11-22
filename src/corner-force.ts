@@ -12,6 +12,7 @@ const PUSH_SCALE = .25;
 const MAX_PUSH = 2.8; // m/s, under a third of the 9 m/s steering authority
 const CELL = 4; // m per cached curvature sample
 const REACH = 8; // m either side: reads the bend rather than a frame seam on measured routes
+const TURN_STEPS = 2 ** 30; // per rad/m; one step moves the push by under 1e-5 m/s
 const GUARD_ZONE = 2.5; // m over which AUTO fades outward force
 const GUARD_MARGIN = .5; // m inside the rail where outward force reaches zero
 const KNOCK_GRACE = 1.5; // s, the cooldown `knock` grants
@@ -29,7 +30,8 @@ const pushFor = (turn: number, speed: number): number =>
 
 function turnOver(heading: (s: number) => number, s: number, end: number): number {
   const from = Math.max(0, s - REACH), to = Math.min(end, s + REACH), delta = heading(to) - heading(from);
-  return to > from ? Math.atan2(Math.sin(delta), Math.cos(delta)) / (to - from) : 0;
+  // Snapped to 2^-30 rad/m: engines differ in the last bit of sin/cos/atan2, and the replay hashes must not.
+  return to > from ? Math.round(Math.atan2(Math.sin(delta), Math.cos(delta)) / (to - from) * TURN_STEPS) / TURN_STEPS : 0;
 }
 
 // Lazily filled so a race start has no hitch. Track geometry is immutable, so a filled cell is never invalidated.
