@@ -17,10 +17,10 @@
     },
     "firebase": {
       "type": "stdio",
-      "command": "npx",
+      "command": "pnpm",
       "args": [
-        "-y",
-        "firebase-tools@latest",
+        "dlx",
+        "firebase-tools@15.34.1",
         "mcp",
         "--dir",
         "."
