@@ -14,6 +14,8 @@ export interface CueState {
   countdown: number | null; stretchEntered: boolean;
   /** m/s a drift needs to start and outlast its bleed to the first payout. */
   driftEntry: number;
+  /** Lesson 1 only: AUTO's state and what the player is holding. */
+  auto?: boolean; throttleHeld?: boolean; brakeHeld?: boolean;
 }
 // Barrel roll band: below 4 m a 0.7 s roll lands mid-spin; an unpowered fall from above ~8.6 m lands at the
 // engine's 11 m/s hard-landing speed (TRICK_HARD_LANDING), so warn while there is still time to tap FLY.
@@ -21,6 +23,10 @@ const ROLL_RELEASE_ALTITUDE = 4;
 const ROLL_FAST_FALL = 8; // m/s down
 const tenth = (seconds: number): number => Math.round(Math.max(0, seconds) * 10) / 10;
 
+function throttleCue({ car, auto, throttleHeld, brakeHeld }: CueState): TutorialCue | null {
+  if (auto) return brakeHeld && car.speed <= 5 ? { key: 'tutorial.cue.autoBrake', actions: ['brake'] } : null;
+  return throttleHeld && car.speed > 5 ? null : { key: 'tutorial.cue.throttle', actions: ['throttle'] };
+}
 function driftCue({ car, driftEntry }: CueState): TutorialCue {
   if (car.driftHold && !car.drift) {
     return { key: car.driftHold.reward ? 'tutorial.cue.driftExit' : 'tutorial.cue.driftReset', actions: ['brake'] };
@@ -65,7 +71,7 @@ export function tutorialCue(state: CueState): TutorialCue | null {
     return { key, actions: ['nitro'] };
   }
   if (state.phase === 'finishing') return { key: 'tutorial.cue.finishing', actions: [] };
-  if (state.step === 'throttle') return state.car.speed > 5 ? null : { key: 'tutorial.cue.throttle', actions: ['throttle'] };
+  if (state.step === 'throttle') return throttleCue(state);
   if (state.step === 'brake') return { key: state.car.braking ? 'tutorial.cue.brakeHold' : 'tutorial.cue.brakeAhead', actions: ['brake'] };
   if (state.step === 'drift') return driftCue(state);
   if (state.step === 'airChain') return airChainCue(state);
