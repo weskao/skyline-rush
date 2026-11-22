@@ -28,13 +28,14 @@ jobs:
         run: |
           python scripts/repair-hud-original-art.py --check
           python -m unittest discover -s tests -p test_hud_original_art_repair.py -v
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
-      - run: npm ci
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - name: Test all 18 HUD icons on phone and desktop layouts
-        run: npm run test:browser -- tests/hud-3x-artwork-browser.spec.js
+        run: pnpm run test:browser -- tests/hud-3x-artwork-browser.spec.js
       - name: Upload real browser screenshots on failure or success
         if: always()
         uses: actions/upload-artifact@v4
