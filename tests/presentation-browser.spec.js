@@ -49,7 +49,10 @@ for (const [name, viewport, hasTouch] of [
     }
     // Countdown is already an in-race phase: gauges must not blink out on touch devices.
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'countdown');
-    for (const selector of ['.telemetry', '#fuel-meter', '#fuel-value', '#boost-status', '#nitro-status', '#nitro-meter']) {
+    // Short landscape intentionally omits the secondary BOOST caption even during racing.
+    const gauges = ['.telemetry', '#fuel-meter', '#fuel-value', '#nitro-status', '#nitro-meter'];
+    if (viewport.height > 500) gauges.push('#boost-status');
+    for (const selector of gauges) {
       await expect(page.locator(selector), `${name} countdown: ${selector} stays visible`).toBeVisible();
     }
     await page.waitForTimeout(300);
