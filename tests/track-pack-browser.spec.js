@@ -119,22 +119,48 @@ test('old downloaded map opens mandatory update dialog and cannot enter until up
   await expect(page.locator('#intro')).toBeHidden({ timeout: ciTimeout(20000) });
 });
 
-test('image assets switch on mouse hover and remain within fixed card action bounds', async ({ page }) => {
+test('generated WebP atlas switches hover/update frames without resizing touch target', async ({ page }) => {
   await page.goto('/');
   await page.locator('#startup-enter').click();
   await waitForHome(page);
   await page.locator('#lobby-tracks-toggle').click();
   const action = page.locator('#lobby-track-options [data-pack-for="coast"]');
   await expect(action).toBeVisible({ timeout: ciTimeout(12000) });
-  const before = await action.boundingBox();
-  await expect.poll(async () => action.evaluate(node => getComputedStyle(node).backgroundImage)).toContain('track-download');
+  const frame = () => action.evaluate(node => {
+    const style = getComputedStyle(node, '::before');
+    return { image: style.backgroundImage, position: style.backgroundPosition, size: getComputedStyle(node).width };
+  });
+  await expect.poll(async () => (await frame()).image).toContain('track-pack-icons');
+  await expect.poll(async () => (await frame()).position).toBe('0% 0%');
+  const originalSize = (await frame()).size;
   await action.hover();
-  await expect.poll(async () => action.evaluate(node => getComputedStyle(node).backgroundImage)).toContain('track-download-hover');
+  await expect.poll(async () => (await frame()).position).toBe('100% 0%');
   await action.evaluate(node => { node.dataset.packState = 'update'; });
-  await expect.poll(async () => action.evaluate(node => getComputedStyle(node).backgroundImage)).toContain('track-update-hover');
+  await expect.poll(async () => (await frame()).position).toBe('100% 100%');
   await page.mouse.move(0, 0);
-  await expect.poll(async () => action.evaluate(node => getComputedStyle(node).backgroundImage)).toContain('track-update.svg');
-  const after = await action.boundingBox();
-  expect(after.width).toBe(before.width);
-  expect(after.height).toBe(before.height);
+  await expect.poll(async () => (await frame()).position).toBe('0% 100%');
+  expect((await frame()).size).toBe(originalSize);
+});
+
+test('download controls preserve mobile sightlines and accessible touch area', async ({ page }, testInfo) => {
+  await page.goto('/');
+  await page.locator('#startup-enter').click();
+  await waitForHome(page);
+  await page.locator('#lobby-tracks-toggle').click();
+  for (const [width, height] of [[320, 568], [390, 844], [844, 390], [1024, 768]]) {
+    await page.setViewportSize({ width, height });
+    const measured = await page.evaluate(() => {
+      const dialog = document.querySelector('#track-chooser').getBoundingClientRect();
+      const action = document.querySelector('#lobby-track-options [data-pack-for="coast"]').getBoundingClientRect();
+      const footer = document.querySelector('.track-chooser-footer').getBoundingClientRect();
+      return { dialog: { top: dialog.top, bottom: dialog.bottom, height: dialog.height },
+        action: { width: action.width, height: action.height }, footerBottom: footer.bottom };
+    });
+    expect(measured.dialog.height, `chooser obstruction at ${width}x${height}`).toBeLessThanOrEqual(height * .86 + 1);
+    expect(measured.dialog.top, `game background hidden at ${width}x${height}`).toBeGreaterThanOrEqual(0);
+    expect(measured.footerBottom, `footer clipped at ${width}x${height}`).toBeLessThanOrEqual(height + 1);
+    expect(measured.action.width, `touch area width at ${width}x${height}`).toBeGreaterThanOrEqual(44);
+    expect(measured.action.height, `touch area height at ${width}x${height}`).toBeGreaterThanOrEqual(44);
+    await page.screenshot({ path: testInfo.outputPath(`track-download-compact-${width}x${height}.png`), animations: 'disabled', scale: 'css' });
+  }
 });

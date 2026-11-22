@@ -51,8 +51,8 @@
   --track-current: #8bdef1;
   --track-divider: #719cb447;
   box-sizing: border-box;
-  width: min(1060px, calc(100vw - 32px));
-  max-height: min(780px, calc(100dvh - 28px));
+  width: min(920px, calc(100vw - 36px));
+  max-height: min(640px, calc(100dvh - 42px));
   grid-template-rows: auto minmax(0, 1fr) auto;
   padding: 0;
   overflow: hidden;
@@ -63,7 +63,7 @@
   box-shadow: 0 24px 70px #000a;
 }
 #track-chooser[open] { display: grid; animation: chooser-in 240ms cubic-bezier(.2, .75, .2, 1) both; }
-#track-chooser::backdrop { background: #030c15ad; animation: chooser-backdrop-in 240ms ease-out both; }
+#track-chooser::backdrop { background: #030c158c; animation: chooser-backdrop-in 240ms ease-out both; }
 @keyframes chooser-in { from { opacity: 0; transform: translateY(18px) scale(.98); } }
 @keyframes chooser-backdrop-in { from { opacity: 0; } }
 
@@ -107,7 +107,7 @@
   gap: 4px 8px;
   width: 100%;
   min-width: 0;
-  min-height: 116px;
+  min-height: 104px;
   overflow: hidden;
   padding: 10px;
   border: 1px solid #9ccbed60;
@@ -249,7 +249,7 @@
   .track-chooser-heading { padding-top: max(8px, var(--safe-top)); }
   .track-chooser-footer { padding-bottom: max(8px, var(--safe-bottom)); }
   .track-chooser .track-select { grid-template-columns: repeat(auto-fill, minmax(min(100%, 138px), 1fr)); gap: 8px; }
-  .track-chooser .track-select .track-card-select { min-height: 93px; padding: 7px; }
+  .track-chooser .track-select .track-card-select { min-height: 88px; padding: 7px; }
   .track-chooser .track-select strong { font-size: 13px; }
 }
 body[data-fold-axis] #track-chooser .track-select {
@@ -268,13 +268,13 @@ body[data-fold-axis] #track-chooser .track-select {
 
 /* Each card has two independent controls: selection and a compact asset action.
    Never nest a download button inside the track-select button. */
-.track-chooser .track-card-shell { position: relative; min-width: 0; min-height: 116px; }
+.track-chooser .track-card-shell { position: relative; min-width: 0; min-height: 104px; }
 .track-chooser .track-card-select { width: 100%; height: 100%; }
 .track-chooser .track-select .track-pack-action {
   position: absolute;
   top: 6px; left: 6px; z-index: 4;
   display: grid; place-items: center;
-  width: 42px; height: 42px; min-height: 0; padding: 4px;
+  width: 44px; height: 44px; min-height: 0; padding: 4px;
   border: 1px solid #a1d8ee99; border-radius: 50%;
   background: #081a2ce8; color: #e3faff;
   cursor: pointer; box-shadow: 0 2px 10px #0008;
@@ -317,10 +317,10 @@ body[data-fold-axis] #track-chooser .track-select {
   color: #e7faff; font: 750 12px/1.2 system-ui, sans-serif;
 }
 #track-choose-download-all[hidden] { display: none; }
-#track-choose-download-all .track-bulk-icon { width: 30px; height: 30px; }
+#track-choose-download-all .track-bulk-icon { width: 24px; height: 24px; }
 #track-choose-download-all:disabled { opacity: .68; cursor: default; }
 @media (max-width: 760px), (max-height: 500px) {
-  .track-chooser .track-card-shell { min-height: 93px; }
+  .track-chooser .track-card-shell { min-height: 88px; }
   .track-chooser .track-select .track-pack-action { width: 44px; height: 44px; top: 5px; left: 5px; }
   .track-chooser-footer { flex-wrap: wrap; }
   #track-choose-pack-summary { margin-inline-start: auto; }
@@ -333,13 +333,13 @@ body[data-fold-axis] #track-chooser .track-select {
 
 /* Native modal: stale installed race assets cannot be skipped by keyboard, touch or restart. */
 #track-required-update {
-  width: min(390px, calc(100% - 32px)); max-height: calc(100dvh - 48px);
-  padding: 24px; overflow: auto; color: #f4f8ff;
+  width: min(340px, calc(100% - 24px)); max-height: min(62dvh, 340px);
+  padding: clamp(14px, 3vw, 20px); overflow: auto; color: #f4f8ff;
   background: linear-gradient(155deg, #102941, #091522);
   border: 1px solid #f7bd63; border-radius: 14px;
   box-shadow: 0 20px 60px #000b, 0 0 22px #f4a25425;
 }
-#track-required-update::backdrop { background: rgb(2 8 17 / .79); backdrop-filter: blur(5px); }
+#track-required-update::backdrop { background: rgb(2 8 17 / .56); backdrop-filter: blur(2px); }
 #track-required-update h2 { margin: 0 0 12px; color: #ffd086; font: 800 21px/1.3 system-ui, sans-serif; }
 #track-required-update p { margin: 0 0 12px; font: 500 13px/1.6 system-ui, sans-serif; }
 #track-update-progress { color: #9bdff2; font-variant-numeric: tabular-nums; }
@@ -355,25 +355,63 @@ body[data-fold-axis] #track-chooser .track-select {
 #track-required-update button:disabled { opacity: .65; cursor: progress; }
 #track-required-update button:focus-visible { outline: 2px solid #f7fbff; outline-offset: 3px; }
 
-/* ImageGen art direction rendered as deployable, independent transparent SVGs.
-   Hover swaps to the brighter asset without moving the 44px touch target. */
-.track-chooser .track-pack-action[data-pack-state="missing"],
-.track-chooser .track-pack-action[data-pack-state="error"],
-.track-chooser .track-pack-action[data-pack-state="update"] {
-  padding: 0; border: 0; background-color: transparent; box-shadow: none;
-  background-position: center; background-repeat: no-repeat; background-size: contain;
+/* ChatGPT-generated transparent WebP icon atlas: download/hover/update/hover.
+   Artwork is only 28px wide; keyboard/touch actions remain 44px. */
+.track-chooser .track-pack-action {
+  border: 0; background: transparent; box-shadow: none; padding: 0;
 }
-.track-chooser .track-pack-action[data-pack-state="missing"] { background-image: url('./assets/track-download.svg'); }
-.track-chooser .track-pack-action:is([data-pack-state="update"], [data-pack-state="error"]) { background-image: url('./assets/track-update.svg'); }
+.track-chooser .track-pack-action::before {
+  content: '';
+  position: absolute; top: 50%; left: 50%;
+  width: 28px; height: 28px;
+  transform: translate(-50%, -50%);
+  background: url('./assets/track-pack-icons.webp') 0 0 / 200% 200% no-repeat;
+  pointer-events: none;
+}
+.track-chooser .track-pack-action[data-pack-state="update"]::before,
+.track-chooser .track-pack-action[data-pack-state="error"]::before { background-position: 0 100%; }
+.track-chooser .track-pack-action[data-pack-state="ready"]::before,
+.track-chooser .track-pack-action[data-pack-state="downloading"]::before { display: none; }
 .track-chooser .track-pack-action:is([data-pack-state="missing"], [data-pack-state="update"], [data-pack-state="error"]) > svg { visibility: hidden; }
-@media (hover: hover) and (pointer: fine) {
-  .track-chooser .track-pack-action[data-pack-state="missing"]:hover { background-image: url('./assets/track-download-hover.svg'); }
-  .track-chooser .track-pack-action:is([data-pack-state="update"], [data-pack-state="error"]):hover { background-image: url('./assets/track-update-hover.svg'); }
-  .track-chooser .track-pack-action:not(:disabled):hover { filter: brightness(1.15); transform: scale(1.06); }
-  #track-choose-download-all:not(:disabled):hover { filter: brightness(1.13); box-shadow: 0 0 14px #70ddff55; }
+.track-chooser .track-pack-action:is([data-pack-state="ready"], [data-pack-state="downloading"]) > svg {
+  width: 30px; height: 30px; margin: auto;
 }
-.track-chooser .track-pack-action[data-pack-state="missing"]:focus-visible { background-image: url('./assets/track-download-hover.svg'); }
-.track-chooser .track-pack-action:is([data-pack-state="update"], [data-pack-state="error"]):focus-visible { background-image: url('./assets/track-update-hover.svg'); }
+@media (hover: hover) and (pointer: fine) {
+  .track-chooser .track-pack-action[data-pack-state="missing"]:hover::before { background-position: 100% 0; }
+  .track-chooser .track-pack-action:is([data-pack-state="update"], [data-pack-state="error"]):hover::before { background-position: 100% 100%; }
+  .track-chooser .track-pack-action:not(:disabled):hover::before { filter: drop-shadow(0 0 5px #65dafa); }
+  #track-choose-download-all:not(:disabled):hover { filter: brightness(1.1); }
+}
+.track-chooser .track-pack-action[data-pack-state="missing"]:focus-visible::before { background-position: 100% 0; }
+.track-chooser .track-pack-action:is([data-pack-state="update"], [data-pack-state="error"]):focus-visible::before { background-position: 100% 100%; }
 @media (prefers-reduced-motion: no-preference) {
-  .track-chooser .track-pack-action, #track-choose-download-all { transition: transform 160ms ease-out, filter 160ms ease-out, box-shadow 160ms ease-out; }
+  .track-chooser .track-pack-action::before { transition: filter 150ms ease-out; }
+}
+/* Portrait: a scrollable bottom sheet leaves the race/Home scene visible above it. */
+@media (max-width: 760px) and (orientation: portrait) {
+  body:not([data-fold-axis]) #track-chooser {
+    inset: auto 0 0; margin: 0 auto;
+    width: min(100%, 540px); height: min(78dvh, 650px);
+    max-height: calc(100dvh - 32px);
+    border: 1px solid #81cde380; border-radius: 16px 16px 0 0;
+  }
+  .track-chooser-heading, .track-chooser-footer { gap: 7px; padding-inline: max(10px, var(--safe-left)); }
+  .track-chooser-heading h2 { font-size: 20px; }
+  .track-chooser .track-select { padding: 8px 10px 10px; }
+}
+/* Landscape phones: bounded centered chooser, not an edge-to-edge screen cover. */
+@media (max-height: 500px) and (orientation: landscape) {
+  body:not([data-fold-axis]) #track-chooser {
+    inset: 0; margin: auto;
+    width: min(820px, calc(100vw - 24px));
+    height: min(84dvh, 340px); max-height: calc(100dvh - 18px);
+    border: 1px solid #81cde380; border-radius: 12px;
+  }
+  .track-chooser-heading, .track-chooser-footer { padding-block: 6px; }
+  .track-chooser .track-select { padding-block: 6px; }
+}
+@media (max-width: 400px) {
+  .track-chooser .track-pack-action::before { width: 26px; height: 26px; }
+  #track-choose-download-all { min-width: 112px; padding-inline: 7px; }
+  .track-chooser-footer small { font-size: 10px; }
 }
