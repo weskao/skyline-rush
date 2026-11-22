@@ -88,7 +88,10 @@ def read_json(path: Path) -> dict:
 
 
 def playwright(specs: list[str], cwd: Path = ROOT, env: dict | None = None) -> tuple[int, str]:
-    return run(["pnpm", "exec", "playwright", "test", *specs, "--reporter=line"], cwd=cwd, env=env)
+    # The r180 reference worktree predates pnpm; use its own installed npm binary.
+    command = (["pnpm", "exec", "playwright"] if (cwd / "pnpm-lock.yaml").exists()
+               else ["npx", "--no-install", "playwright"])
+    return run([*command, "test", *specs, "--reporter=line"], cwd=cwd, env=env)
 
 
 # ---- pure logic (covered by --self-test) -------------------------------------------------------------------------
