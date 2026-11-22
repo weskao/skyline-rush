@@ -1,3 +1,338 @@
+## [0.33.0] - 2026-11-22
+
+### 🚀 Features
+
+- **ui:** Refresh responsive race lobby and player controls [full-regression]
+- **ui:** Apply reference lobby, garage and podium artwork [full-regression]
+- **ui:** Unify race settings and improve lobby track navigation [full-regression]
+- **ui:** Span foldable race scenes and refresh lobby navigation [full-regression]
+- **vfx:** Game-feel freeze/emp effects on rivals
+- **coast:** Modelled lamp posts, far-LOD headlands, road-facing right rail
+- **garage:** Add five animated drift trail skins
+- **garage:** Deepen drift effects and draw preview controls
+- Drive Canyon Skyway from its 10 km track profile
+- Add shared acquisition reveal [full-regression]
+- Add acquisition reveal audio and typed kinds [full-regression]
+- Persist Wave 3 trial economy in Firestore
+- Enable configurable Wave 3 cloud recording for releases
+- Price all Wave 3 cosmetics and show currency icons
+- **garage:** Scale drift trail particles across quality tiers
+- **acquisition:** Share cinematic car unlocks [full-regression]
+- **acquisition:** Stage cinematic premieres and score rewards [full-regression]
+- **acquisition:** Score reveals with cinematic stereo audio
+- Unlock Vantaire GT at 18 Career stars
+- Add responsive Skyline Rush startup screen [full-regression]
+- **vfx:** Scale cosmetic particles and detail by quality
+- **neon:** Cut-out blossom on the cherry tree (Medium and above)
+- **minimap:** Mark road gaps on the route map
+- **wave3:** Complete the trial store redemption flow
+- **wave3:** Redesign the showroom and equipment reveal
+- Sculpt a motorsport fleet for race rivals [full-regression]
+- **spiral:** Day sky and ktx2 road on sky spiral
+- **spiral:** Placement plan for the sky spiral kit
+- **spiral:** Landmark kit glb for sky spiral
+- **spiral:** Draw the landmark kit on sky spiral
+- **spiral:** Cloud sea and drifting wisps on high
+- **spiral:** Seabird and airship kit nodes
+- **spiral:** Birds and an airship round the course
+- **settings:** Toast key toggles and confirm the first effects switch-off
+- **cloud:** Confirm account switch, import and delete in game
+- **settings:** Name + ON/OFF badge toasts; ask on every effects switch-off
+- Restyle and shuffle rival supercars [full-regression]
+- **garage:** Merge preview studio into garage as inspect mode
+- **nitro-trail:** Textured burning jet with a steady white-hot nozzle core
+- **nitro-flame:** Throw sparks from the rear ports while NITRO burns
+- **nitro-flame:** Bake the tileable flame noise texture
+- **sprint-tier:** One ladder for BOOST, NITRO and both together
+- **garage:** Preview each thruster at BOOST, NITRO and both
+- **prop-reuse:** Add glb_ab.py A/B script and prop-reuse guard test
+- **sprint-tier:** Screen cues step up from BOOST to NITRO to NITRO + BOOST
+- **nitro-flame:** Move the flame texture to a path the locked build ships
+- **sprint-plume:** A textured flame per thruster skin and sprint tier, from data
+- **hud:** One look and one caption per sprint tier
+- Apply rewards directly from acquisition reveal
+- Reflect passing light on startup car glass
+- **hud:** Show incoming debuffs in the race centre [full-regression]
+- **hud:** Illustrate debuffs and retune EMP feedback [full-regression]
+- Refine car premieres and add illustrated collectible controls [full-regression]
+- Animate loading until the first race frame [full-regression]
+- **whats-new:** Add responsive Freeze and EMP announcement artwork
+- **race:** Assist repeated chasm falls with midpoint recovery and anti-stuck rescue
+- Racing chronograph HUD with localized live/paused/finish states and SVG icon
+- **debuff:** A car under Freeze and EMP at once wears both effects
+- **debuff:** Cinematic EMP - golden edge lightning, hex glass card, crawling arcs
+- **debuff:** Cinematic Freeze look on the car, screen edge, card and speedometer
+- **release-media:** Record rival attacks, Garage stills and the car premiere
+- **release-media:** Pick the graphics tier a clip is recorded at
+- **share:** Use the startup screen as the link preview
+
+### 🐛 Bug Fixes
+
+- **ui:** Keep settings toggles legible on touch screens [full-regression]
+- **ui:** Exercise the compact lobby and unified settings in CI [full-regression]
+- **ui:** Fit the desktop track rail and restore single-screen layout [full-regression]
+- **garage:** Tone down nitro trail streak glare
+- **ci:** Repair responsive browser regressions on develop
+- **dialog:** Hold last frame when closing dialogs
+- **hud:** Keep pickup cue and results dock in panels
+- **i18n:** Relabel copied route maps after a language switch
+- **garage-vfx:** Tame NITRO trail glare and flicker
+- **ui:** Balance release notes hero spacing [full-regression]
+- **ui:** Scope release notes spacing to its panel [full-regression]
+- **ci:** Repair develop browser regressions [full-regression]
+- **ci:** Isolate browser checks from startup contention [full-regression]
+- **make:** Preserve shared node_modules links
+- Stretch reward controls on narrow screens [full-regression]
+- **touch:** Make braking deliberate and separate the steering thumbs [full-regression]
+- **ci:** Restore Playwright discovery by removing duplicate import
+- **taipei:** Face the Presidential Office toward the race approach
+- **home:** Frame rebuilt classic routes and their landmarks
+- **showcase:** Clear the Taipei portrait orbit sightline
+- **taipei:** Face the Presidential Office toward the race approach
+- **home:** Frame rebuilt classic routes and their landmarks
+- **startup:** Show startup screen on every load
+- **vfx:** Soften all NITRO trails and cap chain glare
+- **vfx:** Bound NITRO shader inputs at mesh edges
+- **vfx:** Soften launch flares, thrusters and airflow
+- **vfx:** Control low-quality showroom exhaust overlap
+- **wave3:** [**breaking**] Make Firestore preview opt-in and always clean up its document
+- **wave3:** Guard trial saves against deletion, early race start and corrupt resets
+- **wave3:** Restore artwork helper needed by the acquisition reveal after merging develop
+- **wave3:** Keep store acquisitions out of locked race bundles
+- **audio:** Quiet the garage and equipment reveal
+- **audio:** Restore race effects after startup music
+- **look:** Reapply a shared sky's sun on a new track
+- **spiral:** Road runs on past the finish
+- **world-tour:** Road runs on past the finish
+- **frostbite:** Run-out covers the whole view
+- **courses:** City and volcano roads run on
+- **courses:** Dune and skyfall roads run on
+- **courses:** Run-out uses each map's asphalt
+- **store:** Share purchase and redemption action states
+- **settings:** Keep the comfort-mode rule on the toast pill, not the body
+- **test:** Remove duplicate lobby helper import blocking Playwright collection
+- Preserve drift intent and pay boost on release [full-regression]
+- Ease braking out of drifts and teach the release [full-regression]
+- **race:** Let rivals use Freeze and EMP [full-regression]
+- **verify:** Allocate a free browser port
+- **settings:** Fit the effects switch-off dialog on short landscape phones
+- **garage:** Drift preview disposes only its own material copies
+- **boot:** Paint Home's setup before building the 3D world [full-regression]
+- **ci:** Restore rival lineup browser regressions [full-regression]
+- **home:** Paint the camera dock before WebGL boot [full-regression]
+- **boot:** Show a Coming Soon card's live 3D once the world exists [full-regression]
+- **ci:** Sync camera CSS contract and verify mobile results after rewards [full-regression]
+- **boot:** Show a Coming Soon card's live 3D once the world exists [full-regression]
+- **ci:** Paint Home camera and verify mobile results after rewards [full-regression]
+- Keep finished rivals visible and pushable [full-regression]
+- **ci:** Repair Home readiness and shared browser regressions [full-regression]
+- **nitro:** Cap trail bloom and flicker
+- **nitro:** Restore speed feel with fast thin flow
+- **ci:** Drop duplicate clickLobbyOption import
+- **wave3:** Keep store wallet icon and offer on phones
+- **ci:** Isolate Garage materials and align browser coverage [full-regression]
+- **perf:** Subtract every drawn car from scenery
+- **garage:** Preserve the selected showcase camera [full-regression]
+- **nitro-flame:** Hold the real flame texture's scroll under 3 Hz; place the sparks rule
+- **sprint-plume:** Hold the exhaust flame scroll under 3 Hz on the real texture
+- Keep the reward continue button full width on phones
+- **hud:** Use yellow EMP and slim the debuff notice [full-regression]
+- **sprint-plume:** A showroom that drives a racing car burns the driver's tier
+- **ui:** Refine demo coin, apparel, inspect and paint icons [full-regression]
+- **ui:** Apply dollar coins, restore demo diamond and update wear icon [full-regression]
+- **ui:** Keep reset label readable in zh-TW race HUD
+- Render the selected graphics tier from the first frame [full-regression]
+- **ci:** Pin Crucible to the official npm release [full-regression]
+- **audio:** Recover stalled mobile race audio [full-regression]
+- **audio:** Recover across mobile interruptions and page lifecycle [full-regression]
+- **ui:** Fit dropdowns to the viewport and restyle settings tabs [full-regression]
+- **ui:** Soften dropdown and settings transitions [full-regression]
+- **ci:** Install the pinned Crucible package from npm [full-regression]
+- **deps:** Link crucible bins so npm install is a no-op
+- **race:** Resolve rescue overlay type narrowing and test Canyon assist
+- **whats-new:** End card entry fill after it plays
+- Keep race chronograph clear of short-landscape standings
+- Remove desktop clock minimum width in short landscape
+- **hud:** Keep the race clock and R hint inside their layouts
+- **whats-new:** Escape apostrophes in sky spiral copy
+- **ci:** Pin Crucible to npm registry package and verified lockfile
+- **ci:** Pin Crucible to npm registry package and verified lockfile
+- **ci:** Use npm registry Crucible alias with matching integrity
+- **ci:** Use npm registry Crucible alias with matching integrity
+- **ci:** Pin Crucible to npm registry package and verified lockfile
+- **ci:** Pin Crucible to npm registry package and verified lockfile
+- **render:** Warm hidden fallback shaders
+- **garage:** Restore A-03 currency art, fit icons at 320px
+- **hud:** Keep the race clock inside the portrait HUD column
+- **garage:** Use camera direction for home framing, centre coming-soon car
+- **garage:** Measure the stage car for Home bounds
+
+### 💼 Other
+
+- Integrate develop into fix/ci-browser-slowdown
+- **garage:** Illustrate the five drift trail cards
+- **deps:** Add crucible 0.21.0 and make setup
+- **spiral:** Replace lobby teaser with daylight track render
+- **spiral:** Redraw teaser from Phase 8c references
+- **mcp:** Register the crucible mcp server
+- Animate race reward details in landscape [full-regression]
+- Feature/nitro-flame-shader into feature/nitro-realistic-flame
+- Feature/nitro-flame-sparks into feature/nitro-realistic-flame
+- Feature/nitro-flame-art into feature/nitro-realistic-flame
+- Fix/ci-gt-skin-timeout into develop
+- Tint startup car glass across responsive artwork
+- Origin/develop into feature/nitro-realistic-flame
+- Feature/nitro-realistic-flame into feature/garage-thruster-ui
+- **deps:** List install-script packages in allowScripts
+- **deps:** Pin the crucible script allow to 0.21.0
+- Sync develop into garage showcase camera fix
+
+### 🚜 Refactor
+
+- **ui:** Move Photo Studio dialog markup into PhotoStudio.vue
+- **assist:** Move the AUTO toggle out of main.js
+- **assist:** Extract AUTO assist toggle from main
+- **assets:** Move cherry_tree to shared prop
+- Keep race timer copy outside legacy UI size limit
+- **hud:** Move the race-info section into RaceInfo.vue
+- **ui:** Reuse garage close button for Event Lab remove cross
+- **ui:** Avoid redundant button type on shared close control
+- **debuff:** Split Freeze and EMP into per-effect modules behind one seam
+
+### 📚 Documentation
+
+- Record owner-approved Roadster phase close-out
+- **tracks:** Publish redesigned course artwork and route profiles
+- **tracks:** Clarify 8–12 km integration target
+- **tracks:** Record minimap integration and verification
+- **tracks:** Consolidate Coast and Neon visual references
+- **3d:** Describe the detailed look by quality tier; record Coast follow-up evidence
+- **tracks:** 3D build plans for the eight tracks no phase covered
+- Update coastal track profiles
+- **rules:** Make the acquisition reveal the shared unlock interface
+- **todo:** Close coast phase 4 items by owner sign-off
+- **specs:** Record dune and skyfall option b decision
+- **neon:** Record Task 5b Step 23 cut-out blossom and its open checks
+- **rules:** Add route minimap gap rule
+- **wave3:** Record the garage and race verification results
+- **spiral:** Record the sky spiral look brief
+- **spiral:** Record task 8c evidence and open gates
+- **rules:** Open roads run on past the finish
+- **spiral:** Record the cloud deck decision and rule
+- **spiral:** Record sky life, cloud deck and fixes
+- **spiral:** Evidence for clouds, run-out and sky life
+- **rules:** Open roads run on past the finish
+- **rules:** List run-out guards per track
+- **claude:** Route shot studies to crucible mcp
+- **spiral:** Audit 8c checkboxes and merge status
+- **release-notes:** Draft upcoming notes after v0.32.0
+- **release-notes:** Apply fresh-eyes review rewrites
+- **nitro-flame:** Design and shared contract for the realistic NITRO trail
+- **rules:** Add prop-reuse rule for 3D props
+- **prop-reuse:** Expand rule to all procedural builders and add glb_ab guard
+- **sprint-tiers:** Screen layer evidence
+- **todo:** Fold the NITRO flame evidence and the acceptance results
+- **nitro-flame:** Integration acceptance evidence (blocked on frame cost)
+- **sprint-tiers:** Exhaust evidence, status blocked on the look
+- **sprint-tiers:** HUD session evidence
+- **whats-new:** Showcase five Garage drift trails
+- **whats-new:** Illustrate Freeze and EMP feedback
+- **sprint-tiers:** Garage session evidence
+- **whats-new:** Continue upcoming player announcements from latest develop
+- **ui:** Require one shared garage-style cross control across the app
+- **todo:** Freeze and EMP cinematic VFX merged, gates and captures
+- **release:** Review 0.33.0 notes and re-record their media
+
+### 🎨 Styling
+
+- **vfx:** Polish garage previews and racing effects
+- **settings:** Balance line wraps in confirm dialog points
+- **ui:** Color the wear action buckle
+- **garage:** Replace demo points price icon with racing score badge
+
+### 🧪 Testing
+
+- **history:** Select Medals and Daily tabs before asserting their panels
+- **ui:** Scale settings screenshot timeout in CI [full-regression]
+- **lobby:** Open Mode dropdown before mode click
+- **lobby:** Open track chooser before clicking cards
+- **ci:** Repair browser regressions across cloud, HUD and audio [full-regression]
+- Stabilize browser CI repairs
+- **ci:** Stabilize Nitro and grid contact checks [full-regression]
+- **ci:** Time HUD callouts on the race clock [full-regression]
+- **ci:** Measure audio cues on the rendering thread [full-regression]
+- **ci:** Batch the airflow sweep and read the halfway card in one tick [full-regression]
+- Authenticate Wave 3 browser checks through the emulator
+- **wave3:** Assert current mission-board progress notice in en and zh-TW
+- **garage:** Expect the ultra tier in the vfx quality dataset
+- **garage:** Fix car-unlock fixture syntax [full-regression]
+- Verify Vantaire GT unlock and record completion
+- **garage:** Arm short trial after equipping skin
+- **browser:** Apply the Low-tier guard only to specs that use the Low default
+- **spiral:** Pin the Sky Spiral route before the detailed look
+- **spiral:** Browser specs for the sky spiral look
+- **world-tour:** Parity follows road past finish
+- **courses:** Guard classic open-road run-out
+- **cloud:** Answer the in-game confirm in the account-switch unit test
+- **browser:** Give the first wait after a page load the default budget
+- **home:** Poll the Home buttons after the page load
+- Remove duplicate result cloud browser import [full-regression]
+- **browser:** Load home before first key press
+- **browser:** Keep the settled comment on settled
+- **ui:** Forbid native dialogs, search fields and pickers
+- **settings:** Restore the toast test to the implemented design
+- **browser:** Let the airflow settle wait survive the toast's cancelled animation
+- **ci:** Align browser specs with intended develop changes
+- **ci:** Pair rivals with their scene cars in race order
+- **ci:** Read the halfway card in one page tick
+- **ci:** Judge boot budgets at first paint, in the page [full-regression]
+- **ci:** Make the phone results dock hit test name its stall [full-regression]
+- **ci:** Batch showcase camera measurements [full-regression]
+- **ci:** Judge boot budgets at first paint, in the page [full-regression]
+- **ci:** Make the phone results dock hit test name its stall [full-regression]
+- **ci:** Stabilize camera and airflow restart checks [full-regression]
+- Cover finish-line collisions at more race steps [full-regression]
+- **ci:** Repair browser regressions across cloud, HUD and audio [full-regression]
+- Stabilize browser CI repairs
+- **browser:** Stabilize specs failing in develop CI
+- **browser:** Give crimson-gt fallback its own page
+- **browser:** Sweep Crimson GT skins one category per test [full-regression]
+- **browser:** Split the GLB car paint and skin sweep per category [full-regression]
+- **hud:** Opt-in capture and HUD cost spec for the sprint tiers
+- Verify the new Store entrance artwork and fallback [full-regression]
+- **garage:** Scope thumbnail assertions to car-picker image
+- **audio:** Preserve user toggle intent when audio initialization fails [full-regression]
+- **ui:** Rebaseline main CSS contract after dropdown rules moved out of style.css
+- **audio:** Match default-on toggles on init failure
+- **showcase:** Wait for a drawn frame before probing
+- **race:** Prevent checkpoint and pickup rewards during cliff rescue [full-regression]
+- **whats-new:** Drop card animation after it ends
+- **ui:** Rebaseline main CSS contract for release card fill
+- Define race clock phases, formatting and HUD presentation
+- **sky-spiral:** Rebaseline for BOOST-range gap launches and wider chasms
+- Acknowledge intended race stopwatch CSS in locked UI baseline
+- **ui:** RED require every cross glyph button to reuse garage close control
+- **ui:** Detect inline × buttons outside the shared garage component
+- **ui:** Cover shared Event Lab remove cross on desktop and phone
+- Sync CSS baseline fixture with identical develop CSS contract
+- **hud:** Align stopwatch UI baseline
+- **debuff:** Freeze and EMP together stack with the halfway card in a real race
+- **debuff:** Record the capture run as video with DEBUFF_VIDEO
+- **browser:** Follow race clock format, sample speed
+- **focus:** End the Tab-trap walk inside the dialog so Escape reaches the page
+- **browser:** Wait for the painted world frame before dragging the Home preview
+- **crimson-gt:** Release the held GLB on the loading step, not on RACING
+- Add zz-debug-browser spec for manual WebGL framing inspection
+- **browser:** Fix swipe-hint, countdown and diag-relay CI flakes
+- **browser:** Fix wallet card, practice countdown and Garage sweep CI failures
+- **browser:** Read the setting toast before the settled-state checks
+
+### ⚙️ Miscellaneous Tasks
+
+- **skills:** Add four Three.js game skills from threejs-game-skills
+- **ui:** Remove decorative footer captions
+- **deploy:** Sync the Wave 3 preview store to Firestore on public deploys
+- Remove stray vim swap file, ignore *.swp
 ## [0.32.0] - 2026-11-17
 
 ### 🚀 Features
