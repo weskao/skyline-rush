@@ -49,6 +49,8 @@ test('Off removes every reward source; presets and recent configurations restore
   expect(await page.evaluate(() => [window.gameplay.race.pickups.length, window.gameplay.race.rings.length])).toEqual([0, 0]);
   await choose('all');
   await page.locator('#start-button').click();
+  // start() saves the recent setup after its async stale-pack check; a reload before that write drops it.
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('skyline-rush-recent-custom-v1'))).not.toBeNull();
   await page.reload();
   await clickLobbyOption(page, 'button[data-race-mode="custom"]');
   await page.locator('#race-mode-rules > summary').click();

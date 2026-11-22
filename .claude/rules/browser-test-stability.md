@@ -156,6 +156,12 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   locators to Home (`#intro-title`): the startup h1 stays in the DOM. Enforced by the same test file
   (*gesture or absence branch after a page load*). `page.reload()` resolves before `main.js` runs too: take a
   storage or state baseline only after `waitForHome(page)`.
+- **A START click is not a saved setup.** `start()` (`src/main.js`) awaits the stale-pack check and the first-start guide
+  gate before `saveRecentCustom` writes, so `click()` then `page.reload()` loses the recent Custom setup. Trap (2026-11-23):
+  `race-modes-browser` "completed Custom setup appears as a recent preset" passed once alone and failed 4 of 5 repeats on a
+  loaded machine, reading `#recent-custom` hidden; it looked like a product bug and was not (the preset is saved, just not yet).
+  Poll `skyline-rush-recent-custom-v1` between the click and the reload, and `waitForHome(page)` before the first click.
+  Enforced by `tests/browser-timeouts.test.js` (*never reloads straight after the START click*).
 - **`data-phase="ready"` is not a painted preview.** `#world` keeps `data-frame-loading` (`visibility:hidden`,
   `src/race-loading.css`, set in `src/world.js`) until its first frame paints, and again after each race rebuild, so
   `document.elementFromPoint` returns `#app` and a mouse press on the preview never starts a drag. Trap (develop CI
