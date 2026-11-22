@@ -18,7 +18,7 @@ test('release opener visibility and unread marker are owned by its Vue view mode
 
 test('home footer makes the current build and release-notes action discoverable without adding another menu', () => {
   const app = readFileSync(new URL('../src/App.vue', import.meta.url), 'utf8');
-  const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../src/race-lobby.css', import.meta.url), 'utf8');
   assert.match(app, /class="build-version-number">v\{\{ version \}\}<\/span>/);
   assert.match(app, /class="build-version-caption" data-i18n="release\.open">What's new<\/span>/);
   assert.match(app, /:aria-label="[^"]*t\('release\.open'/, 'version opener describes its action in the current locale');
