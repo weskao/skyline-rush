@@ -14,7 +14,7 @@ export default defineConfig({
     launchOptions: { args: ['--enable-unsafe-swiftshader'] },
   },
   webServer: {
-    command: 'pnpm run dev -- --port 5187 --strictPort',
+    command: 'pnpm run dev --port 5187 --strictPort',
     env: { GARAGE_VFX_RELEASE_MODE: 'released', VITE_WAVE3_FIRESTORE_PREVIEW: '1' },
     url: 'http://127.0.0.1:5187',
     reuseExistingServer: false,
