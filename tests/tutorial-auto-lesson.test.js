@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { stepRace } from '../src/game.js';
 import { CATALOGS } from '../src/i18n.ts';
-import { createInteractiveTutorial, prepareTutorialInput } from '../src/interactive-tutorial.ts';
+import { TUTORIAL_STEPS, createInteractiveTutorial, prepareTutorialInput } from '../src/interactive-tutorial.ts';
 import { TUTORIAL_COPY } from '../src/locales/tutorial-copy.ts';
 import { tutorialAutoStatus, tutorialCueView, tutorialHighlight, tutorialHintKey, tutorialInstructionKey } from '../src/tutorial-ui.ts';
 import { DEFAULT_KEY_MAP } from '../src/key-map.ts';
@@ -158,4 +158,22 @@ test('main.js drives the tutorial from AUTO and leaves the race rule alone', () 
   assert.match(main, /createInteractiveTutorial\(autoAssist\.isOn\)/);
   assert.match(main, /if \(autoAssist\.isOn\(\) && !input\.brake\) input\.throttle = true;/);
   assert.match(main, /input\.laneAssist = autoAssist\.isOn\(\);/);
+});
+
+test('with AUTO on, no touch lesson line names the accelerator: GAS is hidden then', () => {
+  // touch-sprint-buttons.css hides GAS whenever AUTO is on, in the tutorial too (.claude/rules/touch-sprint-buttons.md).
+  const ACCELERATOR = { en: /\b(throttle|accelerator|GAS)\b/i, 'zh-TW': /油門|加速鍵/ };
+  const phases = ['ready', 'retry', 'airborne', 'rolling', 'flicked', 'readyToLand', 'sprinting'];
+  const reasons = [null, 'noBoost', 'short', 'hard', 'slow', 'noRoll', 'early', 'timeout', 'noBrake'];
+  const keys = new Set();
+  for (const step of TUTORIAL_STEPS) for (const steerMode of ['buttons', 'slide', 'tilt']) for (const flyMode of ['hold', 'toggle']) {
+    keys.add(tutorialHintKey(step, steerMode, flyMode, true));
+    for (const phase of phases) for (const reason of reasons) {
+      keys.add(tutorialInstructionKey(step, phase, reason, false, { touch: true, steerMode, flyMode, auto: true }));
+    }
+  }
+  for (const lang of ['en', 'zh-TW']) for (const key of keys) {
+    const line = TUTORIAL_COPY[lang][key];
+    if (line) assert.doesNotMatch(line, ACCELERATOR[lang], `${lang} ${key}`);
+  }
 });
