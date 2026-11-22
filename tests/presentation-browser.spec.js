@@ -47,6 +47,11 @@ for (const [name, viewport, hasTouch] of [
       expect(edge, 'the block sits off the corner').toBeGreaterThanOrEqual(23.5);
       expect(edge, 'the block stays at the right edge').toBeLessThanOrEqual(24.5);
     }
+    // Countdown is already an in-race phase: gauges must not blink out on touch devices.
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'countdown');
+    for (const selector of ['.telemetry', '#fuel-meter', '#fuel-value', '#boost-status', '#nitro-status', '#nitro-meter']) {
+      await expect(page.locator(selector), `${name} countdown: ${selector} stays visible`).toBeVisible();
+    }
     await page.waitForTimeout(300);
     const overlaps = await page.evaluate(() => {
       const countdown = document.querySelector('#countdown').getBoundingClientRect();
