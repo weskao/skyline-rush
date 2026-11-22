@@ -409,7 +409,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # Call vite directly: `pnpm run build -- --base=...` hands --base to the assert script, not vite.
+      # Call vite directly: a --base flag passed to pnpm run build would reach the bundle assertion, not vite.
       - run: pnpm exec vite build --base=/skyline-rush/ && node scripts/assert-production-locked.mjs
       - name: Check asset paths match the Pages base
         run: |
