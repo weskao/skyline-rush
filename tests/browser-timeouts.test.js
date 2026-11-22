@@ -81,7 +81,7 @@ test('the pre-push layout gate runs on a free port, not the default one a stray 
   const pick = hook.match(/^PLAYWRIGHT_PORT=\$\((.+)\)(?: \|\| exit 1)?$/m);
   assert.ok(pick, 'pre-push must assign PLAYWRIGHT_PORT');
   assert.match(hook, /^export PLAYWRIGHT_PORT$/m);
-  assert.ok(hook.indexOf('export PLAYWRIGHT_PORT') < hook.indexOf('npm run test:layout >&2'), 'export before the gate runs');
+  assert.ok(hook.indexOf('export PLAYWRIGHT_PORT') < hook.indexOf('pnpm run test:layout >&2'), 'export before the gate runs');
   const held = net.createServer();
   await new Promise(resolve => held.listen(5178, '127.0.0.1', resolve).on('error', resolve));
   try {
@@ -99,8 +99,8 @@ test('make verify bypasses a busy default port and honors an override for both b
       held.once('error', error => error.code === 'EADDRINUSE' ? resolve() : reject(error));
       held.listen(5178, '127.0.0.1', resolve);
     });
-    writeFileSync(join(bin, 'npm'), '#!/bin/sh\nprintf "%s|%s\\n" "$*" "$PLAYWRIGHT_PORT"\n', { mode: 0o755 });
-    symlinkSync('npm', join(bin, 'npx'));
+    writeFileSync(join(bin, 'pnpm'), '#!/bin/sh\nprintf "%s|%s\\n" "$*" "$PLAYWRIGHT_PORT"\n', { mode: 0o755 });
+    
     for (const override of [undefined, '5198']) {
       const env = { ...process.env, PATH: bin + delimiter + process.env.PATH };
       if (override) env.PLAYWRIGHT_PORT = override;
@@ -111,7 +111,7 @@ test('make verify bypasses a busy default port and honors an override for both b
       assert.equal(result.status, 0, result.stderr);
       const port = result.stdout.match(/^run test:browser\|(\d{1,5})$/m)?.[1];
       assert.ok(port && Number(port) > 0 && Number(port) <= 65535, 'browser tests need a valid port');
-      assert.ok(result.stdout.split('\n').includes(`playwright test --config=playwright.world-tour.config.js|${port}`));
+      assert.ok(result.stdout.split('\n').includes(`exec playwright test --config=playwright.world-tour.config.js|${port}`));
       if (override) assert.equal(port, override);
       else assert.notEqual(port, '5178');
     }
