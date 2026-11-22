@@ -2,7 +2,7 @@
 """Phase 1 per-device acceptance for the three.js r186.1 upgrade (TODO.md steps D1-D7).
 
     python3 scripts/three-pipeline/phase1_device_check.py --alias "<generic model>"
-    python3 scripts/three-pipeline/phase1_device_check.py --steps D4,D5 [--npm-ci] [--recapture-r180] [--no-capture]
+    python3 scripts/three-pipeline/phase1_device_check.py --steps D4,D5 [--pnpm-install] [--recapture-r180] [--no-capture]
     python3 scripts/three-pipeline/phase1_device_check.py --self-test
 
 Run from any directory; every path resolves from this file. The report goes only to the gitignored
@@ -40,7 +40,7 @@ LAUNCH_JS = ("import { chromium } from 'playwright-core';"
 D4_SPECS = ["tests/shader-warmup-browser.spec.js", "tests/black-frame-browser.spec.js"]
 PERF_LINE = re.compile(r"(\S+@\w+)\s+p50 ([\d.]+) ms · p95 ([\d.]+) ms · ([\d.]+) fps")
 FAILED_TEST = re.compile(r"✘\s+\d+\s+(tests/\S+?\.spec\.js:\d+)")  # Playwright line reporter: "✘  8 tests/x.spec.js:572:1 › ..."
-GUARDED_PATHS = ("src", "tests", "package.json", "package-lock.json")  # a change here mid-run invalidates the run
+GUARDED_PATHS = ("src", "tests", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml")  # a change here mid-run invalidates the run
 
 
 @dataclass
@@ -88,7 +88,7 @@ def read_json(path: Path) -> dict:
 
 
 def playwright(specs: list[str], cwd: Path = ROOT, env: dict | None = None) -> tuple[int, str]:
-    return run(["npx", "playwright", "test", *specs, "--reporter=line"], cwd=cwd, env=env)
+    return run(["pnpm", "exec", "playwright", "test", *specs, "--reporter=line"], cwd=cwd, env=env)
 
 
 # ---- pure logic (covered by --self-test) -------------------------------------------------------------------------
@@ -143,7 +143,7 @@ def tree_fingerprint() -> str:
 
 def busy_runs() -> list[str]:
     """Test runs already active (any session): a rebase or install now would corrupt them."""
-    out = subprocess.run(["pgrep", "-fl", "playwright test|make verify|npm test"], capture_output=True,
+    out = subprocess.run(["pgrep", "-fl", "playwright test|make verify|pnpm test|npm test"], capture_output=True,
                          encoding="utf-8", errors="replace").stdout
     return [line.strip() for line in out.splitlines() if "pgrep" not in line]
 
@@ -151,17 +151,17 @@ def busy_runs() -> list[str]:
 # ---- steps -------------------------------------------------------------------------------------------------------
 
 def d1_install(args) -> Result:
-    if args.npm_ci:
-        code, _ = run(["npm", "ci", "--no-audit", "--no-fund"])
+    if args.pnpm_install:
+        code, _ = run(["pnpm", "install", "--frozen-lockfile"])
         if code:
-            return Result("D1", "clean install", "FAIL", "npm ci failed")
+            return Result("D1", "clean install", "FAIL", "pnpm frozen install failed")
     pkg = read_json(ROOT / "package.json")
     want = {"three": pkg["dependencies"]["three"], "@types/three": pkg["devDependencies"].get("@types/three", "")}
     got = {}
     for name in want:
         manifest = ROOT / "node_modules" / name / "package.json"
         got[name] = read_json(manifest)["version"] if manifest.exists() else "not installed"
-    code, _ = run(["npm", "ls", "three", "@types/three"])
+    code, _ = run(["pnpm", "ls", "three", "@types/three"])
     ok = code == 0 and got == want and want == {"three": TARGET, "@types/three": TYPES_TARGET}
     return Result("D1", "clean install", "PASS" if ok else "FAIL", f"installed {got}, package.json {want}")
 
@@ -311,7 +311,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--alias", default="local-device", help="generic model name only, e.g. 'Mac mini'")
     parser.add_argument("--steps", default=",".join(STEPS), help="comma list, default all of D1-D7")
-    parser.add_argument("--npm-ci", action="store_true", help="D1: really reinstall node_modules first")
+    parser.add_argument("--pnpm-install", "--npm-ci", dest="pnpm_install", action="store_true", help="D1: really reinstall node_modules first")
     parser.add_argument("--recapture-r180", action="store_true", help="D3: capture again even if a baseline exists")
     parser.add_argument("--no-capture", action="store_true", help="D5: only compare the metrics already on disk")
     parser.add_argument("--specs", default="", help="D4: comma list of specs or tests/x.spec.js:LINE to run alone instead of the default pair")
@@ -325,7 +325,7 @@ def main() -> int:
     wanted = [s.strip().upper() for s in args.steps.split(",") if s.strip()]
     if bad := [s for s in wanted if s not in STEPS]:
         parser.error(f"unknown step(s): {', '.join(bad)}")
-    if missing := [t for t in ("git", "node", "npm", "npx", "make") if not shutil.which(t)]:
+    if missing := [t for t in ("git", "node", "pnpm", "npm", "make") if not shutil.which(t)]:
         parser.error(f"missing tools: {', '.join(missing)}")
 
     results, blocked = [], ""
