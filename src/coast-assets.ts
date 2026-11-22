@@ -224,6 +224,21 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
 
   return {
     /** Ready only after selected assets are installed or their loads have failed. Call after updating the look. */
+    /** Start selected-map downloads immediately; leave model attachment and material swaps to update(). */
+    prefetch(trackId: string, quality: VfxQuality, ultra = false): void {
+      const look = detailedTrackLook(trackId, quality);
+      if (!look || !road) return;
+      for (const model of requiredScenery) model?.update(look, true); // true prevents attaching to the previous track
+      const tier = coastRoadTier(quality, ultra);
+      if (!tier) return;
+      for (const slot of ['road', 'ground', 'helix'] as const) {
+        const id = look[slot];
+        if (!id) continue;
+        if (slot === 'ground' && !neon || slot === 'helix' && !spiral) continue;
+        const key = `${id}:${tier}${slot === 'road' ? '' : ':' + slot}`;
+        roadSet(id, tier, key, () => {});
+      }
+    },
     sceneryPending(trackId: string, quality: VfxQuality, ultra = false): boolean {
       const look = detailedTrackLook(trackId, quality);
       if (!look) return false;

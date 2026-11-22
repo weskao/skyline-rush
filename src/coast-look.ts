@@ -64,6 +64,11 @@ export function createCoastLook({ scene, renderer, lens, room, roomIntensity, en
   }
   return {
     get pending(): boolean { return pending; },
+    /** Fetch the chosen HDRI while the existing showroom remains rendered. Already-loaded variants are reused. */
+    preload(trackId: string, preset: string, quality: VfxQuality): Promise<unknown> {
+      const plan = coastEnvPlan(trackId, preset, quality);
+      return plan.kind === 'hdri' ? environments.preload([plan.variant]) : Promise.resolve();
+    },
     update(trackId: string, preset: string, quality: VfxQuality) {
       const plan = coastEnvPlan(trackId, preset, quality);
       // Keyed by track as well: world.js resets the sun and exposure on a track change, so a track that shares the

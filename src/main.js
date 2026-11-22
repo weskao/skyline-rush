@@ -185,7 +185,7 @@ $('#locale-select').addEventListener('change', ({ target }) => { saveLocale(targ
 const raceSelect = setupRaceSelectUI({
   ui,
   getRace: () => race,
-  setRace: next => { race = next; },
+  setRace: next => { race = next; world?.preloadTrackAssets(next.trackId); },
   getDaily: () => daily,
   clearDaily: () => { daily = null; },
   createRace,
@@ -505,7 +505,7 @@ function updateUI(now, input) {
   hud.update(now, input);
 }
 try {
-  startup.step(2); world = createWorld($('#world'), vfx.settings()); syncSkins();
+  startup.step(2); world = createWorld($('#world'), vfx.settings()); world.preloadTrackAssets(race.trackId); syncSkins();
   requestAnimationFrame(maybeShowReleaseNotes);
   showHomeStatus(); // the daily card can start a race now
   previewPaint(equippedPaint);
