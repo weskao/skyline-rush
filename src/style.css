@@ -2226,7 +2226,7 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
 }
 /* Reserve both Large thumb-control rows, including mirrored hands; long lessons scroll inside the card. */
 @media (max-height: 500px) and (orientation: landscape) and (pointer: coarse) {
-  .tutorial-coach { display: flex; flex-direction: column; max-height: calc(100dvh - 70px - max(var(--thumb-lift), var(--safe-bottom)) - 2 * var(--touch-cell) * 1.15 - 20px); }
+  .tutorial-coach { max-height: calc(100dvh - 70px - max(var(--thumb-lift), var(--safe-bottom)) - 2 * var(--touch-cell) * 1.15 - 20px); }
   .tutorial-coach progress { flex-shrink: 0; }
   .tutorial-copy { min-height: 0; overflow: auto; }
 }
