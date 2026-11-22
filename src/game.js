@@ -1,7 +1,7 @@
 import { advanceCountdown } from './frame-pacing.ts';
 import { stepPlayerDrift } from './player-drift.ts';
 export { startRace } from './frame-pacing.ts';
-import { classicCornerPush } from './classic-road-routes.ts';
+import { roadDrift } from './corner-force.ts';
 import { prepareEndless, streamEndless } from './endless-highway.ts';
 import { earnsAirChain } from './air-chain.ts';
 import { createRings, pickupRun, spreadDistances, ITEMS_PER_CAR, RING_RADIUS, RING_FUEL, RING_NITRO, SLIPSTREAM_BOOST, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX } from './ring-layout.ts';
@@ -12,7 +12,7 @@ import { stepRaceWorld } from './race-rivals.js';
 import { seededRng, RACE_STREAMS } from './rng.ts';
 import { createHazards } from './hazards.ts'; import { crossesRamp, launchImpulse, LAUNCH_MIN_SPEED, SKY_GAP_LAUNCH_MIN_SPEED, SKY_GAP_RECOVERY_RUNUP } from './launch-ramps.ts';
 import { stepPlayerHazards } from './hazard-race.ts';
-import { contact, isFollowingVehicle, resolvePlayerContacts, trackPhaseExit, clearRecoveryContacts } from './player-contacts.js';
+import { contact, resolvePlayerContacts, trackPhaseExit, clearRecoveryContacts } from './player-contacts.js';
 import { raceHazards, themedExtras } from './track-themes.ts'; import { mixedCourse, withHoops } from './gauntlet-course.ts';
 import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.ts';
 import { createPracticeStats, samplePractice } from './practice-stats.ts';
@@ -171,7 +171,7 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
       impact: null, landing: null, steering: 0, railContactSide: 0, boosting: false, braking: false,
       nearMiss: null, nearMisses: 0, combo: 0, scrape: null, scrapeCooldown: 0, flyBuffer: 0,
       poweredFlightTime: 0, flightBoosted: false,
-      section: null, inShortcut: false, falls: 0, fall: null, span: false,
+      section: null, inShortcut: false, falls: 0, fall: null, span: false, cornerDrift: 0, cornerX: 0,
       gapFallStreak: /** @type {import('./gap-recovery-seat.ts').GapFallStreak | null} */ (null),
       nitro: 0, nitroTime: 0, nitroHeld: false, nitroUses: 0, nitroBurst: 0, nitroChain: 0, longestCombo: 0,
       slipstream: { time: 0, active: false, paid: false },
@@ -325,12 +325,7 @@ export function stepRace(race, input, dt) {
   const ramp = STEER_RAMP * (car.section === 'ice' ? ICE_RAMP_FACTOR : 1);
   car.steering += clamp(steer - car.steering, -dt / ramp, dt / ramp);
   let lateralPosition = car.x + car.steering * Math.min(9, car.speed * 0.22) * (drifting ? DRIFT_LATERAL : 1) * dt;
-  if (car.altitude < .1 && !drifting && !race.endless?.practice) lateralPosition += classicCornerPush(race.trackId, car.distance, car.speed) * dt;
-  if (car.section === 'crosswind') lateralPosition += (section.dir ?? 1) * CROSSWIND_SPEED * dt;
-  if (input.laneAssist === true && steer === 0 && car.cooldown === 0 && car.speed > 5 && !isFollowingVehicle(car)) {
-    const lane = LANES.reduce((best, centre) => Math.abs(centre - car.x) < Math.abs(best - car.x) ? centre : best);
-    lateralPosition += (lane - lateralPosition) * (1 - Math.exp(-3 * dt));
-  }
+  lateralPosition += roadDrift(race, car, section, drifting, input.laneAssist === true, dt);
   const previousX = car.x;
   car.x = clamp(lateralPosition, -ROAD_LIMIT, ROAD_LIMIT);
   // Re-arm sustained rail contact only after the car pulls clear.
