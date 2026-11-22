@@ -423,16 +423,14 @@ body[data-fold-axis] #intro.lobby-compact .lobby-race-heading #intro-title { dis
   }
 }
 
-body[data-phase="ready"]:not([data-fold-axis]) .bottomline {
-  inset: auto auto var(--home-footer-bottom, max(4px, var(--safe-bottom))) 50%;
+/* The startup chip's spot on every device, foldables included (--version-bottom, startup.css). */
+body[data-phase="ready"] #app > .bottomline {
+  inset: auto auto var(--version-bottom) 50%;
   translate: -50% 0;
   display: flex;
   justify-content: center;
 }
 @media (max-height: 500px) and (orientation: landscape) {
-  body[data-phase="ready"]:not([data-fold-axis]) .bottomline {
-    bottom: calc(max(4px, var(--safe-bottom)) + max(var(--browser-bar), 100% - 100dvh));
-  }
   body[data-phase="ready"]:not([data-fold-axis], .airflow-active) #intro {
     --version-side-room: calc(50vw - 84px);
     --version-panel-limit: calc((var(--version-side-room) - max(16px, var(--safe-left))) / var(--z));
@@ -497,19 +495,38 @@ body[data-fold-axis] #intro .race-mode-heading:has(#lobby-modes-toggle[aria-expa
 body:is([data-phase="countdown"], [data-phase="racing"]) #settings-button { display: none; }
 body[data-phase="ready"] .toolbar :is(#camera-button, #pause-button) { display: none; }
 
-/* The start screen and lobby share one compact version action. */
+/* The start screen and lobby share one compact version action: a quiet glass pill at rest, brighter with a slow
+   sheen while a release is unread (the NEW badge stays), so it gets noticed without competing with the race controls. */
 :is(#startup, body[data-phase="ready"]) .build-version {
-  display: flex; align-items: center; justify-content: center; gap: 5px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
   position: relative; isolation: isolate; width: max-content; min-height: 44px;
-  padding: 0 10px; border: 0; background: transparent; pointer-events: auto; white-space: nowrap;
-  color: #eaf6ff; font: 600 12px/1 'Avenir Next', 'Segoe UI', var(--cjk-fonts), sans-serif; letter-spacing: .02em;
+  padding: 0 12px; border: 0; background: transparent; pointer-events: auto; white-space: nowrap;
+  color: rgb(214 232 244 / .78); font: 500 12px/1 'Avenir Next', 'Segoe UI', var(--cjk-fonts), sans-serif; letter-spacing: .02em;
+  transition: color .2s ease-out;
+}
+.build-version::before, .build-version.has-update::after {
+  content: ''; position: absolute; inset: 6px 0; z-index: -1; border-radius: 999px; pointer-events: none;
 }
 .build-version::before {
-  content: ''; position: absolute; inset: 6px 0; z-index: -1; border-radius: 9px;
-  border: 1px solid rgb(150 227 255 / .3); background: rgb(10 24 43 / .93);
+  border: 1px solid rgb(150 227 255 / .16); background: rgb(6 16 30 / .5);
+  transition: border-color .2s ease-out, background-color .2s ease-out;
 }
-.build-version-number { color: #c5dded; font-variant-numeric: tabular-nums; }
-.build-version-separator { width: 1px; height: 12px; background: rgb(181 213 230 / .27); }
-.build-version-arrow { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-@media (hover: hover) { .build-version:hover::before { border-color: rgb(150 227 255 / .5); background: rgb(18 41 58 / .92); } }
+.build-version-number { color: rgb(170 196 214 / .8); font-variant-numeric: tabular-nums; }
+.build-version-separator { width: 1px; height: 10px; background: rgb(181 213 230 / .2); }
+.build-version-arrow { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; opacity: .7; }
+.build-version.has-update { color: #eaf6ff; }
+.build-version.has-update::before { border-color: rgb(150 227 255 / .34); background: rgb(8 22 38 / .66); }
+@media (hover: hover) {
+  .build-version:hover { color: #f4fbff; }
+  .build-version:hover::before { border-color: rgb(150 227 255 / .45); background: rgb(14 34 52 / .82); }
+}
 .build-version .release-tab-unread { top: 6px; right: 0; pointer-events: none; }
+/* One light band crosses the pill every 7 s, only while unread. A ~170x32 px repaint for ~1 s; Home hides it under
+   full-screen dialogs (full-screen-dialogs rule) and the startup chip leaves with the startup screen. */
+@media (prefers-reduced-motion: no-preference) {
+  .build-version.has-update::after {
+    background: linear-gradient(105deg, transparent 44%, rgb(150 227 255 / .26) 50%, transparent 56%) no-repeat 100% 0 / 300% 100%;
+    animation: build-version-sheen 7s ease-in-out 1.5s infinite;
+  }
+}
+@keyframes build-version-sheen { 0% { background-position: 100% 0; } 16%, 100% { background-position: 0 0; } }

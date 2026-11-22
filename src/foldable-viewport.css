@@ -48,12 +48,6 @@ body[data-fold-axis="vertical"] .flight-director {
   left: calc(var(--fold-scene-left) + var(--fold-scene-width) / 2);
   transform: translateX(-50%);
 }
-body[data-fold-axis="vertical"][data-phase="ready"] .bottomline {
-  top: auto;
-  bottom: var(--fold-gap-bottom);
-  right: var(--fold-gap-right);
-  left: auto;
-}
 body[data-fold-axis="vertical"] .bottomline > span { display: none; }
 
 /* Reflow inside the existing Home scroller. No stacking context or transform is added to a pinned rail. */
@@ -301,13 +295,6 @@ body[data-phase="ready"][data-fold-axis="horizontal"] #intro .intro-wordmark { d
 body[data-phase="ready"][data-fold-axis="horizontal"] #intro .race-mode-picker { margin-top: 6px; }
 body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #intro .track-select > button {
   max-width: calc(100% - 12px);
-}
-body[data-phase="ready"][data-fold-axis="horizontal"] #app > .bottomline {
-  left: auto;
-  right: var(--fold-gap-right);
-  top: calc(var(--fold-pane-top-end) - 48px);
-  bottom: auto;
-  display: block;
 }
 body[data-fold-axis="horizontal"] #app > .bottomline > span { display: none; }
 

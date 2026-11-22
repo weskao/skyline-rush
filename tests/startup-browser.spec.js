@@ -76,6 +76,49 @@ for (const [width, height, locale, caption, enterLabel] of [
   });
 }
 
+// One spot and one look for the What's new chip on every device: shown while the game still loads, identical on Home.
+const VERTICAL_FOLD = [{ left: 0, top: 0, width: 438, height: 700 }, { left: 462, top: 0, width: 438, height: 700 }];
+const HORIZONTAL_FOLD = [{ left: 0, top: 0, width: 900, height: 338 }, { left: 0, top: 362, width: 900, height: 338 }];
+for (const [width, height, segments, name] of [
+  [390, 844], [844, 390], [1440, 900], [900, 700, VERTICAL_FOLD, 'vertical fold'], [900, 700, HORIZONTAL_FOLD, 'horizontal fold'],
+]) {
+  test(`What's new chip keeps one spot and look from loading to Home at ${name ?? `${width}x${height}`}`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.addInitScript(value => {
+      if (value) Object.defineProperty(window, 'viewport', { configurable: true, value: { segments: value } });
+      const requestFrame = window.requestAnimationFrame.bind(window);
+      const queued = [];
+      window.requestAnimationFrame = callback => queued.push(callback);
+      window.releaseStartupFrames = () => {
+        window.requestAnimationFrame = requestFrame;
+        queued.forEach(requestFrame);
+      };
+    }, segments ?? null);
+    await page.goto('/');
+    const startup = page.locator('#startup');
+    await expect(startup).toHaveAttribute('data-stage', '2');
+    await expect(enter(page)).toBeHidden();
+    const look = el => {
+      const chip = getComputedStyle(el), pill = getComputedStyle(el, '::before'), box = el.getBoundingClientRect();
+      return { box: [box.x, box.y, box.width, box.height].map(Math.round), font: chip.font, color: chip.color,
+        fill: pill.backgroundColor, edge: pill.borderTopColor, radius: pill.borderTopLeftRadius };
+    };
+    const loading = startup.locator('#whats-new-open');
+    await expect(loading, 'chip shows while the game is still loading').toBeVisible();
+    const atStartup = await loading.evaluate(look);
+    const [x, y, w, h] = atStartup.box;
+    expect(Math.abs(x + w / 2 - width / 2), 'centered in the viewport').toBeLessThanOrEqual(1);
+    expect(Math.abs(height - 4 - (y + h)), 'at the bottom edge').toBeLessThanOrEqual(1);
+    await page.evaluate(() => window.releaseStartupFrames());
+    await expect(enter(page)).toBeEnabled();
+    await enter(page).click();
+    await expect(startup).toBeHidden();
+    const home = page.locator('.bottomline #whats-new-open');
+    await expect(home).toBeVisible();
+    expect(await home.evaluate(look), 'Home chip matches the startup chip').toEqual(atStartup);
+  });
+}
+
 test('saved Chinese appears before the startup module can load', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('skyline-rush-locale', 'zh-TW'));
   await page.route('**/assets/*.js', route => route.abort());
