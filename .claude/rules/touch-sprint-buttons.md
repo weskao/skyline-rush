@@ -40,5 +40,14 @@ paths:
     The charge bar keeps draining in the BOOST colour: it is information.
   - Guard: `tests/sprint-tier-hud.test.js`. Real frames: `tests/sprint-tier-hud-capture-browser.spec.js`
     (`SPRINT_TIER_HUD_CAPTURE=1`).
+- **AUTO on hides GAS and widens NITRO** (last block of `touch-sprint-buttons.css`). Traps found building it:
+  - `buttons` steering caps every button at `--compact-key-width`, so the wide NITRO needs `max-width: none`.
+  - The flame box is relative to the padding box (1px borders sit outside): `--cell` is one button minus 2px.
+  - **One flame, never a twin.** Two flames side by side showed a dip and two fires in the centre, unlike BOOST's
+    single fire. The wide NITRO keeps one centred flame at one button's size; its ring hugs the wide button.
+  - Hiding is `visibility: hidden` (layout and `offsetWidth` stay). A spec that reads or presses GAS starts with
+    AUTO off (`skyline-rush-auto` = `off`), never with a weaker assertion.
+  - Guards: `tests/touch-gas-auto-layout.test.js`, `tests/touch-gas-auto-layout-browser.spec.js`. The tutorial
+    exclusion is a `shortcut:` comment to remove when `feature/tutorial-auto-lesson` lands.
 - Visual changes here need real frames on a phone, portrait and landscape: the unit guard checks
   colours, not layout, Reduced Motion or touch opacity.

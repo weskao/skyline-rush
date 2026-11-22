@@ -149,6 +149,7 @@ for (const [axis, viewport] of [['vertical', { width: 844, height: 390 }], ['hor
       await page.addInitScript(segments => {
         Object.defineProperty(window, 'viewport', { configurable: true, value: { segments } });
         localStorage.setItem('skyline-rush-controls', JSON.stringify({ version: 1, mode: 'buttons', hand: 'right' }));
+        localStorage.setItem('skyline-rush-auto', 'off'); // AUTO on hides the GAS this spec keeps inside a pane
       }, panes);
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.goto('/');

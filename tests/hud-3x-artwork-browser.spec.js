@@ -121,6 +121,7 @@ test.describe('touch sprint artwork', () => {
 
   test('the thumb cluster shares one bezel and sprint flames burn beyond NITRO and BOOST', async ({ page }) => {
     test.setTimeout(ciTimeout(90000));
+    await page.addInitScript(() => localStorage.setItem('skyline-rush-auto', 'off')); // AUTO on hides GAS, whose bezel and stacking this checks
     await page.goto('/');
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
     await clickLobbyOption(page, 'button[data-race-mode="free"]', 'tap');
