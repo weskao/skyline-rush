@@ -9,6 +9,7 @@ class MemoryCache {
   async match(key) { return this.values.get(this.url(key))?.clone(); }
   async put(key, response) { this.values.set(this.url(key), response.clone()); }
   async delete(key) { return this.values.delete(this.url(key)); }
+  async keys() { return [...this.values.keys()].map(url => new Request(url)); }
 }
 class MemoryStorage {
   caches = new Map();

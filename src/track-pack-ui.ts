@@ -90,7 +90,7 @@ export function setupTrackPackUI(getGraphics: () => Graphics) {
     if (!supported) { paintAll(); return; }
     const result = await Promise.all(cards.map(async card => {
       const pack = packFor(idOf(card));
-      return pack ? { pack, status: await store.status(pack) } : null;
+      return pack ? { pack, status: await store.status(pack) === 'missing' && await store.updateRequired(pack) ? 'update' as const : await store.status(pack) } : null;
     }));
     if (current !== generation) return;
     for (const entry of result) if (entry && !busy.has(entry.pack.trackId))
@@ -187,9 +187,76 @@ export function setupTrackPackUI(getGraphics: () => Graphics) {
       void refresh();
     }
   });
+  /** A native modal prevents START/restart when a previously installed track has a newer asset release. */
+  let pendingGate: Promise<boolean> | null = null;
+  function requireUpdated(id: string): Promise<boolean> {
+    if (pendingGate) return pendingGate;
+    const pack = packFor(id);
+    if (!pack) return Promise.resolve(true);
+    return store.updateRequired(pack).then(required => {
+      if (!required) return true; // no previous installation: online START remains available
+      if (pendingGate) return pendingGate;
+      pendingGate = new Promise<boolean>(resolve => {
+        let dialog = document.querySelector<HTMLDialogElement>('#track-required-update');
+        if (!dialog) {
+          dialog = document.createElement('dialog');
+          dialog.id = 'track-required-update';
+          dialog.setAttribute('aria-labelledby', 'track-update-title');
+          dialog.innerHTML = '<h2 id="track-update-title"></h2><p id="track-update-message"></p>' +
+            '<p id="track-update-progress" role="status" aria-live="polite"></p>' +
+            '<div class="track-update-actions"><button id="track-update-cancel" type="button"></button>' +
+            '<button id="track-update-now" type="button"></button></div>';
+          document.body.append(dialog);
+        }
+        const title = dialog.querySelector<HTMLElement>('#track-update-title')!;
+        const info = dialog.querySelector<HTMLElement>('#track-update-message')!;
+        const progress = dialog.querySelector<HTMLElement>('#track-update-progress')!;
+        const cancel = dialog.querySelector<HTMLButtonElement>('#track-update-cancel')!;
+        const update = dialog.querySelector<HTMLButtonElement>('#track-update-now')!;
+        const name = cards.find(card => idOf(card) === id);
+        title.textContent = chinese() ? '必須更新賽道' : 'Track update required';
+        info.textContent = (name ? labelOf(name) + ' · ' : '') + 'v' + pack.version + ' · ' +
+          (chinese() ? '請先完成新版本素材更新，才能進入賽道。' : 'Update this map before racing.');
+        progress.textContent = chinese() ? '準備更新…' : 'Ready to update';
+        cancel.textContent = chinese() ? '稍後再說' : 'Not now';
+        update.textContent = chinese() ? '立即更新' : 'Update now';
+        const controller = new AbortController();
+        let done = false;
+        const finish = (allowed: boolean): void => {
+          if (done) return;
+          done = true;
+          controller.abort();
+          dialog.close();
+          resolve(allowed);
+        };
+        cancel.onclick = () => finish(false);
+        dialog.oncancel = event => { event.preventDefault(); finish(false); };
+        update.onclick = async () => {
+          update.disabled = true;
+          try {
+            await install(pack, state => {
+              progress.textContent = (chinese() ? '正在更新 ' : 'Updating ') +
+                state.done + '/' + state.total + ' (' + Math.round(100 * state.done / Math.max(1, state.total)) + '%)';
+            }, controller.signal);
+            if (await store.status(pack) !== 'ready' || await store.updateRequired(pack)) throw Error('Updated pack did not validate');
+            finish(true);
+          } catch (error) {
+            if (controller.signal.aborted) return;
+            progress.textContent = chinese() ? '更新失敗，請確認網路後重試。' : 'Update failed. Check your connection and retry.';
+            console.warn('Track version update failed:', error);
+            update.disabled = false;
+          }
+        };
+        update.disabled = false;
+        dialog.showModal();
+        update.focus();
+      }).finally(() => { pendingGate = null; });
+      return pendingGate;
+    });
+  }
   paintAll();
   return {
     stage(id: string | null): void { selectedId = id; paintAll(); void refresh(); },
-    refresh,
+    refresh, requireUpdated,
   };
 }

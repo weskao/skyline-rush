@@ -48,6 +48,22 @@ export function createTrackPackStore({
     } catch { return 'unavailable'; }
   }
 
+  /** An existing installation must be updated before this track can enter a race.
+   * An uninstalled track remains playable online without a forced initial download. */
+  async function updateRequired(pack: TrackAssetPack): Promise<boolean> {
+    if (!storage) return false;
+    try {
+      const receipts = await storage.open(PACK_CACHE);
+      for (const tier of ['low', 'medium', 'high', 'ultra'] as const) {
+        const saved = await receipts.match(receiptKey({ ...pack, tier }));
+        if (!saved) continue;
+        const record = await saved.json() as { version?: string; signature?: string };
+        if (record.version !== pack.version || tier === pack.tier && record.signature !== pack.signature) return true;
+      }
+    } catch { /* Browsers can disable persistent storage; never block first-time online play. */ }
+    return false;
+  }
+
   async function install(pack: TrackAssetPack, onProgress?: (state: PackProgress) => void, signal?: AbortSignal): Promise<PackProgress> {
     if (!storage) throw new Error('Track asset storage is unavailable');
     const assets = await storage.open(ASSET_CACHE), index = await storage.open(INDEX_CACHE);
@@ -80,6 +96,13 @@ export function createTrackPackStore({
     const receipts = await storage.open(PACK_CACHE);
     await receipts.put(receiptKey(pack), new Response(JSON.stringify({ signature: pack.signature, version: pack.version,
       keys: pack.assets.map(asset => key(pack, asset)) })));
+    // A successful update supersedes older releases at other quality tiers too.
+    for (const tier of ['low', 'medium', 'high', 'ultra'] as const) {
+      if (tier === pack.tier) continue;
+      const at = receiptKey({ ...pack, tier });
+      const previous = await receipts.match(at);
+      if (previous && (await previous.json() as { version?: string }).version !== pack.version) await receipts.delete(at);
+    }
     return progress;
   }
 
@@ -101,7 +124,7 @@ export function createTrackPackStore({
   }
 
   return {
-    status,
+    status, updateRequired,
     download(pack: TrackAssetPack, onProgress?: (state: PackProgress) => void, signal?: AbortSignal): Promise<PackProgress> {
       const existing = working.get(pack.signature);
       if (existing) return existing;

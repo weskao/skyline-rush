@@ -201,8 +201,8 @@ const raceSelect = setupRaceSelectUI({
 const { applyTrack, selectedRace, cupCount, focusLobbyTrack } = raceSelect;
 const cupRecovery = setupCupRecovery({ unlocked: () => [...unlockedTracks], cue: () => sound.cue('ui'),
   canResume: () => !!world && race.phase === 'ready' && !contextLost && !document.querySelector('dialog[open]'),
-  resume: function resume(saved) {
-    if (deferWave3RaceStart(() => race.phase === 'ready' && resume(saved))) return;
+  resume: async function resume(saved) {
+    if (!await raceSelect.requireUpdated(saved.tracks[saved.results.length] ?? race.trackId) || deferWave3RaceStart(() => race.phase === 'ready' && resume(saved))) return;
     cup = saved; daily = null; sprintSeries = null; stunt = null;
     raceSelect.restoreCup(saved);
     race.rivalVisualSeed = cupRivalVisualSeed(saved);
@@ -284,13 +284,13 @@ const { resetVehicle } = setupRaceNavigation({ phase: () => race.phase, pause, c
 
 const { showAudio, toggleSound } = setupAudioUI({ audio, volume, sound });
 
-function start() {
+async function start() {
   if (raceSelect.isUpcomingSelected() || isUpcomingBlocked(race.trackId)) return; // preview selection cannot START, including Daily/unlocked
   if (tutorial) return;
   if (raceSelect.selectedMode() === 'cup' && unlockedTracks.size < cupCount()) return;
   if (!world || race.phase !== 'ready' || (!daily && !raceSelect.canRace(race.trackId)) || document.querySelector('dialog[open]')) return;
   if (contextLost) { location.reload(); return; } // a fresh page is the only way back to a live renderer
-  if (deferWave3RaceStart(start)) return; // the race scope is captured after the wallet restore and 7-day expiry
+  if (!await raceSelect.requireUpdated(race.trackId) || deferWave3RaceStart(start)) return; // refuse a stale installed track
   if (offerFirstStart()) return;
   if (touchUI.isEditing()) touchUI.editLayout(false);
   controls.clear();
@@ -306,12 +306,12 @@ function start() {
   focusRace();
 }
 
-function restart(trackId = race.trackId) {
+async function restart(trackId = race.trackId) {
   if (raceSelect.isUpcomingSelected() || isUpcomingBlocked(trackId)) return;
   if (tutorial) { beginTutorial(); return; }
   if (!world || (!daily && !raceSelect.canRace(trackId))) return;
   if (contextLost) { location.reload(); return; }
-  if (deferWave3RaceStart(() => restart(trackId))) return;
+  if (!await raceSelect.requireUpdated(trackId) || deferWave3RaceStart(() => restart(trackId))) return;
   if (touchUI.isEditing()) touchUI.editLayout(false);
   controls.clear();
   const wipe = $('#race-wipe');

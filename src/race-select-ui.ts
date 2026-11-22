@@ -349,7 +349,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   return {
     recreate: eventLab.recreate,
     disconnectPreviews: (): void => previewObserver.disconnect(),
-    selectedRace, canRace,
+    selectedRace, canRace, requireUpdated: packs.requireUpdated,
     selectedMode: (): string => selectedMode,
     isUpcomingSelected: (): boolean => Boolean(upcomingSelection),
     currentTrackId: (): string => upcomingSelection ?? getRace().trackId,

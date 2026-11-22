@@ -330,3 +330,27 @@ body[data-fold-axis] #track-chooser .track-select {
   #track-choose-download-all, #track-choose-confirm { flex: 1 1 auto; }
 }
 @media (prefers-reduced-motion: reduce) { .track-chooser .track-pack-ring-fill { transition: none; } }
+
+/* Native modal: stale installed race assets cannot be skipped by keyboard, touch or restart. */
+#track-required-update {
+  width: min(390px, calc(100% - 32px)); max-height: calc(100dvh - 48px);
+  padding: 24px; overflow: auto; color: #f4f8ff;
+  background: linear-gradient(155deg, #102941, #091522);
+  border: 1px solid #f7bd63; border-radius: 14px;
+  box-shadow: 0 20px 60px #000b, 0 0 22px #f4a25425;
+}
+#track-required-update::backdrop { background: rgb(2 8 17 / .79); backdrop-filter: blur(5px); }
+#track-required-update h2 { margin: 0 0 12px; color: #ffd086; font: 800 21px/1.3 system-ui, sans-serif; }
+#track-required-update p { margin: 0 0 12px; font: 500 13px/1.6 system-ui, sans-serif; }
+#track-update-progress { color: #9bdff2; font-variant-numeric: tabular-nums; }
+#track-required-update .track-update-actions { display: flex; gap: 10px; margin-top: 20px; }
+#track-required-update button {
+  flex: 1; min-height: 44px; padding: 10px; border: 1px solid #63829c;
+  border-radius: 8px; background: #1c3148; color: #e7f5fe; font: 700 13px system-ui, sans-serif;
+}
+#track-required-update #track-update-now {
+  background: linear-gradient(160deg, #ffca70, #de862b);
+  border-color: #ffda9c; color: #19120a;
+}
+#track-required-update button:disabled { opacity: .65; cursor: progress; }
+#track-required-update button:focus-visible { outline: 2px solid #f7fbff; outline-offset: 3px; }
