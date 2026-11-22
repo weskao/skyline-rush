@@ -125,7 +125,7 @@ jobs:
       - run: pnpm exec playwright install ffmpeg
       - run: node scripts/ci-shards.mjs plan playwright.config.js ${{ matrix.shard }} ${{ strategy.job-total }} > "$RUNNER_TEMP/shard-tests.txt"
       # Playwright uses the runner's preinstalled Google Chrome (channel: 'chrome').
-      - run: pnpm run test:browser -- --test-list "$RUNNER_TEMP/shard-tests.txt"
+      - run: pnpm run test:browser --test-list "$RUNNER_TEMP/shard-tests.txt"
       - name: Upload structured WebGL performance evidence
         if: always()
         uses: actions/upload-artifact@v4
