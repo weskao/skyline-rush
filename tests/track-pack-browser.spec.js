@@ -147,7 +147,7 @@ test('download controls preserve mobile sightlines and accessible touch area', a
   await page.locator('#startup-enter').click();
   await waitForHome(page);
   await page.locator('#lobby-tracks-toggle').click();
-  for (const [width, height] of [[320, 568], [390, 844], [844, 390], [1024, 768]]) {
+  for (const [width, height] of [[320, 568], [390, 844], [844, 390], [1024, 768], [1280, 720]]) {
     await page.setViewportSize({ width, height });
     const measured = await page.evaluate(() => {
       const dialog = document.querySelector('#track-chooser').getBoundingClientRect();

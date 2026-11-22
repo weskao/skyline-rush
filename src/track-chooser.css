@@ -52,7 +52,7 @@
   --track-divider: #719cb447;
   box-sizing: border-box;
   width: min(920px, calc(100vw - 36px));
-  max-height: min(640px, calc(100dvh - 42px));
+  max-height: min(600px, calc(100dvh - 42px));
   grid-template-rows: auto minmax(0, 1fr) auto;
   padding: 0;
   overflow: hidden;
