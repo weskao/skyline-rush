@@ -162,7 +162,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     for (const button of trackButtons()) {
       const id = button.dataset.track!;
       const locked = homeTrackStatus(id, unlockedTracks) === 'locked';
-      button.disabled = false; // All unlocked tracks are eligible for Endless.
+      button.disabled = false; // Locked courses still have selectable Home previews.
       button.classList.toggle('is-locked', locked);
       button.setAttribute('aria-pressed', String(!upcomingSelection && id === race.trackId));
       const status = locked ? 'locked' : !upcomingSelection && id === race.trackId ? 'selected' : 'available';
@@ -175,9 +175,10 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
       const id = button.dataset.upcomingTrack as UpcomingTrackId;
       const entered = options.isUpcomingEnterable(id);
       button.disabled = false; // Even preview-only maps can be selected for the Home showcase.
-      button.dataset.trackState = entered ? 'available' : 'preview';
+      const status = !entered ? 'preview' : !upcomingSelection && id === race.trackId ? 'selected' : 'available';
+      button.dataset.trackState = status;
       button.setAttribute('aria-pressed', String(entered && !upcomingSelection ? id === race.trackId : id === upcomingSelection));
-      button.querySelector('small')!.textContent = t(entered ? 'track.open' : 'lobby.preview');
+      button.querySelector('small')!.textContent = t(status === 'preview' ? 'lobby.preview' : status === 'selected' ? 'track.selected' : 'track.open');
       button.title = t('track.comingSoonInfo', { track: upcomingTrackName(id, getLocale()) });
     }
   }
