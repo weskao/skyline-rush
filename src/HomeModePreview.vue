@@ -17,11 +17,12 @@ const summary = computed(() => {
   return setup ? mode.value === 'eventlab'
     ? description.value : modeRulesSummary(setup.config, translate) : '';
 });
-const scene = computed(() => ({
+const SCENES: Readonly<Record<string, string>> = {
   classic: 'grid', custom: 'grid', free: 'open', time: 'timer',
   gauntlet: 'obstacles', checkpoint: 'gates', cup: 'grid', stunt: 'tricks',
   endless: 'open', circuit: 'loop', elimination: 'grid', eventlab: 'builder',
-})[mode.value as 'classic'] ?? 'grid');
+};
+const scene = computed(() => SCENES[mode.value] ?? 'grid');
 </script>
 
 <template>
@@ -63,7 +64,7 @@ const scene = computed(() => ({
 .home-mode-preview[data-mode="gauntlet"], .home-mode-preview[data-mode="elimination"] { --mode-accent: #ff9c9c; }
 .home-mode-preview[data-mode="stunt"], .home-mode-preview[data-mode="eventlab"] { --mode-accent: #d7b0ff; }
 .home-mode-preview[data-mode="cup"], .home-mode-preview[data-mode="circuit"] { --mode-accent: #ffdf8e; }
-body:not([data-phase="ready"]) .home-mode-preview { display: none; }
+:global(body:not([data-phase="ready"])) .home-mode-preview { display: none; }
 .home-mode-preview__heading { display: flex; align-items: center; gap: 9px; }
 .home-mode-preview__heading svg { width: 28px; height: 28px; flex: none; color: var(--mode-accent); }
 .home-mode-preview__heading > div { min-width: 0; display: grid; gap: 2px; }
