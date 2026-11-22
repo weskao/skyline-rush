@@ -33,7 +33,7 @@ test('track chooser installs a versioned visual pack once, then reuses it after 
   await page.locator('#track-choose-confirm').click();
   await page.locator('#start-button').click();
   await expect(page.locator('#world')).toBeVisible({ timeout: ciTimeout(20000) });
-  await expect(page.locator('#world')).toHaveAttribute('data-race-load-ms', /^\\d+\\.\\d$/);
+  await expect(page.locator('#world')).toHaveAttribute('data-race-load-ms', /^\d+\.\d$/);
 });
 
 test('track download indicator stays legible on a wide chooser', async ({ page }) => {

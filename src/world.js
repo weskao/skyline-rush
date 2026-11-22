@@ -380,8 +380,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
   function drawFrame(race, dt) {
     renderer.info.reset(); // Exclude shader warmup draws and previous frames from the counters.
     composer.render(dt);
-    if (race.phase === 'ready' && lastHomePaint !== race) { lastHomePaint = race; canvas.dispatchEvent(new CustomEvent('skyline:showcase-frame', { detail: race.trackId })); }
-    else if (race.phase !== 'ready' && paintedGrid !== race) { paintedGrid = race; canvas.dispatchEvent(new CustomEvent('skyline:race-grid-frame', { detail: race.trackId })); }
+    if (race.phase === 'ready' && lastHomePaint !== race) { lastHomePaint = race; canvas.dispatchEvent(new CustomEvent('skyline:showcase-frame', { detail: race.trackId })); } else if (race.phase !== 'ready' && paintedGrid !== race) { paintedGrid = race; canvas.dispatchEvent(new CustomEvent('skyline:race-grid-frame', { detail: race.trackId })); }
     if (frameLoading) canvas.removeAttribute('data-frame-loading');
     frameLoading = false;
     return true;
