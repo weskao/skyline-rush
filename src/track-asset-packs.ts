@@ -32,23 +32,27 @@ export function trackAssetPack(trackId: string, quality: 'low' | 'medium' | 'hig
         const model = id && MODEL_MANIFEST[id];
         if (model) add(model.url, model.glb.sha256, model.glb.bytes);
       }
-      const resolution = TIERS[tier];
+      const resolution = quality === 'medium' ? TIERS.medium : tier === 'ultra' ? TIERS.ultra : TIERS.high;
       for (const slot of ['road', 'ground', 'helix'] as const) {
         const id = look[slot];
         const material = id && MATERIAL_MANIFEST[id];
         for (const file of material?.files ?? []) if (file.resolution === resolution) add(file.url, file.sha256, file.bytes);
       }
-      const environment = coastEnvPlan(trackId, preset, quality);
-      if (environment.kind === 'hdri') {
-        const sky = COAST_ENV_VARIANTS[environment.variant];
+      // Include every advertised weather/lighting preset, so "downloaded" covers later weather changes.
+      const variants = new Set(Object.keys(look.env).flatMap(name => {
+        const plan = coastEnvPlan(trackId, name, quality);
+        return plan.kind === 'hdri' ? [plan.variant] : [];
+      }));
+      for (const variant of variants) {
+        const sky = COAST_ENV_VARIANTS[variant];
         add(`environments/${sky.file}`);
-        const files = COAST_SKY_MANIFEST.skies[environment.variant].files;
+        const files = COAST_SKY_MANIFEST.skies[variant].files;
         for (const file of files) if (file.width === 4096 || tier === 'ultra') add(file.url, file.sha256, file.bytes);
-        add(COAST_SEA_MANIFEST.url, COAST_SEA_MANIFEST.sha256, COAST_SEA_MANIFEST.bytes);
       }
+      if (variants.size) add(COAST_SEA_MANIFEST.url, COAST_SEA_MANIFEST.sha256, COAST_SEA_MANIFEST.bytes);
     }
   }
   const assets = [...entries.values()];
-  const signature = JSON.stringify([trackId, version, tier, preset, assets]);
+  const signature = JSON.stringify([trackId, version, tier, assets]);
   return { trackId, version, tier, preset, signature, assets };
 }
