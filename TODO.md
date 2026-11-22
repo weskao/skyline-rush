@@ -6665,3 +6665,9 @@ Base `origin/develop` `f9735e4c`. Plan and checklist: `docs/designs/3d-pipeline/
 - [x] Real WebGL zh-TW captures at 390×844, 844×390 and 1440×900 (Garage, Garage on Effects, inspect from Effects), annotated and sent to Telegram.
 - [ ] Deviation for owner review: the catalog stays visible in inspect mode, because about ten suites customise inside Studio.
 - [ ] Not done: full `npm test`, `make verify`, the remaining browser suites, a phone-device check, exact-HEAD `quality-gate`.
+
+## 2026-11-23 — Recent Custom preset browser flake (`fix/recent-custom-preset`)
+- [x] Root cause: `race-modes-browser.spec.js:245` clicked START then reloaded at once; `start()` saves `skyline-rush-recent-custom-v1` only after its async stale-pack check, so on a loaded machine the write never landed and `#recent-custom` stayed hidden (4 of 5 repeats red on develop 7e9d9a57, product code unchanged). Same shape in `item-rules-browser.spec.js`.
+- [x] Fix is test-only: `waitForHome` after each load, poll the storage key between the click and the reload. `CI=1 --repeat-each=8 --workers=4 --retries=0`: 8 of 8 green.
+- [x] Prevention: rule in `.claude/rules/browser-test-stability.md` and guard *never reloads straight after the START click* in `tests/browser-timeouts.test.js`; RED on the old specs (names both lines), green now. `pnpm test` 3904/0 (4 skipped), `typecheck`, `module-size` 3/3.
+- [ ] `pnpm run test:layout` is NOT green: `tests/responsive-browser.spec.js:48` "start layout 568x320" fails 3 of 3 (pinned row covers the track cards, 270.03 > 266). Passes on d4d88553, fails on 7e9d9a57: introduced by the `feature/home-release-notes-entry` merge (`src/race-lobby.css`, `src/track-chooser.css`). Not fixed here.
