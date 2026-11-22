@@ -5,7 +5,7 @@ on:
     branches: ['feature/pnpm-migration']
     paths: ['.github/workflows/pnpm-lock-bootstrap.yml']
 concurrency:
-  group: pnpm-lock-bootstrap
+  group: pnpm-lock-bootstrap-final-20261122
   cancel-in-progress: true
 permissions:
   contents: write
