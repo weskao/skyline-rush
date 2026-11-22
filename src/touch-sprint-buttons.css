@@ -67,6 +67,8 @@
   --flame-tip: var(--nitro-text);
   --flame: var(--nitro);
   --flame-edge: color-mix(in srgb, var(--nitro), black 45%);
+  --flame-idle: .55;
+  --flame-idle-alpha: .92;
   --face-top: var(--nitro-deep);
   --face-bottom: color-mix(in srgb, var(--nitro-deep), black 65%);
   color: var(--nitro-text);
@@ -85,7 +87,7 @@
     linear-gradient(180deg, var(--face-top), var(--face-bottom) 85%);
 }
 #touch-controls .touch-nitro[data-nitro-state="charging"] > svg { filter: grayscale(.7); opacity: .7; }
-#touch-controls .touch-nitro[data-nitro-state="ready"] { --rim: color-mix(in srgb, var(--nitro), white 25%); --face-top: color-mix(in srgb, var(--nitro), black 58%); --flame-rest: .55; --flame-alpha: .92; }
+#touch-controls .touch-nitro[data-nitro-state="ready"] { --rim: color-mix(in srgb, var(--nitro), white 25%); --face-top: color-mix(in srgb, var(--nitro), black 58%); }
 #touch-controls .touch-nitro[data-nitro-state="active"] { --rim: color-mix(in srgb, var(--nitro), white 70%); --face-top: color-mix(in srgb, var(--nitro), black 45%); --face-bottom: color-mix(in srgb, var(--nitro), black 78%); }
 #touch-controls .touch-nitro[data-nitro-state="disabled"] { --rim: #8794a8; --face-top: #384558; --face-bottom: #1c2836; }
 #touch-controls .touch-nitro[data-nitro-state="disabled"] > svg { filter: grayscale(1); }
@@ -96,6 +98,8 @@
   --flame-tip: var(--boost-text);
   --flame: var(--boost);
   --flame-edge: color-mix(in srgb, var(--boost), black 40%);
+  --flame-idle: .3; /* only embers: BOOST is ready whenever fuel is left */
+  --flame-idle-alpha: .8;
   --face-top: var(--boost-deep);
   --face-bottom: color-mix(in srgb, var(--boost-deep), black 55%);
   color: var(--boost-text);
@@ -107,8 +111,7 @@
   --face-bottom: color-mix(in srgb, var(--boost), black 75%);
 }
 
-/* BOOST is ready whenever fuel is left, so its resting flame is only embers at the base. */
-#touch-controls .touch-boost[data-boost-state="ready"] { --rim: color-mix(in srgb, var(--boost), white 15%); --face-top: color-mix(in srgb, var(--boost), black 60%); --flame-rest: .3; --flame-alpha: .8; }
+#touch-controls .touch-boost[data-boost-state="ready"] { --rim: color-mix(in srgb, var(--boost), white 15%); --face-top: color-mix(in srgb, var(--boost), black 60%); }
 #touch-controls .touch-boost[data-boost-state="disabled"] {
   --rim: #8794a8;
   --face-top: #384558;
@@ -123,7 +126,11 @@
 }
 #touch-controls .touch-boost[data-boost-state="charging"] > svg { filter: grayscale(.8); opacity: .55; }
 
-#touch-controls :is([data-nitro-state="active"], [data-boost-state="active"]) { --flame-rest: 1; --flame-alpha: 1; --flame-loop: .7s; }
+/* Not pressed (charging or ready): each button burns its own idle size (--flame-idle above); pressed burns full. */
+#touch-controls :is([data-nitro-state="charging"], [data-nitro-state="ready"], [data-boost-state="charging"], [data-boost-state="ready"]):not(.is-held) {
+  --flame-rest: var(--flame-idle); --flame-alpha: var(--flame-idle-alpha); --flame-burn: sprint-flame;
+}
+#touch-controls :is([data-nitro-state="active"], [data-boost-state="active"]) { --flame-rest: 1; --flame-alpha: 1; --flame-loop: .7s; --flame-burn: sprint-flame; }
 
 /* The sprint ladder (style.css, body[data-sprint-tier] and body[data-sprint-chain]): a running button burns at its
    tier's height and pace in its tier's colours, so both buttons share one look when both run. The glow is static:
@@ -201,10 +208,8 @@ body[data-sprint-tier] #touch-controls :is([data-nitro-state="active"], [data-bo
   transform: scaleY(calc(var(--flame-rest, .2) * var(--flame-lift, 1)));
   transform-origin: 50% var(--button-top);
   transition: opacity .25s, transform .3s ease-out;
-}
-
-#touch-controls :is([data-nitro-state="ready"], [data-nitro-state="active"], [data-boost-state="ready"], [data-boost-state="active"]) > .sprint-ready-effect::before {
-  animation: sprint-flame var(--flame-loop, 1.15s) steps(16, jump-none) infinite;
+  /* The state rules switch the flipbook on (--flame-burn); a hidden flame never runs it. */
+  animation: var(--flame-burn, none) var(--flame-loop, 1.15s) steps(16, jump-none) infinite;
 }
 
 @keyframes sprint-flame { to { mask-position: 100% 0; } }

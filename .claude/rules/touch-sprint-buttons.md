@@ -17,6 +17,14 @@ paths:
   `--charge` (0..1, floored to 2% steps by `nitroFill`, written by `sprint-ready-feedback.ts` only
   when the step changes, never per frame). BOOST `charging` (empty tank) has no progress because any
   refuel makes it ready at once (`game.js`); it is a dim red-orange, distinct from braking grey.
+- **One idle flame while not pressed.** NITRO sat flameless through all of `charging` (most of a race)
+  while BOOST burned embers, so the two read as different systems. `charging` and `ready` without
+  `.is-held` share one rule that burns `--flame-idle` / `--flame-idle-alpha`, which each button
+  declares on its own base block (NITRO .55/.92, BOOST .3/.8); colours come from the button's
+  `--flame*` tokens. The flipbook runs only where a state rule sets `--flame-burn`; never add a
+  second list of states for the animation, or a per-state `--flame-rest`. Guard:
+  `tests/touch-sprint-bezel.test.js` (*one shared idle flame*), real values in
+  `tests/hud-3x-artwork-browser.spec.js`.
 - **Colours come from tokens.** NITRO gold, BOOST red-orange and FLY cyan are the `--nitro*`,
   `--boost*`, `--fly*` tokens on `:root` in `style.css`; states derive from them with `color-mix`,
   only neutral greys stay literal. The meter, charge bar, key hints and the 3D NITRO trail
