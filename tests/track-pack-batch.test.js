@@ -31,3 +31,22 @@ test('AbortSignal stops the remaining queue', async () => {
   }, () => {}, () => {}, controller.signal), { name: 'AbortError' });
   assert.deepEqual(called, ['coast']);
 });
+
+test('a download-all batch caps concurrency at two map installations', async () => {
+  const active = new Set(), installed = new Set(), launched = [];
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  const task = downloadTrackPackBatch([pack('coast'), pack('neon'), pack('spiral')], {
+    status: async item => installed.has(item.trackId) ? 'ready' : 'missing',
+    download: async item => {
+      active.add(item.trackId); launched.push(item.trackId);
+      assert.ok(active.size <= 2, 'mobile pack download cap');
+      await gate; installed.add(item.trackId); active.delete(item.trackId);
+    },
+  }, () => {}, () => {}, undefined, 2);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(launched, ['coast', 'neon']);
+  release();
+  assert.deepEqual(await task, { completed: 3, total: 3, failed: 0 });
+  assert.deepEqual(launched, ['coast', 'neon', 'spiral']);
+});

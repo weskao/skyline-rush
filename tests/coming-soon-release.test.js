@@ -67,8 +67,7 @@ test('Coming Soon cards share the track chooser and retain route maps and distan
   const shell = readFileSync(new URL('../src/App.vue', import.meta.url), 'utf8');
   const select = readFileSync(new URL('../src/race-select-ui.ts', import.meta.url), 'utf8');
   const chooser = readFileSync(new URL('../src/race-lobby-ui.ts', import.meta.url), 'utf8');
-  assert.match(shell, /<button v-for="\(track, id\) in UPCOMING_TRACKS"/);
-  assert.match(shell, /class="upcoming-track-card"/);
+  assert.match(shell, /<div v-for="\(track, id\) in UPCOMING_TRACKS"[^>]*class="track-card-shell"><button type="button" class="track-card-select upcoming-track-card"/);
   assert.match(shell, /:data-upcoming-track="id" aria-pressed="false"/);
   assert.match(shell, /class="track-route-map" aria-hidden="true"><\/span><strong>\{\{ track\.names\.en \}\}<\/strong>/);
   assert.doesNotMatch(shell, /upcoming-route-image/);

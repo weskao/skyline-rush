@@ -179,7 +179,7 @@ export function setupTrackPackUI(getGraphics: () => Graphics) {
       (pack, ok) => {
         cached.set(pack.trackId, { signature: pack.signature, status: ok ? 'ready' : 'error' });
         paintAll();
-      }, current.signal);
+      }, current.signal, 2);
     } catch (error) {
       if (!current.signal.aborted) console.warn('Track batch download failed:', error);
     } finally {

@@ -189,7 +189,8 @@ test('every race start waits for the trial wallet and cloud deletion invalidates
   const { readFile } = await import('node:fs/promises');
   const main = await readFile(new URL('../src/main.js', import.meta.url), 'utf8');
   const body = name => main.slice(main.indexOf(name), main.indexOf('startRace(race', main.indexOf(name)));
-  for (const site of ['function start()', 'function restart(', 'resume: function resume(']) {
+  for (const site of ['async function start()', 'async function restart(', 'resume: async function resume(']) {
+    assert.match(body(site), /await raceSelect\.requireUpdated\(/, `${site} blocks stale installed maps`);
     assert.match(body(site), /deferWave3RaceStart\(/, `${site} defers until the wallet restore finishes`);
   }
   assert.match(main, /deleteCloudProgress: uid => \{ forgetWave3DemoAccount\(uid\); return deleteCloudProgress\(uid\); \}/);

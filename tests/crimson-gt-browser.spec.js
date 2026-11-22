@@ -245,8 +245,14 @@ async function gridPose(page, url, storage = {}) {
   const start = page.locator('#start-button');
   // Hold the live grid in the same click as Start. A host-side poll can arrive after the wall-clock countdown.
   await start.evaluate(button => button.addEventListener('click', () => {
-    const { race } = window.gameplay;
-    if (race.phase === 'countdown') race.countdown = 1e6;
+    // The installed-pack preflight is async; hold the first real countdown grid.
+    const until = performance.now() + 10_000;
+    const hold = () => {
+      const race = window.gameplay?.race;
+      if (race?.phase === 'countdown') race.countdown = 1e6;
+      else if (race?.phase === 'ready' && performance.now() < until) requestAnimationFrame(hold);
+    };
+    hold();
   }, { once: true }));
   await start.click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'countdown');

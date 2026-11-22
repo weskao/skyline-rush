@@ -320,7 +320,12 @@ for (const [name, viewport, segments] of [
         expect(segments.some(pane => box.x >= pane.left - 1 && box.y >= pane.top - 1 &&
           box.x + box.width <= pane.left + pane.width + 1 && box.y + box.height <= pane.top + pane.height + 1)).toBe(true);
       } else {
-        expect(box).toEqual({ x: 0, y: 0, ...viewport });
+        // The compact sheet must remain within safe bounds, leaving Home visible.
+        expect(box.x).toBeGreaterThanOrEqual(0);
+        expect(box.y).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 1);
+        expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 1);
+        expect(box.height).toBeLessThanOrEqual(viewport.height * .86 + 1);
       }
       await expect(dialog.locator('#track-choose-confirm')).toBeInViewport({ ratio: 1 });
       await expect(dialog.locator('#track-choose-close')).toBeInViewport({ ratio: 1 });
