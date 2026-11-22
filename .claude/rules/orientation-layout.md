@@ -122,6 +122,10 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
   into `.race-progress` at 390x844, and a one-row variant widened it under the toast (CI 44892040873). Portrait phones
   show icon + readout only, as short landscape does. Guards: `responsive-browser.spec.js` (race HUD),
   `mode-coverage-browser.spec.js`, `toggle-feedback-browser.spec.js`, `race-hud-overlap-browser.spec.js`.
+- **Countdown never hides the in-race instruments.** While the countdown, scenery loading message or GO is
+  visible, touch devices still show the live `.telemetry` group (fuel, BOOST and NITRO). If the countdown
+  overlaps the HUD, move or compact the countdown itself; never set the entire instrument group to hidden.
+  Guard: `tests/presentation-browser.spec.js` across desktop, phone portrait and landscape.
 - **24px collectible icons need the ≤360 px compaction.** CollectibleIcon (f947f938) put 24px art into Garage mode
   buttons and Store filter/action rows; at 320 px the third mode button wrapped and the first offer fell below the fold.
   ≤360 portrait shrinks them to 16px (`garage-preview-controls.css`, `wave3-demo-store.css`); 390 px keeps 24px.

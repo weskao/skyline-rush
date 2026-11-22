@@ -710,7 +710,6 @@ body:not([data-phase="ready"]) .track-swipe { display: none; }
 }
 @media (pointer: coarse) {
   .countdown { top: 40%; }
-  body:has(#countdown:not([hidden])) .telemetry { visibility: hidden; }
 }
 
 /* Keep thumb controls clear of phone edges without blocking settings scrolling. */
