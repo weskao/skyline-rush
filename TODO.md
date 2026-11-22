@@ -4868,6 +4868,7 @@ the screen is a slide pad; put the thumb down anywhere and slide.
 
 Shared by both modes:
 - [x] **AUTO accelerator on by default on touch** (the existing assist), so no thumb is spent holding the throttle; the gas button stays available when AUTO is off
+- [x] **AUTO on hides GAS; NITRO spans the top row** (BOOST/FLY fixed, one centred flame, tutorial and layout editing keep the 2x2). Evidence: `tests/touch-gas-auto-layout*.{test,spec}.js`, real frames 390x844 / 844x390 / 743x340 at S and L, the wide flame checked in every state against normal NITRO and BOOST; the twin-flame design was rejected on those frames
 - [x] Action hand: FLY (largest), BOOST, NITRO in an arc around it; sliding between FLY and BOOST holds both (AIR DASH)
 - [x] **Drift = brake + steer** in both modes, the same rule as the keyboard
 

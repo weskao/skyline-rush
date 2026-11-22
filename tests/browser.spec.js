@@ -26,6 +26,8 @@ const pick = async (page, name, option) => {
 
 // Touch players default to slide steering; legacy button tests pin Buttons mode (and any other prefs) before the page loads.
 const useControls = (page, prefs) => page.addInitScript(prefs => localStorage.setItem('skyline-rush-controls', JSON.stringify({ version: 1, ...prefs })), prefs);
+// AUTO on (the default) hides the touch GAS button (touch-sprint-buttons.css): a test that reads or presses GAS starts with AUTO off.
+const autoOff = page => page.addInitScript(() => localStorage.setItem('skyline-rush-auto', 'off'));
 
 const measureAudio = (retainCueLevel = false) => {
   const connect = AudioNode.prototype.connect;
@@ -592,6 +594,7 @@ test('desktop: start, drive, steer, fly, land, pause and restart through real co
 test.describe('touch landscape', () => {
   test.use({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true });
   test('rotating a phone keeps the driving controls visible', async ({ page }) => {
+    await autoOff(page);
     await page.goto('/');
     await page.getByRole('button', { name: 'Start race' }).click();
     await expect(page.locator('#race-status')).toHaveText('RACING');
@@ -604,6 +607,7 @@ test.describe('touch landscape', () => {
 });
 
 test('mobile: responsive layout and pointer controls support simultaneous driving and flight', async ({ page }) => {
+  await autoOff(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Start race' })).toBeVisible();
@@ -1075,6 +1079,7 @@ for (const sizes of [[[390, 844], [320, 740]], [[844, 390]]]) {
     });
 
     test('right hand in Buttons mode mirrors the steering buttons', async ({ page }) => {
+      await autoOff(page);
       const centerX = async name => {
         const button = name === 'Nitro button' ? page.locator('[data-control="nitro"]') : page.getByRole('button', { name, exact: true });
         const box = await button.boundingBox();
@@ -1166,6 +1171,7 @@ for (const sizes of [[[390, 844], [320, 740]], [[844, 390]]]) {
     });
 
     test('handedness right mirrors the pad and the action buttons', async ({ page }) => {
+      await autoOff(page);
       const actionCenters = async () => Object.fromEntries(await Promise.all(['Hold to fly', 'Hold to boost', 'Accelerate'].map(async name => {
         const box = await page.getByRole('button', { name, exact: true }).boundingBox();
         return [name, box.x + box.width / 2];
@@ -1195,6 +1201,7 @@ for (const sizes of [[[390, 844], [320, 740]], [[844, 390]]]) {
     for (const mode of ['slide', 'buttons']) {
       test(`${mode} mode: every visible control stays onscreen with a 44px touch target`, async ({ page }) => {
         test.setTimeout(90000 * slow);
+        await autoOff(page);
         for (const touchSize of ['M', 'L']) {
           await atBootSize(page);
           await useControls(page, { mode, size: touchSize });

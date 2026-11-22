@@ -32,10 +32,14 @@ test('BOOST and FLY are not restyled by AUTO', () => {
   assert.doesNotMatch(css, /assist-button[^{]*\.touch-(boost|fly)\b[^{]*\{/);
 });
 
-test('the wide NITRO flame is built from two normal-sized flames, never one stretched mask', () => {
-  assert.match(app, /sprint-ready-twin/);
-  assert.match(feedback, /querySelectorAll\('\.sprint-ready-effect'\)/);
+test('the wide NITRO keeps one centred flame at one button\'s size, never a stretched mask or a twin', () => {
+  // Real frames showed two flames with a dip between them, unlike BOOST's single fire (twin removed).
+  assert.doesNotMatch(app, /sprint-ready-twin/);
+  assert.doesNotMatch(css, /sprint-ready-twin/);
+  assert.doesNotMatch(feedback, /querySelectorAll/);
   const body = rule(`${AUTO} .touch-actions > .touch-nitro:not(.is-positioned) > .sprint-ready-effect::before`);
   assert.ok(body, 'wide flame rule');
   assert.match(body, /width:\s*calc\(var\(--cell\)/);
+  assert.match(body, /left:\s*50%/);
+  assert.match(body, /translate:\s*-50%/);
 });

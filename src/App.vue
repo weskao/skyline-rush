@@ -371,7 +371,6 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
         </svg>
         <span lang="en">NITRO</span>
         <span class="sprint-ready-effect" aria-hidden="true"></span>
-        <span class="sprint-ready-effect sprint-ready-twin" aria-hidden="true"></span>
       </button>
       <button class="touch-fly" data-control="fly" aria-label="Hold to fly" data-i18n-aria-label="hint.fly"><svg v-bind="ICON_ATTRS" v-html="icons.fly"></svg><svg class="touch-fly-lock" v-bind="ICON_ATTRS" v-html="icons.lock"></svg><span lang="en">FLY</span></button>
       <button class="touch-boost" data-control="boost" aria-label="Hold to boost" data-i18n-aria-label="touch.boost">
