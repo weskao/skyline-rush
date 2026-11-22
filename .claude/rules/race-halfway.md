@@ -36,6 +36,15 @@ strip: "50%" chip, title, short remaining distance (zh-TW `剩 {km} 公里`) on 
 - Every map gets the same strip, Coming Soon courses included. A new course or track must
   pass the every-map sweep without spec edits (`CLASSIC_IDS` + `COURSE_TRACKS`).
 
+## Top-of-scene notice lane
+
+Halfway and Freeze/EMP cards share the same `race-notice-stack` in `RaceHalfway.vue`, not separate
+vertically centered overlays. Its top starts at 20% of the visible scene. A live setting toast
+(`GameToast.vue`) reserves its own height above that stack, including phone portrait's lower
+toast offset, so neither message hides the other. Change the shared placement variables in
+`src/race-notice-layout.css`; do not add per-debuff top offsets. Verify normal and simultaneous
+messages on phone portrait/landscape and desktop, including foldable scene placement.
+
 Guards: `tests/presentation.test.js`, `tests/race-audio-events.test.js`, `tests/audio.test.js`
 (chime length), `tests/race-halfway-browser.spec.js` (geometry, alpha, one chime; desktop,
 portrait, landscape) and `tests/race-halfway-maps-browser.spec.js` (every map).

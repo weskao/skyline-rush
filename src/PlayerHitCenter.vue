@@ -41,7 +41,6 @@ onUnmounted(onLocaleChange(next => { locale.value = next; }));
 
 <style scoped>
 .player-hit-center {
-  grid-row: 2;
   display: grid;
   gap: 5px;
   width: min(92%, clamp(190px, 24vw, 236px));

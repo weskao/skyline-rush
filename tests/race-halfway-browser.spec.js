@@ -61,7 +61,7 @@ for (const [name, width, height, hasTouch, locale, calm] of [
         const box = node?.getBoundingClientRect();
         if (!box?.width || !box.height) return null;
         const scene = document.querySelector('#world').getBoundingClientRect();
-        const anchor = node.parentElement.getBoundingClientRect();
+        const anchor = node.closest('.race-halfway').getBoundingClientRect();
         return { text: node.textContent, dx: anchor.x + anchor.width / 2 - scene.x - scene.width / 2,
           dy: anchor.y + anchor.height / 2 - scene.y - scene.height / 2,
           topFraction: (box.top - scene.top) / scene.height, height: box.height / scene.height, area: box.width * box.height / (scene.width * scene.height),

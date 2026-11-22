@@ -2,6 +2,7 @@
 // The one shared setting toast (showToast() in toast-view-state.ts).
 import { ref, watch, onMounted } from 'vue';
 import { toastView } from './toast-view-state.ts';
+import './race-notice-layout.css';
 import { ICON_ATTRS } from './icons.ts';
 
 const region = ref<HTMLElement>();
@@ -31,7 +32,7 @@ watch(() => toastView.id, raise, { flush: 'post' });
 /* Top centre, under the brand/route row and above the race readouts, #driving-message and #event-callout
    (tests/toggle-feedback-browser.spec.js measures all three, portrait and landscape). */
 #game-toast {
-  position: fixed; inset: auto; top: calc(env(safe-area-inset-top, 0px) + var(--toast-top, 86px)); left: 50%; translate: -50% 0;
+  position: fixed; inset: auto; top: calc(env(safe-area-inset-top, 0px) + var(--setting-toast-top)); left: 50%; translate: -50% 0;
   margin: 0; padding: 0; border: 0; background: none; overflow: visible; z-index: 9; pointer-events: none;
 }
 .game-toast-pill {
@@ -54,7 +55,7 @@ watch(() => toastView.id, raise, { flush: 'post' });
 /* Portrait phones: the position readout and #driving-message fill the left column, and a name + state pill is
    wider than the gap beside them, so the toast sits right-aligned under the minimap (portrait race HUD breakpoint). */
 @media (max-width: 760px) and (orientation: portrait) {
-  #game-toast { --toast-top: 156px; left: auto; right: max(12px, env(safe-area-inset-right, 0px)); translate: none; }
+  #game-toast { left: auto; right: max(12px, env(safe-area-inset-right, 0px)); translate: none; }
 }
 @keyframes game-toast { 0% { opacity: 0; translate: 0 -8px; } 10%, 82% { opacity: 1; translate: 0 0; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .game-toast-pill { animation: none; } }
