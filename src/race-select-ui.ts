@@ -42,6 +42,7 @@ interface RaceSelectOptions {
   cueUi(): void;
   reducedMotion: MediaQueryList;
   getGraphics(): { quality: 'low' | 'medium' | 'high'; ultra: boolean };
+  onTrackChange?(id: string): void;
   showUpcoming3D(id: PreviewTrackId | null): boolean;
   /** Local all-unlocked server only: a Coming Soon card whose race runtime is finished starts like a playable track. */
   isUpcomingEnterable(id: string): boolean;
@@ -265,6 +266,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
 
   function applyTrack(id: string): void {
     if (getRace().phase !== 'ready') return;
+    if (id !== (upcomingSelection ?? getRace().trackId)) options.onTrackChange?.(id);
     loadMetrics.select(id);
     const upcoming = isUpcomingTrack(id) ? id : null;
     upcomingSelection = upcoming && !options.isUpcomingEnterable(upcoming) ? upcoming : null;

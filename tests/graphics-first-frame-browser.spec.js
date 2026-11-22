@@ -98,3 +98,37 @@ test('Sky Spiral waits for its High road and skips scene draws during the wait',
   await expect(canvas).toHaveAttribute('data-spiral-road', 'high');
   await expect(page.locator('#race-status')).toHaveText('RACING');
 });
+
+test('Home switches to the chosen track still immediately while High scenery loads', async ({ page }) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.addInitScript(() => {
+    localStorage.setItem('skyline-rush-music', 'off');
+    localStorage.setItem('skyline-rush-sound', 'off');
+    localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', comfortable: true }));
+  });
+  let release, requested;
+  const held = new Promise(resolve => { release = resolve; });
+  const requestedFile = new Promise(resolve => { requested = resolve; });
+  await page.route('**/materials/neon-asphalt/asphalt_basecolor_2k.ktx2', async route => {
+    requested();
+    await held;
+    await route.continue();
+  });
+  await page.goto('/');
+  await page.locator('#startup-enter').click();
+  await waitForHome(page);
+  await openSettingsSection(page, 'display');
+  await page.locator('select[data-vfx="quality"]').selectOption('high', { force: true });
+  await page.locator('#settings-close').click();
+  const canvas = page.locator('#world'), still = page.locator('#race-frame-still');
+  try {
+    await clickLobbyOption(page, '[data-track="neon"]');
+    await requestedFile;
+    await expect(canvas).toBeHidden();
+    await expect(still).toBeVisible();
+    await expect(still).toHaveAttribute('src', /track-teasers\/neon\.jpg/);
+  } finally { release(); }
+  await expect(canvas).toBeVisible();
+  await expect(still).toBeHidden();
+  await expect(canvas).toHaveAttribute('data-home-load-ms', /^\\d+\\.\\d$/);
+});
