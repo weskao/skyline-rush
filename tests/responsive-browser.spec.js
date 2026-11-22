@@ -15,7 +15,7 @@ import { RACE_HUD_CLASSES, bootAirflowRace, readHudBoxes, expectHudBlocksApart }
 
 // One boot per locale: the page resizes through the sizes (the browser context, hasTouch included, is the same for all of them).
 for (const locale of ['en', 'zh-TW']) {
-  test(`home version stays centered in a caption-free bottom strip in ${locale} at ${HOME_VERSION_SIZES.map(size => size.join('x')).join(' ')}`, async ({ page }) => {
+  test(`home version stays centered with a visible update label in ${locale} at ${HOME_VERSION_SIZES.map(size => size.join('x')).join(' ')}`, async ({ page }) => {
     test.setTimeout(ciTimeout(60000));
     const [[width, height]] = HOME_VERSION_SIZES;
     await page.setViewportSize({ width, height });
@@ -32,8 +32,7 @@ for (const locale of ['en', 'zh-TW']) {
         await expect(opener.locator('.build-version-number')).toHaveText(/^v\d+\.\d+\.\d+$/);
         await expect(opener.locator('.build-version-caption')).toHaveText(locale === 'zh-TW' ? '查看更新' : "What's new");
         await expect(opener).toHaveAttribute('aria-label', new RegExp(locale === 'zh-TW' ? '^查看更新 · v' : "^What's new · v"));
-        if (h <= 500 && w > h) await expect(opener.locator('.build-version-caption')).toBeHidden();
-        else await expect(opener.locator('.build-version-caption')).toBeVisible();
+        await expect(opener.locator('.build-version-caption')).toBeVisible();
         await opener.click();
         await expect(page.locator('#whats-new-screen')).toBeVisible();
         await page.locator('#release-close').click();

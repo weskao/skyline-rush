@@ -69,6 +69,18 @@ html[lang='zh-TW'] .startup-copy[lang='zh-TW'] { display: inline; }
   text-shadow: 0 2px 8px #020713, 0 1px 3px #020713;
 }
 .startup-dock { grid-row: 3; width: min(100%, 328px); position: relative; min-height: 58px; }
+#startup-release-entry {
+  display: none;
+  position: absolute;
+  bottom: var(--startup-version-bottom);
+  left: 50%;
+  translate: -50% 0;
+}
+.startup[data-stage='3'] .startup-layout {
+  --startup-version-bottom: max(4px, env(safe-area-inset-bottom, 0px));
+  padding-bottom: max(var(--pad-y), calc(var(--startup-version-bottom) + 52px));
+}
+.startup[data-stage='3']:has(#startup-enter:enabled) #startup-release-entry { display: block; }
 .startup-progress, .startup-action {
   box-sizing: border-box;
   min-height: 58px;

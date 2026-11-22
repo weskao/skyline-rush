@@ -41,6 +41,7 @@ export interface ReleaseView {
   compact: boolean;
   openHidden: boolean;
   openHasUpdate: boolean;
+  openOnStartup: boolean;
   tabs: ReleaseTab[];
   entries: ReleaseEntry[];
   panelLabel: string;
