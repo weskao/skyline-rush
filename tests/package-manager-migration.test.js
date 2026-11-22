@@ -37,3 +37,12 @@ test('the Makefile and local Playwright servers run pnpm', () => {
     assert.doesNotMatch(read(path), /\bnpm\b|\bnpx\b/, path);
   }
 });
+
+test('release, dev worktrees, and Playwright sharding use pnpm binaries', () => {
+  for (const path of ['scripts/release-gate.sh', 'scripts/ci-shards.mjs',
+    'scripts/assets/optimize-glb.mjs', 'scripts/install-gltf-transform.mjs']) {
+    assert.doesNotMatch(read(path), /\bnpx\b|\bnpm\s+(?:install|test|run|ci)\b/, path);
+  }
+  assert.match(read('scripts/perf.mjs'), /modern \? 'pnpm' : 'npm'/,
+    'historical npm-only performance baselines must remain runnable');
+});
