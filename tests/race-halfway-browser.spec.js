@@ -64,7 +64,7 @@ for (const [name, width, height, hasTouch, locale, calm] of [
         const anchor = node.parentElement.getBoundingClientRect();
         return { text: node.textContent, dx: anchor.x + anchor.width / 2 - scene.x - scene.width / 2,
           dy: anchor.y + anchor.height / 2 - scene.y - scene.height / 2,
-          height: box.height / scene.height, area: box.width * box.height / (scene.width * scene.height),
+          topFraction: (box.top - scene.top) / scene.height, height: box.height / scene.height, area: box.width * box.height / (scene.width * scene.height),
           backdrop: Number(getComputedStyle(node).backgroundColor.match(/[\d.]+(?=\))/)?.[0] ?? 1),
           pointer: getComputedStyle(node).pointerEvents, animation: getComputedStyle(node).animationName };
       }, null, { timeout: ciTimeout(5_000) })).jsonValue();
@@ -72,6 +72,7 @@ for (const [name, width, height, hasTouch, locale, calm] of [
       expect(geometry.text).toContain(locale === 'en' ? 'KM TO GO' : '公里');
       expect(Math.abs(geometry.dx)).toBeLessThan(1);
       expect(Math.abs(geometry.dy)).toBeLessThan(1);
+      expect(Math.abs(geometry.topFraction - .2), 'halfway starts about 20% from the scene top').toBeLessThan(.025);
       // A slim, see-through strip: the road ahead stays visible behind and around it.
       expect(geometry.height).toBeLessThan(.1);
       expect(geometry.area).toBeLessThan(.04);

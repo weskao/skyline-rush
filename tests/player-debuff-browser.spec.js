@@ -69,11 +69,11 @@ for (const [name, width, height, hasTouch, locale] of [
     await expect(freeze).toHaveCSS('animation-name', ['desktop', 'foldable'].includes(name) ? /^player-hit-in/ : 'none');
     const centre = await freeze.evaluate(card => {
       const box = card.parentElement.getBoundingClientRect();
-      return { x: box.left + box.width / 2, y: box.top + box.height / 2, height: box.height };
+      return { x: box.left + box.width / 2, top: box.top, height: box.height };
     });
     const expectedX = name === 'foldable' ? 638 : width / 2;
     expect(Math.abs(centre.x - expectedX)).toBeLessThan(1);
-    expect(Math.abs(centre.y - height / 2)).toBeLessThan(1);
+    expect(Math.abs(centre.top - height * .2), 'debuff begins about 20% from scene top').toBeLessThan(3);
     expect(centre.height).toBeLessThan(height * .18);
 
     await page.evaluate(() => {
