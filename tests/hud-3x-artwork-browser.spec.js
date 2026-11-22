@@ -164,6 +164,8 @@ test.describe('touch sprint artwork', () => {
       };
       return {
         nitroCharging: read('.touch-nitro', 'data-nitro-state', 'charging'),
+        nitroHeldCharging: read('.touch-nitro', 'data-nitro-state', 'charging', true),
+        boostEmpty: read('.touch-boost', 'data-boost-state', 'charging'),
         nitroReady: read('.touch-nitro', 'data-nitro-state', 'ready'),
         nitroActive: read('.touch-nitro', 'data-nitro-state', 'active'),
         boostReady: read('.touch-boost', 'data-boost-state', 'ready'),
@@ -181,7 +183,10 @@ test.describe('touch sprint artwork', () => {
       };
     });
     expect(flames.gasRim).toBe('rgb(111, 224, 160)');
-    expect(flames.nitroCharging).toEqual({ rest: 0, burning: false });
+    // Not pressed: both burn one idle flame at their own size, charging or ready. Pressed without effect: none.
+    expect(flames.nitroCharging).toEqual({ rest: .55, burning: true });
+    expect(flames.boostEmpty).toEqual({ rest: .3, burning: true });
+    expect(flames.nitroHeldCharging).toEqual({ rest: 0, burning: false });
     expect(flames.boostHeldEmpty).toEqual({ rest: 0, burning: false });
     expect(flames.nitroReady).toEqual({ rest: .55, burning: true });
     expect(flames.boostReady).toEqual({ rest: .3, burning: true });

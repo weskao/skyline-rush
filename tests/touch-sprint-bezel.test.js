@@ -57,3 +57,34 @@ test('every point of the bezel rim stands out from every button face and the dar
   }
   assert.deepEqual(weak, []);
 });
+
+// NITRO sat flameless while charging (most of a race) while BOOST burned small embers: the two looked like different
+// systems. Both now burn one idle flame whenever they are not pressed; only colours and each button's size differ.
+test('NITRO and BOOST burn one shared idle flame while not pressed, sized per button', () => {
+  const plain = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  const rules = [...plain.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(m => ({ selector: m[1].trim(), body: m[2] }));
+  const value = (body, name) => body.match(new RegExp(`${name}:\\s*([^;]+);`))?.[1].trim();
+
+  const idle = rules.filter(rule => /--flame-rest:\s*var\(--flame-idle\)/.test(rule.body));
+  assert.equal(idle.length, 1, 'one idle rule serves both buttons');
+  for (const state of ['nitro-state="charging"', 'nitro-state="ready"', 'boost-state="charging"', 'boost-state="ready"']) {
+    assert.ok(idle[0].selector.includes(`[data-${state}]`), `idle flame covers ${state}`);
+  }
+  assert.match(idle[0].selector, /:not\(\.is-held\)$/, 'a pressed button (BOOST held on an empty tank) shows no idle flame');
+  assert.equal(value(idle[0].body, '--flame-alpha'), 'var(--flame-idle-alpha)');
+
+  // Size and strength live on each button; no state rule sets its own.
+  const sized = { '#touch-controls .touch-nitro': ['.55', '.92'], '#touch-controls .touch-boost': ['.3', '.8'] };
+  for (const [selector, [rest, alpha]] of Object.entries(sized)) {
+    const base = rules.filter(rule => rule.selector === selector).map(rule => rule.body).join('');
+    assert.deepEqual([value(base, '--flame-idle'), value(base, '--flame-idle-alpha')], [rest, alpha], selector);
+  }
+  const literal = rules.filter(rule => /--flame-rest:\s*[\d.]/.test(rule.body)).map(rule => rule.selector);
+  assert.deepEqual(literal, ['#touch-controls :is([data-nitro-state="active"], [data-boost-state="active"])']);
+
+  // One switch starts the flipbook: no second list of states for the animation.
+  const effect = rules.find(rule => rule.selector === '#touch-controls .sprint-ready-effect::before');
+  assert.match(value(effect.body, 'animation'), /^var\(--flame-burn, none\) /);
+  assert.equal(rules.filter(rule => /animation:\s*sprint-flame/.test(rule.body)).length, 0);
+  for (const rule of [idle[0], rules.find(r => r.selector === literal[0])]) assert.equal(value(rule.body, '--flame-burn'), 'sprint-flame');
+});
