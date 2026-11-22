@@ -34,11 +34,13 @@ export function setupLobbyPickers(applyTrack: (id: string) => void, getTrack: ()
     }
     selection.textContent = card?.querySelector('strong')?.textContent ?? '';
     state.textContent = card?.querySelector('small')?.textContent ?? '';
-    state.dataset.trackState = card?.dataset.trackState ?? '';
-    const previewOnly = ['locked', 'preview'].includes(state.dataset.trackState);
+    const trackState = card?.dataset.trackState ?? '';
+    state.dataset.trackState = trackState;
+    const previewOnly = trackState === 'locked' || trackState === 'preview';
     confirm.dataset.previewOnly = String(previewOnly);
-    actionLabel.dataset.i18n = previewOnly ? 'track.previewConfirm' : 'track.confirm';
-    actionLabel.textContent = t(actionLabel.dataset.i18n);
+    const actionKey = previewOnly ? 'track.previewConfirm' : 'track.confirm';
+    actionLabel.dataset.i18n = actionKey;
+    actionLabel.textContent = t(actionKey);
     copyRouteMap(map, card, card ? trackId(card) : '');
     confirm.disabled = !card;
   }
