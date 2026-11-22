@@ -46,3 +46,10 @@ test('release, dev worktrees, and Playwright sharding use pnpm binaries', () => 
   assert.match(read('scripts/perf.mjs'), /modern \? 'pnpm' : 'npm'/,
     'historical npm-only performance baselines must remain runnable');
 });
+
+test('release gate patches the version without the removed pnpm pkg subcommand', () => {
+  const gate = read('scripts/release-gate.sh');
+  assert.doesNotMatch(gate, /pnpm pkg set/);
+  assert.match(gate, /node\s+--input-type=module\s+-e/);
+  assert.match(gate, /pnpm test/);
+});
