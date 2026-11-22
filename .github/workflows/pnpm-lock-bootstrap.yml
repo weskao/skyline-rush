@@ -1,4 +1,4 @@
-# Temporary one-shot migration runner. Remove via GitHub after the verified lockfile lands.
+# Temporary one-shot migration runner. Remove after verified lockfile lands and all regression gates pass.
 name: Bootstrap pnpm lockfile (temporary)
 on:
   push:
