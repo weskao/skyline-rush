@@ -169,12 +169,3 @@ export const legacyClassicRoad: ClassicRoad = {
   offset: (x, z) => Math.abs(x - classicRoadCenter(-z)),
   heading: distance => Math.atan((classicRoadCenter(distance + 1) - classicRoadCenter(distance - 1)) / 2),
 };
-
-/** Grounded fast cars run a little wide while the road turns. Lane assist and full steering can both counter it. */
-export function classicCornerPush(id: string, distance: number, speed: number): number {
-  const road = classicRoadRoute(id);
-  if (!road || speed <= 35) return 0;
-  const turn = (road.heading(distance + 2) - road.heading(distance - 2)) / 4;
-  const push = -turn * .25 * (speed - 35) ** 2;
-  return Math.max(-2.8, Math.min(2.8, push));
-}

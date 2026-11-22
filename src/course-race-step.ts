@@ -4,7 +4,7 @@ import { physicalGap } from './circuit-track.ts';
 import { chooseCourseNextEdge } from './course-ai-standings.ts';
 import { routeLength, sampleRoute } from './course-route-frame.ts';
 import { COURSE_RUNTIMES, isCourseRuntime } from './course-runtimes.ts';
-import { chooseBranchByLateral, courseCarGap, courseNoRoadAt, courseRemaining, createCourseRuntime, placeCourseCar,
+import { chooseBranchByLateral, forkLateral, courseCarGap, courseNoRoadAt, courseRemaining, createCourseRuntime, placeCourseCar,
   moveFinishedCourseCar, rankCourseRuntime, recoverCourseCar, setCourseContact, stepCourseCar, type CourseHazard, type CourseRuntime, type CourseStepEvent } from './course-race.ts';
 import { RESET_BACKTRACK, startRoadRecovery, type FallingCar, type RecoverySeat } from './road-falls.ts';
 import { knock } from './car-collisions.js';
@@ -18,7 +18,7 @@ import { FLY_DRAIN, GAP_CLEARANCE, GAP_LIFT_RESERVE, GAP_SLOWDOWN, GAP_WARN_DIST
 
 interface Car { distance: number; id?: string }
 interface RaceCar extends Car { x: number; altitude: number; finishTime?: number | null }
-type Player = RaceCar & FallingCar & { fuel: number; effects?: { ghost: number } };
+type Player = RaceCar & FallingCar & { fuel: number; effects?: { ghost: number }; cornerDrift?: number };
 type Rival = RaceCar & RivalCollector & { pace: number; speed: number; cooldown?: number };
 interface CourseRef { course?: CourseRuntime; player: object }
 interface CourseHost extends CourseRef {
@@ -103,7 +103,7 @@ export function stepCoursePlayer(race: CourseHost, dt: number, contact: Contact)
   const rt = race.course!, player = race.player, { travel, edgeStart } = rt.cars.get(PLAYER_ID)!;
   const prevEdge = travel.currentEdgeId, prevS = travel.localS;
   const event = stepCar(rt, PLAYER_ID, player, player.speed * dt,
-    () => chooseBranchByLateral(rt.spec.graph, prevEdge, player.x, BRANCH_DEADBAND));
+    () => chooseBranchByLateral(rt.spec.graph, prevEdge, forkLateral(player.x, player.cornerDrift), BRANCH_DEADBAND));
   if (event === 'rejected' || (courseNoRoadAt(rt, PLAYER_ID) && player.altitude < GAP_CLEARANCE)) {
     const seat = recover(rt, PLAYER_ID);
     if (event === 'rejected') player.distance = rt.cars.get(PLAYER_ID)!.last.distance;
@@ -237,7 +237,7 @@ function gapWarning(race: CourseHost, edgeId: string | null, offset: number, s: 
 export function courseGapWarning(race: CourseHost): { from: number; need: number } | null {
   const rt = race.course!, { travel } = rt.cars.get(PLAYER_ID)!, graph = rt.spec.graph;
   if (travel.finished) return null;
-  const next = chooseBranchByLateral(graph, travel.currentEdgeId, race.player.x, BRANCH_DEADBAND);
+  const next = chooseBranchByLateral(graph, travel.currentEdgeId, forkLateral(race.player.x, race.player.cornerDrift), BRANCH_DEADBAND);
   const here = gapWarning(race, travel.currentEdgeId, 0, travel.localS); // null: a gap in range, enough charge
   return here !== undefined ? here : gapWarning(race, next, routeLength(graph, travel.currentEdgeId), travel.localS) ?? null;
 }
