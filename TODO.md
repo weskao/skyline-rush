@@ -32,6 +32,22 @@
 - [ ] Final rerun of `mobile-guide`, `guide`, `i18n`, `first-visit-start-parity` browser specs and the GitHub `quality-gate` for the pushed HEAD.
 - Known flake, not from this branch: `tests/audio.test.js` reveal/premiere cues drop under heavy load (`CLOCK_STALL_MS` in `src/audio-context-health.ts` vs a mock clock that never advances); reproduced with a 40x `performance.now` shim.
 
+# 版本入口底部置中（2026-11-23）
+
+- [x] RED 與 GREEN。舊版在桌面啟動畫面偏左約 470 CSS px，未讀圓點為 8×8。新版在桌面及手機直向、橫向於畫面底部置中，保留 44 CSS px 操作區，並通過徽章顏色和尺寸比對。
+- [x] 16 項 Chrome 定向回歸通過，涵蓋中英文、版本更新入口、鍵盤、觸控、焦點復原、旋轉、折疊視窗、橫向工具列及安全區。
+- [x] 實際 Chrome 畫面與互動檢查涵蓋 1440×900、390×844、844×390。啟動、公告、主選單截圖位於 `artifacts/version-entry-review/`，三種視窗均無頁面錯誤。
+- [ ] 手機實機與此次修改的 GitHub `quality-gate`。
+
+# 啟動畫面與功能選單共用版本更新入口（2026-11-23）
+
+- [x] RED：桌面 Playwright 可進入啟動畫面，但在 `#startup` 找不到版本更新入口。
+- [x] 啟動畫面與功能選單共用版本號、更新按鈕、未讀狀態和公告視窗。保留 44 CSS px 觸控區，直向與橫向使用相同的文字和樣式。未讀圓點沿用版本分頁徽章的色彩和外框。
+- [x] 型別檢查、正式建置鎖定檢查及 10 項模組／CSS 契約與啟動畫面單元檢查通過。
+- [x] 15 項 Playwright 回歸通過。實際 Chrome 截圖涵蓋 1440×900、390×844、844×390。驗證鍵盤／觸控開啟、關閉後返回啟動畫面、未讀點清除及狹窄有瀏海橫向版面的賽道卡。共用 DOM 按鈕沿用既有音效與畫質設定。
+- [x] `make verify` 的型別、3,800 項單元測試（4 項跳過）與試用模式建置通過。
+- [ ] 全套瀏覽器與 World Tour、手機實機及精確提交的 GitHub `quality-gate`。完整瀏覽器套件共 1,548 項，本次在 8 項通過後停止，保留上述 15 項定向回歸與最後一輪 3 項啟動畫面測試的證據。
+
 # Develop shader warmup in rain (2026-11-21)
 
 - [x] RED on `5f0e321e`: switching Coast from day to rain after GO compiled two extra programs on High for the Roadster (104 → 106) and Crimson GT (108 → 110). Both Low cases passed.

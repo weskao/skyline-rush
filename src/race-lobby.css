@@ -274,7 +274,6 @@ details.performance-notice {
   .lobby-compact #lobby-track-status { margin-inline-start: auto; }
 }
 @media (min-width: 1001px) and (min-height: 701px) {
-  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .bottomline { bottom: max(4px, var(--safe-bottom)); }
   body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .lobby-compact {
     display: flex; flex-direction: column;
     justify-content: flex-start;
@@ -370,7 +369,6 @@ body[data-fold-axis] #intro.lobby-compact .lobby-race-heading #intro-title { dis
   }
   body:not([data-fold-axis]) .intro .home-intro-topbar > .route-label > span { display: none; }
   body:not([data-fold-axis]) .intro .home-intro-topbar :is(button, summary) { pointer-events: auto; }
-  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .bottomline { bottom: var(--home-footer-bottom, var(--safe-bottom)); }
   body[data-phase="ready"]:not([data-fold-axis], .airflow-active) #intro.lobby-compact {
     --lobby-bottom: calc(var(--safe-bottom) + 48px);
     inset: auto max(12px, var(--safe-right)) var(--lobby-bottom) max(12px, var(--safe-left));
@@ -425,24 +423,18 @@ body[data-fold-axis] #intro.lobby-compact .lobby-race-heading #intro-title { dis
   }
 }
 
+body[data-phase="ready"]:not([data-fold-axis]) .bottomline {
+  inset: auto auto var(--home-footer-bottom, max(4px, var(--safe-bottom))) 50%;
+  translate: -50% 0;
+  display: flex;
+  justify-content: center;
+}
 @media (max-height: 500px) and (orientation: landscape) {
-  body[data-phase="ready"]:not([data-fold-axis]) { --home-version-width: 64px; }
   body[data-phase="ready"]:not([data-fold-axis]) .bottomline {
-    top: auto;
-    right: auto;
     bottom: calc(max(4px, var(--safe-bottom)) + max(var(--browser-bar), 100% - 100dvh));
-    left: 50%;
-    translate: -50% 0;
-    width: var(--home-version-width);
-  }
-  body[data-phase="ready"]:not([data-fold-axis]) .build-version {
-    width: 100%;
-    padding-inline: 4px;
-    white-space: nowrap;
-    text-shadow: 0 1px 3px #000;
   }
   body[data-phase="ready"]:not([data-fold-axis], .airflow-active) #intro {
-    --version-side-room: calc(50vw - var(--home-version-width) / 2 - 4px);
+    --version-side-room: calc(50vw - 84px);
     --version-panel-limit: calc((var(--version-side-room) - max(16px, var(--safe-left))) / var(--z));
     --panel-width: min(520px, calc((100vw - 280px - var(--safe-left) - var(--safe-right)) / var(--z)), var(--version-panel-limit));
     --rail: min(210px, calc((var(--version-side-room) - max(16px, var(--safe-right))) / var(--z)));
@@ -504,3 +496,20 @@ body[data-fold-axis] #intro .race-mode-heading:has(#lobby-modes-toggle[aria-expa
 
 body:is([data-phase="countdown"], [data-phase="racing"]) #settings-button { display: none; }
 body[data-phase="ready"] .toolbar :is(#camera-button, #pause-button) { display: none; }
+
+/* The start screen and lobby share one compact version action. */
+:is(#startup, body[data-phase="ready"]) .build-version {
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  position: relative; isolation: isolate; width: max-content; min-height: 44px;
+  padding: 0 10px; border: 0; background: transparent; pointer-events: auto; white-space: nowrap;
+  color: #eaf6ff; font: 600 12px/1 'Avenir Next', 'Segoe UI', var(--cjk-fonts), sans-serif; letter-spacing: .02em;
+}
+.build-version::before {
+  content: ''; position: absolute; inset: 6px 0; z-index: -1; border-radius: 9px;
+  border: 1px solid rgb(150 227 255 / .3); background: rgb(10 24 43 / .93);
+}
+.build-version-number { color: #c5dded; font-variant-numeric: tabular-nums; }
+.build-version-separator { width: 1px; height: 12px; background: rgb(181 213 230 / .27); }
+.build-version-arrow { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+@media (hover: hover) { .build-version:hover::before { border-color: rgb(150 227 255 / .5); background: rgb(18 41 58 / .92); } }
+.build-version .release-tab-unread { top: 6px; right: 0; pointer-events: none; }

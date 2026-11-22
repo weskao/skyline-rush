@@ -155,12 +155,12 @@ const renderResult = setupResultScreen(() => renderWave3DemoResults(race, getLoc
 const overlayActions = setupOverlayActions();
 const notice = setupPerformanceNotice({ downgraded: vfx.deviceSelection.downgraded, quality: vfx.deviceSelection.settings.quality });
 
-const { renderReleaseNotes, maybeShowReleaseNotes } = setupReleaseNotesUI({
+const { renderReleaseNotes, maybeShowReleaseNotes, finishStartupReleaseNotes } = setupReleaseNotesUI({
   canOpen: () => race.phase === 'ready' && !tutorial,
   canAutoOpen: () => startup.entered && !!world && !document.hidden,
   beforeOpen: () => { controls.clear(); toggleSettings(false); notice.hide(); },
   afterClose: () => notice.restore(race.phase === 'ready'),
-  reducedMotion,
+  reducedMotion, startsAtStartup: !startup.entered,
 });
 
 // One-off re-render on a language switch (never per frame); world.js repaints its road signs via its own onLocaleChange.
@@ -559,7 +559,7 @@ try {
       }
       if (drawn && startup.waitingForFrame) {
         cancelAnimationFrame(animationId); // The opaque startup screen only needs the first lobby frame.
-        startup.ready(() => { controls.clear(); sound.cue('ui'); maybeShowReleaseNotes(); animationId = requestAnimationFrame(frame); });
+        startup.ready(() => { controls.clear(); sound.cue('ui'); finishStartupReleaseNotes(); animationId = requestAnimationFrame(frame); });
       }
       if (drawn) fps.completeRender(performance.now() - renderStarted);
     }

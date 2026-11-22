@@ -17,8 +17,9 @@ interface ReleaseNotesUIOptions {
   beforeOpen: () => void;
   afterClose: () => void;
   reducedMotion: MediaQueryList;
+  startsAtStartup: boolean;
 }
-export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClose, reducedMotion }: ReleaseNotesUIOptions) {
+export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClose, reducedMotion, startsAtStartup }: ReleaseNotesUIOptions) {
   const $ = (selector: string): HTMLElement => document.querySelector<HTMLElement>(selector)!;
   const releaseDialog = document.querySelector<HTMLDialogElement>('#whats-new-screen')!;
   const navigation = dialogNavigation(releaseDialog);
@@ -27,11 +28,13 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
   const portrait = matchMedia('(orientation: portrait)');
   const compact = matchMedia('(orientation: landscape) and (max-height: 420px)');
   const RECENT_RELEASES = recentReleases();
+  const latestPublished = RECENT_RELEASES.find(release => release.version !== UPCOMING) ?? null;
   let releaseIndex = 0;
   let releaseOpener: HTMLElement | null = null;
   let releaseShownHere = false;
   let releaseUnread = new Set<string>();
   const releaseStorage = (): Storage | null => { try { return localStorage; } catch { return null; } };
+  const hasUnreadRelease = () => !releaseShownHere && shouldAnnounce(latestPublished, releaseStorage());
   const releaseDay = (date: string, options: Intl.DateTimeFormatOptions): string => formatDate(new Date(date + 'T00:00:00'), options);
   const versionLabel = (version: string): string => version === UPCOMING ? t('release.upcoming') : 'v' + version;
   // Absolute, so the address matches what Cache Storage records for it.
@@ -111,7 +114,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
         };
       }),
     });
-    updateReleaseView({ openHasUpdate: !releaseShownHere && shouldAnnounce(CURRENT_RELEASE, releaseStorage()) });
+    updateReleaseView({ openHasUpdate: hasUnreadRelease() });
     nextTick(syncReleaseVideo);
     void loadVisibleClips();
   }
@@ -192,7 +195,11 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
   // The Vue image handler clears its source when the asset fails.
   // A higher-priority modal may have been open during the first ready-state check.
   document.addEventListener('close', () => queueMicrotask(maybeShowReleaseNotes), true);
-  updateReleaseView({ openHidden: !CURRENT_RELEASE });
+  updateReleaseView({ openHidden: !CURRENT_RELEASE, openOnStartup: startsAtStartup, openHasUpdate: hasUnreadRelease() });
 
-  return { renderReleaseNotes, maybeShowReleaseNotes };
+  function finishStartupReleaseNotes() {
+    updateReleaseView({ openOnStartup: false });
+    void nextTick(maybeShowReleaseNotes);
+  }
+  return { renderReleaseNotes, maybeShowReleaseNotes, finishStartupReleaseNotes };
 }

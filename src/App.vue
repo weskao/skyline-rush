@@ -389,7 +389,11 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
     <button class="touch-brake" data-control="brake" aria-label="Brake" data-i18n-aria-label="touch.brake"><svg v-bind="ICON_ATTRS" v-html="icons.brake"></svg></button>
   </div>
   <div class="layout-toolbar" id="layout-toolbar" hidden><div><strong id="layout-orientation" role="status"></strong><br><span data-i18n="layout.hint">Drag buttons to fit your thumbs</span></div><button id="layout-done" data-i18n="layout.done">Done editing</button></div>
-  <div class="bottomline"><button type="button" id="whats-new-open" class="build-version" :hidden="releaseView.openHidden" :class="{ 'has-update': releaseView.openHasUpdate }" :aria-label="`${t('release.open', undefined, homeWalletLocale)} · v${version}`" :title="t('release.open', undefined, homeWalletLocale)"><span class="build-version-number">v{{ version }}</span><span class="build-version-separator" aria-hidden="true"></span><span class="build-version-caption" data-i18n="release.open">What's new</span><svg class="build-version-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="m5.5 3.5 4.5 4.5-4.5 4.5" /></svg><span class="release-unread" aria-hidden="true"></span></button></div>
+  <div class="bottomline">
+    <Teleport to="#startup-release-entry" :disabled="!releaseView.openOnStartup">
+      <button type="button" id="whats-new-open" class="build-version" :hidden="releaseView.openHidden" :class="{ 'has-update': releaseView.openHasUpdate }" aria-haspopup="dialog" aria-controls="whats-new-screen" :aria-label="`${t('release.open', undefined, homeWalletLocale)} · v${version}`" :aria-description="releaseView.openHasUpdate ? t('release.unread', undefined, homeWalletLocale) : undefined"><span class="build-version-number">v{{ version }}</span><span class="build-version-separator" aria-hidden="true"></span><span class="build-version-caption" data-i18n="release.open">What's new</span><svg class="build-version-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="m5.5 3.5 4.5 4.5-4.5 4.5" /></svg><span v-if="releaseView.openHasUpdate" class="release-tab-unread" aria-hidden="true">{{ t('release.unread', undefined, homeWalletLocale) }}</span></button>
+    </Teleport>
+  </div>
 </template>
 
 <style scoped>

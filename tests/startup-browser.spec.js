@@ -12,6 +12,70 @@ test.beforeEach(async ({ page }) => {
 });
 const enter = page => page.getByRole('button', { name: 'Enter game', exact: true });
 
+for (const [width, height, locale, caption, enterLabel] of [
+  [1440, 900, 'en', "What's new", 'Enter game'],
+  [390, 844, 'zh-TW', '查看更新', '進入遊戲'],
+  [844, 390, 'zh-TW', '查看更新', '進入遊戲'],
+]) {
+  test.describe(`startup release notes at ${width}×${height}`, () => {
+    test.use({ viewport: { width, height }, isMobile: height !== 900, hasTouch: height !== 900, whatsNewSeen: false });
+
+    test('shares the version action with Home and clears its unread badge after reading', async ({ page }) => {
+      await page.addInitScript(value => localStorage.setItem('skyline-rush-locale', value), locale);
+      await page.goto('/');
+      const launch = page.getByRole('button', { name: enterLabel, exact: true });
+      await expect(launch).toBeVisible();
+      const startup = page.locator('#startup');
+      const opener = startup.locator('#whats-new-open');
+      const dialog = page.locator('#whats-new-screen');
+      await expect(opener).toBeVisible();
+      const version = await opener.locator('.build-version-number').innerText();
+      expect(version).toMatch(/^v\d+\.\d+\.\d+$/);
+      await expect(opener).toHaveAccessibleName(`${caption} · ${version}`);
+      await expect(opener.locator('.build-version-caption')).toBeVisible();
+      await expect(opener.locator('.build-version-caption')).toHaveText(caption);
+      await expect(page.locator('#app')).toHaveAttribute('inert', '');
+      const unreadBadge = opener.locator('.release-tab-unread');
+      await expect(unreadBadge).toBeVisible();
+      const [box, launchBox, badge] = await Promise.all([opener, launch, unreadBadge].map(locator => locator.boundingBox()));
+      expect(Math.abs(box.x + box.width / 2 - width / 2), 'version centered in the viewport').toBeLessThanOrEqual(1);
+      expect(Math.abs(height - box.y - box.height - 4), 'version sits at the bottom edge').toBeLessThanOrEqual(1);
+      expect(box.height, 'version tap target').toBeGreaterThanOrEqual(44);
+      expect(badge.y, 'badge clears Enter game').toBeGreaterThan(launchBox.y + launchBox.height);
+      expect(badge.y + badge.height).toBeLessThan(box.y + box.height / 3);
+      const badgeStyle = el => {
+        const { backgroundColor, boxShadow, color, width, height } = getComputedStyle(el);
+        return { backgroundColor, boxShadow, color, width, height };
+      };
+      const openerBadgeStyle = await unreadBadge.evaluate(badgeStyle);
+      if (height === 900) await opener.press('Enter');
+      else await opener.tap();
+      await expect(dialog).toBeVisible();
+      const currentTab = dialog.locator(`.release-tab[data-version="${version.slice(1)}"]`);
+      if (await currentTab.getAttribute('aria-selected') === 'false') await currentTab.click();
+      await expect(dialog.locator('#release-version')).toHaveText(version);
+      const unreadTab = dialog.locator('.release-tab[aria-selected="true"] .release-tab-unread');
+      await expect(unreadTab).toBeVisible();
+      expect(openerBadgeStyle, 'unread badges use the same colors and dimensions').toEqual(await unreadTab.evaluate(badgeStyle));
+      if (height === 900) await page.keyboard.press('Escape');
+      else await dialog.locator('#release-close').tap();
+      await expect(dialog).toBeHidden();
+      await expect(opener).toBeFocused();
+      await expect(unreadBadge).toBeHidden();
+      await expect(startup).toBeVisible();
+      await launch.click();
+      await expect(startup).toBeHidden();
+      const lobbyOpener = page.locator('.bottomline #whats-new-open');
+      await expect(lobbyOpener).toHaveAccessibleName(`${caption} · ${version}`);
+      await expect(lobbyOpener.locator('.build-version-caption')).toBeVisible();
+      await expect(lobbyOpener.locator('.release-tab-unread')).toBeHidden();
+      await expect(dialog).toBeHidden();
+      await lobbyOpener.click();
+      await expect(dialog).toBeVisible();
+    });
+  });
+}
+
 test('saved Chinese appears before the startup module can load', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('skyline-rush-locale', 'zh-TW'));
   await page.route('**/assets/*.js', route => route.abort());
