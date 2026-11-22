@@ -44,7 +44,7 @@ export function setupTrackPackUI(getGraphics: () => Graphics) {
     card.dataset.packState = state;
     control.dataset.packState = state;
     control.dataset.packProgress = String(Math.round(100 * fraction));
-    control.hidden = state === 'checking' || state === 'unavailable';
+    control.hidden = state === 'checking' || state === 'unavailable' || state === 'ready';
     control.disabled = !!batch || state === 'ready' || state === 'downloading';
     ring(control, fraction);
     const stateLabel = state === 'ready' ? chinese() ? '已下載' : 'Downloaded'
@@ -67,7 +67,7 @@ export function setupTrackPackUI(getGraphics: () => Graphics) {
     const label = active ? chinese() ? '取消下載' : 'Cancel downloads'
       : ready === packs.length ? chinese() ? '全部已下載' : 'All downloaded'
       : chinese() ? '下載全部' : 'Download all';
-    allButton.hidden = !supported || checking || !packs.length;
+    allButton.hidden = !supported || checking || !packs.length || (!active && ready === packs.length);
     allButton.disabled = !active && ready === packs.length;
     allButton.dataset.packState = !active && ready === packs.length ? 'ready' : active ? 'downloading' : 'missing';
     allButton.querySelector<HTMLElement>('.track-download-label')!.textContent = label;

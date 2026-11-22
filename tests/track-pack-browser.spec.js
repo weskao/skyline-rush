@@ -22,7 +22,7 @@ test('track chooser installs a versioned visual pack once, then reuses it after 
   await expect(page.locator('#track-choose-pack-version')).toContainText('v1.0.0');
   await download.click();
   await expect(card).toHaveAttribute('data-pack-state', 'ready', { timeout: ciTimeout(15000) });
-  await expect(download).toBeDisabled();
+  await expect(download).toBeHidden();
   await page.screenshot({ path: testInfo.outputPath('track-download-mobile.png'), animations: 'disabled', scale: 'css' });
   const cachedImage = await card.locator('.track-preview img').getAttribute('src');
   await page.context().setOffline(true);
@@ -39,7 +39,7 @@ test('track chooser installs a versioned visual pack once, then reuses it after 
   await waitForHome(page);
   await page.locator('#lobby-tracks-toggle').click();
   await expect(card).toHaveAttribute('data-pack-state', 'ready', { timeout: ciTimeout(15000) });
-  await expect(download).toBeDisabled();
+  await expect(download).toBeHidden();
   await page.locator('#track-choose-confirm').click();
   await page.locator('#start-button').click();
   await expect(page.locator('#world')).toBeVisible({ timeout: ciTimeout(20000) });
@@ -74,13 +74,13 @@ test('each track owns a separate circular download action and download-all skips
   await action.click();
   await expect(select).not.toHaveAttribute('aria-pressed', 'true');
   await expect(action).toHaveAttribute('data-pack-state', 'ready', { timeout: ciTimeout(15000) });
-  await expect(action).toBeDisabled();
+  await expect(action).toBeHidden();
   await expect(action).toHaveAttribute('data-pack-progress', '100');
   const all = page.locator('#track-choose-download-all');
   await expect(all).toBeVisible();
   await all.click();
   await expect(page.locator('#track-choose-pack-summary')).toContainText('16/16', { timeout: ciTimeout(45000) });
-  await expect(all).toBeDisabled();
+  await expect(all).toBeHidden();
   await expect(page.locator('#lobby-track-options .track-pack-action')).toHaveCount(16);
 });
 
@@ -192,4 +192,31 @@ test('per-track icon stays bottom-right without covering distance on desktop and
     expect(geometry.availableDistanceRight, `distance overlaps icon at ${width}x${height}`)
       .toBeLessThanOrEqual(geometry.actionLeft + 1);
   }
+});
+
+test('up-to-date pack hides the corner icon while a new release restores the update action', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', comfortable: true })));
+  await page.goto('/');
+  await page.locator('#startup-enter').click();
+  await waitForHome(page);
+  await page.locator('#lobby-tracks-toggle').click();
+  const card = page.locator('#lobby-track-options [data-track="coast"]');
+  const action = page.locator('#lobby-track-options [data-pack-for="coast"]');
+  await expect(action).toBeVisible({ timeout: ciTimeout(12000) });
+  await action.click();
+  await expect(card).toHaveAttribute('data-pack-state', 'ready', { timeout: ciTimeout(15000) });
+  await expect(action).toBeHidden();
+  await expect(page.locator('#track-choose-download-all')).toBeVisible();
+  await page.evaluate(async () => {
+    const base = new URL(document.baseURI);
+    const receipts = await caches.open('skyline-rush:track-pack-receipts:v1');
+    const key = new URL('.skyline-packs/coast/low/track', base);
+    await receipts.put(key.href, new Response(JSON.stringify({ version: '0.9.0', signature: 'old-release' })));
+  });
+  await page.locator('#track-choose-close').click();
+  await page.locator('#lobby-tracks-toggle').click();
+  await expect(card).toHaveAttribute('data-pack-state', 'update', { timeout: ciTimeout(12000) });
+  await expect(action).toBeVisible();
+  await expect(action).toHaveAttribute('data-pack-progress', '0');
 });
