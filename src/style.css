@@ -528,6 +528,9 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .countdown[data-step="3"] .start-lights > i:first-child,
 .countdown[data-step="2"] .start-lights > i:nth-child(-n+2),
 .countdown[data-step="1"] .start-lights > i { background: #ffae79; border-color: #ffd0a6; box-shadow: 0 0 18px #fb895b; }
+/* GO temporarily claims the right-hand screen space; once it clears, the flight
+   telemetry returns and the existing placement observer moves active callouts aside. */
+body[data-phase="racing"]:has(#countdown[data-step="GO"]:not([hidden])) .flight-telemetry { visibility: hidden; }
 .countdown[data-step="GO"] { color: #b0f5ff; }
 .countdown[data-step="GO"] .start-lights > i { background: #90efff; border-color: #c8faff; box-shadow: 0 0 22px #69d5ff; }
 /* The results overlay (z-index 4) is later in the DOM; keep global language/VFX controls above it so the overlay never swallows taps. The topbar (7) stays above this row because its Controls/Audio dropdowns open over it. */
