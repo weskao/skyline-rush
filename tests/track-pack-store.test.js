@@ -108,3 +108,30 @@ test('a shared unchecksummed HDRI is reused across independently updated map ver
   const replaced = { ...neon, signature: 'neon-v3', assets: [{ ...shared, revision: 'shared-hdri-v2' }] };
   assert.equal(await store.status(replaced), 'update', 'changing the shared resource revision invalidates the receipt');
 });
+
+test('first-time online play needs no mandatory download, but an installed old release does', async () => {
+  const storage = new MemoryStorage(), requests = [], service = create(storage, requests);
+  assert.equal(await service.updateRequired(pack('1.0.1')), false);
+  await service.download(pack());
+  assert.equal(await service.updateRequired(pack('1.0.1')), true);
+  await service.download(pack('1.0.1'));
+  assert.equal(await service.updateRequired(pack('1.0.1')), false);
+});
+test('quality-switch does not bypass a mandatory old map version', async () => {
+  const storage = new MemoryStorage(), service = create(storage, []);
+  await service.download({ ...pack(), tier: 'low', signature: 'low:v1' });
+  assert.equal(await service.updateRequired({ ...pack('1.0.1'), tier: 'high' }), true);
+  await service.download(pack('1.0.1'));
+  assert.equal(await service.updateRequired(pack('1.0.1')), false);
+});
+test('same-release art signature change also requires an update', async () => {
+  const storage = new MemoryStorage(), service = create(storage, []);
+  await service.download(pack());
+  assert.equal(await service.updateRequired({ ...pack(), signature: 'art-changed' }), true);
+});
+test('failed update cannot clear a previous mandatory update', async () => {
+  const storage = new MemoryStorage(), requests = [];
+  await create(storage, requests).download(pack());
+  await assert.rejects(create(storage, requests, 'wrong-data').download(pack('1.0.1', 'new-data')), /checksum/i);
+  assert.equal(await create(storage, requests).updateRequired(pack('1.0.1', 'new-data')), true);
+});

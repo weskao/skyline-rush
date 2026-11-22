@@ -95,3 +95,26 @@ test('update and retry states use the refresh glyph, not the download glyph', as
   await expect.poll(() => action.locator('.track-pack-update-glyph').evaluate(node => getComputedStyle(node).display)).toBe('block');
   await expect.poll(() => action.locator('.track-pack-download-glyph').evaluate(node => getComputedStyle(node).display)).toBe('none');
 });
+
+test('old downloaded map opens mandatory update dialog and cannot enter until updated', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', comfortable: true })));
+  await page.goto('/');
+  await page.locator('#startup-enter').click();
+  await waitForHome(page);
+  await page.evaluate(async () => {
+    const base = new URL(document.baseURI);
+    const key = new URL('.skyline-packs/coast/low/track', base);
+    await (await caches.open('skyline-rush:track-pack-receipts:v1')).put(key.href, new Response(JSON.stringify({ version: '0.9.0', signature: 'old-release' })));
+  });
+  await page.locator('#start-button').click();
+  const gate = page.locator('#track-required-update');
+  await expect(gate).toBeVisible({ timeout: ciTimeout(10000) });
+  await expect(page.locator('#intro')).toBeVisible();
+  await page.locator('#track-update-cancel').click();
+  await expect(gate).toBeHidden();
+  await page.locator('#start-button').click();
+  await expect(gate).toBeVisible();
+  await page.locator('#track-update-now').click();
+  await expect(gate).toBeHidden({ timeout: ciTimeout(15000) });
+  await expect(page.locator('#intro')).toBeHidden({ timeout: ciTimeout(20000) });
+});
