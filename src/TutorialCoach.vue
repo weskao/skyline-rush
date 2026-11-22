@@ -43,5 +43,7 @@ import { rewardParts } from './tutorial-ui.ts';
 .tutorial-meter #tutorial-progress { flex: 1; min-width: 0; margin: 0; }
 /* Narrow portrait: the touch AUTO path wraps to two lines, so drop the small print as phone landscape does; the coach stays above the slide pad at 320x568. */
 @media (max-width: 360px) and (orientation: portrait) { .tutorial-copy small { display: none; } }
+/* Phone landscape: the meter's 8px of margin put the coach 3px over the slide pad at 844x390. */
+@media (max-height: 500px) and (orientation: landscape) { .tutorial-meter { margin: 2px 0 0; } }
 .tutorial-auto-status { flex-shrink: 0; white-space: nowrap; color: #96e3ff; font-size: 11px; font-weight: 700; line-height: 1.4; }
 </style>

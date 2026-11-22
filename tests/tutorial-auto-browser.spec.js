@@ -146,6 +146,11 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
       await expect(instruction(page)).toHaveText(copy['tutorial.throttleTouch']);
       await expect(input).toContainText(copy['tutorial.touch.throttle']);
       for (const shown of [status(page), instruction(page), input]) await expect(shown).not.toContainText('F2');
+      // The touch path wraps to two lines; the coach must still end above the slide pad, or it swallows the pad's top edge.
+      await expect.poll(async () => {
+        const [c, p] = await Promise.all([coach(page).boundingBox(), page.locator('.touch-pad').boundingBox()]);
+        return p.y - (c.y + c.height);
+      }).toBeGreaterThan(0);
       const gas = page.locator('#touch-controls [data-control="throttle"]');
       await expect(gas).toHaveClass(/tutorial-target/);
       const b = await gas.boundingBox();
