@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
+import { settled } from './helpers/test.js';
 
 async function expectArtwork(card, attack) {
   const image = card.locator('img');
@@ -61,6 +62,7 @@ for (const [name, width, height, hasTouch, locale] of [
     await expect(freeze).toContainText(locale === 'en' ? 'FROZEN!' : '冰凍！');
     await expect(freeze).toContainText(locale === 'en' ? 'HANDLING SLUGGISH' : '操控暫時變遲緩');
     await expect(freeze).toHaveAttribute('data-phase', 'impact');
+    await settled(freeze); // player-hit-in translates the card: a mid-entry rect is off by a float32 ULP
     await expectArtwork(freeze, 'freeze');
     await expect(freeze.locator('time')).toHaveText(locale === 'en' ? '2.0s' : '2.0 秒');
     await expect(freeze).toHaveCSS('pointer-events', 'none');
@@ -83,6 +85,7 @@ for (const [name, width, height, hasTouch, locale] of [
     await expect(emp.locator('time')).toHaveText(locale === 'en' ? '1.5s' : '1.5 秒');
     // Both hits are live: each keeps its own screen layer, on its own timeline.
     for (const layer of ['freeze', 'emp']) await expect(page.locator(`#player-hit-screen [data-hit-layer="${layer}"]`)).toHaveAttribute('data-phase', 'impact');
+    await settled(emp);
     await expectArtwork(emp, 'emp');
     await expect(freeze).toBeVisible();
     const separation = await (await page.waitForFunction(() => {

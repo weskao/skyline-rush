@@ -244,6 +244,8 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   `openGarage()` and follow pause/results/history with `await settled(<overlay locator>)` (both in
   `tests/helpers/test.js`); never loosen a pixel bound to absorb it. Enforced by the same test file
   (*overlay geometry*) for every spec that opens one of them and then calls `getBoundingClientRect`/`boundingBox`.
+  An incoming-debuff card (`hit('freeze'|'emp')`, `player-hit-in` in `src/PlayerHitCenter.vue`) counts too: its
+  40 px artwork measured 39.99996948 px on desktop and 40.00001526 on foldable (2026-11-22); `settled(card)` first.
 - **Read the results dock's hit targets together.** Use one `evaluateAll` per poll for the sticky dock and
   sign-in button. All targets share a layout sample, and the poll can report missing controls without
   waiting on several independent locator evaluations (CI 44468157574).
