@@ -90,6 +90,23 @@ export function setupTrackPackUI(getGraphics: () => Graphics) {
       .catch(error => console.warn('Track asset downloads unavailable:', error))
       .finally(() => { checking = false; void refresh(); });
   } else { checking = false; }
+  /** Publish newly downloaded URLs to the active worker before claiming offline-ready UI. */
+  async function publishCached(pack: TrackAssetPack): Promise<void> {
+    const controller = navigator.serviceWorker.controller;
+    if (!controller) return;
+    await new Promise<void>(resolve => {
+      const channel = new MessageChannel();
+      let complete = false;
+      const done = () => {
+        if (complete) return;
+        complete = true; clearTimeout(timeout); channel.port1.close(); resolve();
+      };
+      const timeout = setTimeout(done, 1000);
+      channel.port1.onmessage = done;
+      controller.postMessage({ type: 'track-pack-index-updated',
+        urls: pack.assets.map(asset => new URL(asset.url, baseUrl).href) }, [channel.port2]);
+    });
+  }
   button.addEventListener('click', async () => {
     const pack = packFor(selectedId);
     if (!supported || !pack || busy.has(pack.trackId)) return;
@@ -103,6 +120,7 @@ export function setupTrackPackUI(getGraphics: () => Graphics) {
         job.progress = next;
         paintSelected();
       });
+      await publishCached(pack);
       cached.set(pack.trackId, { signature: pack.signature, status: await store.status(pack) });
     } catch (error) {
       console.warn('Track asset download failed:', error);
