@@ -1,3 +1,10 @@
+# Touch AUTO integration (2026-11-22, `feature/touch-auto-integration`)
+
+- [x] Merged `feature/touch-gas-auto-layout` (d401b449) and `feature/tutorial-auto-lesson` (f69758b0) with `--no-ff`; only `TODO.md` conflicted (both sides kept).
+- [x] Removed the `data-tutorial` exclusion from the AUTO rules in `src/touch-sprint-buttons.css`: the tutorial hides GAS and widens NITRO with AUTO on. RED before: `tests/touch-gas-auto-layout.test.js` (4 fail) and the tutorial case in `tests/touch-gas-auto-layout-browser.spec.js` (GAS "visible").
+- [x] Every lesson's touch copy checked with AUTO on: only `tutorial.airChainRetry.slow` ("Keep the throttle on") named the accelerator; AUTO now shows `slowAuto` (RED sweep in `tests/tutorial-auto-lesson.test.js`).
+- [ ] Gates, real WebGL frames and exact-HEAD CI for this branch.
+
 # Finished race Driving Controls settings (2026-11-22, `fix/finished-driving-settings-enable`)
 
 - [x] Root cause: `canOpenControlsPanel('finished')` returned false; `toggleSettings` disabled the Driving tab and switched to Audio.
