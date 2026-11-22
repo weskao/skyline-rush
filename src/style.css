@@ -2257,9 +2257,6 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
   /* Match the phone bottom-fade rule's :has() specificity: a mask clips every descendant, the fixed rail included;
      its portrait max-height (100dvh - 126px) also lifted the pinned row 32px over the track cards at 320px tall. */
   body:not(.airflow-active) .intro:has(.race-mode-picker) { max-height: none; -webkit-mask-image: none; mask-image: none; }
-  /* The version chip (What's New) moves from the bottom strip into the top bar's gap beside the brand, freeing the
-     bottom edge for the panel's pinned row; its taglines hide. */
-  body[data-phase="ready"] .bottomline { top: 13px; bottom: auto; left: max(245px, calc(var(--safe-left) + 233px)); right: auto; display: block; }
   body[data-phase="ready"] .bottomline > span { display: none; }
   .intro :is(h1, .route-label, .intro-copy, .intro-controls, .flight-tip, .start-hint) { display: none; }
   .intro .race-mode-picker:not(.race-rules-row) { margin: 0; padding: 6px 8px 8px; }
@@ -2296,7 +2293,6 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
 @media (max-height: 500px) and (orientation: landscape) and (max-width: 760px) {
   body:not(.airflow-active) .intro { top: calc(84px / var(--z)); }
   .performance-notice { top: 84px; max-height: calc(100dvh - 84px - max(10px, var(--safe-bottom)) - 62px); }
-  body[data-phase="ready"] .bottomline { top: 19px; left: max(190px, calc(var(--safe-left) + 178px)); }
 }
 
 /* Keep the device notice nonmodal without modifying the byte-locked CSS prefix. */
