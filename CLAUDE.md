@@ -78,7 +78,7 @@ removes it, and a guard test that is RED on the old code.
   regression tests, typecheck and build for the changed behavior. A failure is fixed at its
   source, never by compressing code, removing tests or raising a ceiling; what to report is in
   `.claude/rules/module-size.md`.
-- `.githooks/pre-push` runs the module-size gate (even with `SKIP_LAYOUT_GATE=1`) and `npm test`;
+- `.githooks/pre-push` runs the module-size gate (even with `SKIP_LAYOUT_GATE=1`) and `pnpm test`;
   never bypass it with `--no-verify`. A new clone enables the hooks with `make setup`.
 - GitHub API/connector commits bypass local Git hooks: run the available checks yourself, inspect
   the exact-HEAD remote CI and report every command not executed.
@@ -89,9 +89,9 @@ without explicit user approval.
 
 ## Verification
 
-- Gameplay / progression / build config → `npm test` + `npm run build`.
-- Rendering / navigation / controls / unlock visibility → also `npm run test:browser`, desktop and
-  mobile, portrait and landscape. `npx playwright test <spec>` serves `dist/`: run `npm run build`
+- Gameplay / progression / build config → `pnpm test` + `pnpm run build`.
+- Rendering / navigation / controls / unlock visibility → also `pnpm run test:browser`, desktop and
+  mobile, portrait and landscape. `pnpm exec playwright test <spec>` serves `dist/`: run `pnpm run build`
   first or it tests old code.
 - Bug seen only on a phone → reproduce on that device class and orientation (`make phone-diag`);
   a desktop viewport of the same size is not a reproduction.
@@ -103,17 +103,17 @@ without explicit user approval.
 
 | Command | Purpose |
 | --- | --- |
-| `make setup` | Install npm dependencies (Crucible included) and enable the git hooks |
+| `make setup` | Install pnpm dependencies (Crucible included) and enable the git hooks |
 | `make` / `make dev` | Vite dev server, saved progression respected |
 | `make dev-unlocked` / `make test-unlocked` | Local Vite playtest server with all catalog cars, paints and equipment available |
 | `make dev-feature <name>` | Worktree of `origin/feature/<name>`, all-unlocked, HTTPS |
 | `make phone [name] [y=1]` | Phone-reachable locked dev server (`y=1` = no prompts) |
 | `make phone-unlocked [name] [y=1]` | Phone-reachable Vite playtest server with the same unlocked catalog |
 | `make dev-diag` / `make phone-diag [name]` | Same servers with the diagnostic banner (`VITE_DIAG=1`) |
-| `npm test` | Node unit tests |
-| `npm run build` | Production build + release-bundle lock assertion |
-| `npm run test:browser` | Playwright suite (pretest builds production assets) |
-| `npm run test:layout` | Home-screen layout browser tests |
+| `pnpm test` | Node unit tests |
+| `pnpm run build` | Production build + release-bundle lock assertion |
+| `pnpm run test:browser` | Playwright suite (pretest builds production assets) |
+| `pnpm run test:layout` | Home-screen layout browser tests |
 | `make verify` | Full local gate: unit, build, browser, World Tour long-run |
 | `make deploy` | Trigger CI GitHub Pages deploy of remote `main` |
 | `make deploy-netlify` | Build this checkout, deploy to Netlify production, live check, Telegram link |
