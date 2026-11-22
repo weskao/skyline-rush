@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 const root = path => new URL('../' + path, import.meta.url);
 const src = path => readFileSync(root(path), 'utf8');
 const webp = path => {
@@ -30,4 +31,12 @@ test('real art is animated with object-specific motion and a readable reduced-mo
  assert.match(s,/wallet-diamond-prism/);
  assert.match(s,/prefers-reduced-motion/);
  assert.doesNotMatch(s,/wallet-shimmer|wallet-sparkle-strip/);
+});
+// The restored coin (eed7045f) drew 9 px from its edge, under the 7% safe border that collectible-ui-browser.spec.js
+// checks, and develop's browser shard went red (CI 44991368086). No WebP decoder is a dependency here, so this pins the
+// shipped blob: a new coin passes that browser spec first, then updates this hash.
+test('the shipped wallet coin is the one proven against the browser safe-border check', () => {
+ const hash = createHash('sha256').update(webp('public/feature-assets/wave3-demo/raster/wallet-coin@3x.webp')).digest('hex');
+ assert.equal(hash, '34495c266a14bca981f154077895917b2e428890c1030f3b3c671256bf2954c0',
+  'run npx playwright test tests/collectible-ui-browser.spec.js, then update this hash');
 });

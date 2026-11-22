@@ -76,3 +76,11 @@ on the default locked artifact and with `PLAYWRIGHT_PAGES=1` on the Pages trial 
   localized name when loading fails.
 - Keep the release audit and browser checks driven by `PAINTS` so every new paint
   automatically enters both the locked and Pages trial checks.
+
+## Collectible and wallet icons keep a 7% transparent border
+
+- `tests/collectible-ui-browser.spec.js` requires every `collectible-ui/*.webp` and wallet `@3x.webp` to keep
+  `floor(size × 0.07)` transparent pixels on each side. Feature-branch CI skips browser shards, so run that spec
+  before an icon lands. Trap (2026-11-22): the restored coin (`eed7045f`) drew 9 px from its 144 px edge and
+  turned develop's browser shard red (CI 44991368086). `tests/wave3-currency-assets.test.js` pins the shipped
+  coin's sha256; a new coin passes the browser spec first, then updates that hash.
