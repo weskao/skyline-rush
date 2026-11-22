@@ -53,6 +53,7 @@ const PAD_BRAKE_COPY = new Set(['tutorial.brake', 'tutorial.brakeRetry.noBrake',
   ...['autoBrake', 'brakeAhead', 'brakeHold', 'driftSpeed', 'driftStart', 'driftRelease', 'driftMax', 'driftExit', 'driftReset'].map(cue => 'tutorial.cue.' + cue)]);
 function controlVariant(key: string, { touch, steerMode, flyMode, auto }: HintControls): string {
   if (key === 'tutorial.throttle') return key + (auto ? 'Auto' : '') + (touch ? 'Touch' : '');
+  if (auto && key === 'tutorial.airChainRetry.slow') return key + 'Auto'; // AUTO holds the throttle; GAS is hidden on touch
   if (!touch) return key;
   if (key === 'tutorial.cue.nitro') return 'tutorial.touch.nitro';
   if (flyMode === 'toggle' && TOGGLE_FLY_COPY.has(key)) return key + 'Toggle';

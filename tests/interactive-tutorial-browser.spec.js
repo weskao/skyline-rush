@@ -507,7 +507,9 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
         text => document.querySelector('#tutorial-instruction')?.textContent?.includes(text),
         text, { polling: 'raf', timeout },
       );
-      await gesture(button('throttle'),'left');
+      // AUTO defaults to on: GAS is hidden (NITRO spans its cell) and lesson 1 clears after its read. Held GAS: tutorial-auto-browser.spec.js.
+      await expect(button('throttle')).toHaveCSS('visibility','hidden');
+      await step(page,'left');
       await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('left'),'right',effectiveMode==='slide'?-55:0);
       await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('right'),'brake',effectiveMode==='slide'?55:0);
       await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('brake'),'drift',0,effectiveMode==='slide'?66:0);

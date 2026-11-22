@@ -23,9 +23,9 @@ export const readMapLayout = page => page.evaluate(selectors => {
   const box = el => { const { x, y, width, height } = el.getBoundingClientRect(); return { x, y, width, height }; };
   const map = document.querySelector('.race-route-map');
   const [steer, brake] = ['.touch-steer', '[data-control="brake"]'].map(selector => document.querySelector(selector));
-  return { map: map.checkVisibility() ? box(map) : null, events: getComputedStyle(map).pointerEvents,
-    steer: steer.checkVisibility() ? box(steer) : null, brake: brake.checkVisibility() ? box(brake) : null,
-    others: selectors.flatMap(selector => [...document.querySelectorAll(selector)].filter(el => el.checkVisibility()).map(el => [selector, box(el)])) };
+  return { map: map.checkVisibility({ visibilityProperty: true }) ? box(map) : null, events: getComputedStyle(map).pointerEvents,
+    steer: steer.checkVisibility({ visibilityProperty: true }) ? box(steer) : null, brake: brake.checkVisibility({ visibilityProperty: true }) ? box(brake) : null,
+    others: selectors.flatMap(selector => [...document.querySelectorAll(selector)].filter(el => el.checkVisibility({ visibilityProperty: true })).map(el => [selector, box(el)])) };
 }, OTHERS);
 
 export function mapHits(result, combo, width, height) {

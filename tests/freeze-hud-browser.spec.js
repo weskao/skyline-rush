@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
+import { settled } from './helpers/test.js';
 
 // The Freeze HUD in a real browser (user 2026-11-21): frost grows from all four corners at full size (a global svg
 // height rule once squashed it to a 22px strip), the centre and the controls stay clear, a repeated hit replays the
@@ -13,6 +14,7 @@ test('Freeze frames the screen with frost from its four corners, replays on a re
   await page.evaluate(() => window.debuffHud.hit('freeze', 220));
   await expect(frost(page)).toHaveCount(4);
   await page.emulateMedia({ reducedMotion: 'reduce' }); // measure the frost at rest, not mid-grow
+  await settled(page.locator('#race-player-hit-center [data-debuff="freeze"]'));
   const boxes = await frost(page).evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().toJSON()));
   for (const box of boxes) {
     expect(box.width).toBeGreaterThanOrEqual(120);

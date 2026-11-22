@@ -223,3 +223,33 @@ body[data-sprint-tier] #touch-controls :is([data-nitro-state="active"], [data-bo
 @media (forced-colors: active), (prefers-reduced-motion: reduce) {
   #touch-controls [data-flame] > .sprint-ready-effect { display: none; }
 }
+
+/* AUTO on: main.js holds the throttle, so GAS is idle. It hides (visibility keeps its grid cell and the offsetWidth applyControls reads)
+   and NITRO takes the top row: [NITRO NITRO] over [BOOST][FLY]. BOOST and FLY keep their rects, so one thumb still slides across them.
+   A button the player dragged (.is-positioned) keeps its place and size; layout editing always shows GAS and the 2x2. */
+body:not(.layout-editing):has(#assist-button[aria-pressed="true"]) #touch-controls .touch-pedals > .touch-gas { visibility: hidden; }
+
+body:not(.layout-editing):has(#assist-button[aria-pressed="true"]) #touch-controls .touch-actions > .touch-nitro:not(.is-positioned) {
+  grid-column: 2 / 4;
+  width: auto;
+  max-width: none; /* buttons steering caps every button at --compact-key-width, which would stop the stretch */
+}
+
+/* The wide NITRO keeps ONE flame at one button's size, centred (a strip mask stretched over the wide box doubles every tongue, and two
+   flames side by side show a dip between them that BOOST's fire never has). The effect box spans the wide button, the flame is
+   centred inside it, and the ring hugs the button. */
+body:not(.layout-editing):has(#assist-button[aria-pressed="true"]) #touch-controls .touch-actions > .touch-nitro:not(.is-positioned) > .sprint-ready-effect {
+  /* One button's padding box: 1px borders sit outside the box the flame is sized on, and buttons steering caps a button at --compact-key-width. */
+  --cell: calc(min(var(--touch-cell) * var(--touch-scale, 1), var(--compact-key-width, 999px)) - 2px);
+  /* No sideways reach: this NITRO ends at the cluster's right edge and the centred flame fits inside it. */
+  inset: calc(var(--flame-top) * -100%) 0 calc(var(--flame-bottom) * -100%);
+}
+body:not(.layout-editing):has(#assist-button[aria-pressed="true"]) #touch-controls .touch-actions > .touch-nitro:not(.is-positioned) > .sprint-ready-effect::before {
+  inset: 0 auto 0 auto;
+  left: 50%;
+  translate: -50% 0; /* the individual property composes with the animated transform, which only scales */
+  width: calc(var(--cell) * (1 + 2 * var(--flame-side)));
+}
+body:not(.layout-editing):has(#assist-button[aria-pressed="true"]) #touch-controls .touch-actions > .touch-nitro:not(.is-positioned) > .sprint-ready-effect::after {
+  inset: var(--button-top) 0 calc(var(--flame-bottom) / var(--flame-box) * 100%);
+}

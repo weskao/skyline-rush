@@ -73,7 +73,7 @@ async function expectModeHudApart(page, mode, width, height) {
   if (shown) await expect(page.locator(shown), at).toBeVisible();
   const boxes = await page.evaluate(selectors => selectors.flatMap(selector => {
     const el = document.querySelector(selector);
-    if (!el || !el.checkVisibility()) return [];
+    if (!el || !el.checkVisibility({ visibilityProperty: true })) return [];
     const { x, y, width, height } = el.getBoundingClientRect();
     return width && height ? [[selector, { x, y, width, height }]] : [];
   }), BLOCKS);

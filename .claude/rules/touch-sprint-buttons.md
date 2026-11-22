@@ -40,5 +40,20 @@ paths:
     The charge bar keeps draining in the BOOST colour: it is information.
   - Guard: `tests/sprint-tier-hud.test.js`. Real frames: `tests/sprint-tier-hud-capture-browser.spec.js`
     (`SPRINT_TIER_HUD_CAPTURE=1`).
+- **AUTO on hides GAS and widens NITRO** (last block of `touch-sprint-buttons.css`). Traps found building it:
+  - `buttons` steering caps every button at `--compact-key-width`, so the wide NITRO needs `max-width: none`.
+  - The flame box is relative to the padding box (1px borders sit outside): `--cell` is one button minus 2px.
+  - **One flame, never a twin.** Two flames side by side showed a dip and two fires in the centre, unlike BOOST's
+    single fire. The wide NITRO keeps one centred flame at one button's size; its ring hugs the wide button.
+  - **No sideways reach on the wide NITRO.** It ends at the cluster's right edge, so the usual `--flame-side`
+    reach overflowed `#touch-controls` by 10px (352>342, `i18n-browser.spec.js` phone race HUD). Its effect box
+    has side inset 0; the centred flame fits inside the wide button.
+  - HUD overlap checks that list GAS call `checkVisibility({ visibilityProperty: true })`: the hidden GAS keeps its
+    cell under the wide NITRO, and a bare `checkVisibility()` reports them as overlapping.
+  - Hiding is `visibility: hidden` (layout and `offsetWidth` stay). A spec that reads or presses GAS starts with
+    AUTO off (`skyline-rush-auto` = `off`), never with a weaker assertion.
+  - The tutorial follows AUTO too: lesson 1 is an AUTO lesson, so with AUTO on no touch line names GAS
+    (`tests/tutorial-auto-lesson.test.js` sweeps every lesson); with AUTO off GAS shows and lesson 1 names it.
+  - Guards: `tests/touch-gas-auto-layout.test.js`, `tests/touch-gas-auto-layout-browser.spec.js` (race and tutorial).
 - Visual changes here need real frames on a phone, portrait and landscape: the unit guard checks
   colours, not layout, Reduced Motion or touch opacity.

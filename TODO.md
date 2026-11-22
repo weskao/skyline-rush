@@ -1,3 +1,10 @@
+# Touch AUTO integration (2026-11-22, `feature/touch-auto-integration`)
+
+- [x] Merged `feature/touch-gas-auto-layout` (d401b449) and `feature/tutorial-auto-lesson` (f69758b0) with `--no-ff`; only `TODO.md` conflicted (both sides kept).
+- [x] Removed the `data-tutorial` exclusion from the AUTO rules in `src/touch-sprint-buttons.css`: the tutorial hides GAS and widens NITRO with AUTO on. RED before: `tests/touch-gas-auto-layout.test.js` (4 fail) and the tutorial case in `tests/touch-gas-auto-layout-browser.spec.js` (GAS "visible").
+- [x] Every lesson's touch copy checked with AUTO on: only `tutorial.airChainRetry.slow` ("Keep the throttle on") named the accelerator; AUTO now shows `slowAuto` (RED sweep in `tests/tutorial-auto-lesson.test.js`).
+- [ ] Gates, real WebGL frames and exact-HEAD CI for this branch.
+
 # Finished race Driving Controls settings (2026-11-22, `fix/finished-driving-settings-enable`)
 
 - [x] Root cause: `canOpenControlsPanel('finished')` returned false; `toggleSettings` disabled the Driving tab and switched to Audio.
@@ -4914,6 +4921,7 @@ the screen is a slide pad; put the thumb down anywhere and slide.
 
 Shared by both modes:
 - [x] **AUTO accelerator on by default on touch** (the existing assist), so no thumb is spent holding the throttle; the gas button stays available when AUTO is off
+- [x] **AUTO on hides GAS; NITRO spans the top row** (BOOST/FLY fixed, one centred flame, tutorial and layout editing keep the 2x2). Evidence: `tests/touch-gas-auto-layout*.{test,spec}.js`, real frames 390x844 / 844x390 / 743x340 at S and L, the wide flame checked in every state against normal NITRO and BOOST; the twin-flame design was rejected on those frames
 - [x] Action hand: FLY (largest), BOOST, NITRO in an arc around it; sliding between FLY and BOOST holds both (AIR DASH)
 - [x] **Drift = brake + steer** in both modes, the same rule as the keyboard
 

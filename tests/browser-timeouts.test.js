@@ -300,7 +300,8 @@ test('a slow-frame shim stalls each frame once, not each animation-frame callbac
 // Overlays enter with a transform; a rect read mid-entry is shifted and can be off by a float32 ULP: the Garage car picker
 // thumbnail measured 144.00001526 px in 1 of 30 runs, the paused Race again button 43.99998474 px (2026-11-15).
 // After opening the Garage, pause, results or history, a spec settles the overlay (settled()/openGarage()) before measuring.
-const OVERLAY_OPENER = /#garage-button'\)\.(?:click|tap)\(|#pause-button'\)\.(?:click|tap)\(|data-open-history[^;]*\.(?:click|tap)\(|#race-overlay'\)\)\.toBeVisible\(/;
+// An incoming-debuff card enters the same way (player-hit-in): its 40 px artwork measured 39.99996948 px (2026-11-22).
+const OVERLAY_OPENER = /#garage-button'\)\.(?:click|tap)\(|#pause-button'\)\.(?:click|tap)\(|data-open-history[^;]*\.(?:click|tap)\(|#race-overlay'\)\)\.toBeVisible\(|\bhit\('(?:freeze|emp)'/;
 const OVERLAY_SETTLE = /\b(?:settled|openGarage)\(/;
 const RECT_READ = /getBoundingClientRect|\.boundingBox\(\)/;
 
