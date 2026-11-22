@@ -47,15 +47,17 @@ const read = (cmd, args) => {
   try { return execFileSync(cmd, args, { encoding: 'utf8', timeout: 5000, stdio: ['ignore', 'pipe', 'ignore'] }); } catch { return ''; }
 };
 
-// One worktree per commit, kept for the next run; `npm ci` because the ref may pin other dependencies.
+// One worktree per commit; older git refs may still use npm, so honor their own lockfile.
 function buildRef(ref) {
   const sha = read('git', ['-C', repoRoot, 'rev-parse', '--short', `${ref}^{commit}`]).trim();
   if (!sha) { console.error(`Unknown git ref: ${ref}`); process.exit(1); }
   const dir = path.join(repoRoot, '.claude', 'worktrees', `perf-${sha}`);
   if (!fs.existsSync(path.join(dir, 'dist', 'index.html'))) {
     if (!fs.existsSync(dir)) sh('git', ['worktree', 'add', '--detach', dir, sha]);
-    sh('npm', ['ci', '--no-audit', '--no-fund'], dir);
-    sh('npm', ['run', 'build'], dir);
+    const modern = fs.existsSync(path.join(dir, 'pnpm-lock.yaml'));
+    const manager = modern ? 'pnpm' : 'npm';
+    sh(manager, modern ? ['install', '--frozen-lockfile'] : ['ci', '--no-audit', '--no-fund'], dir);
+    sh(manager, ['run', 'build'], dir);
   }
   return { name: `${ref}@${sha}`, root: dir };
 }
