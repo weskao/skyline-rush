@@ -1,5 +1,6 @@
 import { focusLobbyTrack, refreshCopiedRouteMaps, renderLobbyTrackArt, setupLobbyPickers } from './race-lobby-ui.ts';
 import { setupTrackPackUI } from './track-pack-ui.ts';
+import { setupTrackLoadTelemetry } from './track-load-telemetry.ts';
 import { CIRCUIT_ID } from './circuit-track.ts';
 import { homeTrackStatus, isUpcomingTrack, upcomingTrackInfo, upcomingTrackName, type PreviewTrackId, type UpcomingTrackId } from './upcoming-tracks.ts';
 import { stage2PreviewRequest } from './stage2-tracks.ts';
@@ -56,6 +57,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   const upcomingButtons = (): HTMLButtonElement[] => [...document.querySelectorAll<HTMLButtonElement>('[data-upcoming-track]')];
   const ruleInputs = (): HTMLInputElement[] => [...document.querySelectorAll<HTMLInputElement>('[data-race-rule]')];
   let selectedMode = 'classic';
+  const loadMetrics = setupTrackLoadTelemetry(() => getRace().trackId);
   // Preview-only selection is deliberately separate from the playable Race state.
   let upcomingSelection: PreviewTrackId | null = null;
   const raceRules: Record<RuleKey, unknown> = { ...DEFAULT_RULES };
@@ -263,6 +265,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
 
   function applyTrack(id: string): void {
     if (getRace().phase !== 'ready') return;
+    loadMetrics.select(id);
     const upcoming = isUpcomingTrack(id) ? id : null;
     upcomingSelection = upcoming && !options.isUpcomingEnterable(upcoming) ? upcoming : null;
     options.clearControls(); options.clearDaily();
@@ -313,6 +316,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   function restoreTrack(id: string | null): void {
     const canSelect = (id: string): boolean => isUpcomingTrack(id) ? playable(id) : Object.hasOwn(RACE_TRACKS, id);
     const choice = restoreHomeTrack(id, getRace().trackId, canSelect, isUpcomingTrack);
+    loadMetrics.select(choice.trackId);
     upcomingSelection = choice.upcoming as PreviewTrackId | null;
     setRace(selectedRace(choice.trackId));
   }
