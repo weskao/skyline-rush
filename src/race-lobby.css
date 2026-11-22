@@ -1,4 +1,5 @@
 /* Home lobby. Keep the scroll panel and its fixed landscape actions free of new stacking contexts. */
+#intro #rules-restore[hidden] { display: none; }
 #intro.lobby-compact { animation: none; } /* The startup handoff animates only the individual controls. */
 body[data-phase="ready"] :is(.scene-shade, .topbar),
 .upcoming-scene::after { background: none; }
@@ -153,7 +154,7 @@ details.performance-notice {
   .intro .track-note { display: none; }
   .intro #mode-eligibility { display: none; }
   .intro #rules-restore { display: none; }
-  body:not([data-race-mode="classic"]) .intro #rules-restore { display: inline-flex; }
+  body:not([data-race-mode="classic"]) .intro #rules-restore:not([hidden]) { display: inline-flex; }
 }
 @media (max-height: 500px) and (orientation: landscape) {
   body { --z: 1; }
