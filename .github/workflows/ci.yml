@@ -85,16 +85,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       # Strict TS + real Vue SFC template semantic check + documented JS islands.
-      - run: npm run typecheck
-      - run: npm test
+      - run: pnpm run typecheck
+      - run: pnpm test
       # Always prove the public (default) artifact excludes unreleased Garage modules and assets.
-      - run: npm run build
+      - run: pnpm run build
       # No pickup-3d Playwright smoke here: both specs are *browser.spec.js, so the browser shards run them (and upload
       # their screenshots) on main/develop; rerunning them in this job added 4.4 minutes for no new evidence.
 
@@ -114,16 +115,17 @@ jobs:
         shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       # Wave 2 video recording needs Playwright's FFmpeg binary, not the system binary.
-      - run: npx playwright install ffmpeg
+      - run: pnpm exec playwright install ffmpeg
       - run: node scripts/ci-shards.mjs plan playwright.config.js ${{ matrix.shard }} ${{ strategy.job-total }} > "$RUNNER_TEMP/shard-tests.txt"
       # Playwright uses the runner's preinstalled Google Chrome (channel: 'chrome').
-      - run: npm run test:browser -- --test-list "$RUNNER_TEMP/shard-tests.txt"
+      - run: pnpm run test:browser --test-list "$RUNNER_TEMP/shard-tests.txt"
       - name: Upload structured WebGL performance evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -224,18 +226,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
+          cache: pnpm
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
       - env:
           FIREBASE_CLI_DISABLE_TELEMETRY: '1'
-        run: npm run test:cloud
+        run: pnpm run test:cloud
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
@@ -259,13 +262,14 @@ jobs:
         shard: [1, 2]
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - run: node scripts/ci-shards.mjs plan playwright.world-tour.config.js ${{ matrix.shard }} ${{ strategy.job-total }} > "$RUNNER_TEMP/shard-tests.txt"
-      - run: npx playwright test --config=playwright.world-tour.config.js --test-list "$RUNNER_TEMP/shard-tests.txt"
+      - run: pnpm exec playwright test --config=playwright.world-tour.config.js --test-list "$RUNNER_TEMP/shard-tests.txt"
       - name: Upload real mid-race WebGL screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -375,7 +379,7 @@ jobs:
         run: |
           # The commit to vouch for: the tagged one, or the nearest ancestor below its `docs: release` commits.
           code=$(git log -1 --format=%H --invert-grep --grep='^docs: release ' HEAD)
-          extra=$(git diff --name-only "$code" HEAD | grep -vxE 'CHANGELOG\.md|package\.json|package-lock\.json' || true)
+          extra=$(git diff --name-only "$code" HEAD | grep -vxE 'CHANGELOG\.md|package\.json|pnpm-lock\.yaml' || true)
           if [ -n "$extra" ]; then echo "::error::release commits above $code change more than the release files: $extra"; exit 1; fi
           run=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --branch main --commit "$code" --status success --limit 1 --json url --jq '.[0].url')
           if [ -z "$run" ]; then echo "::error::$code has no successful CI run on main; push it to main, let CI pass, then tag"; exit 1; fi
@@ -384,7 +388,7 @@ jobs:
   deploy:
     # Public Garage VFX FREE TRIAL was approved; stage the reviewed trial artifact for the next release.
     # This only applies to explicitly gated main dispatch / v* tag deployment, not feature pushes.
-    # The default npm run build remains fail-closed (coming-soon) in unit-tests.
+    # The default pnpm run build remains fail-closed (coming-soon) in unit-tests.
     # From 0.33.0 the Wave 3 preview store syncs signed-in wallets to Firestore; the public 1.0.0 keeps
     # both settings and only zeroes the data (docs/cloud-save.md#reset-at-the-public-100).
     env:
@@ -406,13 +410,14 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
-      # Call vite directly: `npm run build -- --base=...` hands --base to the assert script, not vite.
-      - run: npx vite build --base=/skyline-rush/ && node scripts/assert-production-locked.mjs
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Call vite directly: a --base flag passed to pnpm run build would reach the bundle assertion, not vite.
+      - run: pnpm exec vite build --base=/skyline-rush/ && node scripts/assert-production-locked.mjs
       - name: Check asset paths match the Pages base
         run: |
           for p in $(grep -oE '(src|href)="/[^"]*"' dist/index.html | cut -d'"' -f2); do

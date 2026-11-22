@@ -27,7 +27,7 @@ and, when they are new or changed, runs `/review-release-notes` and commits the 
 any test run, intro or release write. It then runs `scripts/release.sh`: `scripts/release-gate.sh`
 re-checks the notes, then refuses to tag unless `main` equals
 `origin/main`, that exact commit has a successful CI run on `main` (a running one is waited for) and
-`npm test` + `npm run build` pass; only then does the shared release script commit, tag and publish.
+`pnpm test` + `pnpm run build` pass; only then does the shared release script commit, tag and publish.
 A red or missing run means fix the root cause, commit, push, wait for green and run `/release` again —
 never tag around the gate. The tag's CI run re-checks unit tests, confirms through `release-verified`
 that the code already passed the full suite on `main`, and deploys, so a release is live within minutes

@@ -219,9 +219,8 @@ for (const group of GROUPS) {
 test.describe('callout raised during GO! 390x844', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
 
-  // The telemetry stays visibility:hidden while the countdown's GO! is up (0.8s into racing); a NITRO chip placed then must
-  // move off it as soon as the countdown hides, not stay on it for the rest of its life. Driven in one synchronous snapshot
-  // (no frame runs inside it) because GO! and a callout last about as long as each other.
+  // The gauges now stay visible throughout countdown and GO!; a NITRO chip must remain clear of the
+  // visible telemetry both before and after GO! hides. Keep this as one synchronous snapshot.
   test('the callout moves clear of the telemetry when the countdown hides', async ({ gameplayPage: page }) => {
     await page.locator('#start-button').click();
     await expect.poll(() => page.evaluate(() => window.gameplay.race.phase), { timeout: ciTimeout(20_000) }).toBe('racing');
@@ -237,15 +236,15 @@ test.describe('callout raised during GO! 390x844', () => {
       report.innerHTML = 'NITRO<span>FULL THROTTLE</span>';
       callout.dataset.kind = 'nitro';
       callout.hidden = false;
-      dispatchEvent(new Event('resize')); // placement runs while GO! still hides the telemetry
+      dispatchEvent(new Event('resize')); // placement must account for visible countdown telemetry
       await Promise.resolve(); // flush refreshes the resize's own attribute writes queued, so only the countdown can move it next
       const telemetryHidden = getComputedStyle(telemetry).visibility === 'hidden', placedOverTelemetry = overlaps();
       countdown.hidden = true;
       await Promise.resolve(); // MutationObserver callbacks run in this microtask checkpoint, before any frame
       return { telemetryHidden, placedOverTelemetry, overlapsAfterGo: overlaps() };
     });
-    // placedOverTelemetry proves the scenario: while hidden, the telemetry's corner is a legal slot.
-    expect(result).toEqual({ telemetryHidden: true, placedOverTelemetry: true, overlapsAfterGo: false });
+    // The countdown's telemetry is intentionally visible; both phases must remain collision-free.
+    expect(result).toEqual({ telemetryHidden: false, placedOverTelemetry: false, overlapsAfterGo: false });
   });
 });
 

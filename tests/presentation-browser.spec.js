@@ -28,6 +28,21 @@ for (const [name, viewport, hasTouch] of [
     await page.locator('#track-choose-close').click();
     await page.evaluate(() => {
       window.uiMotion = [];
+      // Observe the actual countdown phase even when a slow WebGL runner reaches GO!
+      // before Playwright's click promise resolves. Record visible gauges on that phase.
+      window.countdownHUD = { seen: false, visible: {} };
+      const watch = ['.telemetry', '#fuel-meter', '#fuel-value', '#nitro-status', '#nitro-meter', '#boost-status'];
+      new MutationObserver(() => {
+        if (document.body.dataset.phase !== 'countdown') return;
+        window.countdownHUD.seen = true;
+        for (const selector of watch) {
+          const element = document.querySelector(selector);
+          const style = element && getComputedStyle(element);
+          window.countdownHUD.visible[selector] = !!element && !element.hidden &&
+            style.display !== 'none' && style.visibility !== 'hidden' &&
+            element.getBoundingClientRect().width > 0 && element.getBoundingClientRect().height > 0;
+        }
+      }).observe(document.body, { attributes: true, attributeFilter: ['data-phase'] });
       const animate = Element.prototype.animate;
       Element.prototype.animate = function (...args) {
         window.uiMotion.push(this.id || this.className);
@@ -48,12 +63,13 @@ for (const [name, viewport, hasTouch] of [
       expect(edge, 'the block stays at the right edge').toBeLessThanOrEqual(24.5);
     }
     // Countdown is already an in-race phase: gauges must not blink out on touch devices.
-    await expect(page.locator('body')).toHaveAttribute('data-phase', 'countdown');
+    await expect.poll(() => page.evaluate(() => window.countdownHUD.seen)).toBe(true);
     // Short landscape intentionally omits the secondary BOOST caption even during racing.
     const gauges = ['.telemetry', '#fuel-meter', '#fuel-value', '#nitro-status', '#nitro-meter'];
     if (viewport.height > 500) gauges.push('#boost-status');
     for (const selector of gauges) {
-      await expect(page.locator(selector), `${name} countdown: ${selector} stays visible`).toBeVisible();
+      expect(await page.evaluate(sel => window.countdownHUD.visible[sel], selector), `${name} countdown: ${selector} was visible`).toBe(true);
+      await expect(page.locator(selector), `${name} after countdown: ${selector} stays visible`).toBeVisible();
     }
     await page.waitForTimeout(300);
     const overlaps = await page.evaluate(() => {

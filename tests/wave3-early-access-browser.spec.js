@@ -5,7 +5,7 @@ import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { clickLobbyOption } from './helpers/home-lobby.js';
 
-// Exercise the real built game using the trial artifact from pretest:browser.
+// Exercise the real built game using the trial artifact built explicitly by test:browser.
 const demoKey = 'skyline-rush-wave3-demo:v1:guest';
 const modeHistoryKey = 'skyline-rush-mode-history-v1';
 const openGarage = async (page, url = '/') => {

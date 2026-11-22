@@ -46,7 +46,7 @@ export function diagRelayPlugin({ root = process.cwd(), dir = process.env.DIAG_L
       mkdirSync(dir, { recursive: true, mode: 0o700 });
       const file = join(dir, `${new Date().toISOString().replace(/[:.]/g, '-')}.jsonl`);
       appendFileSync(file, `${JSON.stringify({ kind: 'server', received: new Date().toISOString(), branch: git('branch', '--show-current'), commit: git('rev-parse', '--short', 'HEAD'), allowLan })}\n`, { mode: 0o600 });
-      server.config.logger.info(`  ➜  Diag log: ${relative(root, file) || file}  (live: npm run diag:tail)`);
+      server.config.logger.info(`  ➜  Diag log: ${relative(root, file) || file}  (live: pnpm run diag:tail)`);
       server.config.logger.info(allowLan ? '  ⚠  DIAG_ALLOW_LAN=1: logs travel unencrypted over Wi-Fi'
         : '  ➜  Diag log accepts Tailscale and localhost only (Wi-Fi: DIAG_ALLOW_LAN=1, unencrypted)');
       server.middlewares.use(RELAY_PATH, (req, res) => {

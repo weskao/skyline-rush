@@ -39,7 +39,7 @@ test('all four pickup silhouettes clear the road, with movement frozen for reduc
 test('make build is a real non-deploying build target with no pickup switch', () => {
   const makefile = read('Makefile');
   assert.match(makefile, /(?:^|\n)build:\s*node_modules\b/);
-  assert.match(makefile, /(?:^|\n)\s+\$\(NPM\) run build/);
+  assert.match(makefile, /(?:^|\n)\s+\$\(PNPM\) run build/);
   assert.doesNotMatch(makefile, /VITE_PICKUP_3D/);
 });
 

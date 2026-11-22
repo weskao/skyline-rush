@@ -14,7 +14,7 @@ export default defineConfig({
    channel:'chrome',launchOptions:{args:['--enable-unsafe-swiftshader']},
  },
  webServer:{
-   command:`npm run dev -- --port ${port} --strictPort`,
+   command:`pnpm run dev --port ${port} --strictPort`,
    url:`${baseURL}/tests/fixtures/world-tour-mid-race.html`,
    reuseExistingServer:!process.env.CI,
  },

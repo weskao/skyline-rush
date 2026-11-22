@@ -5,12 +5,12 @@ The game keeps versioned race results in `saves/{uid}`, permanent per-ruleset Mo
 
 ## Local verification
 
-Install Node dependencies with `npm ci`, have Java 21 or newer and Google Chrome available, then run:
+Install Node dependencies with `pnpm install --frozen-lockfile`, have Java 21 or newer and Google Chrome available, then run:
 
 ```sh
-npm test
-npm run test:cloud
-npm run build
+pnpm test
+pnpm run test:cloud
+pnpm run build
 ```
 
 `test:cloud` starts local Firebase Auth and Firestore emulators. Its Google account form uses mock identities and does not touch production data. The browser tests cover map recovery after clearing site data, account switching, export and delete, reconnect, and concurrent devices. Firestore rules tests cover owner-only reads, writes and deletion.
@@ -29,9 +29,9 @@ From 0.33.0 the GitHub Pages deploy (`.github/workflows/ci.yml`) and `make deplo
 
 ```sh
 VITE_WAVE3_FIRESTORE_PREVIEW=1 make dev
-npm run test:cloud
-GARAGE_VFX_RELEASE_MODE=released VITE_WAVE3_FIRESTORE_PREVIEW=1 npm run build
-GARAGE_VFX_RELEASE_MODE=released VITE_WAVE3_FIRESTORE_PREVIEW=0 npm run build
+pnpm run test:cloud
+GARAGE_VFX_RELEASE_MODE=released VITE_WAVE3_FIRESTORE_PREVIEW=1 pnpm run build
+GARAGE_VFX_RELEASE_MODE=released VITE_WAVE3_FIRESTORE_PREVIEW=0 pnpm run build
 ```
 
 ### Storage and maintenance
@@ -52,7 +52,7 @@ launch, and 1.0.0 only restarts every balance from zero.
   Wave 3 entirely.
 - Delete the preview data right before the 1.0.0 tag goes live, after the user confirms (it cannot
   be undone):
-  `npx -y firebase-tools@15.34.1 firestore:delete wave3PreviewEconomy --recursive --project skyline-rush-weskao --force`
+  `pnpm dlx firebase-tools@15.34.1 firestore:delete wave3PreviewEconomy --recursive --project skyline-rush-weskao --force`
 - Guest wallets live on each device (`skyline-rush-wave3-demo:v1:guest`) and Firestore cannot reach
   them. They expire after seven days without play; zeroing them on launch day needs a one-time
   client change in the 1.0.0 release (for example a new storage key), with its own test.

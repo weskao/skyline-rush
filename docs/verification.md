@@ -18,10 +18,10 @@
 
 For a separate source checkout with working dependencies and browsers:
 ```sh
-npm ci
-npm run typecheck
+pnpm install --frozen-lockfile
+pnpm run typecheck
 make verify
-npm run test:layout
+pnpm run test:layout
 ```
 
 A command must actually finish successfully before its checklist entry can be checked. The earlier remote environment could not clone GitHub (DNS resolution failure). The current local macOS checkout can execute the gates; completed receipts are recorded below rather than inferred from CI.
@@ -39,8 +39,8 @@ A command must actually finish successfully before its checklist entry can be ch
 - Final production source is `cda325e`; the strict golden correction is `d1a91f4`. No simulation/renderer rewrite or new dependency was needed.
 - `make verify`: **exit 0**. Strict TypeScript/Vue/legacy-boundary checks passed; Node **693 passed / 0 failed / 3 emulator-dependent skipped**; production build and locked-bundle assertion passed; Chrome Browser **447/447 passed**; World Tour **72/72 passed**. Complete output (machine paths normalized): `artifacts/refactor-20261027/make-verify.log`.
 - Earlier broad diagnostic run: **445 passed / 2 failed**, both strict DOM/CSS golden checks after the intentional camera correction. Independent review and a focused **2/2 GREEN** preceded the final full rerun above. All 228 element/tag/class records, full stylesheet hashing and every parity assertion remain.
-- `npm run test:layout`: **exit 0**, **29+42 passed**. Output: `artifacts/refactor-20261027/layout.log`.
-- `npm run test:cloud` with the installed Java 25: **exit 0**, **15 emulator Browser + 3 Firestore Rules passed / 0 skipped**. These are the three rule cases skipped without emulators in the normal unit command. Synthetic accounts and local Auth/Firestore emulators were used; no production cloud save was tested or modified. Output: `artifacts/refactor-20261027/cloud.log`.
+- `pnpm run test:layout`: **exit 0**, **29+42 passed**. Output: `artifacts/refactor-20261027/layout.log`.
+- `pnpm run test:cloud` with the installed Java 25: **exit 0**, **15 emulator Browser + 3 Firestore Rules passed / 0 skipped**. These are the three rule cases skipped without emulators in the normal unit command. Synthetic accounts and local Auth/Firestore emulators were used; no production cloud save was tested or modified. Output: `artifacts/refactor-20261027/cloud.log`.
 - Full remote CI for the continuation is still pending publication/approval; the earlier `4876c90` run #40451947889 has been verified successful but does not cover the new source.
 
 
@@ -52,7 +52,7 @@ Scope: a measuring tool for the open §A real-phone gate, not the measurement it
   last 20 s of racing (`src/perf.js`, nearest-rank percentiles; frames over 250 ms, i.e. tab
   switches, are skipped). Without the parameter no element is created and nothing is sampled.
 - TDD: `tests/perf.test.js` (3 cases) and `tests/perf-browser.spec.js` (overlay text and position
-  with `?perf`, absence without it). Both failed first and pass now; `npm test` 218/218.
+  with `?perf`, absence without it). Both failed first and pass now; `pnpm test` 218/218.
 - iOS Simulator Safari (iPhone 17, iOS 26.5) over the LAN: p50 17.0 ms, p95 24.0 ms, 59.7 fps over
   20 s on Coast. This uses the Mac's GPU and is not a phone number.
 - Not verified: a physical iPhone and a mid-range Android. The iPhone was not connected when this
@@ -104,8 +104,8 @@ finished §C, then built §D.
   the way: an empty pylon slot defaulted to `relative = -1`, which passed the `> -20`
   visibility check and then read `undefined.distance`. It is now `NaN`, which fails the check,
   and hidden instances still get finite matrices.
-- Results: in the worktree, `npm test` **215 passed** and `npm run test:browser` **131
-  passed** (15.5 min). On the merge result, `npm test` **215 passed**, and
+- Results: in the worktree, `pnpm test` **215 passed** and `pnpm run test:browser` **131
+  passed** (15.5 min). On the merge result, `pnpm test` **215 passed**, and
   `nitro-fly-browser` + `motion-browser` + `depth-browser` **32 passed**. `artifacts/*.jpeg`
   were restored after the run.
 - Visual: screenshots of Coast at desktop and 844×390 show the rolled car with `TRICK` /
@@ -148,9 +148,9 @@ a `shortcut` section on all four tracks and `shortcutPylons()`; `src/world.js` g
   `assert.ok(trick)` precondition and went red. Two existing tests were narrowed: the
   air-pickup invariant now allows pickups inside shortcut sections, and the tunnel-ring test
   filters `type === 'tunnel'`.
-- Results: `npm test` **211 passed**. `npm run test:browser` (1 worker) ran 104 passed and
+- Results: `pnpm test` **211 passed**. `pnpm run test:browser` (1 worker) ran 104 passed and
   21 failed with `ERR_CONNECTION_REFUSED`. The test server on port 5178 went down mid-run,
-  while a parallel Codex session committed in the same tree. `npx playwright test
+  while a parallel Codex session committed in the same tree. `pnpm exec playwright test
   --last-failed` on a fresh build then gave **21 passed**, so **125/125** in total.
 - Visual: a screenshot of Coast with the corridor moved to 300 m in the served bundle only
   shows the `SHORTCUT / FLY HIGH` sign over the left side.
@@ -170,7 +170,7 @@ optional daily `modifier`, `stepRace` ignores FLY under `no-flight`, and results
   control-settings tests needed the new `ghost` default added to their expected objects. A new
   `progression-browser.spec.js` (3 tests) and the updated collections spec (4 viewports) failed
   on the old placeholder states before the wiring went in.
-- Results: `npm test` **194 passed**. `npm run test:browser -- --workers=2` **125 passed (7.9 min)**.
+- Results: `pnpm test` **194 passed**. `pnpm run test:browser -- --workers=2` **125 passed (7.9 min)**.
   This includes the complete 5 km sprint, which now also checks that the saved ghost has about
   10 samples per second of finish time and that the coast stars were saved.
 - Visual: a screenshot taken during the countdown, with a ghost saved for the track, shows the
@@ -220,8 +220,8 @@ cosmetic unlock/equip persistence remain open for Claude Code in `HANDOFF.md`.
   Nine final PNGs were annotated from native-pixel DOM bounds and individually inspected.
 - Independent read-only code review found a finish shadow left behind by the visual coast;
   the shadow now follows the player's presentation Z offset. No other actionable code finding.
-- Final acceptance: `npm test` **177 passed**, zero failures/skips;
-  `npm run test:browser -- --workers=2` **122 passed in 7.2 minutes**. Production build,
+- Final acceptance: `pnpm test` **177 passed**, zero failures/skips;
+  `pnpm run test:browser -- --workers=2` **122 passed in 7.2 minutes**. Production build,
   source/test syntax checks and `git diff --check` pass; the existing >500 kB chunk advisory
   remains. No source/test changes followed this run. Prior complete-suite attempts were
   interrupted for screenshot-discovered fixes and are not counted as final acceptance.
@@ -266,8 +266,8 @@ Scope: TODO 8B Consistency → Event callouts → Button feel → Animated numbe
   now own compression, while logical held state owns illumination. Release, cancel, capture loss, blur and pause
   clear the physical press. Screenshot inspection also caught landscape HUD overlap; the three phone viewports
   now assert that callouts stay clear of progress and flight-state panels, and all three pass.
-- `npm test`: **170 passed**, zero failures/skips. Source/test syntax checks and `git diff --check` pass.
-- `npm run test:browser -- --workers=2`: **88 passed in 5.7 minutes**, with one stable production build.
+- `pnpm test`: **170 passed**, zero failures/skips. Source/test syntax checks and `git diff --check` pass.
+- `pnpm run test:browser -- --workers=2`: **88 passed in 5.7 minutes**, with one stable production build.
   This includes all existing gameplay/audio/storage/controls tests and nine new motion tests. Desktop 1440×900
   and touch 390×844, 320×740, 844×390 are covered. The production build succeeds with the existing >500 kB chunk advisory.
 - Four real-race PNGs (desktop ranking, desktop events, phone portrait, phone landscape) were inspected
@@ -294,8 +294,8 @@ Scope: History, gauge feedback, slide-pad feedback, track selection/scenery/unlo
   Additional red/green regressions cover black Neon rendering from zero-scale lit instances,
   legacy unlocks surviving the 50-record rollover, fractional star thresholds, chart direction,
   touch-readable unlock instructions, and mobile gauge/button overlap.
-- `npm test`: **162 passed**. Production build succeeds; Vite retains its existing >500 kB chunk advisory.
-- Final complete browser acceptance: `npx playwright test --fully-parallel --workers=2`:
+- `pnpm test`: **162 passed**. Production build succeeds; Vite retains its existing >500 kB chunk advisory.
+- Final complete browser acceptance: `pnpm exec playwright test --fully-parallel --workers=2`:
   **78 passed in 5.0 minutes**, using one stable production build. Desktop 1440×900, touch 390×844,
   320×740 and 844×390 are covered. An earlier run passed 77/78; its remaining test received a local
   HTTP navigation failure while the build directory was being replaced.
@@ -330,9 +330,9 @@ TDD evidence:
 - Browser regressions first failed for missing controls/NITRO UI, resuming while still editing, unsafe custom positions and MAX animation ignoring reduced motion. The new gameplay test earns the first five rings with real keyboard input, checks fractional fill/MAX/PERFECT LINE, then spends NITRO and drifts. The touch tests use trusted CDP touches and verify actual saved/mirrored positions, not just stored JSON.
 - The complete browser run exposed MINI BOOST masking TOUCHDOWN. The HUD now preserves landing feedback; its existing acceptance test is the regression.
 
-`npm test`: **154/154 passed**. `npm run build` succeeds (635.28 kB JS / 171.42 kB gzip), retaining Vite's existing large-chunk advisory. All source/test JavaScript syntax checks and `git diff --check` pass; there is no separate lint script.
+`pnpm test`: **154/154 passed**. `pnpm run build` succeeds (635.28 kB JS / 171.42 kB gzip), retaining Vite's existing large-chunk advisory. All source/test JavaScript syntax checks and `git diff --check` pass; there is no separate lint script.
 
-The complete `npm run test:browser` run exercised all **66 tests**: **65 passed / 1 failed** in 8.3 minutes, exposing the landing-feedback regression above. After rebuilding its fix, `npx playwright test tests/browser.spec.js tests/handoff-browser.spec.js --grep 'complete 5 km|flight HUD|earned ring'` passed **3/3** in 1.8 minutes. This rechecked landing, real NITRO/drift/comfort behavior and the full race's history/per-track/legacy-best persistence. The complete suite was not repeated after that one-line priority fix.
+The complete `pnpm run test:browser` run exercised all **66 tests**: **65 passed / 1 failed** in 8.3 minutes, exposing the landing-feedback regression above. After rebuilding its fix, `pnpm exec playwright test tests/browser.spec.js tests/handoff-browser.spec.js --grep 'complete 5 km|flight HUD|earned ring'` passed **3/3** in 1.8 minutes. This rechecked landing, real NITRO/drift/comfort behavior and the full race's history/per-track/legacy-best persistence. The complete suite was not repeated after that one-line priority fix.
 
 Independent code review found and verified repairs for editor race transitions, safe-area placement and pooled-material disposal, then accepted the final landing-priority fix. No important findings remain.
 
@@ -359,7 +359,7 @@ The README image URLs and social-preview URL use a new cache version. `public/og
 
 Every new image was opened and inspected: correct language, no cut-off text. Known cosmetic limits, not changed here: the intro footnote (`.flight-tip`) is clipped by the 1440×900 intro panel in both languages, so the cover captures hide it; zh-TW ON/OFF badges in the audio panel render at 10 px; the zh-TW mobile `自動油門 · 踩煞車即可接手` hint wraps one character to a second line. `public/icons/*` and `app-icon.svg` contain no text (no `<text>` elements; viewed), so they need no variants. `public/manifest.webmanifest` stays English: a manifest has one name/description and no per-locale form, and a second manifest would break installability.
 
-`npm test`: 250/250 passed. `npm run build` succeeds and the production-lock assertion passes (`dist/` contains the three og images).
+`pnpm test`: 250/250 passed. `pnpm run build` succeeds and the production-lock assertion passes (`dist/` contains the three og images).
 
 ## zh-TW wording rules (units and brand terms) — 2026-10-22
 
@@ -370,8 +370,8 @@ Decision from the i18n review (kept as is, written down so nobody "fixes" it lat
 
 ## Final results
 
-- `npm test`: 15 tests passed, 0 failed. Driving, speed/road limits, launch speed, flight, fuel exhaustion, landing, collision altitude/cooldown, pause/invalid time steps, rival flight, reset, boost consumption, within-tick finish order, outward-facing geometry, keyboard cleanup and touch cancellation.
-- `npm run test:browser`: production build succeeded; 6 real Chrome browser tests passed in 1.5 minutes. The suite serves `dist/` through Vite preview, not the development server.
+- `pnpm test`: 15 tests passed, 0 failed. Driving, speed/road limits, launch speed, flight, fuel exhaustion, landing, collision altitude/cooldown, pause/invalid time steps, rival flight, reset, boost consumption, within-tick finish order, outward-facing geometry, keyboard cleanup and touch cancellation.
+- `pnpm run test:browser`: production build succeeded; 6 real Chrome browser tests passed in 1.5 minutes. The suite serves `dist/` through Vite preview, not the development server.
 - Browser checks exercised desktop keyboard driving/flight/landing, sound and camera controls, pause/resume, blur pause, restart, portrait multi-pointer driving/flight, coarse-pointer landscape, WebGL initialization failure, and preserved-page lifecycle events.
 - The full 5 km sprint test drove with actual keyboard events, reached FINISHED, verified results and local best-time storage, then restarted with Race again. It took 1.1 minutes of wall time.
 - JavaScript syntax checks passed for every source module. `git diff --check` was clean.
@@ -408,8 +408,8 @@ No external deployment, remote Git operations or changes to other projects were 
 
 ## Immersive UI update — 2026-10-18
 
-- Final `npm test`: 19 tests passed, 0 failed. Added red-to-green coverage for vehicle impact data/rebound, guardrail contact versus airborne clearance, one-shot landing events and particle initialization with a nonpositive first-frame delta.
-- Final `npm run test:browser`: production build succeeded and all 10 Chrome tests passed in 2.2 minutes. Includes the complete 5 km sprint, restart, best-time storage, keyboard/touch flight, ascent/descent/touchdown instructions, collision report and recovery with sound enabled, reduced motion, landscape, and all six touch targets at 320px.
+- Final `pnpm test`: 19 tests passed, 0 failed. Added red-to-green coverage for vehicle impact data/rebound, guardrail contact versus airborne clearance, one-shot landing events and particle initialization with a nonpositive first-frame delta.
+- Final `pnpm run test:browser`: production build succeeded and all 10 Chrome tests passed in 2.2 minutes. Includes the complete 5 km sprint, restart, best-time storage, keyboard/touch flight, ascent/descent/touchdown instructions, collision report and recovery with sound enabled, reduced motion, landscape, and all six touch targets at 320px.
 - Low-charge guidance was reproduced as an actual browser failure: the UI reported empty charge while positive usable charge remained. The corrected HUD offers lift while descending until charge is genuinely exhausted. The test asserts during descent so a later landing cannot falsely satisfy it.
 - The 320px layout regression failed on a 42px boost target. The final test checks all six button rectangles are within the viewport and at least 44px wide. HUD layout was also adjusted to keep the car visible in landscape.
 - The first rendering failure was traced to a negative initial animation-frame delta reviving dormant particle entries. A focused test reproduced the exact exception before the timing clamp was fixed.
@@ -451,8 +451,8 @@ An additional failure probe reproduced an audio allocation error leaving a parti
 
 ### Final acceptance
 
-- `npm test`: **26 passed**, 0 failed.
-- `npm run test:browser`: production build succeeded; **13 Chrome tests passed in 2.7 minutes**. This includes desktop, portrait and landscape controls, countdown/AUTO/brake behavior, actual audio signal and mute/pause handling, audio allocation failure/retry, contact recovery, close-pass HUD, reduced motion, WebGL failure, preserved-page lifecycle and the full 5 km sprint with results/storage/restart.
+- `pnpm test`: **26 passed**, 0 failed.
+- `pnpm run test:browser`: production build succeeded; **13 Chrome tests passed in 2.7 minutes**. This includes desktop, portrait and landscape controls, countdown/AUTO/brake behavior, actual audio signal and mute/pause handling, audio allocation failure/retry, contact recovery, close-pass HUD, reduced motion, WebGL failure, preserved-page lifecycle and the full 5 km sprint with results/storage/restart.
 - The final complete sprint finished first in 01:00.13, with 21 close passes and zero contacts. Results and reward screenshots were visually inspected, along with desktop flight, boost and the narrow mobile layout.
 - Every source module passed `node --check`; `git diff --check` passed. There is no separate configured lint script.
 - Final JS bundle: **567.73 kB minified / 148.45 kB gzip**. Vite's existing >500 kB advisory remains; no additional runtime dependency or artificial chunk split was introduced.

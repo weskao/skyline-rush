@@ -60,16 +60,16 @@ Otherwise signed-in players' cloud saves are rejected (example: layout-2 bests s
    final report. Exit 1 means they changed: continue.
 2. Show the rules diff. The new rules must still accept every document the currently published
    site writes, because rules go live before the site does. If they would reject an old-format
-   write, stop and ask the user. `npm run test:cloud` must pass on this commit.
+   write, stop and ask the user. `pnpm run test:cloud` must pass on this commit.
 3. Ask with `AskUserQuestion`; the first option is "Deploy Firestore rules now (Recommended)".
    `-y` never skips this question. Without approval, stop and do not run Phase B.
 4. Deploy with the same pinned `firebase-tools` that `test:cloud` uses:
 
    ```bash
-   npx -y firebase-tools@15.34.1 deploy --only firestore:rules --project skyline-rush-weskao
+   pnpm dlx firebase-tools@15.34.1 deploy --only firestore:rules --project skyline-rush-weskao
    ```
 
-   Not logged in → hand the user `! npx -y firebase-tools@15.34.1 login` and wait.
+   Not logged in → hand the user `! pnpm dlx firebase-tools@15.34.1 login` and wait.
 5. Continue to Phase B only after the output reports the rules were released. Run Phase B with
    `FIRESTORE_RULES_DEPLOYED="$(git hash-object firestore.rules)"` in its environment:
    `scripts/release-gate.sh` refuses to tag changed rules without it. Put the deploy result in the
@@ -88,7 +88,7 @@ The tag's CI always publishes GitHub Pages. Ask with `AskUserQuestion` where els
 2. "GitHub Pages + Netlify": after Phase B, on `main` at the release commit, run
    `make deploy-netlify` (builds, deploys to Netlify production, checks the published deploy id,
    sends its own Telegram link). Not logged in → hand the user
-   `! npx --yes netlify-cli@27.16.2 login` and wait. A failed Netlify deploy does not roll back
+   `! pnpm dlx netlify-cli@27.16.2 login` and wait. A failed Netlify deploy does not roll back
    the release; report its result in the final report and the Telegram notice.
 
 ## Phase W — Wave 3 preview data (1.0.0 only, before Phase B)
@@ -106,7 +106,7 @@ Follow Phases T and A, then Phases F, D and W above, then Phase B and the final 
 `$HOME/.claude/commands/release.md` unchanged.
 `RELEASE_SCRIPT` resolves to this project's `scripts/release.sh`, whose `scripts/release-gate.sh`
 re-runs the notes check first, then requires `main` = `origin/main`, a green CI run and
-`npm test` + `npm run build`, before the shared script writes the changelog, commits, tags,
+`pnpm test` + `pnpm run build`, before the shared script writes the changelog, commits, tags,
 pushes and creates the GitHub Release. Last, `scripts/release-back-merge.sh` pushes a merge of
 `main` into `develop`; if it prints `⚠️  main → develop back-merge not done`, report it in the
 final report and run the manual merge it prints after the user approves.

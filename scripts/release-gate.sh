@@ -39,7 +39,7 @@ done
 echo "release-gate: CI green for $sha ($url)"
 # Test as the tag will: the release commit bumps package.json, and CURRENT_RELEASE follows that version.
 trap 'git checkout -q -- package.json' EXIT
-npm pkg set version="${1#v}"
-npm test
+node --input-type=module -e 'import fs from "node:fs"; const file = "package.json"; const pkg = JSON.parse(fs.readFileSync(file, "utf8")); pkg.version = process.argv[1]; fs.writeFileSync(file, JSON.stringify(pkg, null, 2) + "\n");' "${1#v}"
+pnpm test
 git checkout -q -- package.json
-npm run build
+pnpm run build

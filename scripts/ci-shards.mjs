@@ -56,8 +56,8 @@ export function parseLog(text) {
   return durations;
 }
 
-const playwrightList = (config, extra = []) => JSON.parse(execFileSync('npx',
-  ['playwright', 'test', `--config=${config}`, '--list', '--reporter=json', ...extra],
+const playwrightList = (config, extra = []) => JSON.parse(execFileSync('pnpm',
+  ['exec', 'playwright', 'test', `--config=${config}`, '--list', '--reporter=json', ...extra],
   { encoding: 'utf8', maxBuffer: 256 << 20 }));
 
 function plan(config, shard, total) {

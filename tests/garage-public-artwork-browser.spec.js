@@ -4,7 +4,7 @@ import { PAINTS } from '../src/appearance.ts';
 
 const paintCount = Object.keys(PAINTS).length;
 
-// npm run test:browser builds trial by default. For a locked dist, set the mode explicitly.
+// pnpm run test:browser builds trial by default. For a locked dist, set the mode explicitly.
 const trial = [undefined, 'trial'].includes(process.env.GARAGE_VFX_RELEASE_MODE);
 const viewports = [
   { width: 1440, height: 900 },

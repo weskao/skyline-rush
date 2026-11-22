@@ -268,7 +268,7 @@ test('the release script checks the notes before it pulls, commits or tags anyth
   assert.ok(release.indexOf('release-gate.sh') < release.indexOf('.claude/scripts/release.sh'), 'gate runs before the shared commit/tag script');
   const notes = gate.indexOf('node scripts/check-release-notes.mjs');
   assert.ok(notes > 0);
-  for (const step of ['git fetch', 'gh run list', 'npm test']) assert.ok(notes < gate.indexOf(step), `notes are checked before ${step}`);
+  for (const step of ['git fetch', 'gh run list', 'pnpm test']) assert.ok(notes < gate.indexOf(step), `notes are checked before ${step}`);
 });
 
 test('the release gate refuses changed Firestore rules until their deploy is attested', () => {
@@ -276,7 +276,7 @@ test('the release gate refuses changed Firestore rules until their deploy is att
   const rules = gate.indexOf('-- firestore.rules');
   assert.ok(rules > 0, 'gate diffs firestore.rules against the last release tag');
   assert.ok(gate.includes('[[ ${FIRESTORE_RULES_DEPLOYED:-} == "$rules" ]] ||'), 'deploy attestation must match the rules blob');
-  for (const step of ['git fetch', 'gh run list', 'npm test']) assert.ok(rules < gate.indexOf(step), `rules are checked before ${step}`);
+  for (const step of ['git fetch', 'gh run list', 'pnpm test']) assert.ok(rules < gate.indexOf(step), `rules are checked before ${step}`);
 });
 
 // Developer-record lines from CHANGELOG.md that must never reach players, and player copy that must pass.

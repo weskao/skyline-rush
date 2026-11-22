@@ -6,14 +6,14 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 // 2026-11-09: a commit of another session's RED tests (tracks never registered) was pushed and CI went red with 15
-// failures. The pre-push hook now runs `npm test` whenever a pushed range touches code or tests.
+// failures. The pre-push hook now runs `pnpm test` whenever a pushed range touches code or tests.
 const hook = new URL('../.githooks/pre-push', import.meta.url).pathname;
 // This file itself runs inside that hook: never let a hook's GIT_DIR steer the scratch repos below into the real one.
 const local = execFileSync('git', ['rev-parse', '--local-env-vars'], { encoding: 'utf8' }).split('\n').filter(Boolean);
 const clean = Object.fromEntries(Object.entries(process.env).filter(([key]) => !local.includes(key)));
 
-function push(changedFile, npmExit) {
-  const repo = mkdtempSync(join(tmpdir(), 'pre-push-')), bin = join(repo, '.bin'), log = join(repo, 'npm.log');
+function push(changedFile, pnpmExit) {
+  const repo = mkdtempSync(join(tmpdir(), 'pre-push-')), bin = join(repo, '.bin'), log = join(repo, 'pnpm.log');
   const git = (...args) => execFileSync('git', args, { cwd: repo, encoding: 'utf8', env: clean }).trim();
   git('init', '-q');
   git('config', 'user.email', 'test@example.com');
@@ -28,11 +28,11 @@ function push(changedFile, npmExit) {
   git('commit', '-qm', 'change');
   const head = git('rev-parse', 'HEAD');
   mkdirSync(bin);
-  // node stands in for the module-size check; npm records what it was asked to run.
+  // node stands in for the module-size check; pnpm records what it was asked to run.
   writeFileSync(join(bin, 'node'), '#!/bin/sh\nexit 0\n');
-  writeFileSync(join(bin, 'npm'), `#!/bin/sh\necho "$*" >> "${log}"\n[ -n "$GIT_DIR" ] && echo "GIT_DIR=$GIT_DIR" >> "${log}"\nexit ${npmExit}\n`);
+  writeFileSync(join(bin, 'pnpm'), `#!/bin/sh\necho "$*" >> "${log}"\n[ -n "$GIT_DIR" ] && echo "GIT_DIR=$GIT_DIR" >> "${log}"\nexit ${pnpmExit}\n`);
   chmodSync(join(bin, 'node'), 0o755);
-  chmodSync(join(bin, 'npm'), 0o755);
+  chmodSync(join(bin, 'pnpm'), 0o755);
   copyFileSync(hook, join(repo, 'pre-push'));
   const run = spawnSync('sh', ['pre-push', 'origin', 'url'], {
     cwd: repo, encoding: 'utf8', input: `refs/heads/f ${head} refs/heads/f ${base}\n`,
@@ -40,7 +40,7 @@ function push(changedFile, npmExit) {
     env: { ...clean, GIT_DIR: join(repo, '.git'), PATH: `${bin}:${process.env.PATH}`, SKIP_LAYOUT_GATE: '' },
   });
   let calls = '';
-  try { calls = readFileSync(log, 'utf8'); } catch { /* npm never ran */ }
+  try { calls = readFileSync(log, 'utf8'); } catch { /* pnpm never ran */ }
   return { status: run.status, calls };
 }
 

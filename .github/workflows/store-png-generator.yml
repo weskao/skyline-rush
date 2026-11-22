@@ -18,12 +18,13 @@ jobs:
         with:
           ref: feature/garage-store-readiness
           persist-credentials: true
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
       - run: node scripts/render-store-png.mjs
       - name: Verify independent PNG source pixels, margins, and alpha
         run: node --test tests/garage-store-png.test.js

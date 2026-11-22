@@ -55,6 +55,6 @@ test('the CI matrix fits 20 concurrent jobs and the unit job reruns no browser s
   assert.ok(shards[0] + shards[1] + 2 <= 20, `${shards.join(' + ')} + unit + cloud exceeds 20 concurrent jobs`);
   // Every *browser.spec.js already runs in a shard; a second run in the unit job cost 4.4 minutes (pickup-3d, 2026-11).
   const unit = workflow.slice(workflow.indexOf('\n  unit-tests:\n'), workflow.indexOf('\n  browser-tests:\n'));
-  assert.ok(unit.includes('npm test'), 'the unit job section was found');
+  assert.ok(unit.includes('pnpm test'), 'the unit job section was found');
   assert.doesNotMatch(unit, /playwright test/, 'browser specs run once, in the shards');
 });

@@ -8,6 +8,7 @@ import { REVISION } from 'three';
 const TARGET = '0.186.1';
 const read = path => JSON.parse(readFileSync(new URL(`../${path}`, import.meta.url), 'utf8'));
 const pkg = read('package.json');
+const lock = readFileSync(new URL('../pnpm-lock.yaml', import.meta.url), 'utf8');
 
 test('three is pinned exactly to the target release and the installed copy matches', () => {
   assert.equal(pkg.dependencies.three, TARGET);
@@ -16,14 +17,15 @@ test('three is pinned exactly to the target release and the installed copy match
 });
 
 test('the lockfile resolves the same three release', () => {
-  assert.equal(read('package-lock.json').packages['node_modules/three'].version, TARGET);
+  assert.ok(lock.includes(`three@${TARGET}`), 'pnpm lock must pin Three.js to the renderer version');
 });
 
 test('@types/three is a declared devDependency on the same minor as three', () => {
   const declared = pkg.devDependencies?.['@types/three'];
   assert.ok(declared, '@types/three must be a devDependency, not a --no-save install');
   assert.match(declared, /^0\.186\.\d+$/);
-  assert.equal(read('package-lock.json').packages['node_modules/@types/three'].version, declared);
+  assert.equal(read('node_modules/@types/three/package.json').version, declared);
+  assert.ok(lock.includes(`@types/three@${declared}`), 'pnpm lock must pin matching Three.js types');
 });
 
 test('typecheck scripts do not install a hardcoded @types/three', () => {

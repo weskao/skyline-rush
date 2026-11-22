@@ -14,8 +14,12 @@ function sharedWorktree(lock) {
   const wt = join(root, 'wt');
   mkdirSync(join(main, 'node_modules'), { recursive: true });
   mkdirSync(wt);
-  writeFileSync(join(main, 'package-lock.json'), '{"main":1}');
-  writeFileSync(join(wt, 'package-lock.json'), lock);
+  writeFileSync(join(wt, 'package.json'), '{}');
+  writeFileSync(join(main, 'package.json'), '{}');
+  writeFileSync(join(wt, 'pnpm-workspace.yaml'), 'packages:\n  - .\n');
+  writeFileSync(join(main, 'pnpm-workspace.yaml'), 'packages:\n  - .\n');
+  writeFileSync(join(main, 'pnpm-lock.yaml'), '{"main":1}');
+  writeFileSync(join(wt, 'pnpm-lock.yaml'), lock);
   symlinkSync(join(main, 'node_modules'), join(wt, 'node_modules'));
   const old = new Date(Date.now() - 3600_000);
   utimesSync(join(main, 'node_modules'), old, old); // checkout made the lockfile newer
@@ -27,8 +31,8 @@ function makeNodeModules(cwd) {
   const env = { ...process.env };
   delete env.GIT_DIR;
   delete env.GIT_WORK_TREE;
-  // NPM=false: any npm install attempt fails the target.
-  return spawnSync('make', ['-f', makefile, 'node_modules', 'NPM=false'], { cwd, env, encoding: 'utf8' });
+  // PNPM=false: any pnpm install attempt fails the target.
+  return spawnSync('make', ['-f', makefile, 'node_modules', 'PNPM=false'], { cwd, env, encoding: 'utf8' });
 }
 
 test('make node_modules keeps a shared node_modules link when the lockfile matches', () => {
@@ -45,6 +49,16 @@ test('make node_modules keeps a shared node_modules link when the lockfile match
 test('make node_modules still installs when a linked worktree has a different lockfile', () => {
   const { root, wt } = sharedWorktree('{"wt":2}');
   try {
+    assert.notEqual(makeNodeModules(wt).status, 0);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('make node_modules reinstalls when workspace dependency policy differs', () => {
+  const { root, wt } = sharedWorktree('{"main":1}');
+  try {
+    writeFileSync(join(wt, 'pnpm-workspace.yaml'), 'allowBuilds:\n  esbuild: true\n');
     assert.notEqual(makeNodeModules(wt).status, 0);
   } finally {
     rmSync(root, { recursive: true, force: true });

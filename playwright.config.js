@@ -36,7 +36,7 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   webServer: {
-    command: `npm run preview -- --port ${port} --strictPort${pages ? ' --base=/skyline-rush/' : ''}${process.env.COAST_PREVIEW_DIR ? ` --outDir=${process.env.COAST_PREVIEW_DIR}` : ''}`,
+    command: `pnpm run preview --port ${port} --strictPort${pages ? ' --base=/skyline-rush/' : ''}${process.env.COAST_PREVIEW_DIR ? ` --outDir=${process.env.COAST_PREVIEW_DIR}` : ''}`,
     url: baseURL,
     reuseExistingServer: false,
   },

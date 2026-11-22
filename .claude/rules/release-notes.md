@@ -10,7 +10,7 @@ paths:
 
 - Write each entry for players (`docs/release-process.md` "Player-facing release announcement writing"): what they
   can now do or notice, never how it was built, configured or tested, and nothing sensitive.
-- `checkReleaseNotes` (run by `npm test` and the release gate) rejects developer terms in en and
+- `checkReleaseNotes` (run by `pnpm test` and the release gate) rejects developer terms in en and
   zh-TW, links, emails, secrets, file and code names, commit ids and over-long text. Extend its
   word lists when a new kind of leak slips through (add the line to `DEVELOPER_ONLY` in
   `tests/release-notes.test.js`); never loosen them to pass a note.
@@ -26,7 +26,7 @@ paths:
   under `public/whats-new/<theme-slug>/`. It shows first as "Upcoming" until the release commit bumps
   `package.json`, which names it; the review and the gate find it under the version being released.
   Before writing the next notes, stamp the shipped entry with its version and tag date
-  (`git log -1 --format=%cs v<version>`); `npm test` refuses two UPCOMING entries.
+  (`git log -1 --format=%cs v<version>`); `pnpm test` refuses two UPCOMING entries.
 - A highlight players see happen in the game ships with a real-game picture or clip, checked frame by
   frame (`docs/release-announcements.md` §6 step 2); the review's "Show it" verdict and `/release`
   Phase N both stop a release that lacks one. Record it once, right before the release, from the code
@@ -65,7 +65,7 @@ paths:
 - Every notes module stays at or below 400 lines (`tests/module-size.test.js`). When writing new notes, move each
   entry past the newest five, unchanged, from `release-notes-data.ts` to the top of
   `release-notes-archive-recent.ts`; when an archive module would pass 400 lines, start a new one and spread it in
-  `release-notes-data.ts` in version order. Run `npm test` before pushing notes: a docs-only notes commit
+  `release-notes-data.ts` in version order. Run `pnpm test` before pushing notes: a docs-only notes commit
   (`caf4a3b3`, 478 lines) turned `develop` red on 2026-11-07.
 - Inside a release the dialog lists highlights NEW → improvement → fix (unknown kinds last); within
   a kind, clip + text → picture + text → text only, written order kept among equals, via `highlightsByKind` in `src/release-notes.ts`; write the data in any

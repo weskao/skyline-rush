@@ -90,13 +90,13 @@ Custom and Free Drive offer **Off / Classic Mystery Rings / Active Items / All I
 
 ### Real game screenshots and verification
 
-The screenshots used to inspect these modes were taken **from the running browser game**, not concept art. [Download the actual Playwright capture set](https://github.com/weskao/skyline-rush/actions/runs/39742666980/artifacts/12410172411) (Custom solo, Free Drive, Time Attack, Obstacle Run, Extreme obstacles, Checkpoint Rush and mobile mode menu). GitHub Actions artifacts may require sign-in and expire; to recreate them locally, run `npx playwright test tests/race-modes-browser.spec.js` and open `test-results/race-mode-*.png`. CI screenshots are software-rendered at reduced resolution, not representative of final device image quality.
+The screenshots used to inspect these modes were taken **from the running browser game**, not concept art. [Download the actual Playwright capture set](https://github.com/weskao/skyline-rush/actions/runs/39742666980/artifacts/12410172411) (Custom solo, Free Drive, Time Attack, Obstacle Run, Extreme obstacles, Checkpoint Rush and mobile mode menu). GitHub Actions artifacts may require sign-in and expire; to recreate them locally, run `pnpm exec playwright test tests/race-modes-browser.spec.js` and open `test-results/race-mode-*.png`. CI screenshots are software-rendered at reduced resolution, not representative of final device image quality.
 
 **Verification:** each feature lists its tests and full-gate receipts in `TODO.md`. Physical iPhone and Android checks are still pending.
 
 ## Run locally
 
-Requires Node.js 22.12 or newer and a browser with WebGL 2 and hardware acceleration.
+Requires Node.js 22.12 or newer, pnpm 11.28.13, and a browser with WebGL 2 and hardware acceleration. Enable the pinned package manager with `corepack enable` (or install `pnpm@11.28.13`) and run `make setup` before development.
 
 ```sh
 cd skyline-rush   # From the directory containing your clone
@@ -107,7 +107,7 @@ Open the local URL Vite prints (normally http://127.0.0.1:5173). Assets and the 
 
 `make` and `make dev-unlocked` also start local Firebase Auth/Firestore emulators (needs Java 21+), so the cloud-save Google sign-in works with fake test accounts and never touches real saves. Cloud-save operations and Spark quota checks for the project owner are in `docs/cloud-save.md`.
 
-`make dev-diag` and `make phone-diag` serve the same builds with an on-screen diagnostic banner compiled in (frame counter, page lifecycle and touch events with their hit targets, plus the last uncaught errors kept across reloads), for chasing a freeze or dead buttons on a real phone. Production builds never contain it: `npm run build` refuses a bundle that carries the diagnostic module.
+`make dev-diag` and `make phone-diag` serve the same builds with an on-screen diagnostic banner compiled in (frame counter, page lifecycle and touch events with their hit targets, plus the last uncaught errors kept across reloads), for chasing a freeze or dead buttons on a real phone. Production builds never contain it: `pnpm run build` refuses a bundle that carries the diagnostic module.
 
 `make phone` opens a terminal menu that starts, checks or stops a dev server your phone can open (over Tailscale or the same Wi-Fi) and prints the phone URL once it answers. The menu lists this checkout, other worktrees and recent branches, or takes a typed branch name; `make phone <name>` goes straight to that branch (or `feature/<name>`), creating its worktree under `.claude/worktrees/` when needed, `make phone off` stops every server it started (like `/phone-dev off`), and `y=1` (e.g. `make phone y=1 <name>`) skips the menu: every question takes its Recommended option and each choice is printed. When a port is already held by this project's own earlier server (any worktree), reusing that port is the Recommended answer: the old server is stopped and the URL stays the same; `make dev`, `make dev-diag`, `make dev-unlocked` (5173) and `make dev-feature` (5443) do the same without asking, and leave another project's server alone. It serves the normal locked build; `make phone-unlocked [name]` is the same menu with every track and paint unlocked, the only all-unlocked server a phone can reach (`make dev-unlocked` and `make dev-feature` stay desktop-only). Coming Soon cards stay preview-only in every build except an id added to `PLAYABLE_PREVIEW_IDS` in `src/upcoming-tracks.ts` (only once its real race runtime is in `RACE_TRACKS`); `make dev-unlocked` and `make phone-unlocked` then let that card start, production never does. It needs the personal `phone-dev` Claude Code skill (`/phone-dev` asks the same menu) and runs without the emulators, so cloud-save sign-in on the phone uses the real project.
 
@@ -222,22 +222,22 @@ Localized images: `node scripts/capture-og-images.mjs` drives the real app in Ch
 ## Verify
 
 ```sh
-npm test                 # Deterministic simulation, input lifecycle and geometry
-npm run build           # Production assets in dist/
-npm run test:browser    # Real Chrome: desktop, mobile, graphics errors, full race
-npm run test:layout     # Home-screen fit, top bar and touch targets (runs on pre-push)
+pnpm test                 # Deterministic simulation, input lifecycle and geometry
+pnpm run build           # Production assets in dist/
+pnpm run test:browser    # Real Chrome: desktop, mobile, graphics errors, full race
+pnpm run test:layout     # Home-screen fit, top bar and touch targets (runs on pre-push)
 make run                # All three (test:browser builds first)
 make deploy             # Trigger CI checks + GitHub Pages deployment of remote main
 make help               # List every make command with its options
 ```
 
-Browser tests use an installed Google Chrome and allow SwiftShader for headless rendering. CPU-only CI uses a device scale factor of 0.25 to keep the 3D scene responsive while retaining the same CSS viewport sizes and gameplay assertions; local tests render at full resolution. Normal gameplay uses the browser's available GPU. The English README screenshots are written to `artifacts/` as JPEG (quality 70) only when the file is missing or with `UPDATE_ARTIFACTS=1 npm run test:browser`, since the live 3D scene differs every run; test traces/results are ignored. The full sprint test takes roughly a minute on a fast machine, longer when software rendering slows the simulation.
+Browser tests use an installed Google Chrome and allow SwiftShader for headless rendering. CPU-only CI uses a device scale factor of 0.25 to keep the 3D scene responsive while retaining the same CSS viewport sizes and gameplay assertions; local tests render at full resolution. Normal gameplay uses the browser's available GPU. The English README screenshots are written to `artifacts/` as JPEG (quality 70) only when the file is missing or with `UPDATE_ARTIFACTS=1 pnpm run test:browser`, since the live 3D scene differs every run; test traces/results are ignored. The full sprint test takes roughly a minute on a fast machine, longer when software rendering slows the simulation.
 
 ```sh
-npm run preview         # Serve the production build after npm run build
+pnpm run preview         # Serve the production build after pnpm run build
 ```
 
-For a phone check, serve the build on your network (`npx vite preview --host 0.0.0.0`) and open it with `?perf` (for example `http://<computer-ip>:4173/?perf`). A strip at the top then shows racing frame times over the last 20 s: median (p50), 95th percentile (p95), average fps and the sample length. Without `?perf` nothing is measured or shown.
+For a phone check, serve the build on your network (`pnpm exec vite preview --host 0.0.0.0`) and open it with `?perf` (for example `http://<computer-ip>:4173/?perf`). A strip at the top then shows racing frame times over the last 20 s: median (p50), 95th percentile (p95), average fps and the sample length. Without `?perf` nothing is measured or shown.
 
 ```sh
 make perf BASE=main         # A/B in Chrome at 412×915, CPU throttled 6× (RATE=20 for a low-end phone), 3 alternating rounds
@@ -292,7 +292,7 @@ The link-preview image is `public/og-image.jpeg`, the startup screen once it is 
 - `src/audio-settings.ts`: reads saved music/sound on/off and volume from `localStorage`, and the mute-keeps-level rule for sliders.
 - `tests/`: unit and browser behavior tests. `tests/module-size.test.js` keeps every source module at or below 400 lines (older large files have ceilings that only go down).
 - `docs/design.md`, `docs/verification.md`: scope and verification evidence.
-- `README.zh-TW.md`: Traditional Chinese translation of this file, kept current by `scripts/readme-zh.mjs` (`check`, `sync` to translate with `claude -p`, `stamp` after a hand edit). The `.githooks/pre-commit` hook regenerates it when a commit changes README.md (skip once with `SKIP_README_ZH=1`), and `.githooks/pre-push` runs `npm test` when pushed commits change `src/`, `tests/`, `scripts/` or `package.json`, then `npm run test:layout` when they touch the home screen (`index.html`, `src/App.vue`, `src/main.js`, `src/style.css`, `src/locales/`; skip once with `SKIP_LAYOUT_GATE=1`), and `.githooks/main-merge-guard` (run by `pre-merge-commit` and `pre-commit`) rejects merging any branch other than `develop` or `hotfix/*` into `main` (fast-forwards run no hook, so use `--no-ff`; skip once with `ALLOW_MAIN_MERGE=1`); `make` turns the hooks on with `git config core.hooksPath .githooks`. A Claude Code Stop hook in `.claude/settings.json` sends Claude back to update it if a turn edits README.md without doing so.
+- `README.zh-TW.md`: Traditional Chinese translation of this file, kept current by `scripts/readme-zh.mjs` (`check`, `sync` to translate with `claude -p`, `stamp` after a hand edit). The `.githooks/pre-commit` hook regenerates it when a commit changes README.md (skip once with `SKIP_README_ZH=1`), and `.githooks/pre-push` runs `pnpm test` when pushed commits change `src/`, `tests/`, `scripts/` or `package.json`, then `pnpm run test:layout` when they touch the home screen (`index.html`, `src/App.vue`, `src/main.js`, `src/style.css`, `src/locales/`; skip once with `SKIP_LAYOUT_GATE=1`), and `.githooks/main-merge-guard` (run by `pre-merge-commit` and `pre-commit`) rejects merging any branch other than `develop` or `hotfix/*` into `main` (fast-forwards run no hook, so use `--no-ff`; skip once with `ALLOW_MAIN_MERGE=1`); `make` turns the hooks on with `git config core.hooksPath .githooks`. A Claude Code Stop hook in `.claude/settings.json` sends Claude back to update it if a turn edits README.md without doing so.
 
 All vehicle/scenery geometry and effects are generated in code. Barlow Condensed is bundled under its SIL Open Font License in `public/fonts/OFL.txt`. Three.js, Vue, Vite and Playwright retain their respective package licenses.
 
