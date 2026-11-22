@@ -5,7 +5,7 @@ import CollectibleIcon from './CollectibleIcon.vue';
 // Text that main.js always rewrites before it is seen (HUD readouts, statuses, route heading) stays untagged.
 import packageMeta from '../package.json' with { type: 'json' };
 import { ref, onMounted, onUnmounted } from 'vue';
-import { getLocale, onLocaleChange } from './i18n.ts';
+import { getLocale, onLocaleChange, t } from './i18n.ts';
 import { wave3DemoExperience } from '#wave3-demo-race';
 import Wave3CurrencyStrip from './Wave3CurrencyStrip.vue';
 import { RACE_TRACKS } from './game.js';
@@ -387,7 +387,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
     <button class="touch-brake" data-control="brake" aria-label="Brake" data-i18n-aria-label="touch.brake"><svg v-bind="ICON_ATTRS" v-html="icons.brake"></svg></button>
   </div>
   <div class="layout-toolbar" id="layout-toolbar" hidden><div><strong id="layout-orientation" role="status"></strong><br><span data-i18n="layout.hint">Drag buttons to fit your thumbs</span></div><button id="layout-done" data-i18n="layout.done">Done editing</button></div>
-  <div class="bottomline"><button type="button" id="whats-new-open" class="build-version" :hidden="releaseView.openHidden" :class="{ 'has-update': releaseView.openHasUpdate }" data-i18n-aria-label="release.open" data-i18n-title="release.open" title="What's new">v{{ version }}<span class="release-unread" aria-hidden="true"></span></button></div>
+  <div class="bottomline"><button type="button" id="whats-new-open" class="build-version" :hidden="releaseView.openHidden" :class="{ 'has-update': releaseView.openHasUpdate }" :aria-label="`${t('release.open', undefined, homeWalletLocale)} · v${version}`" :title="t('release.open', undefined, homeWalletLocale)"><span class="build-version-number">v{{ version }}</span><span class="build-version-separator" aria-hidden="true"></span><span class="build-version-caption" data-i18n="release.open">What's new</span><svg class="build-version-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="m5.5 3.5 4.5 4.5-4.5 4.5" /></svg><span class="release-unread" aria-hidden="true"></span></button></div>
 </template>
 
 <style scoped>
