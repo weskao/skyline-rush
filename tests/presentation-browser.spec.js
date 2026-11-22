@@ -47,6 +47,14 @@ for (const [name, viewport, hasTouch] of [
       expect(edge, 'the block sits off the corner').toBeGreaterThanOrEqual(23.5);
       expect(edge, 'the block stays at the right edge').toBeLessThanOrEqual(24.5);
     }
+    // Countdown is already an in-race phase: gauges must not blink out on touch devices.
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'countdown');
+    // Short landscape intentionally omits the secondary BOOST caption even during racing.
+    const gauges = ['.telemetry', '#fuel-meter', '#fuel-value', '#nitro-status', '#nitro-meter'];
+    if (viewport.height > 500) gauges.push('#boost-status');
+    for (const selector of gauges) {
+      await expect(page.locator(selector), `${name} countdown: ${selector} stays visible`).toBeVisible();
+    }
     await page.waitForTimeout(300);
     const overlaps = await page.evaluate(() => {
       const countdown = document.querySelector('#countdown').getBoundingClientRect();

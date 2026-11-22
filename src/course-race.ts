@@ -182,6 +182,11 @@ export function stepCourseCar(rt: CourseRuntime, id: string, now: CourseKinemati
   return next.finished ? 'finished' : nextId ? 'crossed' : 'moved';
 }
 
+/** The lane the driver chose: how far a corner carried a released car outward is not a fork decision. */
+export function forkLateral(x: number, carried = 0): number {
+  return carried * x > 0 ? Math.sign(x) * Math.max(0, Math.abs(x) - Math.abs(carried) - 1e-6) : x;
+}
+
 /** Player fork choice (§6): the branch on the side of `lateral`; inside the deadband the ground route. */
 export function chooseBranchByLateral(graph: CourseGraph, incomingEdgeId: string, lateral: number, deadband: number): string | null {
   const incoming = edgeById(graph, incomingEdgeId);

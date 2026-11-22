@@ -7,6 +7,7 @@ test.use({ guideSeen: false, hasTouch: true, isMobile: true });
 test.describe('390x844 first tap', () => {
   test.use({ viewport: { width: 390, height: 844 } });
   test('first Start tap opens touch practice with a reachable Skip into the race', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('skyline-rush-auto', 'off')); // GAS is the press-now target only with AUTO off
     await page.goto('/');
     await page.locator('#start-button').tap();
     await page.locator('#guide-practice').tap();

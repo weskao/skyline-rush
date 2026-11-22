@@ -13,7 +13,7 @@ interface AssistButton {
 
 export interface AssistUIDeps {
   button: AssistButton;
-  isLocked: () => boolean;
+  isLocked?: () => boolean;
   cue: () => void;
 }
 
@@ -27,7 +27,7 @@ export function setupAssistUI({ button, isLocked, cue }: AssistUIDeps) {
   }
 
   function toggle() {
-    if (isLocked()) return;
+    if (isLocked?.()) return;
     on = !on;
     try { localStorage.setItem(AUTO_KEY, on ? 'on' : 'off'); } catch { /* The toggle lasts for this page without storage. */ }
     show();
