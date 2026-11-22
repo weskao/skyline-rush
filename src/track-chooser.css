@@ -293,6 +293,13 @@ body[data-fold-axis] #track-chooser .track-select {
 }
 .track-chooser .track-pack-download-glyph { stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .track-chooser .track-pack-ready-glyph { display: none; stroke: #a5f7c3; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.track-chooser .track-pack-update-glyph {
+  display: none; stroke: currentColor; stroke-width: 2.4;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.track-chooser .track-pack-action:is([data-pack-state="update"], [data-pack-state="error"]) .track-pack-download-glyph { display: none; }
+.track-chooser .track-pack-action:is([data-pack-state="update"], [data-pack-state="error"]) .track-pack-update-glyph { display: block; }
+
 .track-chooser [data-pack-state="ready"] .track-pack-download-glyph,
 .track-chooser #track-choose-download-all[data-pack-state="ready"] .track-pack-download-glyph { display: none; }
 .track-chooser [data-pack-state="ready"] .track-pack-ready-glyph,
@@ -314,7 +321,7 @@ body[data-fold-axis] #track-chooser .track-select {
 #track-choose-download-all:disabled { opacity: .68; cursor: default; }
 @media (max-width: 760px), (max-height: 500px) {
   .track-chooser .track-card-shell { min-height: 93px; }
-  .track-chooser .track-select .track-pack-action { width: 38px; height: 38px; top: 5px; left: 5px; }
+  .track-chooser .track-select .track-pack-action { width: 44px; height: 44px; top: 5px; left: 5px; }
   .track-chooser-footer { flex-wrap: wrap; }
   #track-choose-pack-summary { margin-inline-start: auto; }
 }

@@ -72,10 +72,23 @@ test('each track owns a separate circular download action and download-all skips
   await expect(select).not.toHaveAttribute('aria-pressed', 'true');
   await expect(action).toHaveAttribute('data-pack-state', 'ready', { timeout: ciTimeout(15000) });
   await expect(action).toBeDisabled();
+  await expect(action).toHaveAttribute('data-pack-progress', '100');
   const all = page.locator('#track-choose-download-all');
   await expect(all).toBeVisible();
   await all.click();
   await expect(page.locator('#track-choose-pack-summary')).toContainText('16/16', { timeout: ciTimeout(45000) });
   await expect(all).toBeDisabled();
   await expect(page.locator('#lobby-track-options .track-pack-action')).toHaveCount(16);
+});
+
+test('update and retry states use the refresh glyph, not the download glyph', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#startup-enter').click();
+  await waitForHome(page);
+  await page.locator('#lobby-tracks-toggle').click();
+  const action = page.locator('#lobby-track-options [data-pack-for="coast"]');
+  await expect(action).toBeVisible({ timeout: ciTimeout(12000) });
+  await action.evaluate(node => { node.dataset.packState = 'update'; });
+  await expect.poll(() => action.locator('.track-pack-update-glyph').evaluate(node => getComputedStyle(node).display)).toBe('block');
+  await expect.poll(() => action.locator('.track-pack-download-glyph').evaluate(node => getComputedStyle(node).display)).toBe('none');
 });
