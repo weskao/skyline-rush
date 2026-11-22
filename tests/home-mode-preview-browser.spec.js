@@ -25,6 +25,10 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
       await expect(page.locator('#home-mode-preview-rules')).not.toBeEmpty();
       await expect(preview.locator('svg')).toBeVisible();
       await expect(page.locator('#world')).toBeVisible();
+      if (mode === 'circuit') {
+        await expect(page.locator('#lobby-hero-map')).toHaveAttribute('data-theme', 'harbor-circuit');
+        await expect(page.locator('#lobby-hero-map svg')).toBeVisible();
+      }
       const bounds = await preview.boundingBox();
       expect(bounds.x, mode).toBeGreaterThanOrEqual(0);
       expect(bounds.y, mode).toBeGreaterThanOrEqual(0);
