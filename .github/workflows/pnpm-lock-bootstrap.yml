@@ -1,4 +1,4 @@
-# Temporary one-shot migration tool; remove after the generated lockfile passes CI.
+# One-shot migration runner. Deletes itself after a verified lockfile is committed.
 name: Bootstrap pnpm lockfile (temporary)
 on:
   push:
@@ -9,10 +9,11 @@ concurrency:
   cancel-in-progress: true
 permissions:
   contents: write
+  actions: write
 jobs:
   generate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
         with:
@@ -25,23 +26,32 @@ jobs:
           corepack enable
           corepack prepare pnpm@11.28.13 --activate
           pnpm --version
-      - name: Import npm lock and validate frozen install
+      - name: Import old lockfile, verify clean install, and run smoke gates
         run: |
           git fetch --quiet origin feature/pnpm-migration
           git checkout -B feature/pnpm-migration origin/feature/pnpm-migration
           pnpm import
           pnpm install --lockfile-only
           pnpm install --frozen-lockfile
-      - name: Commit the real pnpm lockfile
+          git rm package-lock.json
+          pnpm test
+          pnpm run typecheck
+          pnpm run build
+      - name: Commit final lock and remove this one-shot workflow
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add pnpm-lock.yaml
+          git rm .github/workflows/pnpm-lock-bootstrap.yml
           git diff --cached --quiet && exit 1
-          git commit -m 'chore: generate pnpm lockfile [pnpm-lock-generated]'
+          git commit -m 'chore: finish pnpm lockfile migration [pnpm-lock-generated]'
           for attempt in 1 2 3; do
             git fetch origin feature/pnpm-migration
             git rebase origin/feature/pnpm-migration || exit 1
             if git push origin HEAD:feature/pnpm-migration; then exit 0; fi
           done
           exit 1
+      - name: Trigger full regression on the final migration commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run ci.yml --ref feature/pnpm-migration -f full_regression=true
