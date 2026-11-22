@@ -1,5 +1,5 @@
 # NITRO realistic flame: integration acceptance
-Status: blocked: held-NITRO frame cost could not be measured (machine load 100 to 200 from parallel sessions; see "Frame cost")
+Status: done
 
 Branch `feature/nitro-flame-acceptance`, 2026-11-21. Checks the "Acceptance" section of
 `docs/designs/nitro-flame/DESIGN.md` on the merged result of the art, shader and sparks sessions
@@ -54,33 +54,70 @@ The `.r` sample scrolled at 1.2 tiles/s, which is 3.6 Hz at one pixel, over the 
 | `npm run build` | exit 0, "Production coming-soon bundle checked" |
 | Locked build with the image present: `ls dist/feature-assets/garage-vfx-skins`; `grep -rl 'flame-noise\|nitro-flame' dist/assets` | No such directory; no match |
 | `PLAYWRIGHT_PORT=5248 npx playwright test tests/shader-warmup-browser.spec.js tests/black-frame-browser.spec.js tests/sprint-plume-veil-browser.spec.js --workers=1` | 8 passed (1.8 min). Veil is under 80 on both cars. None of these specs equips a trail skin. |
-| `PLAYWRIGHT_PORT=5248 PLUME_BENCH=1 LABEL=acceptance VIEWPORT=1440x900 npx playwright test tests/sprint-plume-cost-browser.spec.js` | 1 passed at load 142 to 160. p50 / p95 ms, calls: Low 11.3 / 15.5, 298; Medium 12.8 / 15.3, 185; High 12.5 / 14.9, 199. Not comparable to a budget (see below). |
-| Same with `VIEWPORT=844x390` (three runs, each alone) | Failed in fixture setup every time: `Test timeout of 45000ms exceeded while setting up "gameplayPage"`, waiting for `#start-button`. Vite logged "Failed to scan for dependencies". Load was 101 to 155. |
+| `PLAYWRIGHT_PORT=5248 PLUME_BENCH=1 LABEL=acceptance VIEWPORT=844x390 npx playwright test tests/sprint-plume-cost-browser.spec.js` | 1 passed (1.5 min), load 74 to 86. p50 / p95 ms, calls: Low 4.5 / 6.5, 284; Medium 6.1 / 8.4, 189; High 7.4 / 9.2, 183. |
+| Same with `VIEWPORT=1440x900` | 1 passed (2.6 min), load 86 to 157. Low 7.9 / 10, 273; Medium 12.4 / 15.1, 187; High 12.7 / 14.8, 191. |
+| Earlier attempts at load 101 to 199 | 1440x900 read about 2x these numbers; 844x390 and both A/Bs failed fixture setup (`#start-button` not attached in 45 s). Superseded by the runs above. |
 
-## Frame cost (not measured)
+## Frame cost
 
-The budget in `.claude/rules/sprint-plume.md` is a held-NITRO median rise of at most 5% or 0.3 ms, from a before
-and an after taken on the same machine. Other sessions kept 54 Chrome renderers busy, and the load average never
-fell below 100 during this session; a 25-minute wait for it to drop below 30 timed out at 117.
+The budget in `.claude/rules/sprint-plume.md` is a held-NITRO median rise of at most 5% or 0.3 ms, whichever is
+larger, between a before and an after on the same machine. Other sessions still kept the load average between 23 and
+108, so the before and the after were taken **interleaved on one page** rather than as two separate runs. The drift
+then falls on both arms equally.
 
-- At 1440x900 the one run read about twice the sparks session's numbers (Low 5.5, Medium 9.9, High 9.0 ms, taken at
-  load 30 to 80). That gap is machine load, not a regression.
-- An interleaved A/B was written for the one cost this integration adds: the real image against the neutral 1 x 1
-  texel, with the cyan skin equipped and the order real, neutral, neutral, real. It is a throwaway spec, not
-  committed. It failed the same fixture setup at both viewports (load 137 to 199).
-- `tests/sprint-plume-cost-browser.spec.js` equips no trail skin, so the texture is never sampled there. On that path
-  the merge adds only the sparks, which `evidence-sparks.md` measured as no cost above noise.
-- With a skin, the shader session measured the stand-in image interleaved and found no cost above noise. That
-  image had the same 512 x 512 size and the same sampling.
-- Neither of those two measurements replaces this one.
+`tests/sprint-plume-cost-browser.spec.js` equips no trail skin, so its numbers above are absolute, not a judgement.
+They sit near the sparks session's "after" (844x390: 4.4, 8.5, 6.8 ms). This integration adds two costs, and each was
+measured on its own with an A/B. Both A/B specs were throwaway and are not committed.
 
-To unblock, on a quiet machine run both viewports, plus the interleaved real-vs-neutral texture A/B with a skin
-equipped:
+The method, in both A/Bs:
 
-```bash
-PLAYWRIGHT_PORT=5248 PLUME_BENCH=1 LABEL=acceptance VIEWPORT=844x390 npx playwright test tests/sprint-plume-cost-browser.spec.js
-PLAYWRIGHT_PORT=5248 PLUME_BENCH=1 LABEL=acceptance VIEWPORT=1440x900 npx playwright test tests/sprint-plume-cost-browser.spec.js
-```
+- Coast, holding speed 118 and `nitroTime 30`;
+- order A, B, B, A, A, B, each sample a 4 s GPU-synced p50 (`sampleFrameCost`);
+- each arm's median of three is shown below;
+- "pooled" is the median of every sample of that arm over all runs.
+
+**Real image vs neutral texel (cyan trail skin equipped).** The flame uniform switched between the loaded 512 x 512
+image and `createNitroFlame(null)`'s 1 x 1 texel. Values are p50 in ms, real / neutral:
+
+| Viewport, run (load) | Low | Medium | High |
+| --- | --- | --- | --- |
+| 844x390, 1 (88 to 91) | 5.1 / 5.8 | 6.9 / 7.3 | 7.1 / 6.8 |
+| 844x390, 2 (33) | 3.9 / 4.3 | 6.8 / 7.1 | 6.7 / 6.6 |
+| 844x390, pooled | 4.5 / 4.85 (-0.35) | 6.85 / 7.3 (-0.45) | 6.75 / 6.7 (+0.05) |
+| 1440x900, 1 (91 to 109) | 7.1 / 6.9 | 10.9 / 10.8 | 10.4 / 10.8 |
+| 1440x900, 2 (28 to 37) | 6.5 / 7.1 | 10.9 / 10.7 | 12.1 / 12.0 |
+| 1440x900, pooled | 6.8 / 6.95 (-0.15) | 10.9 / 10.75 (+0.15) | 10.8 / 11.1 (-0.3) |
+
+Every single run and every pooled cell is within budget. The largest rise in one run is +0.3 ms, at 844x390 High run 1,
+where the limit is 0.34 ms.
+
+**Sparks on vs off (no skin, the path of `sprint-plume-cost-browser.spec.js`).** `SPARK_RATE` (exported, read every
+frame) was zeroed live on the page's own module. A probe of the particle pool counted live points (alpha > 0):
+
+- with the sparks off, Low and High dropped to 0, and the count came back when they were switched on;
+- Medium kept 32 points from another emitter.
+
+So the switch reached the running game. Values are p50 in ms, on / off:
+
+| Viewport, run (load) | Low | Medium | High |
+| --- | --- | --- | --- |
+| 844x390, 1 (65) | 3.6 / 3.5 | 5.3 / 5.5 | 5.4 / 5.4 |
+| 844x390, 2 (27 to 42) | 4.2 / 3.8 | 5.9 / 6.1 | 6.7 / 6.0 |
+| 844x390, 3 (31) | 4.1 / 4.0 | 5.9 / 6.1 | 5.7 / 5.7 |
+| 844x390, pooled | 4.0 / 3.8 (+0.2) | 5.8 / 5.9 (-0.1) | 5.7 / 5.7 (0) |
+| 1440x900, 1 (23 to 27) | 6.4 / 6.1 | 9.8 / 10.0 | 10.8 / 11.0 |
+| 1440x900, 2 (30 to 33) | 5.4 / 5.4 | 10.8 / 10.2 | 11.0 / 10.7 |
+| 1440x900, pooled | 5.85 / 5.85 (0) | 10.0 / 10.05 (-0.05) | 10.85 / 10.85 (0) |
+
+Every pooled cell is within budget. Three single-run cells went over:
+
+- 844x390 run 2, Low, +0.4 ms;
+- 844x390 run 2, High, +0.7 ms;
+- 1440x900 run 2, Medium, +0.6 ms.
+
+In each of them the spread inside one arm was wider than the gap: High "off" read 6.0 to 8.6, and Medium "off" read
+9.8 to 11.3. The other runs of the same cells read 0 or below. The sparks draw no call of their own: they use at
+most 19 of the shared pool's 480 points, a single draw that is the same size either way.
 
 ## Real WebGL captures
 
@@ -134,7 +171,7 @@ What the frames show, after looking at all 16 and the crops:
 
 ## Not run
 
-- Held-NITRO frame cost at 844x390 (all tiers), and a budget judgement at 1440x900: machine load (above).
+- A frame-cost run on an idle machine: the load average stayed 23 to 108, so cost was judged by interleaved A/Bs.
 - `make verify`, the full `npm run test:browser`, and the World Tour long-run.
 - A real phone (`make phone-diag`). Every capture is desktop Chromium at phone sizes; iOS Safari and the image's
   first upload on a phone are unmeasured.

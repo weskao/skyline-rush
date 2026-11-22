@@ -52,11 +52,10 @@ Three sessions built it (design `docs/designs/nitro-flame/DESIGN.md`; their evid
 - [x] Locked build with the image present: `npm run build` passes; no `dist/feature-assets/garage-vfx-skins`, no `flame-noise` / `nitro-flame` string in `dist/assets`.
 - [x] Gates on the merged tree: module-size 3/3; focused `nitro-trail-comfort`, `garage-nitro-trail`, `nitro-flame-texture`, `shader-safety`, `module-size` 37/37; typecheck and build pass; `shader-warmup`, `black-frame`, `sprint-plume-veil` browser specs 8/8 (none equips a trail skin).
 - [x] Real WebGL captures, Coast, High, DPR 2, 4 skins x 2 cars x 844x390 and 390x844 (16 frames, looked at): nozzle cores read as white points; tongues read clearly in portrait (camera above the road) and only as streaks inside each beam in landscape (jets seen end-on); sparks show beside the jets in the skin colour; no white wash over the rear (veil 1.4 to 76 with a skin, limit 80). The Crimson GT's orange deck hotspot is its own lighting: it stays with `Rear ports` hidden.
-- [ ] Frame cost of a held NITRO (`tests/sprint-plume-cost-browser.spec.js`), 844x390 and 1440x900, Low / Medium / High: not judged. The load average stayed between 100 and 200 from parallel sessions.
-  - 844x390 failed fixture setup 3 times (`#start-button` not attached in 45 s).
-  - 1440x900 ran once at load 160 and read p50 Low 11.3, Medium 12.8, High 12.5 ms, about 2× the sparks session's run at load 30 to 80.
-  - The interleaved A/B of the real image against the neutral texel, with a skin equipped, also failed fixture setup.
-  - Re-run both viewports and that A/B on a quiet machine.
+- [x] Frame cost of a held NITRO, 844x390 and 1440x900, Low / Medium / High: within budget (max(5%, 0.3 ms) on the median), load 23 to 108. Numbers: `docs/designs/sprint-tiers/evidence-nitro-acceptance.md`, "Frame cost".
+  - `tests/sprint-plume-cost-browser.spec.js` passed at both viewports (no skin; p50 844x390 Low 4.5, Medium 6.1, High 7.4 ms; 1440x900 Low 7.9, Medium 12.4, High 12.7 ms).
+  - Interleaved real image vs neutral 1 x 1 texel, cyan skin, 2 runs per viewport: every cell within budget; pooled rise at most +0.15 ms.
+  - Interleaved sparks on vs off (`SPARK_RATE` zeroed live; live points drop to 0), no skin, 3 runs at 844x390 and 2 at 1440x900: pooled rise at most +0.2 ms. Two single-run cells went over, each with an in-arm spread wider than its gap.
 - [ ] Chained NITRO comfort (open since the shader session): the trail clock runs `1 + chain * .5`, so at chain 1 the scrolls reach 4.5 Hz (R) and 4.46 Hz (G); the guard reads the base clock only. Holding 3 Hz on the chained clock means `.r` .67 and `.gb` .18. Needs the coordinating session's call.
 - [x] `FLAME_CYCLES` in `src/nitro-flame-texture.ts` raised to r 3, g 11, b 3 at integration (`8e8b83c3`); the exhaust scrolls dropped to `.r` 1.0 and `.gb` .27 so `tests/sprint-plume-flame.test.js` holds 3 Hz (RED at 4.20 Hz on the old 1.4).
 - [ ] `.claude/rules/sprint-plume.md` Modes row "NITRO with a trail skin": add that the base jets drop to 20% brightness (outside this branch's list).
