@@ -169,6 +169,6 @@ setup: node_modules ## `make setup`: install pnpm dependencies (crucible include
 node_modules: package.json pnpm-workspace.yaml pnpm-lock.yaml
 	@if [ -L $@ ] && cmp -s pnpm-lock.yaml "$$(readlink $@)/../pnpm-lock.yaml"; then \
 	  echo "node_modules: shared via $$(readlink $@), lockfile unchanged; skipping pnpm install"; \
-	else $(PNPM) install; fi
+	else $(PNPM) install --frozen-lockfile; fi
 	@git config core.hooksPath .githooks
 	@touch $@
