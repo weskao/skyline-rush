@@ -1,0 +1,10 @@
+/* Shared layout knobs for short-lived setting and in-race notifications. */
+:root {
+  --setting-toast-top: 86px;
+  --setting-toast-height: 52px; /* Reserve the complete pill, including its ON/OFF badge. */
+  --race-notice-top: 20%;
+  --race-notice-gap: 8px;
+}
+@media (max-width: 760px) and (orientation: portrait) {
+  :root { --setting-toast-top: 156px; }
+}

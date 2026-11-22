@@ -2,6 +2,8 @@
 import { computed, onUnmounted, shallowRef } from 'vue';
 import { formatNumber, getLocale, onLocaleChange, t } from './i18n.ts';
 import { raceHalfwayView } from './race-halfway-view.ts';
+import { toastView } from './toast-view-state.ts';
+import './race-notice-layout.css';
 import PlayerHitCenter from './PlayerHitCenter.vue';
 
 const locale = shallowRef(getLocale());
@@ -17,14 +19,16 @@ const detail = computed(() => {
 </script>
 
 <template>
-  <div class="race-halfway">
+  <div class="race-halfway" :class="{ 'has-setting-toast': !!toastView.text }">
     <span class="lobby-visually-hidden" role="status">{{ raceHalfwayView.cue ? `${title} ${detail}` : '' }}</span>
-    <div v-if="raceHalfwayView.cue" id="race-halfway-card" class="race-halfway-card" aria-hidden="true" :class="{ 'is-leaving': raceHalfwayView.leaving }">
+    <div class="race-notice-stack">
+      <div v-if="raceHalfwayView.cue" id="race-halfway-card" class="race-halfway-card" aria-hidden="true" :class="{ 'is-leaving': raceHalfwayView.leaving }">
       <b class="race-halfway-mark" aria-hidden="true">50%</b>
       <strong>{{ title }}</strong>
       <span>{{ detail }}</span>
+      </div>
+      <PlayerHitCenter />
     </div>
-    <PlayerHitCenter />
   </div>
 </template>
 
@@ -36,13 +40,24 @@ const detail = computed(() => {
   width: var(--fold-scene-width, 100vw);
   height: var(--fold-scene-height, 100dvh);
   display: grid;
-  grid-template: 1fr auto 1fr / minmax(0, 1fr);
-  place-items: center;
+  grid-template: max(var(--race-notice-top), var(--race-notice-toast-floor, 0px)) auto minmax(0, 1fr) / minmax(0, 1fr);
+  justify-items: center;
   pointer-events: none;
+}
+/* The halfway cue and all incoming debuffs share one stack; neither can paint over the other. */
+.race-notice-stack {
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--race-notice-gap);
+  width: 100%;
+}
+.race-halfway.has-setting-toast {
+  --race-notice-toast-floor: calc(env(safe-area-inset-top, 0px) + var(--setting-toast-top) + var(--setting-toast-height) + var(--race-notice-gap) - var(--fold-scene-top, 0px));
 }
 /* One slim see-through strip: it names the milestone without hiding the road ahead. */
 .race-halfway-card {
-  grid-row: 2;
   width: max-content;
   max-width: min(92%, 26rem);
   padding: clamp(4px, 0.9dvh, 6px) clamp(12px, 2.2vw, 18px) clamp(4px, 0.9dvh, 6px) clamp(4px, 0.9dvh, 6px);
@@ -56,11 +71,6 @@ const detail = computed(() => {
   border-radius: 999px;
   text-shadow: 0 1px 8px rgb(3 12 22 / .75);
   animation: race-halfway-in 300ms var(--ease-out) both;
-}
-.race-halfway:has(.player-hit-center) .race-halfway-card {
-  grid-row: 1;
-  align-self: end;
-  margin-bottom: 8px;
 }
 .race-halfway-card strong {
   font: 700 clamp(18px, min(3vw, 5dvh), 28px)/1 'Barlow Condensed', var(--cjk-fonts), sans-serif;
