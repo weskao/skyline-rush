@@ -27,8 +27,8 @@ unset $(git rev-parse --local-env-vars)
 # Unit tests on any push that changes code or tests: committed RED tests for never-registered tracks once turned the
 # remote CI red (2026-11-09). Guard: tests/pre-push-unit-gate.test.js.
 if printf '%s\n' "$files" | grep -Eq '^(src|tests|scripts)/|^package(-lock)?\.json$'; then
-  echo "pre-push: code or tests changed; running npm test..." >&2
-  if ! npm test >&2; then
+  echo "pre-push: code or tests changed; running pnpm test..." >&2
+  if ! pnpm test >&2; then
     echo "pre-push: BLOCKED - unit tests failed. Fix them (or finish the implementation the RED tests need) first." >&2
     exit 1
   fi
@@ -39,11 +39,11 @@ fi
 [ "${SKIP_LAYOUT_GATE:-}" = 1 ] && exit 0
 ui='^(index\.html|src/(App\.vue|main\.js|style\.css|locales/))'
 printf '%s\n' "$files" | grep -Eq "$ui" || exit 0
-echo "pre-push: home-screen files changed; running npm run test:layout (a few minutes)..." >&2
+echo "pre-push: home-screen files changed; running pnpm run test:layout (a few minutes)..." >&2
 # A preview server another worktree's test run still holds on 5178 would abort the gate; take a free port.
 PLAYWRIGHT_PORT=$(node scripts/free-local-port.mjs) || exit 1
 export PLAYWRIGHT_PORT
-if ! npm run test:layout >&2; then
+if ! pnpm run test:layout >&2; then
   echo "pre-push: layout tests failed. Fix them before pushing (skip once: SKIP_LAYOUT_GATE=1 git push)." >&2
   exit 1
 fi
