@@ -27,6 +27,7 @@ interface TutorialDependencies {
   getTouchMatches(): boolean;
   getInputPrefs(): { mode: string };
   getControlPrefs(): { flyMode: string; hand: 'left' | 'right' };
+  isAutoOn(): boolean;
   showKeyMap(): void;
   getKeyMap(): KeyMap;
   /** Plays a named sound effect (audio.js); muted audio stays silent there. */
@@ -39,7 +40,7 @@ const PHASE_COPY: Readonly<Record<string, string>> = {
   'barrelRoll/rolling': 'tutorial.barrelRollRolling', 'barrelRoll/flicked': 'tutorial.barrelRollFlicked',
 };
 /** The player's live Controls settings that change what a hint must name. */
-export interface HintControls { touch: boolean; steerMode: string; flyMode: string }
+export interface HintControls { touch: boolean; steerMode: string; flyMode: string; auto?: boolean }
 const KEYBOARD: HintControls = { touch: false, steerMode: 'buttons', flyMode: 'hold' };
 // Copy naming a held FLY or the BRAKE button has a variant for the player's touch controls: toggle FLY is tapped on
 // and off (keyboard FLY is always held: the setting only latches the touch button), and the slide pad, which tilt
@@ -49,8 +50,9 @@ const TOGGLE_FLY_COPY = new Set(['tutorial.airChain', 'tutorial.airChainAirborne
   'tutorial.touch.land', 'tutorial.touch.airChain', 'tutorial.touch.barrelRoll', 'tutorial.slide.barrelRoll', 'tutorial.tilt.barrelRoll',
   ...['chainFly', 'chainBoost', 'chainHold', 'chainLanding', 'chainRelease', 'rollFly', 'rollClimb', 'rollRelease', 'rollSpin', 'rollSoften'].map(cue => 'tutorial.cue.' + cue)]);
 const PAD_BRAKE_COPY = new Set(['tutorial.brake', 'tutorial.brakeRetry.noBrake', 'tutorial.drift', 'tutorial.driftRetry.short', 'tutorial.driftRetry.slow',
-  ...['brakeAhead', 'brakeHold', 'driftSpeed', 'driftStart', 'driftRelease', 'driftMax', 'driftExit', 'driftReset'].map(cue => 'tutorial.cue.' + cue)]);
-function controlVariant(key: string, { touch, steerMode, flyMode }: HintControls): string {
+  ...['autoBrake', 'brakeAhead', 'brakeHold', 'driftSpeed', 'driftStart', 'driftRelease', 'driftMax', 'driftExit', 'driftReset'].map(cue => 'tutorial.cue.' + cue)]);
+function controlVariant(key: string, { touch, steerMode, flyMode, auto }: HintControls): string {
+  if (key === 'tutorial.throttle') return key + (auto ? 'Auto' : '') + (touch ? 'Touch' : '');
   if (!touch) return key;
   if (key === 'tutorial.cue.nitro') return 'tutorial.touch.nitro';
   if (flyMode === 'toggle' && TOGGLE_FLY_COPY.has(key)) return key + 'Toggle';
@@ -67,15 +69,22 @@ export function tutorialInstructionKey(step: string | null, phase: string, reaso
 }
 
 /** Touch hint line: the steering surface's own copy (tilt brakes on the slide pad), then the FLY mode variant. */
-export function tutorialHintKey(step: string | null, steerMode: string, flyMode: string): string {
+export function tutorialHintKey(step: string | null, steerMode: string, flyMode: string, auto = false): string {
+  if (step === 'throttle' && auto) return 'tutorial.touch.throttleAuto';
   const surface = steerMode === 'buttons' || !['left', 'right', 'brake', 'drift', 'barrelRoll'].includes(step ?? '') ? 'touch'
     : step === 'brake' ? 'slide' : steerMode;
   return controlVariant(`tutorial.${surface}.${step}`, { touch: true, steerMode, flyMode });
 }
 
-/** Control to press now (phone outline) and the desktop key chips; both null while landing, when FLY must be released. */
-export function tutorialHighlight(step: string | null, phase: string): { action: string | null; keys: string | null } {
-  const action = step === 'land' ? null : step === 'airChain'
+/** The coach's AUTO status line; a phone has no F2 key to name. */
+export function tutorialAutoStatus(on: boolean, touch: boolean): string {
+  const label = t(on ? 'assist.titleOn' : 'assist.titleOff');
+  return touch ? label.replace(/ · F2$/, '') : label;
+}
+
+/** Control to press now (phone outline) and the desktop key chips; both null while landing, when FLY must be released, and while AUTO holds the throttle. */
+export function tutorialHighlight(step: string | null, phase: string, auto = false): { action: string | null; keys: string | null } {
+  const action = step === 'land' || step === 'throttle' && auto ? null : step === 'airChain'
     ? phase === 'airborne' ? null : 'fly'
     : step === 'barrelRoll' ? (phase === 'ready' || phase === 'retry') ? 'fly' : null : step;
   const keys = step === 'drift' ? 'brake left right' : step === 'airChain' ? 'fly boost nitro' : step === 'barrelRoll' ? 'fly left right' : action;
@@ -142,7 +151,7 @@ export function updateTutorialActions(firstStart: boolean): void {
 }
 
 export function setupTutorialUI({
-  getTutorial, getRace, getTouchMatches, getInputPrefs, getControlPrefs, showKeyMap, getKeyMap, cue: playCue,
+  getTutorial, getRace, getTouchMatches, getInputPrefs, getControlPrefs, isAutoOn, showKeyMap, getKeyMap, cue: playCue,
 }: TutorialDependencies) {
   const $ = (selector: string): HTMLElement => document.querySelector<HTMLElement>(selector)!;
   const progress = document.querySelector<HTMLProgressElement>('#tutorial-progress')!;
@@ -159,14 +168,15 @@ export function setupTutorialUI({
     const tutorial = getTutorial();
     if (!tutorial) return;
     const race = getRace(), touch = getTouchMatches(), inputPrefs = getInputPrefs(), controlPrefs = getControlPrefs(), keyMap = getKeyMap();
-    const controls = { touch, steerMode: inputPrefs.mode, flyMode: controlPrefs.flyMode };
+    const auto = isAutoOn();
+    const controls = { touch, steerMode: inputPrefs.mode, flyMode: controlPrefs.flyMode, auto };
     if (keyMap !== keyMapSeen) { keyMapSeen = keyMap; force = true; } // a rebind redraws the key chips
     progress.value = tutorial.index + (tutorial.complete ? 0 : tutorial.progress);
     clearChime(tutorial);
     const passed = race.phase === 'racing' ? tutorial.clearedStep ?? null : null;
     // While the pass toast is up it holds the cue's place; a paused race shows the pause screen instead.
     const cue = race.phase === 'racing' && !tutorial.complete && !passed ? tutorial.cue : null;
-    const view = [passed, tutorial.step, tutorial.coachPhase, tutorial.coachReason, tutorial.guide, race.phase, touch, inputPrefs.mode, controlPrefs.flyMode, controlPrefs.hand, cue?.key, cue?.n, cue?.count].join('/');
+    const view = [passed, tutorial.step, tutorial.coachPhase, tutorial.coachReason, tutorial.guide, race.phase, touch, inputPrefs.mode, controlPrefs.flyMode, controlPrefs.hand, auto, cue?.key, cue?.n, cue?.count].join('/');
     if (!force && tutorialView === view) return;
     tutorialView = view;
     const step = tutorial.step;
@@ -174,9 +184,10 @@ export function setupTutorialUI({
     const phase = tutorial.coachPhase ?? 'ready';
     // Only highlight a control if pressing it is appropriate *now*.
     // Landing and finished-roll phases must not highlight BOOST or FLY.
-    const { action, keys } = tutorialHighlight(step, phase);
+    const { action, keys } = tutorialHighlight(step, phase, auto);
     updateCoachView({
       step: step ?? 'complete',
+      autoStatus: tutorialAutoStatus(auto, touch),
       title: done ? t('tutorial.complete') : t('tutorial.step', {
         n: tutorial.index + 1,
         total: TUTORIAL_STEPS.length,
@@ -186,7 +197,7 @@ export function setupTutorialUI({
       completeActionsHidden: !done,
       assistHidden: done,
       hintKeys: done || touch ? '' : keys ?? '',
-      hintText: !done && touch ? t(tutorialHintKey(step, inputPrefs.mode, controlPrefs.flyMode)) : '',
+      hintText: !done && touch ? t(tutorialHintKey(step, inputPrefs.mode, controlPrefs.flyMode, auto)) : '',
       celebration: done ? t('tutorial.freeDrive') : '',
       guide: done || race.phase === 'countdown' ? '' : tutorial.guide ?? '', // the arrow starts at GO, with the throttle cue
       skipHidden: done || race.phase === 'paused',

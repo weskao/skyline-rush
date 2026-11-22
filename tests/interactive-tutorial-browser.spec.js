@@ -15,6 +15,8 @@ test.beforeEach(async ({ page }) => {
 });
 
 const coach = page => page.locator('#tutorial-coach');
+// AUTO defaults to on and rolls the car at GO; a spec about the held accelerator starts with it off.
+const autoOff = page => page.addInitScript(() => localStorage.setItem('skyline-rush-auto', 'off'));
 // BOOST now includes a 700 m timed stretch plus its approach. Slow CI can need over 30 s to drive it.
 const step = (page, name) => expect(coach(page)).toHaveAttribute('data-step', name, { timeout: ciTimeout(name === 'airChain' ? 30000 : 10000) });
 const begin = async page => {
@@ -109,6 +111,7 @@ const keyboardToNitro = async page => {
 };
 
 test('practice opens with the race countdown, stands still at GO, and THROTTLE then FLY answer', async ({ page }) => {
+  await autoOff(page);
   await page.goto('/');
   await toggleSettingsSection(page, 'driving');
   // The 3-2-1 runs on wall clock (3 s) while a slow runner spends that long on two expects: sample it in the page, per frame.
@@ -189,6 +192,7 @@ test('NITRO practice recovers after braking and demands a fresh charged sprint',
 });
 
 test('the final NITRO prompt uses the rebound key in the same cue as THROTTLE', async ({ page }) => {
+  await autoOff(page);
   await page.addInitScript(map => {
     localStorage.setItem('skyline-rush-keymap', JSON.stringify(map));
     localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low' }));
@@ -218,6 +222,7 @@ test('the final NITRO prompt uses the rebound key in the same cue as THROTTLE', 
 test.describe('touch NITRO interruption', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   test('brake and NITRO touches interrupt practice and a new touch spends a fresh charge', async ({ page, context }) => {
+    await autoOff(page);
     await page.addInitScript(() => {
       localStorage.setItem('skyline-rush-controls', JSON.stringify({ version: 1, mode: 'buttons', flyMode: 'hold' }));
       localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low' }));
@@ -264,6 +269,7 @@ test.describe('touch NITRO interruption', () => {
 });
 
 test('practice restores a paused race and uses the current custom throttle key', async ({ page }) => {
+  await autoOff(page);
   await page.addInitScript(() => localStorage.setItem('skyline-rush-keymap', JSON.stringify({throttle:['KeyZ'],brake:['KeyS'],left:['KeyA'],right:['KeyD'],fly:['Space'],boost:['ShiftLeft'],nitro:['KeyE']})));
   await page.goto('/');
   await page.locator('#start-button').click();

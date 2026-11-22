@@ -34,7 +34,7 @@ test('AUTO starts on, remembers only a player toggle, and ignores clicks while l
     assert.equal(cues, 1);
     locked = true;
     auto.toggle();
-    assert.equal(auto.isOn(), false, 'the tutorial locks AUTO');
+    assert.equal(auto.isOn(), false, 'a locked toggle keeps AUTO as it is');
     assert.equal(setupAssistUI({ button: fakeButton(), isLocked: () => false, cue() {} }).isOn(), false, 'a saved "off" is restored');
     delete globalThis.localStorage;
     assert.equal(setupAssistUI({ button: fakeButton(), isLocked: () => false, cue() {} }).isOn(), true, 'no storage keeps AUTO on');
