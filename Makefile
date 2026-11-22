@@ -56,7 +56,7 @@ phone-diag: ## `make phone-diag [name|off] [y=1]`: like `make phone`, with the o
 
 # Compile with the development-only access implementation. Never produces a distributable build.
 dev-unlocked: stop-old-dev reclaim-dev-port node_modules ## `make dev-unlocked`: local Vite playtest with all race-ready tracks, cars, paints and equipment
-	$(WITH_EMULATORS) '$(PNPM) run dev -- --config vite.unlocked.config.js'
+	$(WITH_EMULATORS) '$(PNPM) run dev --config vite.unlocked.config.js'
 
 test-unlocked: dev-unlocked ## Alias: `make test-unlocked` also opens the all-unlocked local dev server
 
