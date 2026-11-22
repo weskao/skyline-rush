@@ -816,6 +816,20 @@ on every tier. Low / VFX Off = tail light + flash; Reduced Motion = no flicker, 
 - [x] Showroom pulse (owner's pick over a fixed race length or a hold-to-preview button): Garage/Home plume was 0.83 m vs Preview Studio's 4.70 m (default settings). `tests/sprint-plume.test.js` *showroom plume: loops…* RED on `e4329420` (0.83 m), GREEN after: every showroom loops from idle to ≥ 95% of the race length with the 2.2 s ignition demo; Reduced Motion holds Studio at full length.
 - [ ] Showroom pulse in real Garage/Studio frames, both cars, both phone orientations: delegated recording, not yet reviewed.
 
+## Corner push + AUTO edge guard (2026-11-22, `feature/steering-assist-balance`)
+
+- [x] One outward corner force for all 17 tracks in `src/corner-force.ts` (`roadDrift`); AUTO no
+  longer centres, it only fades outward force near the rail. Guard: `tests/corner-force.test.js`
+  (RED on the old lane centring; fork-intent and knock-grace cases RED before their fixes).
+- [x] Hands-free, AUTO on: all 17 finish, deviation 5.5–12.2 m, 0 hard hits, 0 scrapes. AUTO off:
+  0 hard hits. Lane keeper at lanes ±2/±2.5, 88 m/s and NITRO: deviation < 1.25 m, 0 hard hits.
+- [x] 30/60/120 FPS consistent; step cost ~1.6 → ~1.65 µs (+2%), no per-step allocation.
+- [x] Rings unchanged (layout identical, take ±0.4); pickups and rival gaps near baseline.
+- [x] Replay fixture re-recorded (`RECORD_REPLAY=1`); Frostbite balance tests rewritten to the new
+  contract (hands-free place ≤ 8, mean ≤ 186.6 s), owner's pick.
+- [ ] `make verify` and WebGL corner captures (desktop, phone portrait/landscape).
+- [ ] Not run: physical phone, exact-HEAD GitHub `quality-gate` (not committed).
+
 ## Wave 3 trial review fixes (2026-11-19, `fix/wave3-review-experience`)
 
 - [x] Cloud deletion invalidates trial writes first. RED: `forgetAccount` did not exist, and a
