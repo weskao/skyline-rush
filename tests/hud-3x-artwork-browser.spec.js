@@ -209,9 +209,11 @@ test.describe('touch sprint artwork', () => {
         });
         expect(cornerHitsButton).toBe(true);
         if (!sprint) continue;
-        const effect = button.locator('.sprint-ready-effect');
-        await expect(effect).toHaveCSS('pointer-events', 'none');
-        await expect(effect).toHaveCSS('clip-path', 'none');
+        // NITRO also carries the AUTO flank flames: every copy stays untouchable and unclipped.
+        for (const effect of await button.locator('.sprint-ready-effect').all()) {
+          await expect(effect).toHaveCSS('pointer-events', 'none');
+          await expect(effect).toHaveCSS('clip-path', 'none');
+        }
         const flame = await button.evaluate(element => {
           const rect = element.getBoundingClientRect();
           const fire = element.querySelector('.sprint-ready-effect').getBoundingClientRect();

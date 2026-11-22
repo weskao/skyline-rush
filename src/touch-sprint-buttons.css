@@ -235,9 +235,9 @@ body:not(.layout-editing):has(#assist-button[aria-pressed="true"]) #touch-contro
   max-width: none; /* buttons steering caps every button at --compact-key-width, which would stop the stretch */
 }
 
-/* The wide NITRO keeps ONE flame at one button's size, centred (a strip mask stretched over the wide box doubles every tongue, and two
-   flames side by side show a dip between them that BOOST's fire never has). The effect box spans the wide button, the flame is
-   centred inside it, and the ring hugs the button. */
+/* The wide NITRO's fire follows its width with flames at one button's size (a strip mask stretched over the wide box doubles every
+   tongue, and two flames side by side show a dip that BOOST's fire never has): one centred, plus a flank copy at each corner, out of
+   phase so the tongues do not repeat. The effect boxes span the wide button, and the one ring hugs it. */
 body:not(.layout-editing):has(#assist-button[aria-pressed="true"]) #touch-controls .touch-actions > .touch-nitro:not(.is-positioned) > .sprint-ready-effect {
   /* One button's padding box: 1px borders sit outside the box the flame is sized on, and buttons steering caps a button at --compact-key-width. */
   --cell: calc(min(var(--touch-cell) * var(--touch-scale, 1), var(--compact-key-width, 999px)) - 2px);
@@ -252,4 +252,21 @@ body:not(.layout-editing):has(#assist-button[aria-pressed="true"]) #touch-contro
 }
 body:not(.layout-editing):has(#assist-button[aria-pressed="true"]) #touch-controls .touch-actions > .touch-nitro:not(.is-positioned) > .sprint-ready-effect::after {
   inset: var(--button-top) 0 calc(var(--flame-bottom) / var(--flame-box) * 100%);
+}
+#touch-controls [data-flame] > .sprint-ready-flank { display: none; }
+#touch-controls .sprint-ready-flank::after { content: none; }
+/* Guarded so the flanks never outrank the Reduced Motion / forced-colours rule that turns every flame off. */
+@media (prefers-reduced-motion: no-preference) and (forced-colors: none) {
+  body:not(.layout-editing):has(#assist-button[aria-pressed="true"]) #touch-controls .touch-actions > .touch-nitro:not(.is-positioned)[data-flame="on"] > .sprint-ready-flank { display: block; }
+}
+body:not(.layout-editing):has(#assist-button[aria-pressed="true"]) #touch-controls .touch-actions > .touch-nitro:not(.is-positioned) > .sprint-ready-flank[data-side="start"]::before {
+  left: 0;
+  translate: none;
+  animation-delay: calc(var(--flame-loop, 1.15s) * -1 / 3);
+}
+body:not(.layout-editing):has(#assist-button[aria-pressed="true"]) #touch-controls .touch-actions > .touch-nitro:not(.is-positioned) > .sprint-ready-flank[data-side="end"]::before {
+  left: auto;
+  right: 0;
+  translate: none;
+  animation-delay: calc(var(--flame-loop, 1.15s) * -2 / 3);
 }
