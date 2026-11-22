@@ -17,7 +17,7 @@ import { createRouteMap, hasStreamingRouteMap } from './route-map.ts';
 import { timeString } from './time-format.ts';
 import { setupEventLabUI } from './event-lab-ui.ts';
 import type { GhostRun } from './ghost.ts';
-import { racePresentationFor, updateRaceSetup } from './race-presentation-ui.ts';
+import { racePresentationFor, racePresentationView, updateRaceSetup } from './race-presentation-ui.ts';
 import type { VisualPreset } from './race-session.ts';
 import { backHomeHref, bootHomeTrack, lastHomeTrack, rememberLastHomeTrack, restoreHomeTrack, withoutRacedQuery } from './last-home-track.ts';
 
@@ -49,6 +49,7 @@ interface RaceSelectOptions {
 }
 type RuleKey = 'rivals' | 'traffic' | 'difficulty' | 'items' | 'activeItems' | 'itemRules' | 'collision' | 'hazards' | 'stages' | 'bonusGates' | 'riskLines' | 'themes';
 const LAST_MODE_KEY = 'skyline-rush-last-mode'; // tab-only; Event Lab needs its course, so it is not restored
+const RESETTABLE_MODES = new Set(['custom', 'free', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'circuit']);
 
 /** Home-screen race selection: mode, custom rules, track picker, route maps and the remembered track. */
 export function setupRaceSelectUI(options: RaceSelectOptions) {
@@ -116,6 +117,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   }
 
   function renderModeRules(): void {
+    $<HTMLButtonElement>('#rules-restore').hidden = !RESETTABLE_MODES.has(selectedMode);
     for (const button of document.querySelectorAll<HTMLElement>('button[data-race-mode]'))
       button.setAttribute('aria-pressed', String(button.dataset.raceMode === selectedMode));
     $('#race-mode-rules').hidden = !['custom', 'free'].includes(selectedMode);
@@ -167,18 +169,23 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     for (const button of trackButtons()) {
       const id = button.dataset.track!;
       const locked = homeTrackStatus(id, unlockedTracks) === 'locked';
-      button.disabled = false; // All unlocked tracks are eligible for Endless.
+      button.disabled = false; // Locked courses still have selectable Home previews.
       button.classList.toggle('is-locked', locked);
       button.setAttribute('aria-pressed', String(!upcomingSelection && id === race.trackId));
-      button.querySelector('small')!.textContent = t(locked ? 'track.locked' : !upcomingSelection && id === race.trackId ? 'track.selected' : 'track.open');
+      const status = locked ? 'locked' : !upcomingSelection && id === race.trackId ? 'selected' : 'available';
+      button.dataset.trackState = status;
+      button.querySelector('small')!.textContent = t(status === 'available' ? 'track.open' : `track.${status}`);
       const previous = Object.keys(RACE_TRACKS)[Object.keys(RACE_TRACKS).indexOf(id) - 1]!;
       button.title = button.disabled ? t('mode.description.endless') : locked ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) : t(`track.note.${id}`);
     }
     for (const button of upcomingButtons()) {
       const id = button.dataset.upcomingTrack as UpcomingTrackId;
       const entered = options.isUpcomingEnterable(id);
+      button.disabled = false; // Even preview-only maps can be selected for the Home showcase.
+      const status = !entered ? 'preview' : !upcomingSelection && id === race.trackId ? 'selected' : 'available';
+      button.dataset.trackState = status;
       button.setAttribute('aria-pressed', String(entered && !upcomingSelection ? id === race.trackId : id === upcomingSelection));
-      button.querySelector('small')!.textContent = t(entered ? 'track.open' : 'lobby.preview');
+      button.querySelector('small')!.textContent = t(status === 'preview' ? 'lobby.preview' : status === 'selected' ? 'track.selected' : 'track.open');
       button.title = t('track.comingSoonInfo', { track: upcomingTrackName(id, getLocale()) });
     }
   }
@@ -241,6 +248,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     if (options.getDaily() || selectedMode === 'circuit') upcomingSelection = null;
     const race = getRace();
     updateRaceSetup(race);
+    racePresentationView.lobbyMode = selectedMode;
     document.body.dataset.raceMode = race.mode;
     renderModeRules();
     renderTrackButtons(race);
@@ -281,8 +289,8 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   setupLobbyPickers(applyTrack, () => upcomingSelection ?? getRace().trackId, packs.stage);
   for (const button of document.querySelectorAll<HTMLElement>('button[data-race-mode]')) button.addEventListener('click', () => {
     if (button.dataset.raceMode === 'eventlab') { eventLab.open(); return; }
-    upcomingSelection = null;
     selectedMode = button.dataset.raceMode!;
+    if (selectedMode === 'circuit') upcomingSelection = null; // The circuit mode has its own fixed course.
     changeRaceSelection();
   });
   for (const button of document.querySelectorAll<HTMLElement>('[data-race-preset]')) button.addEventListener('click', () => {
@@ -295,7 +303,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     Object.assign(raceRules, DEFAULT_RULES);
     $<HTMLSelectElement>('#hazard-tier').value = 'standard'; $<HTMLInputElement>('#clean-trial').checked = false;
     $<HTMLSelectElement>('#stunt-duration').value = '120'; $<HTMLSelectElement>('#cup-length').value = '3';
-    $<HTMLSelectElement>('#gauntlet-layout').value = 'classic';
+    $<HTMLSelectElement>('#gauntlet-layout').value = 'classic'; $<HTMLSelectElement>('#circuit-laps').value = '3';
     showRuleInputs();
     changeRaceSelection();
   });

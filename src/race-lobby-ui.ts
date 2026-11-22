@@ -1,8 +1,12 @@
 import { dialogNavigation, dialogTabIndex } from './dialog-navigation.ts';
+import { getLocale, t } from './i18n.ts';
+import { CIRCUIT_ID } from './circuit-track.ts';
+import { createRouteMap } from './route-map.ts';
 
 const trackId = (card: HTMLButtonElement): string => card.dataset.track ?? card.dataset.upcomingTrack ?? '';
 const chooser = (): HTMLDialogElement => document.querySelector<HTMLDialogElement>('#track-chooser')!;
 const trackOpener = (): HTMLButtonElement => document.querySelector<HTMLButtonElement>('#lobby-tracks-toggle')!;
+let circuitHomeMap: ReturnType<typeof createRouteMap> | undefined;
 
 function copyRouteMap(slot: HTMLElement, card: Element | undefined | null, track: string): void {
   const map = card?.querySelector('.track-route-map')?.firstElementChild;
@@ -19,6 +23,7 @@ export function setupLobbyPickers(applyTrack: (id: string) => void, getTrack: ()
   const map = dialog.querySelector<HTMLElement>('#track-choose-map')!;
   const selection = dialog.querySelector<HTMLElement>('#track-choose-selection')!;
   const state = dialog.querySelector<HTMLElement>('#track-choose-state')!;
+  const actionLabel = confirm.querySelector<HTMLElement>('span')!;
   const navigation = dialogNavigation(dialog);
   let pending: HTMLButtonElement | undefined;
 
@@ -32,6 +37,13 @@ export function setupLobbyPickers(applyTrack: (id: string) => void, getTrack: ()
     }
     selection.textContent = card?.querySelector('strong')?.textContent ?? '';
     state.textContent = card?.querySelector('small')?.textContent ?? '';
+    const trackState = card?.dataset.trackState ?? '';
+    state.dataset.trackState = trackState;
+    const previewOnly = trackState === 'locked' || trackState === 'preview';
+    confirm.dataset.previewOnly = String(previewOnly);
+    const actionKey = previewOnly ? 'track.previewConfirm' : 'track.confirm';
+    actionLabel.dataset.i18n = actionKey;
+    actionLabel.textContent = t(actionKey);
     copyRouteMap(map, card, card ? trackId(card) : '');
     confirm.disabled = !card;
     onStage(card ? trackId(card) : null);
@@ -82,6 +94,13 @@ export function setupLobbyPickers(applyTrack: (id: string) => void, getTrack: ()
 
 const trackCard = (id: string): Element | null => chooser().querySelector(`[data-track="${id}"], [data-upcoming-track="${id}"]`);
 
+function renderHomeMap(slot: HTMLElement, id: string, card: Element | null): void {
+  if (id !== CIRCUIT_ID) { copyRouteMap(slot, card, id); return; }
+  circuitHomeMap ??= createRouteMap(CIRCUIT_ID);
+  slot.replaceChildren(circuitHomeMap.element);
+  slot.dataset.theme = id;
+}
+
 export function renderLobbyTrackArt(id: string): void {
   const card = trackCard(id);
   const image = document.querySelector<HTMLImageElement>('#lobby-hero-art')!;
@@ -90,7 +109,7 @@ export function renderLobbyTrackArt(id: string): void {
   if (thumbnail) { image.src = thumbnail; still.src = thumbnail; }
   else { image.removeAttribute('src'); still.removeAttribute('src'); }
   const slot = document.querySelector<HTMLElement>('#lobby-hero-map')!;
-  copyRouteMap(slot, card, id);
+  renderHomeMap(slot, id, card);
 }
 
 export function focusLobbyTrack(): void {
@@ -101,6 +120,7 @@ export function focusLobbyTrack(): void {
 export function refreshCopiedRouteMaps(): void {
   for (const slot of document.querySelectorAll<HTMLElement>('#lobby-hero-map, #track-choose-map')) {
     const id = slot.dataset.theme;
-    if (id) copyRouteMap(slot, trackCard(id), id);
+    if (id === CIRCUIT_ID) circuitHomeMap?.relabel(getLocale());
+    if (id) renderHomeMap(slot, id, trackCard(id));
   }
 }

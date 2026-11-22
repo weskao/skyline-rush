@@ -49,6 +49,7 @@ import RaceHalfway from './RaceHalfway.vue';
 import RaceSpeedometer from './RaceSpeedometer.vue';
 import ItemRules from './ItemRules.vue';
 import RaceInfo from './RaceInfo.vue';
+import HomeModePreview from './HomeModePreview.vue';
 import PhotoStudio from './PhotoStudio.vue';
 
 const { version } = packageMeta;
@@ -76,6 +77,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
   <TutorialCoach />
   <canvas id="world" aria-label="3D coastal racing highway"></canvas>
   <img id="race-frame-still" alt="" aria-hidden="true" decoding="async" />
+  <HomeModePreview />
   <div id="upcoming-scene" class="upcoming-scene" hidden><img id="upcoming-scene-image" alt="" /><span id="upcoming-scene-fallback" role="status">3D preview unavailable · concept image</span></div>
   <div class="scene-shade"></div>
   <div id="race-recovery" role="status" hidden>
