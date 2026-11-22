@@ -130,5 +130,5 @@ test('Home switches to the chosen track still immediately while High scenery loa
   } finally { release(); }
   await expect(canvas).toBeVisible();
   await expect(still).toBeHidden();
-  await expect(canvas).toHaveAttribute('data-home-load-ms', /^\\d+\\.\\d$/);
+  await expect(canvas).toHaveAttribute('data-home-load-ms', /^\d+\.\d$/);
 });

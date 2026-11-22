@@ -39,6 +39,7 @@ export function setupTrackPackUI(getGraphics: () => Graphics) {
     }
     const state = stateFor(pack);
     card.dataset.packState = state;
+    card.setAttribute('aria-description', `Visual assets ${state} · v${pack.version}`);
     badge.textContent = state === 'ready' ? '✓' : state === 'update' ? '↻' :
       state === 'downloading' || state === 'checking' ? '…' : state === 'unavailable' ? '' : '↓';
     badge.title = `v${pack.version} · ${pack.tier} · ${state}`;

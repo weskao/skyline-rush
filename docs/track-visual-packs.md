@@ -9,3 +9,9 @@ The `public/track-asset-sw.js` service worker only intercepts same-origin `model
 A track's `ready` status requires the matching pack receipt, every referenced cache response, and every active index pointer. Cache eviction, failed checksum, interrupted download or newly published map assets must never appear as `ready`. Downloaded assets are still subject to browser storage quotas and eviction; online play remains available without predownloads. User data, progress and save keys are untouched. Shared filenames/sha reuse the same cached bytes.
 
 Verification: `node --test tests/track-asset-packs.test.js tests/track-pack-store.test.js`; `npm test`; `npm run typecheck`; `npm run build`; browser tests for Coast, Neon, Spiral, orientation, High/Ultra, rapid map changes, forced missing assets, service-worker activation and unchanged countdown gating. Require exact-HEAD CI and real WebGL screenshots before marking release-ready.
+
+## Performance instrumentation
+
+The scene controller starts nonblocking selected-map GLB and KTX2 loads on selection, before START, while retaining the same renderer and existing models. The real first successful Home showcase and race grid frames emit one-shot browser events. `src/track-load-telemetry.ts` records durations to the WebGL canvas as `data-home-load-ms` and `data-race-load-ms` and as bounded User Timing measures named `skyline-track-showcase` / `skyline-track-race`. These are observations, not fabricated performance figures; use matching devices, network and quality tiers before claiming improvements.
+
+The fullscreen fallback uses the selected track teaser and is hidden only after the first finished WebGL frame. The static teaser is not guaranteed to match the exact live camera pose: do not claim photo-perfect frame matching until real 3D screenshots replace those teasers.

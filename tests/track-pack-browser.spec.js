@@ -23,6 +23,15 @@ test('track chooser installs a versioned visual pack once, then reuses it after 
   await download.click();
   await expect(card).toHaveAttribute('data-pack-state', 'ready', { timeout: ciTimeout(15000) });
   await expect(download).toBeHidden();
+  const cachedImage = await card.locator('.track-preview img').getAttribute('src');
+  await page.context().setOffline(true);
+  let offlineCached = false;
+  try {
+    offlineCached = await page.evaluate(async url => {
+      try { return (await fetch(url)).ok; } catch { return false; }
+    }, cachedImage);
+  } finally { await page.context().setOffline(false); }
+  expect(offlineCached).toBe(true);
 
   await page.reload();
   await page.locator('#startup-enter').click();
