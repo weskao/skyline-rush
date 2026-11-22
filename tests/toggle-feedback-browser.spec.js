@@ -56,18 +56,19 @@ test('every Visual effects switch-off asks in game; Cancel, Esc and the backdrop
   await expect(toast(page)).toHaveCount(0);
 
   await vfx(page).click();
+  // Read the toast first: the settled-state checks after it outlive the 1.8 s pill on a starved CI page.
   await page.locator('#confirm-accept').click();
+  await expectToast(page, 'Visual effects', 'off');
   await expect(vfx(page)).not.toBeChecked();
   await expect(page.locator('#airflow-toggle')).toBeDisabled();
-  await expectToast(page, 'Visual effects', 'off');
   // The toast is raised into the top layer above the open Settings dialog.
   expect(await page.locator('#game-toast').evaluate(el => el.matches(':popover-open'))).toBe(true);
 
   // Turning effects on never asks; the next switch-off asks again, and so does one after a reload.
   await vfx(page).click();
+  await expectToast(page, 'Visual effects', 'on');
   await expect(vfx(page)).toBeChecked();
   await expect(dialog(page)).toBeHidden();
-  await expectToast(page, 'Visual effects', 'on');
   await vfx(page).click();
   await expectVfxOffDialog(page);
   await page.locator('#confirm-accept').click();

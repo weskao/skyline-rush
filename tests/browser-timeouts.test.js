@@ -570,3 +570,15 @@ test('a Tab-trap walk ends with focus back inside the dialog, so the next key re
   });
   assert.deepEqual(offenders, [], 'End assertTrapped by focusing a control inside the dialog (.claude/rules/browser-test-stability.md)');
 });
+
+// Trap (2026-11-22, main CI 44953782730): toggle-feedback read the Visual effects toast only after two settled-state
+// assertions (not.toBeChecked, toBeDisabled). On a starved CI page they outlived the 1.8 s pill, so the read timed out on
+// both attempts although the switch had worked. Read the toast straight after the action that raises it.
+test('a spec reads the setting toast straight after the action that raises it', () => {
+  const offenders = FILES.flatMap(file => {
+    const lines = readFileSync(new URL(file, import.meta.url), 'utf8').split('\n');
+    return lines.flatMap((line, i) => /\bexpectToast\(page,/.test(line) && !/^\s*const expectToast/.test(line)
+      && !/\.(click|tap|press)\(/.test(lines[i - 1]) ? [`tests/${file}:${i + 1}`] : []);
+  });
+  assert.deepEqual(offenders, [], 'call expectToast on the line after the click/press, assert settled state after (.claude/rules/browser-test-stability.md)');
+});
