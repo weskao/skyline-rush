@@ -1,3 +1,30 @@
+# Finished race Driving Controls settings (2026-11-22, `fix/finished-driving-settings-enable`)
+
+- [x] Root cause: `canOpenControlsPanel('finished')` returned false; `toggleSettings` disabled the Driving tab and switched to Audio.
+- [x] RED reproduced in isolated Node test using GitHub-exact source blobs (policy `aa11a9df`), expected true vs actual false for `finished`.
+- [x] Allow `ready` / `paused` / `finished`, retain restrictions during `racing` / `countdown`, and remove unreachable finished-only fallback.
+- [x] Browser regression tests added to exercise actual settings/tab clicks, Audio→Driving, closure and Race Again at 1440×900, 390×844 and 844×390.
+- [ ] Verify focused unit GREEN, full test/typecheck/build/browser checks and exact-HEAD CI; real phone portrait/landscape confirmation remains separate.
+
+# Countdown HUD visible before GO (2026-11-22, `fix/countdown-telemetry-visible`)
+
+- [x] Found the root cause: `src/style.css` hid `.telemetry` during countdown on touch devices.
+- [x] Added browser regression assertions for charge, BOOST and NITRO on desktop, 390×844, 320×740 and 844×390 during countdown.
+- [x] Removed the countdown-only visibility suppression; existing HUD data paths remain unchanged.
+- [ ] Finish exact-HEAD CI and verify no overlap in mobile portrait/landscape or on a real phone before merging.
+
+# Tutorial AUTO accelerator lesson (2026-11-22, `feature/tutorial-auto-lesson`)
+
+- [x] AUTO (F2) toggles in every lesson; tutorial throttle follows the race rule (AUTO on and not braking); `laneAssist` stays false. Lesson 1 (`throttle`) switches copy and clear rule by AUTO state; AUTO on needs speed > 5 and a 3 s read.
+- [x] Phone path: Settings is reachable from the paused tutorial at 390x844 and 844x390, so touch copy names Pause → Game settings → Driving controls → AUTO; the coach label stays text (no F2 on touch).
+- [x] RED on old code: `tests/tutorial-auto-off-completion.test.js` (AUTO off never holds the accelerator) and `tests/tutorial-auto-lesson.test.js` (missing `tutorialAutoStatus` export). GREEN after.
+- [x] `node --test tests/module-size.test.js`, `npm run typecheck`, `npm test` (3,836: 3,832 pass, 0 fail, 4 skipped), `npm run test:layout` (38 + 23 passed), `npm run build`.
+- [x] Browser: `tests/tutorial-auto-browser.spec.js` 8/8 (keyboard all 11 lessons, 3 s read, AUTO off hold, pause/resume, touch Settings path en/zh-TW portrait and landscape). `tutorial-hand-layout` and the 320x568 paused/slide practice cases 14/14 after the coach label moved into the progress row.
+- [x] GitHub `quality-gate` green on `fd2485bb` (run 45015432467).
+- [x] 844x390 touch: the coach ended 2.9 px over the slide pad (RED in `tests/tutorial-auto-browser.spec.js`); landscape meter margin trimmed in `src/TutorialCoach.vue`, coach bottom 211 vs pad 215. `tutorial-auto`, `tutorial-hand-layout`, `interactive-tutorial` 35/35 serial.
+- [ ] Final rerun of `mobile-guide`, `guide`, `i18n`, `first-visit-start-parity` browser specs and the GitHub `quality-gate` for the pushed HEAD.
+- Known flake, not from this branch: `tests/audio.test.js` reveal/premiere cues drop under heavy load (`CLOCK_STALL_MS` in `src/audio-context-health.ts` vs a mock clock that never advances); reproduced with a 40x `performance.now` shim.
+
 # Develop shader warmup in rain (2026-11-21)
 
 - [x] RED on `5f0e321e`: switching Coast from day to rain after GO compiled two extra programs on High for the Roadster (104 → 106) and Crimson GT (108 → 110). Both Low cases passed.
@@ -815,6 +842,25 @@ on every tier. Low / VFX Off = tail light + flash; Reduced Motion = no flicker, 
 - [ ] Not run: physical phone, exact-HEAD GitHub `quality-gate`.
 - [x] Showroom pulse (owner's pick over a fixed race length or a hold-to-preview button): Garage/Home plume was 0.83 m vs Preview Studio's 4.70 m (default settings). `tests/sprint-plume.test.js` *showroom plume: loops…* RED on `e4329420` (0.83 m), GREEN after: every showroom loops from idle to ≥ 95% of the race length with the 2.2 s ignition demo; Reduced Motion holds Studio at full length.
 - [ ] Showroom pulse in real Garage/Studio frames, both cars, both phone orientations: delegated recording, not yet reviewed.
+
+## Corner push + AUTO edge guard (2026-11-22, `feature/steering-assist-balance`)
+
+- [x] One outward corner force for all 17 tracks in `src/corner-force.ts` (`roadDrift`); AUTO no
+  longer centres, it only fades outward force near the rail. Guard: `tests/corner-force.test.js`
+  (RED on the old lane centring; fork-intent and knock-grace cases RED before their fixes).
+- [x] Hands-free, AUTO on: all 17 finish, deviation 5.5–12.2 m, 0 hard hits, 0 scrapes. AUTO off:
+  0 hard hits. Lane keeper at lanes ±2/±2.5, 88 m/s and NITRO: deviation < 1.25 m, 0 hard hits.
+- [x] 30/60/120 FPS consistent; step cost ~1.6 → ~1.65 µs (+2%), no per-step allocation.
+- [x] Rings unchanged (layout identical, take ±0.4); pickups and rival gaps near baseline.
+- [x] Replay fixture re-recorded (`RECORD_REPLAY=1`); Frostbite balance tests rewritten to the new
+  contract (hands-free place ≤ 8, mean ≤ 186.6 s), owner's pick.
+- [x] WebGL corner captures, hands-free with AUTO at 88 m/s: Neon desktop, Coast phone portrait, Aurora
+  phone landscape. Outward drift 4.4 / 3.0 / 1.4 m over 2.5 s, no rail contact, car on the road surface.
+- [ ] `make verify`: unit, typecheck and build pass; browser 1453 passed / 4 failed / 88 skipped, so the
+  World Tour long run did not start. `rival-drive-vfx` and the 1024x768 tilt tutorial pass when re-run alone
+  (load timing). `collectible-ui` (`wallet-coin@3x.webp` 9 < 10) and `hero-roadster-equipment` launch-flare
+  glow fail the same way on develop `5f5d11d7`: pre-existing, not from this branch.
+- [ ] Not run: physical phone, World Tour long run, exact-HEAD GitHub `quality-gate`.
 
 ## Wave 3 trial review fixes (2026-11-19, `fix/wave3-review-experience`)
 

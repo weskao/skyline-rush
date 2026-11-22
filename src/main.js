@@ -87,7 +87,7 @@ let contextLost = false; // iOS drops WebGL on lock/app switch and may never res
 let previousPhase;
 let goUntil = 0;
 let { audio, volume } = readAudio();
-const autoAssist = setupAssistUI({ button: ui['assist-button'], isLocked: () => !!tutorial, cue: () => sound.cue('ui') });
+const autoAssist = setupAssistUI({ button: ui['assist-button'], cue: () => sound.cue('ui') });
 let animationId;
 if (import.meta.env.VITE_DIAG) import('./diag-relay.ts').then(({ startDiag }) => startDiag(window, localStorage, $('#error-message'), () => ({ phase: race.phase, track: race.trackId, mode: race.mode, quality: vfx.settings().ultra ? 'ultra' : vfx.settings().quality, audio: sound.diagnostics() }))); // diagnostic builds only; production drops the module
 let pausedPhase = 'racing';
@@ -448,7 +448,6 @@ function phaseUI() {
     ui['restart-button'].hidden = true;
     ui['pause-button'].disabled = tutorial.complete;
   }
-  ui['assist-button'].disabled = !!tutorial;
   if (phase === 'paused') {
     $('#new-best').hidden = true;
     enter($('.overlay-content'), 'translateY(12px)');
@@ -524,7 +523,7 @@ try {
     // Count elapsed seconds after the track scene has attached and warmed on a rendered frame.
     if (countingDown && previousPhase === 'countdown' && !document.hidden && !world.raceFramePending(race)) advanceCountdown(race, Math.max(0, rawDelta));
     const input = controls.read();
-    if (tutorial) prepareTutorialInput(input, tutorial.step);
+    if (tutorial) prepareTutorialInput(input, autoAssist.isOn());
     else {
       if (autoAssist.isOn() && !input.brake) input.throttle = true;
       input.laneAssist = autoAssist.isOn();
@@ -603,7 +602,7 @@ function beginTutorial(firstStart = raceAfterTutorial) {
   if (touchUI.isEditing()) touchUI.editLayout(false);
   controls.clear(); clearButtonPresses(); toggleSettings(false);
   updateTutorialActions(raceAfterTutorial);
-  tutorial = createInteractiveTutorial(); race = tutorial.race;
+  tutorial = createInteractiveTutorial(autoAssist.isOn); race = tutorial.race;
   race.phase = 'countdown'; // the same 3-2-1 → GO as a race, so equipped Launch Flare charges and bursts here too
   touchUI.applyControls(false);
   goUntil = 0; hud.resetMemory(); hud.forgetFlightMode();
@@ -635,6 +634,7 @@ const { renderTutorial, resetTutorialView } = setupTutorialUI({
   getTouchMatches: () => touchPreference.matches,
   getInputPrefs: () => touchUI.inputPrefs(),
   getControlPrefs: () => touchUI.prefs(),
+  isAutoOn: autoAssist.isOn,
   showKeyMap: () => keymap.showKeyMap(), getKeyMap: () => keymap.getKeyMap(), cue: name => sound.cue(name),
 });
 const { closeGuide, offerFirstStart } = setupGuideUI({

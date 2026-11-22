@@ -27,6 +27,11 @@ The finished screen, paused screen and ready screen are not exempt from input te
   Controls/Audio dropdowns open over the tool row, so raising the tool row to or past the topbar
   covers "How to play" and the key bindings. Guards: `tests/guide-browser.spec.js`,
   `tests/device-quality-browser.spec.js` (real clicks fail on a wrong order).
+- **Driving settings remain operable after FINISH.** The in-settings `#controls-button` must be enabled
+  and its section must respond to actual clicks on a finished race, just as in ready/paused;
+  keep driving settings inaccessible during countdown and active racing. Guard:
+  `tests/controls-panels-ui.test.js` and finished desktop/phone cases in
+  `tests/result-actions-browser.spec.js`.
 - A restart/finish/pause must not leave a stale `<dialog open>`, inert ancestor,
   pointer capture, invisible full-screen clickable surface, or animation that traps
   interaction. Release active driving input and preserve keyboard, mouse, and touch.

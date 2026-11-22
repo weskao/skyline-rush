@@ -363,12 +363,12 @@ test('steering input ramps to full over 0.15 s and high-speed lateral speed caps
   assert.ok(Math.abs(race.player.x - x - 4.5) < 0.05);
 });
 
-test('lane assist eases a released car to the nearest lane centre only when enabled', () => {
+test('AUTO never moves a released car toward a lane centre, and steering still works under it', () => {
   for (const laneAssist of [true, false]) {
     const race = racing(); race.rivals = [];
     Object.assign(race.player, { speed: 40, x: 3.6 });
     advance(race, 2, { throttle: true, laneAssist });
-    assert.ok(laneAssist ? Math.abs(race.player.x - 2.5) < 0.05 : race.player.x === 3.6);
+    assert.equal(race.player.x, 3.6);
   }
   const race = racing(); race.rivals = [];
   Object.assign(race.player, { speed: 40, x: 3.6 });

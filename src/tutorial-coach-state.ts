@@ -5,7 +5,7 @@ import { reactive } from 'vue';
 // imperative because it is updated on every racing frame.
 export const coachView = reactive<TutorialCoachView>({
   visible: false, step: '', title: '', instruction: '',
-  completeActionsHidden: true, assistHidden: false,
+  autoStatus: '', completeActionsHidden: true, assistHidden: false,
   hintKeys: '', hintText: '', celebration: '', guide: '', skipHidden: true,
   cue: '', cueId: '', cueKeys: [], cueCount: '', passed: '', passedReward: '',
 });

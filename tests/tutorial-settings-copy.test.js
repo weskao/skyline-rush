@@ -13,7 +13,7 @@ const BRAKE_BUTTON = { en: /\bBRAKE\b|\b[Hh]old(ing)? (the )?brake\b/, 'zh-TW': 
 const REASONS = { left: ['missed'], right: ['missed'], brake: ['missed', 'noBrake'], boost: ['timeout'], drift: ['short', 'slow'],
   airChain: ['noBoost', 'short', 'hard', 'slow'], barrelRoll: ['noRoll', 'early', 'hard'], nitro: [null] };
 const PHASES = ['ready', 'cleared', 'finishing', 'airborne', 'rolling', 'readyToLand', 'flicked', 'sprinting'];
-const CUES = ['throttle', 'brakeAhead', 'brakeHold', 'driftSpeed', 'driftStart', 'driftHold', 'driftRelease', 'driftMax', 'driftExit', 'driftReset', 'chainFly', 'chainBoost',
+const CUES = ['throttle', 'autoBrake', 'brakeAhead', 'brakeHold', 'driftSpeed', 'driftStart', 'driftHold', 'driftRelease', 'driftMax', 'driftExit', 'driftReset', 'chainFly', 'chainBoost',
   'chainHold', 'chainRelease', 'chainLanding', 'rollFly', 'rollClimb', 'rollRelease', 'rollFlick', 'rollOpposite', 'rollSpin', 'rollSoften',
   'rollLand', 'boostAhead', 'boostGo', 'finishing'];
 // Desktop plus each touch steering mode the tutorial can run (tilt before permission falls back to slide).
