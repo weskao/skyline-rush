@@ -1,0 +1,117 @@
+name: One-shot wallet coin v0.32.0 restoration
+on:
+  push:
+    branches:
+      - feature/restore-v032-wallet-coin-dollar
+    paths:
+      - .github/workflows/one-shot-v032-wallet-dollar.yml
+permissions:
+  contents: write
+jobs:
+  rebuild-wallet-coin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Restore v0.32.0 coin and replace bolt with dollar
+        run: |
+          python -m pip install --quiet pillow numpy opencv-python-headless
+          python - <<'PY'
+          import io
+          import os
+          import subprocess
+          from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageChops
+          import numpy as np
+          import cv2
+          
+          path = "public/feature-assets/wave3-demo/raster/wallet-coin@3x.webp"
+          source = subprocess.check_output(["git", "show", "v0.32.0:" + path])
+          original = Image.open(io.BytesIO(source)).convert("RGBA")
+          assert original.size == (144, 144), "Unexpected v0.32.0 asset dimensions"
+          
+          # Remove only the old lightning mark, preserving the older single-coin silhouette.
+          rgba = np.array(original)
+          mask = np.zeros((144, 144), dtype=np.uint8)
+          points = np.array([
+              (72, 35), (86, 36), (82, 51), (95, 55), (92, 65),
+              (76, 84), (63, 93), (59, 84), (67, 68),
+              (54, 67), (54, 59), (67, 46)
+          ], dtype=np.int32)
+          cv2.fillPoly(mask, [points], 255)
+          mask = cv2.dilate(mask, np.ones((5, 5), np.uint8), iterations=1)
+          repaired = cv2.inpaint(cv2.cvtColor(rgba[:, :, :3], cv2.COLOR_RGB2BGR), mask, 7, cv2.INPAINT_TELEA)
+          repaired = cv2.cvtColor(repaired, cv2.COLOR_BGR2RGB)
+          composite = np.empty_like(rgba)
+          composite[:, :, :3] = repaired
+          composite[:, :, 3] = rgba[:, :, 3]
+          base = Image.fromarray(composite, "RGBA")
+          blend = Image.fromarray(mask, "L").filter(ImageFilter.GaussianBlur(2))
+          base.paste(Image.fromarray(composite, "RGBA"), (0, 0), blend)
+          
+          # Emboss a gold dollar mark aligned to the oblique face of the v0.32.0 coin.
+          font_candidates = [
+              "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+              "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf",
+          ]
+          font_path = next((p for p in font_candidates if os.path.exists(p)), None)
+          assert font_path, "A bold font is required for the coin engraving"
+          font = ImageFont.truetype(font_path, 53)
+          mask_layer = Image.new("L", (94, 100), 0)
+          draw = ImageDraw.Draw(mask_layer)
+          box = draw.textbbox((0, 0), "$", font=font, stroke_width=1)
+          x = (94 - (box[2] - box[0])) // 2 - box[0]
+          y = (100 - (box[3] - box[1])) // 2 - box[1]
+          draw.text((x, y), "$", font=font, fill=255, stroke_width=1, stroke_fill=255)
+          mask_layer = mask_layer.rotate(-14, Image.Resampling.BICUBIC)
+          letter = Image.new("L", original.size, 0)
+          letter.paste(mask_layer, (26, 15))
+          # Contain the emboss inside the existing front coin face.
+          inner_face = Image.new("L", original.size, 0)
+          ImageDraw.Draw(inner_face).ellipse((47, 30, 98, 98), fill=255)
+          inner_face = inner_face.filter(ImageFilter.GaussianBlur(1))
+          letter = ImageChops.multiply(letter, inner_face)
+          layer = Image.new("RGBA", original.size, (0, 0, 0, 0))
+          # Dark lower-right bevel, followed by a narrow pale rim and textured golden body.
+          shadow = Image.new("RGBA", original.size, (88, 31, 5, 0))
+          shadow.putalpha(ImageChops.offset(letter, 2, 3))
+          layer = Image.alpha_composite(layer, shadow)
+          edge = Image.new("RGBA", original.size, (255, 225, 99, 0))
+          edge.putalpha(ImageChops.offset(letter, -1, -1))
+          layer = Image.alpha_composite(layer, edge)
+          fill = Image.new("RGBA", original.size, (0, 0, 0, 0))
+          fa = np.array(letter)
+          out = np.zeros((144, 144, 4), dtype=np.uint8)
+          for yy in range(144):
+              for xx in range(144):
+                  if fa[yy, xx] == 0:
+                      continue
+                  t = max(0, min(1, (yy - 35) / 55))
+                  out[yy, xx] = (
+                      int(255 - 19 * t),
+                      int(220 - 71 * t),
+                      int(81 - 54 * t),
+                      int(fa[yy, xx]),
+                  )
+          fill = Image.fromarray(out, "RGBA")
+          layer = Image.alpha_composite(layer, fill)
+          result = Image.alpha_composite(base, layer)
+          result.putalpha(original.getchannel("A"))
+          assert result.size == original.size
+          assert result.getbbox() == original.getbbox(), "Source silhouette must not change"
+          result.save(path, "WEBP", quality=96, method=6, exact=True)
+          print("Created", path, os.path.getsize(path), "bytes")
+          PY
+      - name: Commit replacement and clean up temporary workflow
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/one-shot-v032-wallet-dollar.yml
+          git add public/feature-assets/wave3-demo/raster/wallet-coin@3x.webp
+          git diff --cached --check
+          git commit -m "fix(assets): restore v0.32.0 gold coin with dollar emblem"
+          git push origin HEAD:feature/restore-v032-wallet-coin-dollar
