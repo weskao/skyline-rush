@@ -15,7 +15,9 @@ function sharedWorktree(lock) {
   mkdirSync(join(main, 'node_modules'), { recursive: true });
   mkdirSync(wt);
   writeFileSync(join(wt, 'package.json'), '{}');
+  writeFileSync(join(main, 'package.json'), '{}');
   writeFileSync(join(wt, 'pnpm-workspace.yaml'), 'packages:\n  - .\n');
+  writeFileSync(join(main, 'pnpm-workspace.yaml'), 'packages:\n  - .\n');
   writeFileSync(join(main, 'pnpm-lock.yaml'), '{"main":1}');
   writeFileSync(join(wt, 'pnpm-lock.yaml'), lock);
   symlinkSync(join(main, 'node_modules'), join(wt, 'node_modules'));
@@ -47,6 +49,16 @@ test('make node_modules keeps a shared node_modules link when the lockfile match
 test('make node_modules still installs when a linked worktree has a different lockfile', () => {
   const { root, wt } = sharedWorktree('{"wt":2}');
   try {
+    assert.notEqual(makeNodeModules(wt).status, 0);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('make node_modules reinstalls when workspace dependency policy differs', () => {
+  const { root, wt } = sharedWorktree('{"main":1}');
+  try {
+    writeFileSync(join(wt, 'pnpm-workspace.yaml'), 'allowBuilds:\n  esbuild: true\n');
     assert.notEqual(makeNodeModules(wt).status, 0);
   } finally {
     rmSync(root, { recursive: true, force: true });
