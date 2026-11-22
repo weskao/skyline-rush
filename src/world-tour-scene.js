@@ -264,7 +264,7 @@ export function createWorldTourScene(scene){
   });
 
   const dummy=new THREE.Object3D(),basis=new THREE.Matrix4(),world=new THREE.Vector3();
-  let active=null, heroMaterials=[],cachedOrigin=null,cachedQuality=null,homeId=null,homeOrigin=null,homePoint=null;
+  let active=null, heroMaterials=[],cachedOrigin=null,cachedQuality=null,homeId=null,homeOrigin=null,homePoint=null,cachedTunnel=null;
   // One home sample per rebuild origin; callers pass the frame they already hold (its point is the centreline at s).
   const local=(id,s,x=0,y=0,origin=0,f=trackFrame(id,clamped(id,s),endlessActive),c=f.point)=>{
     if(homeId!==id||homeOrigin!==origin){homeId=id;homeOrigin=origin;homePoint=trackPoint(id,clamped(id,origin),endlessActive);}
@@ -295,8 +295,8 @@ export function createWorldTourScene(scene){
     glowMat.color.set(ROAD_CHARACTER[id].edge);
     stripeMat.color.set(ROAD_CHARACTER[id].lane);
     shoulderMat.color.set(ROAD_CHARACTER[id].shoulder);
-    portalMat.color.set(id==='cosmic'?'#688b9a':id==='tokyo'?'#9e839c':'#9b9587');
-    portalSecondary.color.set(id==='cosmic'?'#8b819f':'#aa9b83');
+    portalMat.color.set(id==='cosmic'?'#688b9a':id==='tokyo'?'#55c6d7':'#9b9587');
+    portalSecondary.color.set(id==='cosmic'?'#8b819f':id==='tokyo'?'#dd83c5':'#aa9b83');
     glassMat.color.set(ROAD_CHARACTER[id].edge);
     architectureMat.color.set(theme.buildings);
     terrainMat.color.set(theme.rock);
@@ -330,9 +330,10 @@ export function createWorldTourScene(scene){
       group.position.set(home.x-current.x,home.y-current.y,home.z-current.z);
       sceneryLayer.position.set(-home.x,-home.y,-home.z);
       streamScenery(id,distance,quality,sections);motion.update(id,distance,quality,time,reducedMotion,endless);
-      const rebuild=cachedOrigin!==origin||cachedQuality!==quality;
+      const tunnel=sections.find(s=>s.type==='boost-tunnel' && Math.abs(distance-(s.from+s.to)/2)<(id==='tokyo'?1300:1500));
+      const rebuild=cachedOrigin!==origin||cachedQuality!==quality||cachedTunnel!==tunnel?.from;
       if(rebuild){
-        cachedOrigin=origin;cachedQuality=quality;
+        cachedOrigin=origin;cachedQuality=quality;cachedTunnel=tunnel?.from;
         const start=Math.max(0,origin-160);
         for(let i=0;i<=ROWS;i++){
         const s=start+i*STEP,f=drawnFrame(id,s);
@@ -393,8 +394,7 @@ export function createWorldTourScene(scene){
       }
       // Physical driving reward is granted by game.js; portals are only the
       // matching visible markers along the main driving lane.
-      const tunnel=sections.find(s=>s.type==='boost-tunnel');
-      boostGroup.visible=!!tunnel && Math.abs(distance-(tunnel.from+tunnel.to)/2)<1500;
+      boostGroup.visible=!!tunnel;
       arrowGroup.visible=boostGroup.visible && (id==='tokyo'||id==='cosmic');
       sideGlass.visible=ceilingGlass.visible=id==='tokyo'||id==='cosmic';
       if(tunnel){

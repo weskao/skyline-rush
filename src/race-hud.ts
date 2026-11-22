@@ -209,8 +209,8 @@ export function createRaceHud(options: HudOptions) {
     feedbackPlacement.refresh();
   }
   function updateBoostAndFeedback(race: HudRace, car: HudRace, nitroActive: boolean, flying: boolean, calm: boolean): void {
-    const visual = getVisual();
-    document.body.classList.toggle('low-charge', car.fuel < 20);
+    const visual = getVisual(), tokyoCharge = race.trackId === 'tokyo' && car.section === 'boost-tunnel' && car.altitude < .1 && car.speed >= 20;
+    document.body.classList.toggle('low-charge', car.fuel < 20); document.body.classList.toggle('tokyo-charge-zone', tokyoCharge && race.phase === 'racing');
     document.body.classList.toggle('boosting', (car.boosting || nitroActive || (car.miniBoost > 0 && car.boostTunnelEvent)) && race.phase === 'racing');
     document.body.classList.toggle('boost-draining', car.boosting && race.phase === 'racing'); // BOOST alone, not NITRO or tunnel mini-boost: tints the charge bar
     const tunnelBoost = car.miniBoost > 0 && car.boostTunnelEvent &&
@@ -358,7 +358,7 @@ export function createRaceHud(options: HudOptions) {
     setHudText(ui['flight-budget']!, race.modifier === 'no-flight' ? '—' : car.inShortcut && !airDash ? '∞' : `${(car.fuel / (car.inShortcut ? 3 : airDash ? 22 : 19)).toFixed(1)}s`);
     setHudText(ui['flight-instruction']!, race.modifier === 'no-flight' ? L['daily.flightDisabled.reason']! : car.thrusting ? interpolate(L['hud.steerAir']!, { action: L[tap ? 'hud.tapLand' : 'hud.releaseDescend']! }) : car.altitude > 0.25 ? depleted ? L['hud.autoLand']! : interpolate(L['hud.climbAgain']!, { hold })
       : car.exhausted ? interpolate(L['hud.rechargeRoad']!, { action: tap ? L['hud.tapLand']! : release }) : car.speed < 18 ? interpolate(L['hud.reachLift']!, { hold }) : depleted ? L['hud.charging']! : interpolate(L[tap ? 'hud.lift' : 'hud.liftLand']!, { hold }));
-    setHudText(ui['fuel-caption']!, race.modifier === 'no-flight' ? L['daily.flightDisabled.fuel']! : car.exhausted ? interpolate(L['hud.toRecharge']!, { action: tap ? L['hud.land']! : release }) : L[car.boosting ? 'hud.sharedCharge' : car.thrusting ? 'hud.thrustersOn' : flying ? !input.fly && car.fuel < 100 ? 'hud.glideRecharge' : 'hud.descendRoad' : 'hud.groundRecharge']!);
+    setHudText(ui['fuel-caption']!, race.modifier === 'no-flight' ? L['daily.flightDisabled.fuel']! : car.exhausted ? interpolate(L['hud.toRecharge']!, { action: tap ? L['hud.land']! : release }) : L[race.trackId === 'tokyo' && car.section === 'boost-tunnel' && car.altitude < .1 && car.speed >= 20 ? 'hud.tokyoChargeZone' : car.boosting ? 'hud.sharedCharge' : car.thrusting ? 'hud.thrustersOn' : flying ? !input.fly && car.fuel < 100 ? 'hud.glideRecharge' : 'hud.descendRoad' : 'hud.groundRecharge']!);
     setHudText(ui['climb-rate']!, `${car.verticalSpeed >= 0 ? '+' : ''}${car.verticalSpeed.toFixed(1)} M/S`);
     ui['height-indicator']!.style.transform = `translateY(${-Math.max(0, car.altitude) / 12 * 110}px)`;
     updateBoostAndFeedback(race, car, nitroActive, flying, calm);

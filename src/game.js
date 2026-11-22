@@ -52,7 +52,8 @@ export const CROSSWIND_SPEED = 4; // m/s sideways push
 export const ICE_RAMP_FACTOR = 4; // steering takes this many times longer to respond on ice
 
 export const NITRO_FUEL_PER_CHARGE = 32; // overflow conversion: each 0.25 charge = 8 fuel
-export const NITRO_FUEL_BONUS = 20; // fuel per charge banked below the cap: each 0.25 charge = 5 fuel
+export const NITRO_FUEL_BONUS = 20;
+const TOKYO_HYPERDRIVE_REGEN = 4; // fuel/s while moving on Tokyo's powered road; BOOST still has a net drain // fuel per charge banked below the cap: each 0.25 charge = 5 fuel
 
 // AIR TRICK: a steer press opposite to one begun moments earlier, while flying, is a barrel roll; landing it pays nitro.
 export const TRICK_FLICK_WINDOW = 0.3; // s between the starts of the two presses
@@ -356,6 +357,7 @@ export function stepRace(race, input, dt) {
   }
   // AIR DASH: combined drain is 18/s (15 FLY + 3 BOOST), rather than adding 10/s to FLY.
   if (boost) car.fuel = Math.max(0, car.fuel - (car.thrusting ? 3 : BOOST_DRAIN) * dt);
+  if (race.trackId === 'tokyo' && car.section === 'boost-tunnel' && car.altitude < .1 && car.speed >= 20) car.fuel = Math.min(100, car.fuel + TOKYO_HYPERDRIVE_REGEN * dt);
   const previousAltitude = car.altitude;
   // Sky Spiral launch ramps impart momentum automatically; FLY can extend the jump.
   if (car.altitude === 0 && ((race.trackId === 'spiral' && car.speed >= SKY_GAP_LAUNCH_MIN_SPEED && car.section === 'launch' &&

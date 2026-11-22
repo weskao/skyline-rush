@@ -168,3 +168,19 @@ test('World Tour scenery skips CourseGraph destinations without creating legacy 
     assert.equal(root.visible, true, 'classic World Tour scenery must recover after switching back');
   } finally { visual.dispose(); }
 });
+
+test('both Tokyo charge tunnels show energy hoops at low and high graphics without leaking to distant roads',()=>{
+ const scene=new THREE.Scene(),visual=createWorldTourScene(scene);
+ const world=scene.getObjectByName('World Tour authored scenery');
+ const boost=world.getObjectByName('Playable speed tunnel');
+ const tunnels=RACE_TRACKS.tokyo.sections.filter(s=>s.type==='boost-tunnel');
+ try{
+  for(const quality of ['low','high'])for(const t of tunnels){
+   visual.update('tokyo',t.from+80,quality,RACE_TRACKS.tokyo.sections,0,false);
+   assert.equal(boost.visible,true,`Tokyo ${t.from}m charge tunnel absent at ${quality} graphics`);
+   assert.ok(boost.children.some(c=>c.visible),'energy geometry must exist');
+  }
+  visual.update('tokyo',7150,'high',RACE_TRACKS.tokyo.sections,0,false);
+  assert.equal(boost.visible,false,'no energy tunnel appears between the two charge sectors');
+ }finally{visual.dispose();}
+});

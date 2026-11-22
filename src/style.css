@@ -2646,3 +2646,7 @@ html[lang="zh-TW"] .race-clock-state { font-size: 10px; letter-spacing: .5px; }
   .tutorial-copy p { margin: 2px 0 4px; font-size: 13px; }
   .tutorial-cue, .tutorial-pass { top: 34%; left: 79%; max-width: calc(42vw - 32px); padding: 6px 10px; font-size: 13px; }
 }
+
+/* Tokyo's powered-road feedback is peripheral and static, including reduced-motion mode. */
+body.tokyo-charge-zone #fuel-meter { box-shadow: 0 0 0 1px rgba(85, 198, 215, .55), 0 0 12px rgba(85, 198, 215, .22); }
+body.tokyo-charge-zone #fuel-caption { color: #b6f5ff; text-shadow: 0 0 8px rgba(85, 198, 215, .35); }
