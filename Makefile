@@ -1,5 +1,5 @@
 # Shortcuts for the common skyline-rush commands. Run from the repo root.
-NPM := npm
+PNPM := pnpm
 .DEFAULT_GOAL := dev
 
 .PHONY: build help setup dev dev-diag dev-unlocked dev-feature test-unlocked phone phone-diag phone-unlocked perf perf-modes perf-phone run verify deploy deploy-netlify stop-old-dev reclaim-dev-port
@@ -8,7 +8,7 @@ NPM := npm
 # touches production saves. VITE_FIREBASE_EMULATOR points the page at them; Ctrl+C stops both.
 # firebase-tools needs Java 21+, which need not be the JDK first on PATH (Android tooling often pins 17).
 JAVA21_HOME := $(shell /usr/libexec/java_home -v 21+ 2>/dev/null)
-WITH_EMULATORS := $(if $(JAVA21_HOME),PATH="$(JAVA21_HOME)/bin:$$PATH" )VITE_FIREBASE_EMULATOR=1 npx -y firebase-tools@15.34.1 emulators:exec --project skyline-rush-weskao --only auth,firestore
+WITH_EMULATORS := $(if $(JAVA21_HOME),PATH="$(JAVA21_HOME)/bin:$$PATH" )VITE_FIREBASE_EMULATOR=1 pnpm dlx firebase-tools@15.34.1 emulators:exec --project skyline-rush-weskao --only auth,firestore
 
 # A second emulator run dies on port 9099 ("port taken"), so stop the earlier run first. Its
 # emulators:exec process and every child (Vite would be orphaned otherwise) are stopped, then ports re-checked.
@@ -42,21 +42,21 @@ reclaim-dev-port:
 	$(call reclaim-port,5173)
 
 dev: stop-old-dev reclaim-dev-port node_modules ## `make dev [procedural=1]`: dev server; procedural=1 previews the procedural Roadster
-	VITE_PROCEDURAL_ROADSTER=$(if $(filter 1,$(procedural)),1,0) $(WITH_EMULATORS) '$(NPM) run dev'
+	VITE_PROCEDURAL_ROADSTER=$(if $(filter 1,$(procedural)),1,0) $(WITH_EMULATORS) '$(PNPM) run dev'
 
 # VITE_DIAG=1 compiles in src/crash-log.ts: a live banner with frame counter, lifecycle and input events plus the
 # stored crash log. Production builds never include it (scripts/assert-production-locked.mjs refuses the marker).
-# Both also stream it to diag-logs/*.jsonl on this Mac (scripts/diag-relay-plugin.mjs; read live: `npm run diag:tail`),
+# Both also stream it to diag-logs/*.jsonl on this Mac (scripts/diag-relay-plugin.mjs; read live: `pnpm run diag:tail`),
 # from localhost and Tailscale only; `via=wifi` serves Wi-Fi, whose logs need DIAG_ALLOW_LAN=1 (unencrypted).
 dev-diag: stop-old-dev reclaim-dev-port node_modules ## `make dev-diag`: like `make`, with the on-screen diagnostic panel compiled in
-	VITE_DIAG=1 $(WITH_EMULATORS) '$(NPM) run dev'
+	VITE_DIAG=1 $(WITH_EMULATORS) '$(PNPM) run dev'
 
 phone-diag: ## `make phone-diag [name|off] [y=1]`: like `make phone`, with the on-screen diagnostic panel compiled in
 	VITE_DIAG=1 $(MAKE) phone $(if $(y),y=$(y)) $(if $(via),PHONE_VITE_ARGS="--via $(via)") $(if $(DEV_FEATURE_NAME),DEV_FEATURE_NAME=$(DEV_FEATURE_NAME))
 
 # Compile with the development-only access implementation. Never produces a distributable build.
 dev-unlocked: stop-old-dev reclaim-dev-port node_modules ## `make dev-unlocked`: local Vite playtest with all race-ready tracks, cars, paints and equipment
-	$(WITH_EMULATORS) '$(NPM) run dev -- --config vite.unlocked.config.js'
+	$(WITH_EMULATORS) '$(PNPM) run dev -- --config vite.unlocked.config.js'
 
 test-unlocked: dev-unlocked ## Alias: `make test-unlocked` also opens the all-unlocked local dev server
 
@@ -79,16 +79,16 @@ phone-unlocked: ## `make phone-unlocked [name|off] [y=1]`: phone Vite playtest w
 # (version, Tailscale/Wi-Fi, Telegram) for anything not passed and logs Android temperatures.
 PERF_ARGS = $(if $(BASE),--base $(BASE)) $(if $(RATE),--rate $(RATE)) $(if $(ROUNDS),--rounds $(ROUNDS)) $(if $(RACE_SECONDS),--seconds $(RACE_SECONDS)) $(if $(VIA),--via $(VIA)) $(if $(TG),--tg $(TG)) $(if $(VIEWPORT),--viewport $(VIEWPORT))
 perf: node_modules ## `make perf [BASE=main] [RATE=6] [ROUNDS=3] [VIEWPORT=desktop]`: p50/p95/fps of a race in CPU-throttled Chrome
-	$(NPM) run build
+	$(PNPM) run build
 	node scripts/perf.mjs desktop $(PERF_ARGS)
 
 # Scenario frame times for new content vs Classic (dev server, themed hazards loaded in-page); JSON in artifacts/perf-modes/.
 perf-modes: node_modules ## `make perf-modes [RATE=6] [ROUNDS=3] [VIEWPORT=desktop]`: p50/p95, draw calls, triangles: Classic vs themes, Obstacle Run, Endless
-	$(NPM) run build
-	PERF_MODES=1 RATE=$(or $(RATE),6) ROUNDS=$(or $(ROUNDS),3) $(if $(RACE_SECONDS),RACE_SECONDS=$(RACE_SECONDS)) $(if $(VIEWPORT),VIEWPORT=$(VIEWPORT)) npx playwright test tests/perf-modes-browser.spec.js --reporter=line
+	$(PNPM) run build
+	PERF_MODES=1 RATE=$(or $(RATE),6) ROUNDS=$(or $(ROUNDS),3) $(if $(RACE_SECONDS),RACE_SECONDS=$(RACE_SECONDS)) $(if $(VIEWPORT),VIEWPORT=$(VIEWPORT)) pnpm exec playwright test tests/perf-modes-browser.spec.js --reporter=line
 
 perf-phone: node_modules ## `make perf-phone [BASE=main] [VIA=tailscale|wifi|auto] [TG=0]`: like `make phone` for ?perf builds, plus phone temperatures
-	$(NPM) run build
+	$(PNPM) run build
 	node scripts/perf.mjs phone $(PERF_ARGS)
 
 # Fetches origin/feature/<name> into .claude/worktrees/<name> without checking it out here.
@@ -107,24 +107,24 @@ endif
 
 # Production-style artifact without deployment.
 build: node_modules ## `make build`: compile the site locally without publishing
-	$(NPM) run build
+	$(PNPM) run build
 
 # test:browser builds dist/ first via pretest:browser, so build is not run separately.
 run: node_modules ## `make run`: unit tests, production build and Chrome browser tests
-	$(NPM) test
-	$(NPM) run test:browser
+	$(PNPM) test
+	$(PNPM) run test:browser
 
 # The complete local merge-readiness gate: default browser tests already build the locked
 # production bundle; the authored World Tour fixture uses its own Playwright config.
 # Manual real-game/WebGL evidence and exact-commit CI still need separate review.
 verify: node_modules ## `make verify`: type checks, units, production build, browser and World Tour suites
-	$(NPM) run typecheck
-	$(NPM) test
+	$(PNPM) run typecheck
+	$(PNPM) test
 	@if [ -z "$${PLAYWRIGHT_PORT:-}" ]; then \
 	  PLAYWRIGHT_PORT=$$(node scripts/free-local-port.mjs) || exit 1; \
 	fi; \
 	export PLAYWRIGHT_PORT; \
-	$(NPM) run test:browser && npx playwright test --config=playwright.world-tour.config.js
+	$(PNPM) run test:browser && pnpm exec playwright test --config=playwright.world-tour.config.js
 
 # Lists every target that carries a `## description`.
 help: ## `make help`: list these commands
@@ -134,11 +134,11 @@ help: ## `make help`: list these commands
 deploy: ## `make deploy`: trigger CI checks and GitHub Pages deployment of remote main
 	gh workflow run ci.yml --ref main
 
-# Deploys the current checkout straight from this Mac; needs `npx netlify-cli login` once per machine.
+# Deploys the current checkout straight from this Mac; needs `pnpm dlx netlify-cli login` once per machine.
 # GARAGE_VFX_RELEASE_MODE and VITE_WAVE3_FIRESTORE_PREVIEW match the Pages deploy pins in ci.yml. The site has Netlify visitor access protection
 # (anonymous requests get 401), so the live check asks the Netlify API which deploy is published instead of curl.
 # The Telegram line goes through tg-send.sh when it exists (bot type deploy-done; default bot until that exists).
-NETLIFY := npx --yes netlify-cli@27.16.2
+NETLIFY := pnpm dlx netlify-cli@27.16.2
 NETLIFY_SITE := skyline-rush
 NETLIFY_URL := https://$(NETLIFY_SITE).netlify.app
 TG_SEND := $(HOME)/.claude/scripts/tg-send.sh
@@ -150,7 +150,7 @@ deploy-netlify: node_modules ## `make deploy-netlify`: production build of this 
 	  | jq -e --arg d "$(NETLIFY_SITE).netlify.app" '.authorizedDomains | any(. == $$d)' >/dev/null || { \
 	  echo "Google sign-in would fail: $(NETLIFY_SITE).netlify.app is not a confirmed Firebase Auth authorized domain."; \
 	  echo "Add it: Firebase console > Authentication > Settings > Authorized domains > Add domain"; exit 1; }
-	GARAGE_VFX_RELEASE_MODE=trial VITE_WAVE3_FIRESTORE_PREVIEW=1 $(NPM) run build
+	GARAGE_VFX_RELEASE_MODE=trial VITE_WAVE3_FIRESTORE_PREVIEW=1 $(PNPM) run build
 	@out=$$($(NETLIFY) deploy --prod --no-build --dir=dist --site $(NETLIFY_SITE) --json \
 	  --message "local deploy $$(git describe --tags --always)") || { echo "$$out"; exit 1; }; \
 	id=$$(echo "$$out" | jq -r .deploy_id); unique=$$(echo "$$out" | jq -r .deploy_url); \
@@ -161,14 +161,14 @@ deploy-netlify: node_modules ## `make deploy-netlify`: production build of this 
 	  "$$(git rev-parse --abbrev-ref HEAD)" "$$(git describe --tags --always)"); \
 	if [ -f "$(TG_SEND)" ]; then TG_MSG_TYPE=deploy-done bash "$(TG_SEND)" send "$$msg"; else echo "TG: send skipped — $(TG_SEND) not found"; fi
 
-setup: node_modules ## `make setup`: install npm dependencies (crucible included) and enable the git hooks; other targets do this too
+setup: node_modules ## `make setup`: install pnpm dependencies (crucible included) and enable the git hooks; other targets do this too
 
-# Installs dependencies on first run and whenever package-lock.json changes; also enables the repo's git hooks.
+# Installs dependencies on first run and whenever pnpm-lock.yaml changes; also enables the repo's git hooks.
 # A worktree that links node_modules to another checkout keeps the link while both lockfiles match:
-# a checkout only bumps the lockfile's mtime, and npm install would replace the link with a full copy.
-node_modules: package-lock.json
-	@if [ -L $@ ] && cmp -s package-lock.json "$$(readlink $@)/../package-lock.json"; then \
-	  echo "node_modules: shared via $$(readlink $@), lockfile unchanged; skipping npm install"; \
-	else $(NPM) install; fi
+# a checkout only bumps the lockfile's mtime, and pnpm install would replace the link with a full copy.
+node_modules: package.json pnpm-workspace.yaml pnpm-lock.yaml
+	@if [ -L $@ ] && cmp -s pnpm-lock.yaml "$$(readlink $@)/../pnpm-lock.yaml"; then \
+	  echo "node_modules: shared via $$(readlink $@), lockfile unchanged; skipping pnpm install"; \
+	else $(PNPM) install; fi
 	@git config core.hooksPath .githooks
 	@touch $@
