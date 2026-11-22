@@ -45,6 +45,7 @@ interface RaceSelectOptions {
 }
 type RuleKey = 'rivals' | 'traffic' | 'difficulty' | 'items' | 'activeItems' | 'itemRules' | 'collision' | 'hazards' | 'stages' | 'bonusGates' | 'riskLines' | 'themes';
 const LAST_MODE_KEY = 'skyline-rush-last-mode'; // tab-only; Event Lab needs its course, so it is not restored
+const RESETTABLE_MODES = new Set(['custom', 'free', 'time', 'gauntlet', 'checkpoint', 'cup', 'stunt', 'circuit']);
 
 /** Home-screen race selection: mode, custom rules, track picker, route maps and the remembered track. */
 export function setupRaceSelectUI(options: RaceSelectOptions) {
@@ -111,6 +112,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   }
 
   function renderModeRules(): void {
+    $<HTMLButtonElement>('#rules-restore').hidden = !RESETTABLE_MODES.has(selectedMode);
     for (const button of document.querySelectorAll<HTMLElement>('button[data-race-mode]'))
       button.setAttribute('aria-pressed', String(button.dataset.raceMode === selectedMode));
     $('#race-mode-rules').hidden = !['custom', 'free'].includes(selectedMode);
@@ -292,7 +294,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     Object.assign(raceRules, DEFAULT_RULES);
     $<HTMLSelectElement>('#hazard-tier').value = 'standard'; $<HTMLInputElement>('#clean-trial').checked = false;
     $<HTMLSelectElement>('#stunt-duration').value = '120'; $<HTMLSelectElement>('#cup-length').value = '3';
-    $<HTMLSelectElement>('#gauntlet-layout').value = 'classic';
+    $<HTMLSelectElement>('#gauntlet-layout').value = 'classic'; $<HTMLSelectElement>('#circuit-laps').value = '3';
     showRuleInputs();
     changeRaceSelection();
   });
