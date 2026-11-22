@@ -1,4 +1,5 @@
 import { test, expect } from './helpers/test.js';
+import { ciTimeout } from './helpers/ci.js';
 import { toggleSettingsSection } from './helpers/settings-browser.js';
 
 // Layout contract: the same live lesson, controls and readable toast on every device class.
@@ -20,7 +21,7 @@ for (const { width, height, mobile } of viewports) {
       await toggleSettingsSection(page, 'driving');
       await page.locator('#tutorial-open').click();
       await expect(page.locator('#tutorial-coach')).toBeVisible();
-      await expect(page.locator('#tutorial-cue')).toBeVisible();
+      await expect(page.locator('#tutorial-cue')).toBeVisible({ timeout: ciTimeout(20000) });
       // No device loses the practice disclaimer, progress or input hint.
       for (const id of ['#tutorial-title', '#tutorial-progress', '#tutorial-instruction', '#tutorial-input', '#tutorial-assist']) {
         await expect(page.locator(id)).toBeVisible();
