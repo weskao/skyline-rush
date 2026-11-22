@@ -1,5 +1,20 @@
 #world[data-frame-loading] { visibility: hidden; }
 
+/* Keep the selected track in view while 3D models, textures and shaders finish loading.
+   Reuse the lobby teaser URL (browser cache); never expose a half-rendered race frame. */
+#race-frame-still {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  background: linear-gradient(#264359, #081522);
+  pointer-events: none;
+  visibility: hidden;
+}
+#world[data-frame-loading] + #race-frame-still { visibility: visible; }
+
 .race-loading-rail { display: none; }
 
 .countdown[data-step="loading"]:not([hidden]) {

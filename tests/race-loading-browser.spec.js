@@ -22,12 +22,16 @@ for (const reducedMotion of ['no-preference', 'reduce']) {
     const countdown = page.locator('#countdown');
     const rail = countdown.locator('.race-loading-rail');
     const canvas = page.locator('#world');
+    const still = page.locator('#race-frame-still');
     try {
       await page.goto('/');
       await waitForHome(page);
       await page.locator('#start-button').click();
       await expect(countdown).toHaveAttribute('data-step', 'loading');
       await expect(canvas).toBeHidden();
+      await expect(still).toBeVisible();
+      await expect(still).toHaveAttribute('src', /track-teasers\/coast\.jpg/);
+      await expect(still).toHaveCSS('object-fit', 'cover');
       await expect(rail).toBeVisible({ timeout: ciTimeout(2000) });
       await expect(countdown.locator('#countdown-number')).toBeHidden();
       const animation = () => rail.evaluate(element => getComputedStyle(element, '::after').animationName);
@@ -38,6 +42,7 @@ for (const reducedMotion of ['no-preference', 'reduce']) {
     }
 
     await expect(canvas).toBeVisible();
+    await expect(still).toBeHidden();
     await expect(rail).toBeHidden();
     await expect(page.locator('#race-status')).toHaveText('RACING');
   });

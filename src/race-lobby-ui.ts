@@ -85,8 +85,9 @@ export function renderLobbyTrackArt(id: string): void {
   const card = trackCard(id);
   const image = document.querySelector<HTMLImageElement>('#lobby-hero-art')!;
   const thumbnail = card?.querySelector<HTMLImageElement>('.track-preview img')?.getAttribute('src');
-  if (thumbnail) image.src = thumbnail;
-  else image.removeAttribute('src');
+  const still = document.querySelector<HTMLImageElement>('#race-frame-still')!;
+  if (thumbnail) { image.src = thumbnail; still.src = thumbnail; }
+  else { image.removeAttribute('src'); still.removeAttribute('src'); }
   const slot = document.querySelector<HTMLElement>('#lobby-hero-map')!;
   copyRouteMap(slot, card, id);
 }

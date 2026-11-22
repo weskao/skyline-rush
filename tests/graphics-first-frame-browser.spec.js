@@ -56,6 +56,7 @@ test('Sky Spiral waits for its High road and skips scene draws during the wait',
   const road = holdAsset(page, '**/materials/neon-asphalt/asphalt_basecolor_2k.ktx2');
   await road.install;
   const canvas = page.locator('#world');
+  const still = page.locator('#race-frame-still');
   await page.goto('/');
   await page.locator('#startup-enter').click();
   await waitForHome(page);
@@ -70,6 +71,8 @@ test('Sky Spiral waits for its High road and skips scene draws during the wait',
     await road.requested;
     await expect(canvas).toHaveAttribute('data-spiral-landmarks', 'attached');
     await expect(canvas).toBeHidden();
+    await expect(still).toBeVisible();
+    await expect(still).toHaveAttribute('src', /track-teasers\/spiral\.jpg/);
     await expect(page.locator('#countdown')).toHaveAttribute('data-step', 'loading');
     const draws = await canvas.evaluate(async element => {
       const gl = element.getContext('webgl2');
@@ -91,6 +94,7 @@ test('Sky Spiral waits for its High road and skips scene draws during the wait',
     road.release();
   }
   await expect(canvas).toBeVisible();
+  await expect(still).toBeHidden();
   await expect(canvas).toHaveAttribute('data-spiral-road', 'high');
   await expect(page.locator('#race-status')).toHaveText('RACING');
 });
