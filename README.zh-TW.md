@@ -1,4 +1,4 @@
-<!-- source-sha256: c60d7df3d026f9838f3c92a9031f8cc20dcba8bd2b45905e45b0d52566b7c08d generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: bf7c2675a21d36e4f19b36b41f0a66f8b69dc0b6343f22f8c1c7c0161fe8eb5a generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
