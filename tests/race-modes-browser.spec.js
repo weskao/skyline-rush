@@ -1,6 +1,6 @@
 import { clickLobbyOption } from './helpers/home-lobby.js';
 import { toggleSettingsSection } from './helpers/settings-browser.js';
-import { test, expect } from './helpers/test.js';
+import { test, expect, waitForHome } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
 
 async function closeMusicPrompt(page) {
@@ -244,12 +244,16 @@ test('402x714 phone setup scrolls to its last card while the primary actions sta
 
 test('completed Custom setup appears as a recent preset without touching unlocks', async ({ page }) => {
   await page.goto('/');
+  await waitForHome(page); // START is a no-op until main.js has attached it and the race is ready
   await closeMusicPrompt(page);
   const readUnlocks = () => page.evaluate(() => localStorage.getItem('skyline-rush-unlocked'));
   const unlocks = await readUnlocks();
   await clickLobbyOption(page, 'button[data-race-mode="custom"]');
   await page.locator('#start-button').click();
+  // start() saves the preset after its async stale-pack check; a reload before that write drops it.
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('skyline-rush-recent-custom-v1'))).not.toBeNull();
   await page.reload();
+  await waitForHome(page);
   await closeMusicPrompt(page);
   await clickLobbyOption(page, 'button[data-race-mode="custom"]');
   await expect(page.locator('#recent-custom')).toBeVisible();

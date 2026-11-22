@@ -189,6 +189,21 @@ test('a gesture or an absence branch after a page load waits for Home', () => {
   assert.deepEqual(offenders, [], 'Load with gotoHome(page): isVisible() does not wait and main.js listens after page.goto resolves (.claude/rules/browser-test-stability.md)');
 });
 
+// `start()` (src/main.js) awaits the stale-pack check before it saves the recent Custom setup, so a reload straight after the
+// START click drops the write (race-modes-browser "completed Custom setup", 4 of 5 runs failed on a loaded machine, 2026-11-23).
+test('a spec never reloads straight after the START click, before the state it saves is written', () => {
+  const offenders = FILES.flatMap(file => {
+    const lines = readFileSync(new URL(file, import.meta.url), 'utf8').split('\n');
+    return lines.flatMap((line, i) => {
+      if (!/#start-button'\)\.click\(\)/.test(line)) return [];
+      let j = i + 1;
+      while (j < lines.length && /^\s*(\/\/.*)?$/.test(lines[j])) j++;
+      return /\bpage\.reload\(/.test(lines[j] ?? '') ? [`tests/${file}:${j + 1}: ${lines[j].trim()}`] : [];
+    });
+  });
+  assert.deepEqual(offenders, [], 'Poll the saved localStorage key between the START click and the reload (.claude/rules/browser-test-stability.md)');
+});
+
 // A tap after a raw page.goto lands before main.js attaches its input and diag listeners (diag-relay probe, develop CI 44946255115:
 // the 4.5 s probe poll starved on a cold Vite load). Between the goto and the tap the spec must call waitForHome.
 test('a touch tap after a raw page load waits for Home', () => {
