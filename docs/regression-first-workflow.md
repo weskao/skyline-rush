@@ -23,7 +23,7 @@ explicit user request**.
 - Add the smallest deterministic regression test that reproduces the original
   problem. **Run it and inspect the expected failure** (a syntax/import error is not RED).
 - Implement the minimum shared fix; re-run the focused test until GREEN, then
-  `npm test`. Preserve camera, collision, speed, handling and effects unless the
+  `pnpm test`. Preserve camera, collision, speed, handling and effects unless the
   fix legitimately requires changing them. Do not weaken or delete old tests.
 - Write down test command and observed results; a test merely *written* or a CI job
   merely *started* does not count as verified. Mark TODO boxes `[x]` only when
@@ -52,11 +52,11 @@ Run from the repository root:
 make verify
 ```
 
-This runs `npm test`, `npm run test:browser` (including the production
-`npm run build` via its pretest hook), then
-`npx playwright test --config=playwright.world-tour.config.js`. The latter
+This runs `pnpm test`, `pnpm run test:browser` (including the production
+`pnpm run build` via its pretest hook), then
+`pnpm exec playwright test --config=playwright.world-tour.config.js`. The latter
 is **not** part of the default browser suite. For cloud-save changes, additionally
-run `npm run test:cloud` with the required Java 21/Firebase emulators.
+run `pnpm run test:cloud` with the required Java 21/Firebase emulators.
 
 Investigate all failures before proceeding. If a local test cannot be run,
 state the specific blocker and leave the acceptance item unchecked.
