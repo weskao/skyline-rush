@@ -151,15 +151,26 @@ test.describe('GAS hides while AUTO is on', () => {
     near(editing.throttle.rect, off.throttle.rect, 'GAS while editing');
   });
 
-  test('the tutorial keeps GAS until the tutorial lesson drops it', async ({ page }) => {
+  // Lesson 1 is an AUTO lesson: with AUTO on its touch copy never names GAS, so GAS hides there as in a race.
+  test('the tutorial follows AUTO: GAS hidden and NITRO wide when on, the 2x2 when off', async ({ page }) => {
     test.setTimeout(ciTimeout(90000));
-    await start(page);
-    await setPrefs(page, { mode: 'buttons' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoHome(page);
+    await toggleSettingsSection(page, 'driving');
+    await page.locator('#tutorial-open').click();
+    await expect(page.locator('#tutorial-coach')).toHaveAttribute('data-step', 'throttle', { timeout: ciTimeout(15000) });
+    await expect(page.locator('body')).toHaveAttribute('data-tutorial', 'active');
     await auto(page, true);
-    await page.evaluate(() => { document.body.dataset.tutorial = 'active'; });
-    await expect(page.locator('[data-control="throttle"]')).toHaveCSS('visibility', 'visible');
-    const nitro = await page.locator('[data-control="nitro"]').boundingBox();
-    const boost = await page.locator('[data-control="boost"]').boundingBox();
-    expect(nitro.width).toBeCloseTo(boost.width, 0);
+    const on = await settledSnapshot(page);
+    expect(on.throttle.visibility, 'tutorial GAS hidden with AUTO on').toBe('hidden');
+    expect(on.throttle.hit, 'tutorial GAS takes no touch').toBe(false);
+    expect(on.nitro.hit, 'tutorial NITRO takes the touch').toBe(true);
+    await toggleAuto(page, false);
+    const off = await settledSnapshot(page);
+    expect(off.throttle.visibility, 'tutorial GAS shown with AUTO off').toBe('visible');
+    expect(off.throttle.hit, 'tutorial GAS takes the touch with AUTO off').toBe(true);
+    expect(off.nitro.rect.width, 'tutorial NITRO is one cell with AUTO off').toBeCloseTo(off.boost.rect.width, 0);
+    const row = { x: Math.min(off.nitro.rect.x, off.throttle.rect.x), right: Math.max(off.nitro.rect.x + off.nitro.rect.width, off.throttle.rect.x + off.throttle.rect.width) };
+    near(on.nitro.rect, { x: row.x, y: off.nitro.rect.y, width: row.right - row.x, height: off.nitro.rect.height }, 'tutorial NITRO spans the top row');
   });
 });

@@ -47,7 +47,8 @@ paths:
     single fire. The wide NITRO keeps one centred flame at one button's size; its ring hugs the wide button.
   - Hiding is `visibility: hidden` (layout and `offsetWidth` stay). A spec that reads or presses GAS starts with
     AUTO off (`skyline-rush-auto` = `off`), never with a weaker assertion.
-  - Guards: `tests/touch-gas-auto-layout.test.js`, `tests/touch-gas-auto-layout-browser.spec.js`. The tutorial
-    exclusion is a `shortcut:` comment to remove when `feature/tutorial-auto-lesson` lands.
+  - The tutorial follows AUTO too: lesson 1 is an AUTO lesson, so with AUTO on no touch line names GAS
+    (`tests/tutorial-auto-lesson.test.js` sweeps every lesson); with AUTO off GAS shows and lesson 1 names it.
+  - Guards: `tests/touch-gas-auto-layout.test.js`, `tests/touch-gas-auto-layout-browser.spec.js` (race and tutorial).
 - Visual changes here need real frames on a phone, portrait and landscape: the unit guard checks
   colours, not layout, Reduced Motion or touch opacity.

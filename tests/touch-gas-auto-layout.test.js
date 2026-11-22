@@ -6,9 +6,9 @@ const css = readFileSync(new URL('../src/touch-sprint-buttons.css', import.meta.
 const feedback = readFileSync(new URL('../src/sprint-ready-feedback.ts', import.meta.url), 'utf8');
 const app = readFileSync(new URL('../src/App.vue', import.meta.url), 'utf8');
 const rule = selector => css.split('}').map(block => block.split('{')).find(([head]) => head?.replace(/\s+/g, ' ').trim().endsWith(selector))?.[1];
-const AUTO = 'body:not([data-tutorial="active"], .layout-editing):has(#assist-button[aria-pressed="true"]) #touch-controls';
+const AUTO = 'body:not(.layout-editing):has(#assist-button[aria-pressed="true"]) #touch-controls';
 
-test('GAS hides with visibility while AUTO is on, outside the tutorial and layout editing', () => {
+test('GAS hides with visibility while AUTO is on, outside layout editing', () => {
   const body = rule(`${AUTO} .touch-pedals > .touch-gas`);
   assert.ok(body, 'AUTO-on rule for GAS');
   assert.match(body, /visibility:\s*hidden/);
@@ -16,8 +16,9 @@ test('GAS hides with visibility while AUTO is on, outside the tutorial and layou
   assert.doesNotMatch(body, /display:\s*none/);
 });
 
-test('the tutorial exclusion is named as a removable shortcut', () => {
-  assert.match(css, /shortcut:[^\n*]*tutorial[^\n*]*feature\/tutorial-auto-lesson/i);
+test('the tutorial follows AUTO like a race: no tutorial exclusion', () => {
+  // Lesson 1 is an AUTO lesson (docs/tutorial-driving.md): with AUTO on its touch copy never names GAS.
+  assert.doesNotMatch(css, /data-tutorial/);
 });
 
 test('NITRO spans both columns of the top row unless a player placed it', () => {
