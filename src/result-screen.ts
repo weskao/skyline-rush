@@ -1,5 +1,5 @@
 import { loadCircuitLapBest } from './circuit-records.ts';
-import { t, trackName, getLocale } from './i18n.ts';
+import { t, trackName, getLocale, applyI18n } from './i18n.ts';
 import { icon } from './icons.ts';
 import { timeString } from './time-format.ts';
 import { presentationPlacementBadge, placementBadgeArtwork } from './finish-placement-badge.ts';
@@ -233,6 +233,9 @@ export function setupOverlayActions() {
   }
   return {
     pause(practice: boolean, mode: string) {
+      resume.dataset.i18nAriaLabel = practice ? 'tutorial.resume.aria' : 'resume.aria';
+      resume.querySelector<HTMLElement>('span')!.dataset.i18n = practice ? 'tutorial.resume.label' : 'resume.label';
+      applyI18n(resume.parentElement!);
       resume.hidden = false;
       again.hidden = leave.hidden = practice;
       photo.hidden = practice || mode !== 'free';
