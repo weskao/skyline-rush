@@ -61,7 +61,7 @@ test('track download indicator stays legible on a wide chooser', async ({ page }
   await page.screenshot({ path: testInfo.outputPath('track-download-desktop.png'), animations: 'disabled', scale: 'css' });
 });
 
-test('each track owns a separate circular download action and download-all skips cached packs', async ({ page }) => {
+test('each track owns a separate image-only download action and download-all skips cached packs', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', comfortable: true })));
   await page.goto('/');
