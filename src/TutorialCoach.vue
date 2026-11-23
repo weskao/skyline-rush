@@ -7,9 +7,9 @@ import { rewardParts } from './tutorial-ui.ts';
 </script>
 <template>
   <aside id="tutorial-coach" class="tutorial-coach" aria-labelledby="tutorial-title" :hidden="!coachView.visible" :data-step="coachView.step">
-    <header class="tutorial-heading"><strong id="tutorial-title">{{ coachView.title }}</strong><div class="tutorial-actions"><button id="tutorial-skip-step" class="controls-reset" :hidden="coachView.skipHidden" data-i18n="tutorial.skipStep">Skip step</button><button id="tutorial-exit" class="controls-reset" :hidden="!coachView.completeActionsHidden" data-i18n="tutorial.exit">Exit</button></div></header>
+    <header class="tutorial-heading"><div class="tutorial-heading-text"><strong id="tutorial-title">{{ coachView.title }}</strong><small id="tutorial-assist" :hidden="coachView.assistHidden" data-i18n="tutorial.assist">Practice only · no career rewards</small></div><div class="tutorial-actions"><button id="tutorial-skip-step" class="controls-reset" :hidden="coachView.skipHidden" data-i18n="tutorial.skipStep">Skip step</button><button id="tutorial-exit" class="controls-reset" :hidden="!coachView.completeActionsHidden" data-i18n="tutorial.exit">Exit</button></div></header>
     <div class="tutorial-meter"><progress id="tutorial-progress" :max="TUTORIAL_STEPS.length" value="0" aria-label="Practice progress" data-i18n-aria-label="tutorial.progress"></progress><small id="tutorial-auto-status" class="tutorial-auto-status">{{ coachView.autoStatus }}</small></div>
-    <div class="tutorial-copy"><p id="tutorial-instruction" role="status" aria-live="polite"><template v-for="(part, i) in rewardParts(coachView.instruction)" :key="i"><mark v-if="part.reward" class="tutorial-reward">{{ part.text }}</mark><template v-else>{{ part.text }}</template></template></p><div id="tutorial-input" :data-keys="coachView.hintKeys || undefined">{{ coachView.hintText }}</div><small id="tutorial-assist" :hidden="coachView.assistHidden" data-i18n="tutorial.assist">Practice only · no career rewards</small></div>
+    <div class="tutorial-copy"><p id="tutorial-instruction" role="status" aria-live="polite"><template v-for="(part, i) in rewardParts(coachView.instruction)" :key="i"><mark v-if="part.reward" class="tutorial-reward">{{ part.text }}</mark><template v-else>{{ part.text }}</template></template></p><div id="tutorial-input" :data-keys="coachView.hintKeys || undefined">{{ coachView.hintText }}</div></div>
     <div id="tutorial-complete-actions" class="tutorial-actions" :hidden="coachView.completeActionsHidden"><button id="tutorial-retry" class="controls-reset" data-i18n="tutorial.retry">Practice again</button><button id="tutorial-done" class="controls-reset" data-i18n="tutorial.done">Back to game</button></div>
   </aside>
   <!-- Decorative: the instruction names the gate; the arrow only points the way to it. -->
@@ -41,8 +41,6 @@ import { rewardParts } from './tutorial-ui.ts';
 /* Shares the progress bar's row so the label adds no height: on 320x568 a line of its own pushed the coach over the slide pad. */
 .tutorial-meter { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin: 6px 0 2px; }
 .tutorial-meter #tutorial-progress { flex: 1; min-width: 0; margin: 0; }
-/* Narrow portrait: the touch AUTO path wraps to two lines, so drop the small print as phone landscape does; the coach stays above the slide pad at 320x568. */
-@media (max-width: 360px) and (orientation: portrait) { .tutorial-copy small { display: none; } }
 /* Phone landscape: the meter's 8px of margin put the coach 3px over the slide pad at 844x390. */
 @media (max-height: 500px) and (orientation: landscape) { .tutorial-meter { margin: 2px 0 0; } }
 .tutorial-auto-status { flex-shrink: 0; white-space: nowrap; color: #96e3ff; font-size: 11px; font-weight: 700; line-height: 1.4; }

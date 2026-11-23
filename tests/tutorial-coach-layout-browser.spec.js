@@ -5,6 +5,8 @@ import { toggleSettingsSection } from './helpers/settings-browser.js';
 // Layout contract: the same live lesson, controls and readable toast on every device class.
 const viewports = [
   { width: 320, height: 568, mobile: true },
+  { width: 360, height: 640, mobile: true },
+  { width: 375, height: 667, mobile: true }, // the unfolded card + toast reached the speedometer at both
   { width: 390, height: 844, mobile: true },
   { width: 743, height: 340, mobile: true },
   { width: 844, height: 390, mobile: true },
@@ -26,10 +28,17 @@ for (const { width, height, mobile } of viewports) {
       await page.locator('#tutorial-open').click();
       await expect(page.locator('#tutorial-coach')).toBeVisible();
       await expect(page.locator('#tutorial-cue')).toBeVisible({ timeout: ciTimeout(20000) });
-      // No device loses the practice disclaimer, progress or input hint.
-      for (const id of ['#tutorial-title', '#tutorial-progress', '#tutorial-instruction', '#tutorial-input', '#tutorial-assist']) {
-        await expect(page.locator(id)).toBeVisible();
-      }
+      for (const id of ['#tutorial-title', '#tutorial-assist']) await expect(page.locator(id)).toBeVisible();
+      // Phones fold the card to its title row while a toast is up (one prompt at a time); desktop keeps it whole.
+      const folded = await page.locator('.tutorial-copy').evaluate(el => el.getBoundingClientRect().height <= 1);
+      expect(folded).toBe(mobile);
+      // The instruction stays a live region either way, so a lesson change is still announced.
+      await expect(page.locator('#tutorial-instruction')).toHaveAttribute('aria-live', 'polite');
+      // Card and toast settle together once the observer republishes the folded card's bottom.
+      await expect.poll(() => page.evaluate(() => {
+        const card = document.querySelector('#tutorial-coach').getBoundingClientRect();
+        return document.querySelector('#tutorial-cue').getBoundingClientRect().top - card.bottom;
+      })).toBeLessThanOrEqual(16);
 
       const layout = await page.evaluate(() => {
         const bounds = element => {
@@ -70,9 +79,10 @@ for (const { width, height, mobile } of viewports) {
       // The road follows the viewport centre, not the left HUD rail, at every orientation.
       expect(Math.abs((card.left + card.right) / 2 - screen.width / 2)).toBeLessThanOrEqual(2);
       expect(card.top).toBeLessThan(screen.height * 0.48); // The coach floats above the road, away from the driving thumbs.
-      if (mobile && height > 500) {
-        expect(Math.abs((toast.left + toast.right) / 2 - screen.width / 2)).toBeLessThanOrEqual(2);
-      }
+      // One toast slot for every device: horizontally centred, directly below the coach (landscape once put it at 79%).
+      expect(Math.abs((toast.left + toast.right) / 2 - screen.width / 2)).toBeLessThanOrEqual(2);
+      expect(toast.top).toBeGreaterThanOrEqual(card.bottom);
+      expect(toast.top - card.bottom).toBeLessThanOrEqual(16);
       expect(layout.alpha).toBeGreaterThanOrEqual(0.68);
       expect(layout.alpha).toBeLessThanOrEqual(0.88);
       expect(layout.copyFont).toBeGreaterThanOrEqual(13);
@@ -88,6 +98,16 @@ for (const { width, height, mobile } of viewports) {
       }
       // Toasts keep the existing upper-screen zone rather than jumping into the driving thumb area.
       expect((toast.top + toast.bottom) / (2 * screen.height)).toBeLessThan(0.64);
+
+      // No device loses the practice disclaimer, progress or input hint: a lesson without a live cue shows the whole card.
+      await page.locator('#tutorial-skip-step').click();
+      await expect(page.locator('#tutorial-coach')).toHaveAttribute('data-step', 'left');
+      await expect(page.locator('#tutorial-cue')).toBeHidden();
+      for (const id of ['#tutorial-title', '#tutorial-progress', '#tutorial-instruction', '#tutorial-input', '#tutorial-assist']) {
+        await expect(page.locator(id)).toBeVisible();
+      }
+      const unfolded = await page.locator('.tutorial-copy').evaluate(el => el.getBoundingClientRect().height); // settled: cue already hidden
+      expect(unfolded).toBeGreaterThan(14);
     });
   });
 }
