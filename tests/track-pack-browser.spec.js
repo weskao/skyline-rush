@@ -240,14 +240,14 @@ test('every track pack icon uses its atlas artwork without a second ring or visi
           const legacySvg = getComputedStyle(node.querySelector('svg'));
           return {
             state,
-            background: art.backgroundImage,
+            image: art.backgroundImage,
             artVisible: art.display !== 'none',
             artWidth: parseFloat(art.width),
             artHeight: parseFloat(art.height),
             svgDisplay: legacySvg.display,
             borderWidth: parseFloat(button.borderTopWidth),
             padding: parseFloat(button.paddingTop),
-            background: button.backgroundColor,
+            surface: button.backgroundColor,
             shadow: button.boxShadow,
             targetWidth: node.getBoundingClientRect().width,
             targetHeight: node.getBoundingClientRect().height,
@@ -258,14 +258,14 @@ test('every track pack icon uses its atlas artwork without a second ring or visi
       }));
     expect(icons.length, `at least one visible track icon at ${width}x${height}`).toBeGreaterThan(0);
     for (const icon of icons) {
-      expect(icon.background, `${icon.state} uses artwork`).toContain('track-pack-icons.webp');
+      expect(icon.image, `${icon.state} uses artwork`).toContain('track-pack-icons.webp');
       expect(icon.artVisible, `${icon.state} artwork visible`).toBe(true);
       expect(icon.artWidth, `${icon.state} has no extra visual gutter`).toBeGreaterThanOrEqual(38);
       expect(icon.artHeight).toBeGreaterThanOrEqual(38);
       expect(icon.svgDisplay, `${icon.state} does not render a second SVG ring`).toBe('none');
       expect(icon.borderWidth).toBe(0);
       expect(icon.padding).toBe(0);
-      expect(icon.background).toBe('rgba(0, 0, 0, 0)');
+      expect(icon.surface).toBe('rgba(0, 0, 0, 0)');
       expect(icon.shadow).toBe('none');
       expect(icon.targetWidth).toBeGreaterThanOrEqual(44);
       expect(icon.targetHeight).toBeGreaterThanOrEqual(44);
