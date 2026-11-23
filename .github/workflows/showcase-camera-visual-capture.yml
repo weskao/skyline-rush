@@ -1,0 +1,50 @@
+# Screenshot only: render the existing Home/Garage camera parity spec at real pixel density.
+# Scoped to its feature branch; this workflow neither deploys nor modifies another branch.
+name: Showcase Camera Visual Capture
+on:
+  push:
+    branches:
+      - feature/showcase-camera-controls-parity
+    paths:
+      - .github/workflows/showcase-camera-visual-capture.yml
+      - src/App.vue
+      - src/style.css
+      - src/race-lobby.css
+      - src/garage-preview-controls.css
+      - tests/showcase-camera-actions-parity-browser.spec.js
+permissions:
+  contents: read
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      # The existing browser test opens the real Home and Garage and records both at
+      # 1440x900 desktop, 390x844 portrait and 844x390 landscape.
+      - name: Capture real Three.js and Vue frames
+        run: |
+          cat > playwright.camera-captures.config.mjs <<'EOF'
+          import base from './playwright.config.js';
+          export default {
+            ...base,
+            use: { ...base.use, deviceScaleFactor: 1 },
+            reporter: 'list',
+          };
+          EOF
+          pnpm exec playwright test tests/showcase-camera-actions-parity-browser.spec.js --config=playwright.camera-captures.config.mjs --workers=1 --timeout=180000
+      - name: Upload original browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: showcase-camera-real-screenshots
+          path: test-results/**/camera-*.png
+          if-no-files-found: warn
+          retention-days: 7
