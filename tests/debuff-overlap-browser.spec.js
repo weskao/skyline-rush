@@ -55,7 +55,7 @@ for (const [name, width, height, hasTouch] of [
         rival: kind.getX(0),
       };
     }, null, { timeout: ciTimeout(30_000) })).jsonValue();
-    expect(seen).toEqual({ gap: seen.gap, cards: ['emp', 'freeze'], screen: 'emp', layers: ['emp', 'freeze'], speedometer: 'emp', rival: 2 });
+    expect(seen).toEqual({ gap: seen.gap, toastClear: seen.toastClear, cards: ['emp', 'freeze'], screen: 'emp', layers: ['emp', 'freeze'], speedometer: 'emp', rival: 2 });
     expect(seen.gap).toBeGreaterThanOrEqual(0);
     expect(seen.toastClear, 'the setting toast and race notices stay apart').toBe(true);
     await page.screenshot({ path: testInfo.outputPath(`debuff-overlap-${name}.png`) });

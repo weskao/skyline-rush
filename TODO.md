@@ -6701,3 +6701,8 @@ Base `origin/develop` `f9735e4c`. Plan and checklist: `docs/designs/3d-pipeline/
 - [ ] Verify full exact-HEAD GitHub `quality-gate`, iOS/Android device painting and touch acceptance before merging.
 
 - Landscape tutorial coach overlap (2026-11-23): reproduced the fixed top offset in the RED layout guard. Updated the shared landscape placement and removed the duplicate decorative completion panel on short screens. Chrome passed 743×340 and 844×390 HUD/control geometry and the zh-TW turn/completion flow at 844×390. Layout and module-size guards passed. Type checks, unit tests and production build passed; full browser verification stopped after sandboxed Chrome launch failures. Physical-device and exact-commit CI verification remain open.
+
+## 2026-11-24 — CI debuff overlap assertion
+
+- [x] CI run 45212737190: the sampled object contains `toastClear` but the exact equality omitted it; include the value and retain the separate clearance assertion. JavaScript syntax and module-size checks passed.
+- [ ] Run the desktop, portrait and landscape browser cases and investigate the other CI failures; browser checks were not run at the user's request. Full verification and exact-commit CI remain pending.
