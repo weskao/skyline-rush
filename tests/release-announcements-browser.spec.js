@@ -164,6 +164,8 @@ test.describe('several releases missed', () => {
     const tab = tabFor(page.locator('#whats-new-screen'), announced[0]);
     await expect(tab.locator('.release-tab-unread')).toBeVisible();
     const [t, badge, label, rail] = await Promise.all([tab, tab.locator('.release-tab-unread'), tab.locator('.release-tab-version'), page.locator('#release-versions')].map(l => l.boundingBox()));
+    expect(Math.abs(badge.width - badge.height)).toBeLessThanOrEqual(1); // a round dot, not a text tag
+    expect(badge.width).toBeLessThanOrEqual(12);
     expect(Math.abs(badge.y + badge.height / 2 - t.y)).toBeLessThanOrEqual(2); // centred on the top border
     expect(badge.x + badge.width).toBeGreaterThan(t.x + t.width); // overhangs the right edge
     expect(badge.y + badge.height).toBeLessThanOrEqual(label.y + 1); // never covers the version

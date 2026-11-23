@@ -21,6 +21,6 @@ test('home footer makes the current build and release-notes action discoverable 
   assert.match(app, /class="build-version-number">v\{\{ version \}\}<\/span>/);
   assert.match(app, /class="build-version-caption" data-i18n="release\.open">What's new<\/span>/);
   assert.match(app, /:aria-label="[^"]*t\('release\.open'/, 'version opener describes its action in the current locale');
-  assert.match(app, /v-if="releaseView\.openHasUpdate" class="release-tab-unread"/, 'version opener uses the release tab badge');
+  assert.match(app, /v-if="releaseView\.openHasUpdate" class="release-tab-unread" aria-hidden="true"><\/span>/, 'version opener uses the release tab dot, with no visible text');
   assert.match(app, /<Teleport to="#startup-release-entry" :disabled="!releaseView\.openOnStartup">/);
 });

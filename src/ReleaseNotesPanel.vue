@@ -56,7 +56,7 @@ function zoomHero() {
       <button v-for="tab in releaseView.tabs" :key="tab.version" type="button" :id="tab.id" class="release-tab" :tabindex="tab.selected ? 0 : -1" :data-version="tab.version" role="tab" aria-controls="release-panel" :aria-selected="tab.selected">
         <span class="release-tab-version">{{ tab.label }}</span>
         <span :class="tab.latest ? 'release-tab-note release-tab-latest' : 'release-tab-note'">{{ tab.note }}</span>
-        <span v-if="tab.unread" class="release-tab-unread">{{ tab.unreadLabel }}</span>
+        <span v-if="tab.unread" class="release-tab-unread"><span class="lobby-visually-hidden">{{ tab.unreadLabel }}</span></span>
       </button>
     </div>
     <section id="release-panel" class="release-panel" role="tabpanel" tabindex="0" :aria-labelledby="releaseView.panelLabel">
