@@ -1,3 +1,16 @@
+# Track pack icon-only UI (2026-11-23, `fix/track-pack-icon-only`)
+
+- [x] Traced all per-track download/update buttons to `src/track-chooser.css`: legacy SVG progress ring was rendered over/under the icon atlas, and 28px artwork sat inside a 44px touch target.
+- [x] Added a regression test for missing/update/downloading states across 320×568, 390×844, 844×390, 1280×720. Missing/update use the 40px WebP only; downloading keeps its original, scaled-to-match SVG progress ring; all retain a 44px transparent target.
+- [x] Removed the duplicate SVG ring from idle/update states while preserving the active download progress ring and the separate footer download-all progress indicator; pack-state logic is unchanged.
+- [ ] Run Playwright RED/GREEN on a full checkout, `node --test tests/module-size.test.js`, typecheck, build, `make verify`, inspect real-game images in phone portrait/landscape, and verify the exact-HEAD GitHub CI before merging.
+
+# Download All: up to 10 concurrent track installations (2026-11-23)
+- [x] TDD RED on the old batch helper: 16 simultaneous downloads when a caller requested 100 (expected max 10), and missing aggregate progress for parallel downloads.
+- [x] Isolated Node 22 TDD GREEN: 6/6 batch unit tests including both new cases; files reconstructed from fetched project source. Full repository suite still pending.
+- [x] Reuse `MAX_CONCURRENT_TRACK_DOWNLOADS = 10` across the batch cap and the Download All caller. Keep per-map progress rings and update the summary using fractional progress from all active downloads.
+- [ ] Exact-HEAD remote CI, full browser regression, cancellation/partial failures on real devices, and `make verify` are not yet complete.
+
 # Touch AUTO integration (2026-11-22, `feature/touch-auto-integration`)
 
 - [x] Merged `feature/touch-gas-auto-layout` (d401b449) and `feature/tutorial-auto-lesson` (f69758b0) with `--no-ff`; only `TODO.md` conflicted (both sides kept).

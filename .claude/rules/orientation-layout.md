@@ -132,3 +132,11 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
   Guards: `garage-dense-layout`, `wave3-early-access` and `collectible-ui` browser specs.
 
 - **Home and Garage share the camera controls themselves, not two sets of overrides.** The `#showcase-camera-dock` node moves between hosts; keep `.showcase-camera-actions`, its SVG arrows, label typography, 44 px hit targets and hover/focus design shared. Only the outer dock may change position, padding or visibility for each page. Guard: `tests/showcase-camera-actions-parity-browser.spec.js` (desktop, portrait, landscape).
+
+- **Per-track pack buttons use image-only idle/update states.** In the track chooser, the
+  44×44 download/update target stays transparent while its WebP artwork is 40×40.
+  During an active download, replace the atlas with the original SVG progress ring,
+  sized to the same visible footprint (~40px), with real percent progress. Never
+  stack two rings or paint an extra button border/shadow. The bulk-download footer
+  keeps its separate progress visuals. Guard desktop and phone portrait/landscape
+  in `tests/track-pack-browser.spec.js`.

@@ -50,3 +50,58 @@ test('a download-all batch caps concurrency at two map installations', async () 
   assert.deepEqual(await task, { completed: 3, total: 3, failed: 0 });
   assert.deepEqual(launched, ['coast', 'neon', 'spiral']);
 });
+
+test('Download All never starts more than 10 maps concurrently, even when 100 are requested', async () => {
+  const packs = Array.from({ length: 16 }, (_, i) => pack(`map-${i}`));
+  const launched = [], active = new Set(), ready = new Set(), settled = [];
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  const batch = downloadTrackPackBatch(packs, {
+    status: async item => ready.has(item.trackId) ? 'ready' : 'missing',
+    download: async item => {
+      launched.push(item.trackId);
+      active.add(item.trackId);
+      await gate;
+      ready.add(item.trackId);
+      active.delete(item.trackId);
+    },
+  }, () => {}, (item, ok) => settled.push([item.trackId, ok]), undefined, 100);
+  await new Promise(resolve => setImmediate(resolve));
+  try {
+    assert.equal(launched.length, 10, 'only the first 10 maps start before a download finishes');
+    assert.equal(active.size, 10);
+  } finally { release(); }
+  assert.deepEqual(await batch, { completed: 16, total: 16, failed: 0 });
+  assert.equal(launched.length, 16);
+  assert.equal(settled.length, 16);
+  assert.equal(active.size, 0);
+});
+
+test('Download All sums progress across parallel maps without moving backwards', async () => {
+  const packs = [pack('a'), pack('b')];
+  const ready = new Set(), updates = [];
+  let releaseA, releaseB;
+  const first = new Promise(resolve => { releaseA = resolve; });
+  const second = new Promise(resolve => { releaseB = resolve; });
+  const task = downloadTrackPackBatch(packs, {
+    status: async item => ready.has(item.trackId) ? 'ready' : 'missing',
+    download: async (item, update) => {
+      update({ done: 1, total: 2, downloaded: 1, reused: 0 });
+      await (item.trackId === 'a' ? first : second);
+      ready.add(item.trackId);
+      update({ done: 2, total: 2, downloaded: 2, reused: 0 });
+    },
+  }, state => updates.push(state), () => {}, undefined, 2);
+  await new Promise(resolve => setImmediate(resolve));
+  try {
+    assert.equal(updates.at(-1).activeFraction, 1, 'two half-downloaded maps count as one full map');
+    releaseA();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(updates.at(-1).completed, 1);
+    assert.equal(updates.at(-1).activeFraction, 0.5, 'the other active map is still included');
+  } finally { releaseA(); releaseB(); }
+  assert.deepEqual(await task, { completed: 2, total: 2, failed: 0 });
+  assert.ok(updates.every((state, i) => !i ||
+    (state.completed + state.activeFraction) >= (updates[i - 1].completed + updates[i - 1].activeFraction)),
+    'aggregate progress never decreases');
+});

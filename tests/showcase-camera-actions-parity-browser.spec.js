@@ -18,6 +18,11 @@ async function cameraAppearance(page) {
     };
     const label = css(actions.querySelector('#showcase-camera-name'));
     return {
+      inset: {
+        left: css(actions).paddingLeft,
+        right: css(actions).paddingRight,
+        border: css(actions).borderTopWidth,
+      },
       gap: css(actions).gap,
       justify: css(actions).justifyContent,
       align: css(actions).alignItems,
@@ -40,6 +45,12 @@ for (const viewport of [
     await expect(dock.locator('.showcase-camera-chevron')).toHaveCount(2);
     await page.mouse.move(1, 1); // Avoid comparing a hovered button with an unhovered one.
     const home = await cameraAppearance(page);
+    // The rendered control surface owns a small symmetric inset, not the oversized Home dock.
+    expect(parseFloat(home.inset.left)).toBeGreaterThanOrEqual(3);
+    expect(parseFloat(home.inset.left)).toBeLessThanOrEqual(5);
+    expect(home.inset.left).toBe(home.inset.right);
+    expect(home.inset.border).toBe('1px');
+    await expect(dock).toHaveCSS('border-top-width', '0px');
     await page.screenshot({ path: info.outputPath(`camera-home-${viewport.width}.png`), animations: 'disabled' });
 
     await openGarage(page);
