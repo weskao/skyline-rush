@@ -130,3 +130,10 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
   buttons and Store filter/action rows; at 320 px the third mode button wrapped and the first offer fell below the fold.
   ≤360 portrait shrinks them to 16px (`garage-preview-controls.css`, `wave3-demo-store.css`); 390 px keeps 24px.
   Guards: `garage-dense-layout`, `wave3-early-access` and `collectible-ui` browser specs.
+
+- **Per-track pack buttons display artwork only.** In the track chooser, the transparent 44×44
+  download/update action retains its accessible touch/focus target, but only the WebP atlas
+  image is painted (40×40 inside the target). Never expose an extra SVG ring, border or
+  shadow beneath the atlas. The bulk-download footer has independent progress visuals.
+  Guard all visible track buttons and download states at portrait, landscape and desktop
+  sizes in `tests/track-pack-browser.spec.js`.
