@@ -272,7 +272,7 @@ $('#choose-track').addEventListener('click', () => chooseTrack());
 const { showSwipeHint, cancelSwipe } = setupTrackSwipeUI({
   getRace: () => race,
   getWorld: () => world,
-  selectedRace, applyTrack,
+  selectedRace, applyTrack, previewOnlyTrack: raceSelect.previewOnlyTrack,
   getSelectedTrackId: () => raceSelect.currentTrackId(),
   calmMotion,
   motionOptions,

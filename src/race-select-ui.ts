@@ -272,17 +272,17 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     refreshCustomSelects();
   }
 
+  const previewOnlyTrack = (id: string): PreviewTrackId | null => isUpcomingTrack(id) && !options.isUpcomingEnterable(id) ? id : null;
   function applyTrack(id: string): void {
     if (getRace().phase !== 'ready') return;
     if (id !== (upcomingSelection ?? getRace().trackId)) options.onTrackChange?.(id);
     loadMetrics.select(id);
-    const upcoming = isUpcomingTrack(id) ? id : null;
-    upcomingSelection = upcoming && !options.isUpcomingEnterable(upcoming) ? upcoming : null;
+    upcomingSelection = previewOnlyTrack(id);
     options.clearControls(); options.clearDaily();
     rememberLastHomeTrack(id);
     if (!upcomingSelection) setRace(selectedRace(id));
     showTracks();
-    if (upcoming) options.refreshPhase();
+    if (isUpcomingTrack(id)) options.refreshPhase();
     options.cueUi();
   }
   const packs = setupTrackPackUI(options.getGraphics);
@@ -326,7 +326,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   function restoreTrack(id: string | null): void {
     const canSelect = (id: string): boolean => isUpcomingTrack(id) ? playable(id) : Object.hasOwn(RACE_TRACKS, id);
     const choice = restoreHomeTrack(id, getRace().trackId, canSelect, isUpcomingTrack);
-    loadMetrics.select(choice.trackId);
+    loadMetrics.select(choice.upcoming ?? choice.trackId);
     upcomingSelection = choice.upcoming as PreviewTrackId | null;
     setRace(selectedRace(choice.trackId));
   }
@@ -357,7 +357,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   return {
     recreate: eventLab.recreate,
     disconnectPreviews: (): void => previewObserver.disconnect(),
-    selectedRace, canRace, requireUpdated: packs.requireUpdated,
+    selectedRace, previewOnlyTrack, canRace, requireUpdated: packs.requireUpdated,
     selectedMode: (): string => selectedMode,
     isUpcomingSelected: (): boolean => Boolean(upcomingSelection),
     currentTrackId: (): string => upcomingSelection ?? getRace().trackId,

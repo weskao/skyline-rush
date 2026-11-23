@@ -1,3 +1,4 @@
+import { writeFile } from 'node:fs/promises';
 import { clickLobbyOption } from './helpers/home-lobby.js';
 import { toggleAirflowPreview } from './helpers/settings-browser.js';
 import { test, expect, waitForHome, waitForWorldFrame } from './helpers/test.js';
@@ -26,7 +27,7 @@ const watchHints = page => chip(page).evaluate(element => {
 const hints = page => page.evaluate(() => window.__hints);
 
 // Real touch input through CDP: start, a few moves, release; holdMs pauses before lifting (no flick).
-async function touchSwipe(page, from, to, y, { steps = 8, stepMs = 16, holdMs = 0 } = {}) {
+async function touchSwipe(page, from, to, y, { steps = 8, stepMs = 16, holdMs = 0, end = 'touchEnd' } = {}) {
   const cdp = await page.context().newCDPSession(page);
   const point = x => [{ x, y, id: 1 }];
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: point(from) });
@@ -35,7 +36,7 @@ async function touchSwipe(page, from, to, y, { steps = 8, stepMs = 16, holdMs = 
     await page.waitForTimeout(stepMs);
   }
   if (holdMs) await page.waitForTimeout(holdMs);
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await cdp.send('Input.dispatchTouchEvent', { type: end, touchPoints: [] });
   await cdp.detach();
 }
 
@@ -225,14 +226,28 @@ test('desktop: wheel momentum pauses over 160ms remain part of the same trackpad
 });
 
 
-test('desktop: neighboring 3D previews touch edge-to-edge while dragging, with no exposed background', async ({ page }) => {
+test('desktop: neighboring 3D previews touch edge-to-edge while dragging, with no exposed background', async ({ page }, info) => {
   await page.goto('/');
   const [first, second] = await trackOrder(page);
+  await page.evaluate(target => {
+    const world = document.querySelector('#world');
+    window.__edgePixels = canvas => {
+      const probe = document.createElement('canvas');
+      probe.width = probe.height = 16;
+      const context = probe.getContext('2d');
+      context.drawImage(canvas, 0, 0, canvas.width / 10, canvas.height, 0, 0, 16, 16);
+      return Array.from(context.getImageData(0, 0, 16, 16).data);
+    };
+    world.addEventListener('skyline:showcase-frame', event => {
+      if (event.detail === target) window.__targetEdge = window.__edgePixels(world);
+    });
+  }, second);
   await page.mouse.move(1150, 600);
   await page.mouse.down();
   await page.mouse.move(1020, 600, { steps: 6 });
   const pages = page.locator('#track-swipe-scenes canvas');
   await expect(pages).toHaveCount(2);
+  const edges = await pages.evaluateAll(canvases => canvases.map(window.__edgePixels));
   const geometry = await pages.evaluateAll(canvases => canvases.map(canvas => {
     const box = canvas.getBoundingClientRect();
     const pixels = canvas.getContext('2d').getImageData(
@@ -251,6 +266,12 @@ test('desktop: neighboring 3D previews touch edge-to-edge while dragging, with n
   await expect.poll(() => selected(page)).toBe(second);
   await expect(pages).toHaveCount(0);
   expect(await page.locator('#world').evaluate(canvas => canvas.style.opacity)).toBe('');
+  const reference = await page.evaluate(() => window.__targetEdge);
+  const distance = (a, b) => a.reduce((sum, sample, i) => sum + Math.abs(sample - b[i]), 0) / a.length;
+  expect(reference, 'the official target has actual composed pixels').toBeDefined();
+  expect(distance(reference, edges[1]), 'the exposed strip matches the target better than the outgoing scene')
+    .toBeLessThan(distance(reference, edges[0]) / 2);
+  await page.screenshot({ path: info.outputPath('warm-target-reference.png') });
 });
 
 
@@ -292,7 +313,7 @@ test(`desktop trackpad scroll (${deliverMs}ms delivery): completed animation nev
   await trackpadSwipe(page, 30, 8, { deliverMs }); // delayed delivery must keep the snapshot handoff intact
   expect(await page.evaluate(() => window.__swipeDurations), 'production slide keeps its 240ms motion token').toContain(240);
   await expect.poll(() => selected(page)).toBe(second);
-  await expect(page.locator('#track-swipe-scenes canvas')).toHaveCount(0);
+  await expect(page.locator('#track-swipe-scenes')).toHaveJSProperty('childElementCount', 0);
   expect(await page.evaluate(() => window.__selectedAtSlide), 'the choice is committed before the slide starts').toBe(true);
   const frames = await page.evaluate(() => window.__swipeFrames);
   expect(frames.length, 'frames sampled between the slide ending and the layer being removed').toBeGreaterThan(0);
@@ -351,7 +372,7 @@ test('desktop: a short drag snaps the joined previews back without changing trac
   await expect(page.locator('#track-swipe-scenes canvas')).toHaveCount(2);
   await page.waitForTimeout(160); // a held slow drag, not a 30px flick
   await page.mouse.up();
-  await expect(page.locator('#track-swipe-scenes canvas')).toHaveCount(0);
+  await expect(page.locator('#track-swipe-scenes')).toHaveJSProperty('childElementCount', 0);
   expect(await selected(page)).toBe(first);
 });
 
@@ -388,10 +409,10 @@ test.describe('phone upcoming preview swipe', () => {
     await expect(page.locator('[data-upcoming-track="monsoon-ruins"]')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#start-button')).toBeDisabled();
     // The choice is committed before the slide; a swipe started while it still runs is ignored (swipeBusy).
-    await expect(page.locator('#track-swipe-scenes canvas')).toHaveCount(0);
+    await expect(page.locator('#track-swipe-scenes')).toHaveJSProperty('childElementCount', 0);
     await touchSwipe(page, 70, 300, 560);
     await expect(page.locator('[data-upcoming-track="dune-tempest"]')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('#track-swipe-scenes canvas')).toHaveCount(0);
+    await expect(page.locator('#track-swipe-scenes')).toHaveJSProperty('childElementCount', 0);
     await touchSwipe(page, 70, 300, 560);
     await expect(page.locator('[data-track="cosmic"]')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#upcoming-scene')).toBeHidden();
@@ -411,6 +432,125 @@ test('a committed Coming Soon swipe selects the card exactly once', async ({ pag
   });
   await trackpadSwipe(page, 30, 6);
   await expect(page.locator('[data-upcoming-track="dune-tempest"]')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('#track-swipe-scenes canvas')).toHaveCount(0);
+  await expect(page.locator('#track-swipe-scenes')).toHaveJSProperty('childElementCount', 0);
   expect(await page.evaluate(() => window.__duneSelections)).toBe(1);
+});
+
+for (const quality of ['medium', 'high']) {
+  test(`desktop: cold ${quality} swipe holds the Neon page until its formal WebGL frame`, async ({ page }, info) => {
+    await page.addInitScript(tier => {
+      localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: tier, enabled: true }));
+      localStorage.setItem('skyline-rush-unlocked', JSON.stringify(['coast', 'neon']));
+    }, quality);
+    let release;
+    let requested = false;
+    const hold = new Promise(resolve => { release = resolve; });
+    await page.route(`**/materials/neon-asphalt/asphalt_basecolor_${quality === 'medium' ? 1 : 2}k.ktx2`, async route => {
+      requested = true;
+      await hold;
+      await route.continue();
+    });
+    await page.goto('/');
+    const [first, second] = await trackOrder(page);
+    expect([first, second]).toEqual(['coast', 'neon']);
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.evaluate(() => {
+      const canvas = document.querySelector('#world');
+      const layer = document.querySelector('#track-swipe-scenes');
+      const still = document.querySelector('#race-frame-still');
+      window.__coldSwipe = { frames: [], firstPaint: [], slideEnd: null, dragStart: null, released: null, selected: null, assetReleased: null };
+      const record = window.__coldSwipe;
+      canvas.addEventListener('pointerdown', () => { record.dragStart = performance.now(); }, { once: true });
+      canvas.addEventListener('pointerup', () => { record.released = performance.now(); }, { once: true });
+      const home = document.querySelector('#intro');
+      new MutationObserver((_, observer) => {
+        if (home.dataset.lobbyTrack !== 'neon') return;
+        record.selected = performance.now();
+        observer.disconnect();
+      }).observe(home, { attributes: true, attributeFilter: ['data-lobby-track'] });
+      canvas.addEventListener('skyline:showcase-frame', event => {
+        record.firstPaint.push({ track: event.detail, at: performance.now() });
+      });
+      const animate = layer.animate.bind(layer);
+      layer.animate = (...args) => {
+        const animation = animate(...args);
+        if ('transform' in args[0][0]) animation.finished.then(() => { record.slideEnd = performance.now(); }, () => {});
+        return animation;
+      };
+      const sample = () => {
+        record.frames.push({ at: performance.now(), still: getComputedStyle(still).visibility === 'visible',
+          target: layer.lastElementChild?.dataset.swipeTrack, offset: layer.lastElementChild?.getBoundingClientRect().left,
+          live: getComputedStyle(canvas).visibility === 'visible' && getComputedStyle(canvas).opacity === '1' });
+        if (record.frames.length < 900) requestAnimationFrame(sample);
+      };
+      requestAnimationFrame(sample);
+    });
+    const layer = page.locator('#track-swipe-scenes');
+    let heldView;
+    try {
+      await page.mouse.move(1150, 600);
+      await page.mouse.down();
+      await page.mouse.move(1020, 600, { steps: 6 });
+      await expect.poll(() => requested, { message: 'the target showcase requests its quality-tier road texture' }).toBe(true);
+      await page.screenshot({ path: info.outputPath('01-drag-edge.png') });
+      await page.mouse.up();
+      await expect.poll(() => selected(page)).toBe('neon');
+      await page.screenshot({ path: info.outputPath('02-release.png') });
+      await expect.poll(() => page.evaluate(() => window.__coldSwipe.slideEnd)).not.toBeNull();
+      await page.screenshot({ path: info.outputPath('03-slide-ended-held.png') });
+      heldView = await layer.evaluate(scenes => {
+        const art = scenes.querySelector('[data-swipe-track="neon"] img');
+        const bounds = art?.getBoundingClientRect();
+        return { teaser: art?.getAttribute('src'), ratio: bounds ? bounds.width / bounds.height : null,
+          decoded: (art?.naturalWidth ?? 0) > 0,
+          fullStill: getComputedStyle(document.querySelector('#race-frame-still')).visibility === 'visible' };
+      });
+      await page.evaluate(() => { window.__coldSwipe.assetReleased = performance.now(); });
+    } finally { release(); }
+    await expect.poll(() => page.evaluate(() => window.__coldSwipe.firstPaint.map(event => event.track))).toContain('neon');
+    await expect(layer).toHaveJSProperty('childElementCount', 0);
+    await page.screenshot({ path: info.outputPath('04-formal-frame.png') });
+    const evidence = await page.evaluate(() => window.__coldSwipe);
+    await writeFile(info.outputPath('cold-swipe-timings.json'), JSON.stringify(evidence, null, 2));
+    expect.soft(heldView.teaser).toMatch(/track-teasers\/neon\.jpg/);
+    expect.soft(heldView.ratio).toBeCloseTo(568 / 205, 2);
+    expect.soft(heldView.decoded).toBe(true);
+    expect.soft(heldView.fullStill).toBe(false);
+    const firstPaint = evidence.firstPaint.find(event => event.track === 'neon').at;
+    const revealed = evidence.frames.find(frame => frame.offset < 1440);
+    expect(revealed, 'the target reaches the viewport during the drag').toBeDefined();
+    const untilFirstPaint = evidence.frames.filter(frame => frame.at >= revealed.at && frame.at < firstPaint);
+    expect(untilFirstPaint.length).toBeGreaterThan(0);
+    expect(untilFirstPaint.every(frame => frame.target === 'neon' && !frame.still && !frame.live)).toBe(true);
+    expect(evidence.firstPaint.map(event => event.track)).toEqual(['neon']);
+    expect(errors).toEqual([]);
+  });
+}
+
+test.describe('landscape touch track swipe', () => {
+  test.use({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true });
+  test('cancels without selection and reverses after a completed swipe', async ({ page }, info) => {
+    await page.goto('/');
+    const [first, second] = await trackOrder(page);
+    await toggleAirflowPreview(page);
+    const layer = page.locator('#track-swipe-scenes');
+    const start = await page.evaluate(() => {
+      for (let y = 130; y < 315; y += 12) {
+        for (let x = 660; x < 795; x += 12) if (document.elementFromPoint(x, y)?.id === 'world') return { x, y };
+      }
+      return null;
+    });
+    expect(start).not.toBeNull();
+    await touchSwipe(page, start.x, start.x - 160, start.y, { end: 'touchCancel' });
+    await expect(layer).toHaveJSProperty('childElementCount', 0);
+    expect(await selected(page)).toBe(first);
+    await touchSwipe(page, start.x, start.x - 160, start.y);
+    await expect.poll(() => selected(page)).toBe(second);
+    await expect(layer).toHaveJSProperty('childElementCount', 0);
+    await page.screenshot({ path: info.outputPath('landscape-target.png') });
+    await touchSwipe(page, start.x, start.x + 120, start.y);
+    await expect.poll(() => selected(page)).toBe(first);
+    await expect(layer).toHaveJSProperty('childElementCount', 0);
+  });
 });
