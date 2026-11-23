@@ -377,7 +377,7 @@ body[data-fold-axis] #track-chooser .track-select {
 
 /* Shared transparent WebP atlas: download/hover/update/hover.
    Visible artwork is 40px; the transparent keyboard/touch target remains 44px. */
-.track-chooser .track-pack-action {
+.track-chooser .track-select .track-pack-action {
   border: 0; background: transparent; box-shadow: none; padding: 0;
 }
 .track-chooser .track-pack-action::before {
