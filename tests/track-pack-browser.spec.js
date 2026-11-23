@@ -221,7 +221,7 @@ test('up-to-date pack hides the corner icon while a new release restores the upd
   await expect(action).toHaveAttribute('data-pack-progress', '0');
 });
 
-test('every track pack icon uses its atlas artwork without a second ring or visible padding', async ({ page }) => {
+test('each track pack shows only WebP artwork except a same-size progress ring while downloading', async ({ page }) => {
   await page.goto('/');
   await page.locator('#startup-enter').click();
   await waitForHome(page);
@@ -245,6 +245,14 @@ test('every track pack icon uses its atlas artwork without a second ring or visi
             artWidth: parseFloat(art.width),
             artHeight: parseFloat(art.height),
             svgDisplay: legacySvg.display,
+            svgWidth: parseFloat(legacySvg.width),
+            svgHeight: parseFloat(legacySvg.height),
+            ringDiameter: (() => {
+              const circle = node.querySelector('.track-pack-ring-fill');
+              const stroke = parseFloat(getComputedStyle(circle).strokeWidth);
+              return (2 * circle.r.baseVal.value + stroke) * parseFloat(legacySvg.width) / 40;
+            })(),
+            ringOffset: node.querySelector('.track-pack-ring-fill').style.strokeDashoffset,
             borderWidth: parseFloat(button.borderTopWidth),
             padding: parseFloat(button.paddingTop),
             surface: button.backgroundColor,
@@ -259,10 +267,19 @@ test('every track pack icon uses its atlas artwork without a second ring or visi
     expect(icons.length, `at least one visible track icon at ${width}x${height}`).toBeGreaterThan(0);
     for (const icon of icons) {
       expect(icon.image, `${icon.state} uses artwork`).toContain('track-pack-icons.webp');
-      expect(icon.artVisible, `${icon.state} artwork visible`).toBe(true);
-      expect(icon.artWidth, `${icon.state} has no extra visual gutter`).toBeGreaterThanOrEqual(38);
-      expect(icon.artHeight).toBeGreaterThanOrEqual(38);
-      expect(icon.svgDisplay, `${icon.state} does not render a second SVG ring`).toBe('none');
+      if (icon.state === 'downloading') {
+        expect(icon.artVisible, 'the download spinner replaces WebP artwork').toBe(false);
+        expect(icon.svgDisplay, 'keep the original progress ring visible during download').not.toBe('none');
+        expect(icon.ringDiameter, 'the ring fits the 40px visible icon').toBeGreaterThanOrEqual(38);
+        expect(icon.ringDiameter).toBeLessThanOrEqual(40);
+        expect(icon.svgWidth).toBe(44);
+        expect(icon.svgHeight).toBe(44);
+      } else {
+        expect(icon.artVisible, `${icon.state} artwork visible`).toBe(true);
+        expect(icon.artWidth, `${icon.state} has no extra visual gutter`).toBeGreaterThanOrEqual(38);
+        expect(icon.artHeight).toBeGreaterThanOrEqual(38);
+        expect(icon.svgDisplay, `${icon.state} must not render another SVG ring`).toBe('none');
+      }
       expect(icon.borderWidth).toBe(0);
       expect(icon.padding).toBe(0);
       expect(icon.surface).toBe('rgba(0, 0, 0, 0)');
