@@ -246,6 +246,8 @@ test('every track pack icon uses its atlas artwork without a second ring or visi
             artHeight: parseFloat(art.height),
             svgDisplay: legacySvg.display,
             borderWidth: parseFloat(button.borderTopWidth),
+            padding: parseFloat(button.paddingTop),
+            background: button.backgroundColor,
             shadow: button.boxShadow,
             targetWidth: node.getBoundingClientRect().width,
             targetHeight: node.getBoundingClientRect().height,
@@ -262,6 +264,8 @@ test('every track pack icon uses its atlas artwork without a second ring or visi
       expect(icon.artHeight).toBeGreaterThanOrEqual(38);
       expect(icon.svgDisplay, `${icon.state} does not render a second SVG ring`).toBe('none');
       expect(icon.borderWidth).toBe(0);
+      expect(icon.padding).toBe(0);
+      expect(icon.background).toBe('rgba(0, 0, 0, 0)');
       expect(icon.shadow).toBe('none');
       expect(icon.targetWidth).toBeGreaterThanOrEqual(44);
       expect(icon.targetHeight).toBeGreaterThanOrEqual(44);
