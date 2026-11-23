@@ -1,5 +1,5 @@
 import { toggleSettingsSection } from './helpers/settings-browser.js';
-import { test, expect } from './helpers/test.js';
+import { test, expect, settled } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { DRIFT_ENTRY_KMH } from './helpers/tutorial-practice.js';
@@ -374,6 +374,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 320, height: 568 }
         await expect(page.locator('#tutorial-coach')).toHaveAttribute('data-step', next);
       }
       await page.locator('#pause-button').tap();
+      await settled(page.locator('#race-overlay')); // measure the resume button after the pause card's entry transform
       // The translated resume label must never resize the original action or clip its text.
       const resume = page.locator('#resume-button');
       await expect(resume.locator('span')).toHaveText('Continue practicing');
