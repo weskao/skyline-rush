@@ -6671,3 +6671,10 @@ Base `origin/develop` `f9735e4c`. Plan and checklist: `docs/designs/3d-pipeline/
 - [x] Fix is test-only: `waitForHome` after each load, poll the storage key between the click and the reload. `CI=1 --repeat-each=8 --workers=4 --retries=0`: 8 of 8 green.
 - [x] Prevention: rule in `.claude/rules/browser-test-stability.md` and guard *never reloads straight after the START click* in `tests/browser-timeouts.test.js`; RED on the old specs (names both lines), green now. `pnpm test` 3904/0 (4 skipped), `typecheck`, `module-size` 3/3.
 - [ ] `pnpm run test:layout` is NOT green: `tests/responsive-browser.spec.js:48` "start layout 568x320" fails 3 of 3 (pinned row covers the track cards, 270.03 > 266). Passes on d4d88553, fails on 7e9d9a57: introduced by the `feature/home-release-notes-entry` merge (`src/race-lobby.css`, `src/track-chooser.css`). Not fixed here.
+
+## 2026-11-23 — Shared Home / Garage camera control design (`feature/showcase-camera-controls-parity`)
+
+- [x] Root cause: Garage-only CSS showed WebP arrows while Home used typography glyphs and different button/label sizing. Keep the single reused DOM dock, replace both glyphs with crisp original SVG chevrons, and share the button/label CSS across both hosts.
+- [x] Add a cross-page browser regression for matching camera controls, 44px hit targets, functional previous/next and desktop/phone portrait/landscape screenshots. RED confirmed before implementation: missing SVG arrows and page-specific style/icon switches.
+- [ ] Run local module-size, focused browser, unit, typecheck and build suites; compare real WebGL screenshots on both pages.
+- [ ] Verify full exact-HEAD GitHub `quality-gate`, iOS/Android device painting and touch acceptance before merging.
