@@ -2034,6 +2034,18 @@ body[data-tutorial-reward="nitro"] #nitro-meter, body[data-tutorial-reward="nitr
 @media (max-width: 760px) and (min-height: 501px) { .tutorial-pass { top: calc(var(--tutorial-coach-bottom, 300px) + 40px); font-size: 15px; } }
 @media (max-height: 500px) and (orientation: landscape) { .tutorial-pass { top: 34%; left: 79%; max-width: calc(42vw - 32px); padding: 6px 12px; font-size: 14px; } }
 @media (prefers-reduced-motion: reduce) { .tutorial-pass, .tutorial-pass-badge, .tutorial-reward, body[data-tutorial-reward] #nitro-meter { animation: none; } }
+/* Practice and race resume labels have different lengths; the tutorial action must not grow with copy.
+   Preserve the original compact 196px × inherited-height button, including the 852×393 landscape layout. */
+body[data-tutorial] #resume-button {
+  inline-size: 220px;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  padding-inline: 16px;
+  gap: 12px;
+  white-space: nowrap;
+}
+body[data-tutorial] #resume-button > svg { flex: none; }
+@media (max-width: 1000px) { body[data-tutorial] #resume-button { inline-size: 196px; } }
 /* Paused practice: the coach keeps its full lesson and progress (Exit is its only button) and the shared
    pause screen starts below it on phones, right of it in landscape; neither covers the other. */
 body[data-tutorial] .aero-tools:has([aria-expanded="true"]) { z-index: 13; } /* an open language/VFX list opens over the coach (12) */
