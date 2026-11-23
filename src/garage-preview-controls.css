@@ -85,6 +85,8 @@
 #garage-screen #showcase-camera-dock :is(.showcase-camera-heading, .showcase-camera-dots) { display: none; }
 
 #garage-screen .garage-preview-controls button:focus-visible { outline: 2px solid #ffd880; outline-offset: -3px; }
+/* The shared camera arrows keep the Home's outer focus ring, not Garage mode-buttons' inset ring. */
+#garage-screen #showcase-camera-dock .showcase-camera-actions > button:focus-visible { outline-offset: 2px; }
 
 @media (max-width: 360px) {
   #garage-screen .garage-mode-controls button { padding-inline: 4px; font-size: 11px; }
