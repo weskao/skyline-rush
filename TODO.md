@@ -1,8 +1,8 @@
 # Track pack icon-only UI (2026-11-23, `fix/track-pack-icon-only`)
 
 - [x] Traced all per-track download/update buttons to `src/track-chooser.css`: legacy SVG progress ring was rendered over/under the icon atlas, and 28px artwork sat inside a 44px touch target.
-- [x] Added a regression test covering every visible track action in missing/update/downloading states at 320×568, 390×844, 844×390 and 1280×720, requiring atlas-only visuals, at least 38px visible art and a 44px transparent target.
-- [x] Removed the redundant per-track SVG paint and used 40px WebP artwork within its existing 44px interactive target. Preserved the separate footer download-all progress indicator and all pack-state logic.
+- [x] Added a regression test for missing/update/downloading states across 320×568, 390×844, 844×390, 1280×720. Missing/update use the 40px WebP only; downloading keeps its original, scaled-to-match SVG progress ring; all retain a 44px transparent target.
+- [x] Removed the duplicate SVG ring from idle/update states while preserving the active download progress ring and the separate footer download-all progress indicator; pack-state logic is unchanged.
 - [ ] Run Playwright RED/GREEN on a full checkout, `node --test tests/module-size.test.js`, typecheck, build, `make verify`, inspect real-game images in phone portrait/landscape, and verify the exact-HEAD GitHub CI before merging.
 
 # Touch AUTO integration (2026-11-22, `feature/touch-auto-integration`)
