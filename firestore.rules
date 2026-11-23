@@ -106,8 +106,9 @@ service cloud.firestore {
   }
 
   function validScoreMaps(data) {
-    return data.stars is map && data.bests is map && data.medals is map
-      && data.stars.keys().hasOnly(trackIds())
+    // .keys()/.values() already require a map, so extra `is map` checks spend
+    // the Firestore 1000-expression budget without rejecting any additional payload.
+    return data.stars.keys().hasOnly(trackIds())
       && data.bests.keys().hasOnly(bestIds())
       && data.medals.keys().hasOnly(['first-win', 'clean-run', 'perfect-five', 'nitro-chain'])
       && validStars(data.stars) && validBests(data.bests) && validMedals(data.medals);
@@ -165,7 +166,7 @@ service cloud.firestore {
         && request.resource.data.get('gtTrialStartedAt', 1) is int
         && request.resource.data.get('gtTrialStartedAt', 1) > 0
         && request.resource.data.get('gtTrialStartedAt', 1) <= 9007199254740991
-        && request.resource.data.unlocked is list
+        // .hasAll()/.hasOnly() below require a list and reject other types.
         && request.resource.data.unlocked.size() <= 10
         && request.resource.data.unlocked.hasAll(['coast'])
         && request.resource.data.unlocked.hasOnly(trackIds())
