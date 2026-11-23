@@ -67,24 +67,18 @@ body[data-phase="ready"] :is(.scene-shade, .topbar),
 /* ‹ name › stepper: the arrows switch the view, the name between them is centred and only a label (no dropdown).
    A long name ("Driving camera") wraps between words, never inside one; CJK names stay on one line. */
 #showcase-camera-name {
-  flex: 1 1 0;
+  flex: 0 1 6.5em;
   min-width: 0;
   min-height: 44px;
   display: grid;
   place-items: center;
   color: #effaff;
-  font-size: 12px;
+  font-size: clamp(11px, 1vw, 12px);
   line-height: 1.15;
   word-break: keep-all;
 }
-/* Every dock has a set width (148-210px or the panel's), so a size container is safe. The 148/158px AIRFLOW docks
-   leave about 40px between the arrows, so the row tightens and the name steps down a size there. */
+/* Same label typography in Home and Garage, even when the dock shrinks into the landscape rail. */
 .showcase-camera-dock { container-type: inline-size; }
-@container (max-width: 180px) {
-  .showcase-camera-actions { gap: 2px; }
-  #showcase-camera-name { font-size: 11px; }
-}
-.showcase-camera-actions > button { width: 44px; height: 44px; }
 .intro .upcoming-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 60%; }
 
 details.performance-notice {

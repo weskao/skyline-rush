@@ -83,11 +83,10 @@
 }
 #garage-screen[data-page="studio"] #showcase-camera-dock { display: none; }
 #garage-screen #showcase-camera-dock :is(.showcase-camera-heading, .showcase-camera-dots) { display: none; }
-#garage-screen #showcase-camera-dock .showcase-camera-actions { width: auto; gap: 2px; }
-#garage-screen #showcase-camera-dock .showcase-camera-actions > button { width: 44px; height: 44px; }
-#garage-screen #showcase-camera-dock #showcase-camera-name { width: 6.5em; min-width: 0; }
 
 #garage-screen .garage-preview-controls button:focus-visible { outline: 2px solid #ffd880; outline-offset: -3px; }
+/* The shared camera arrows keep the Home's outer focus ring, not Garage mode-buttons' inset ring. */
+#garage-screen #showcase-camera-dock .showcase-camera-actions > button:focus-visible { outline-offset: 2px; }
 
 @media (max-width: 360px) {
   #garage-screen .garage-mode-controls button { padding-inline: 4px; font-size: 11px; }
@@ -106,7 +105,4 @@
 }
 
 
-#showcase-camera-dock button > .collectible-icon { display: none; }
-#garage-screen #showcase-camera-dock button > .collectible-icon { display: inline-block; }
-#garage-screen #showcase-camera-dock .showcase-dock-glyph { display: none; }
 #garage-screen #garage-pose-action > span .collectible-icon { flex: none; }

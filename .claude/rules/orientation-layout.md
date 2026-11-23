@@ -130,3 +130,5 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
   buttons and Store filter/action rows; at 320 px the third mode button wrapped and the first offer fell below the fold.
   ≤360 portrait shrinks them to 16px (`garage-preview-controls.css`, `wave3-demo-store.css`); 390 px keeps 24px.
   Guards: `garage-dense-layout`, `wave3-early-access` and `collectible-ui` browser specs.
+
+- **Home and Garage share the camera controls themselves, not two sets of overrides.** The `#showcase-camera-dock` node moves between hosts; keep `.showcase-camera-actions`, its SVG arrows, label typography, 44 px hit targets and hover/focus design shared. Only the outer dock may change position, padding or visibility for each page. Guard: `tests/showcase-camera-actions-parity-browser.spec.js` (desktop, portrait, landscape).
