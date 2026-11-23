@@ -69,6 +69,7 @@ for (const { width, height, mobile } of viewports) {
       expect(card.width).toBeLessThanOrEqual(maxWidth);
       // The road follows the viewport centre, not the left HUD rail, at every orientation.
       expect(Math.abs((card.left + card.right) / 2 - screen.width / 2)).toBeLessThanOrEqual(2);
+      expect(card.top).toBeLessThan(screen.height * 0.48); // The coach floats above the road, away from the driving thumbs.
       if (mobile && height > 500) {
         expect(Math.abs((toast.left + toast.right) / 2 - screen.width / 2)).toBeLessThanOrEqual(2);
       }
