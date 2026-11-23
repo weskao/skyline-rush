@@ -40,6 +40,14 @@ for (const { width, height, mobile } of viewports) {
         const controls = [...document.querySelectorAll('#touch-controls [data-control], #pause-button')]
           .filter(el => el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden')
           .map(bounds);
+        // The existing clock, instruments and app controls have priority over tutorial hints.
+        // A compact coach is still a regression if it covers race time (reported at 1440x859).
+        const hud = [...document.querySelectorAll(
+          '#race-clock, #position, .race-progress, .telemetry, .topbar button, .aero-tools button, .aero-tools summary, #touch-controls .touch-pad'
+        )].filter(el => {
+          const style = getComputedStyle(el);
+          return el.getClientRects().length && style.visibility !== 'hidden' && style.display !== 'none';
+        }).map(bounds);
         const background = getComputedStyle(coach).backgroundColor;
         const alpha = background.startsWith('rgba(') ? Number(background.split(',').at(-1).replace(')', '')) : 1;
         return {
@@ -47,6 +55,8 @@ for (const { width, height, mobile } of viewports) {
           copyFont: parseFloat(getComputedStyle(document.querySelector('#tutorial-instruction')).fontSize),
           inputsCovered: controls.some(box => intersects(card, box) || intersects(toast, box)),
           coachCoversCue: intersects(card, toast),
+          coachCoversHud: hud.some(box => intersects(card, box)),
+          cueCoversHud: hud.some(box => intersects(toast, box)),
         };
       });
 
@@ -58,6 +68,8 @@ for (const { width, height, mobile } of viewports) {
       expect(layout.copyFont).toBeGreaterThanOrEqual(13);
       expect(layout.inputsCovered).toBe(false);
       expect(layout.coachCoversCue).toBe(false);
+      expect(layout.coachCoversHud).toBe(false);
+      expect(layout.cueCoversHud).toBe(false);
       for (const rect of [card, toast]) {
         expect(rect.left).toBeGreaterThanOrEqual(0);
         expect(rect.right).toBeLessThanOrEqual(screen.width + 1);
