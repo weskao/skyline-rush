@@ -1,4 +1,4 @@
-import { test, expect, openGarage } from './helpers/test.js';
+import { test, expect, openGarage, waitForWorldFrame } from './helpers/test.js';
 
 // One DOM dock is moved between Home and Garage. Its controls must look the same in either host,
 // even when the surrounding layout needs a different width or position.
@@ -45,13 +45,35 @@ for (const viewport of [
     await expect(dock.locator('.showcase-camera-chevron')).toHaveCount(2);
     await page.mouse.move(1, 1); // Avoid comparing a hovered button with an unhovered one.
     const home = await cameraAppearance(page);
-    // The rendered control surface owns a small symmetric inset, not the oversized Home dock.
+    // The landscape rail and portrait panel keep their compact inset.
     expect(parseFloat(home.inset.left)).toBeGreaterThanOrEqual(3);
-    expect(parseFloat(home.inset.left)).toBeLessThanOrEqual(5);
+    if (viewport.width !== 1440) expect(parseFloat(home.inset.left)).toBeLessThanOrEqual(5);
     expect(home.inset.left).toBe(home.inset.right);
     expect(home.inset.border).toBe('1px');
     await expect(dock).toHaveCSS('border-top-width', '0px');
+    await waitForWorldFrame(page);
     await page.screenshot({ path: info.outputPath(`camera-home-${viewport.width}.png`), animations: 'disabled' });
+    if (viewport.width === 1440) {
+      const layout = await dock.evaluate(node => {
+        const bounds = node.getBoundingClientRect();
+        const actions = node.querySelector('.showcase-camera-actions');
+        const frame = actions.getBoundingClientRect();
+        const [prev, label, next] = [...actions.children].map(child => child.getBoundingClientRect());
+        return {
+          fits: frame.left >= bounds.left - 1 && frame.right <= bounds.right + 1
+            && frame.left >= 0 && frame.right <= innerWidth && actions.scrollWidth <= actions.clientWidth,
+          inset: Math.min(prev.left - frame.left, frame.right - next.right, prev.top - frame.top, frame.bottom - prev.bottom),
+          gap: Math.min(label.left - prev.right, next.left - label.right),
+        };
+      });
+      expect(layout.fits).toBe(true);
+      expect(layout.inset).toBeGreaterThanOrEqual(6);
+      expect(layout.gap).toBeGreaterThanOrEqual(6);
+      await page.locator('#showcase-camera-next').click();
+      await expect(dock).toHaveAttribute('data-view', 'front');
+      await page.locator('#showcase-camera-prev').click();
+      await expect(dock).toHaveAttribute('data-view', 'drive');
+    }
 
     await openGarage(page);
     await expect(page.locator('#garage-screen #showcase-camera-dock')).toBeVisible();

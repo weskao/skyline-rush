@@ -2759,6 +2759,7 @@ body.tokyo-charge-zone #fuel-caption { color: #b6f5ff; text-shadow: 0 0 8px rgba
 #showcase-camera-name { font-size: 11px; line-height: 1.15; }
 @media (min-width: 761px) and (min-height: 501px) {
   .showcase-camera-dock { width: max-content; }
+  .showcase-camera-actions { gap: 8px; padding: 6px 8px; }
 }
 @media (hover: hover) {
   #app #showcase-camera-dock .showcase-camera-actions > button:hover {

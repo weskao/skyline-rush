@@ -1,3 +1,11 @@
+# Desktop Home showcase camera layout
+
+- [x] RED at 1440×900 in `tests/showcase-camera-actions-parity-browser.spec.js`. Inline-size containment collapsed the max-content dock to zero width, and Playwright reported the dock hidden.
+- [x] Let the dock size to its contents. Give the shared desktop controls 6 px vertical padding, 8 px horizontal padding and an 8 px gap.
+- [x] GREEN in Chrome at 1440×900, 390×844 and 844×390. The desktop row fits inside the dock and both arrows change the view. Garage matches Home and keeps 44 px targets. Reviewed the before/after Coast Home WebGL captures.
+- [x] Source module-size check, typecheck and production build pass.
+- [ ] Full `make verify`, exact-commit GitHub `quality-gate` and physical phone checks.
+
 # Track pack icon-only UI (2026-11-23, `fix/track-pack-icon-only`)
 
 - [x] Traced all per-track download/update buttons to `src/track-chooser.css`: legacy SVG progress ring was rendered over/under the icon atlas, and 28px artwork sat inside a 44px touch target.
