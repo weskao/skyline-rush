@@ -6675,6 +6675,6 @@ Base `origin/develop` `f9735e4c`. Plan and checklist: `docs/designs/3d-pipeline/
 ## 2026-11-23 — Shared Home / Garage camera control design (`feature/showcase-camera-controls-parity`)
 
 - [x] Root cause: Garage-only CSS showed WebP arrows while Home used typography glyphs and different button/label sizing. Keep the single reused DOM dock, replace both glyphs with crisp original SVG chevrons, and share the button/label CSS across both hosts.
-- [x] Add a cross-page browser regression for matching camera controls, 44px hit targets, functional previous/next and desktop/phone portrait/landscape screenshots. RED confirmed before implementation: missing SVG arrows and page-specific style/icon switches.
+- [x] Author a cross-page browser regression for matching controls, 44px hit targets, previous/next and desktop/phone screenshots. Pre-fix source assertions failed on the old text/WebP icon split and Garage-only style overrides; the browser spec itself is awaiting execution.
 - [ ] Run local module-size, focused browser, unit, typecheck and build suites; compare real WebGL screenshots on both pages.
 - [ ] Verify full exact-HEAD GitHub `quality-gate`, iOS/Android device painting and touch acceptance before merging.
