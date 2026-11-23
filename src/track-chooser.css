@@ -382,20 +382,17 @@ body[data-fold-axis] #track-chooser .track-select {
 }
 .track-chooser .track-pack-action::before {
   content: '';
-  position: absolute; top: 50%; left: 50%;
-  width: 28px; height: 28px;
-  transform: translate(-50%, -50%);
+  position: absolute; inset: 2px;
+  width: 40px; height: 40px;
   background: url('./assets/track-pack-icons.webp') 0 0 / 200% 200% no-repeat;
   pointer-events: none;
 }
 .track-chooser .track-pack-action[data-pack-state="update"]::before,
 .track-chooser .track-pack-action[data-pack-state="error"]::before { background-position: 0 100%; }
-.track-chooser .track-pack-action[data-pack-state="ready"]::before,
-.track-chooser .track-pack-action[data-pack-state="downloading"]::before { display: none; }
-.track-chooser .track-pack-action:is([data-pack-state="missing"], [data-pack-state="update"], [data-pack-state="error"]) > svg { visibility: hidden; }
-.track-chooser .track-pack-action:is([data-pack-state="ready"], [data-pack-state="downloading"]) > svg {
-  width: 30px; height: 30px; margin: auto;
-}
+.track-chooser .track-pack-action[data-pack-state="ready"]::before { display: none; }
+/* The WebP is the entire visual; keep the hidden SVG out of layout and paint.
+   The transparent 44px parent remains the accessible touch/focus target. */
+.track-chooser .track-pack-action > svg { display: none; }
 @media (hover: hover) and (pointer: fine) {
   .track-chooser .track-pack-action[data-pack-state="missing"]:hover::before { background-position: 100% 0; }
   .track-chooser .track-pack-action:is([data-pack-state="update"], [data-pack-state="error"]):hover::before { background-position: 100% 100%; }
@@ -431,7 +428,6 @@ body[data-fold-axis] #track-chooser .track-select {
   .track-chooser .track-select { padding-block: 6px; }
 }
 @media (max-width: 400px) {
-  .track-chooser .track-pack-action::before { width: 26px; height: 26px; }
   #track-choose-download-all { min-width: 112px; padding-inline: 7px; }
   .track-chooser-footer small { font-size: 10px; }
 }
