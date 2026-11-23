@@ -43,7 +43,7 @@ for (const { width, height, mobile } of viewports) {
         // The existing clock, instruments and app controls have priority over tutorial hints.
         // A compact coach is still a regression if it covers race time (reported at 1440x859).
         const hud = [...document.querySelectorAll(
-          '#race-clock, #position, .race-progress, .telemetry, .topbar button, .aero-tools button, .aero-tools summary, #touch-controls .touch-pad'
+          '#race-clock, #position, .race-progress > :not([hidden]), .telemetry > *, .topbar .brand, .topbar button, .aero-tools button, .aero-tools summary, #touch-controls .touch-pad'
         )].filter(el => {
           const style = getComputedStyle(el);
           return el.getClientRects().length && style.visibility !== 'hidden' && style.display !== 'none';
