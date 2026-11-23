@@ -364,7 +364,7 @@ const pauseLayoutClear = page => page.evaluate(() => {
     return r.width > 0 && r.bottom <= Math.min(innerHeight, box.bottom) && r.right <= innerWidth && (r.top >= coach.bottom || r.bottom <= coach.top || r.left >= coach.right || r.right <= coach.left);
   });
 });
-for (const viewport of [{ width: 390, height: 844 }, { width: 320, height: 568 }, { width: 844, height: 390 }, { width: 750, height: 342 }]) {
+for (const viewport of [{ width: 390, height: 844 }, { width: 320, height: 568 }, { width: 844, height: 390 }, { width: 852, height: 393 }, { width: 750, height: 342 }]) {
   test.describe(`paused practice ${viewport.width}x${viewport.height}`, () => {
     test.use({ viewport, hasTouch: true, isMobile: true });
     test('the pause screen is readable beside the full coach', async ({ page }) => {
@@ -374,7 +374,23 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 320, height: 568 }
         await expect(page.locator('#tutorial-coach')).toHaveAttribute('data-step', next);
       }
       await page.locator('#pause-button').tap();
+      // The translated resume label must never resize the original action or clip its text.
+      const resume = page.locator('#resume-button');
+      await expect(resume.locator('span')).toHaveText('Continue practicing');
+      const enBox = await resume.boundingBox();
       await selectLocale(page, 'zh-TW'); // the drift lesson in zh-TW is the tallest coach card
+      await expect(resume.locator('span')).toHaveText('繼續練習');
+      const zhBox = await resume.boundingBox();
+      expect(Math.abs(enBox.width - zhBox.width)).toBeLessThanOrEqual(1);
+      expect(Math.abs(enBox.height - zhBox.height)).toBeLessThanOrEqual(1);
+      await expect.poll(() => resume.evaluate(button => {
+        const text = button.querySelector('span');
+        const icon = button.querySelector('svg');
+        const outer = button.getBoundingClientRect();
+        const iconRect = icon.getBoundingClientRect();
+        return text.scrollWidth <= text.clientWidth + 1 && button.scrollWidth <= button.clientWidth + 1
+          && iconRect.right <= outer.right && iconRect.left >= outer.left;
+      })).toBe(true);
       await expect(page.locator('#race-overlay')).toBeVisible();
       // Paused, the coach keeps its lesson and progress; Exit is its only button.
       for (const id of ['#tutorial-title', '#tutorial-progress', '#tutorial-instruction']) await expect(page.locator(id)).toBeVisible();
