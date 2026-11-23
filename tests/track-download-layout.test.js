@@ -16,6 +16,7 @@ test('mobile chooser remains smaller than viewport in portrait and landscape', (
   assert.match(css, /height:\s*min\(84dvh,/);
 });
 test('small visual glyph retains a 44px touch target', () => {
-  assert.match(css, /\.track-pack-action::before\s*\{[^}]*width:\s*28px/s);
+  assert.match(css, /\.track-pack-action::before\s*\{[^}]*width:\s*40px/s);
+    assert.match(css, /\.track-pack-action::before\s*\{[^}]*height:\s*40px/s);
   assert.match(css, /\.track-pack-action\s*\{[^}]*width:\s*44px/s);
 });

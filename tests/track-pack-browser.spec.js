@@ -61,7 +61,7 @@ test('track download indicator stays legible on a wide chooser', async ({ page }
   await page.screenshot({ path: testInfo.outputPath('track-download-desktop.png'), animations: 'disabled', scale: 'css' });
 });
 
-test('each track owns a separate circular download action and download-all skips cached packs', async ({ page }) => {
+test('each track owns a separate image-only download action and download-all skips cached packs', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', comfortable: true })));
   await page.goto('/');
@@ -219,4 +219,73 @@ test('up-to-date pack hides the corner icon while a new release restores the upd
   await expect(card).toHaveAttribute('data-pack-state', 'update', { timeout: ciTimeout(12000) });
   await expect(action).toBeVisible();
   await expect(action).toHaveAttribute('data-pack-progress', '0');
+});
+
+test('each track pack shows only WebP artwork except a same-size progress ring while downloading', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#startup-enter').click();
+  await waitForHome(page);
+  await page.locator('#lobby-tracks-toggle').click();
+  await expect(page.locator('#lobby-track-options [data-pack-for="coast"]')).toBeVisible({ timeout: ciTimeout(12000) });
+
+  for (const [width, height] of [[320, 568], [390, 844], [844, 390], [1280, 720]]) {
+    await page.setViewportSize({ width, height });
+    const icons = await page.locator('#lobby-track-options .track-pack-action:not([hidden])').evaluateAll(nodes =>
+      nodes.flatMap(node => {
+        const original = node.dataset.packState;
+        const samples = ['missing', 'update', 'downloading'].map(state => {
+          node.dataset.packState = state;
+          const art = getComputedStyle(node, '::before');
+          const button = getComputedStyle(node);
+          const legacySvg = getComputedStyle(node.querySelector('svg'));
+          return {
+            state,
+            image: art.backgroundImage,
+            artVisible: art.display !== 'none',
+            artWidth: parseFloat(art.width),
+            artHeight: parseFloat(art.height),
+            svgDisplay: legacySvg.display,
+            svgWidth: parseFloat(legacySvg.width),
+            svgHeight: parseFloat(legacySvg.height),
+            ringDiameter: (() => {
+              const circle = node.querySelector('.track-pack-ring-fill');
+              const stroke = parseFloat(getComputedStyle(circle).strokeWidth);
+              return (2 * circle.r.baseVal.value + stroke) * parseFloat(legacySvg.width) / 40;
+            })(),
+            ringOffset: node.querySelector('.track-pack-ring-fill').style.strokeDashoffset,
+            borderWidth: parseFloat(button.borderTopWidth),
+            padding: parseFloat(button.paddingTop),
+            surface: button.backgroundColor,
+            shadow: button.boxShadow,
+            targetWidth: node.getBoundingClientRect().width,
+            targetHeight: node.getBoundingClientRect().height,
+          };
+        });
+        node.dataset.packState = original;
+        return samples;
+      }));
+    expect(icons.length, `at least one visible track icon at ${width}x${height}`).toBeGreaterThan(0);
+    for (const icon of icons) {
+      expect(icon.image, `${icon.state} uses artwork`).toContain('track-pack-icons.webp');
+      if (icon.state === 'downloading') {
+        expect(icon.artVisible, 'the download spinner replaces WebP artwork').toBe(false);
+        expect(icon.svgDisplay, 'keep the original progress ring visible during download').not.toBe('none');
+        expect(icon.ringDiameter, 'the ring fits the 40px visible icon').toBeGreaterThanOrEqual(38);
+        expect(icon.ringDiameter).toBeLessThanOrEqual(40);
+        expect(icon.svgWidth).toBe(44);
+        expect(icon.svgHeight).toBe(44);
+      } else {
+        expect(icon.artVisible, `${icon.state} artwork visible`).toBe(true);
+        expect(icon.artWidth, `${icon.state} has no extra visual gutter`).toBeGreaterThanOrEqual(38);
+        expect(icon.artHeight).toBeGreaterThanOrEqual(38);
+        expect(icon.svgDisplay, `${icon.state} must not render another SVG ring`).toBe('none');
+      }
+      expect(icon.borderWidth).toBe(0);
+      expect(icon.padding).toBe(0);
+      expect(icon.surface).toBe('rgba(0, 0, 0, 0)');
+      expect(icon.shadow).toBe('none');
+      expect(icon.targetWidth).toBeGreaterThanOrEqual(44);
+      expect(icon.targetHeight).toBeGreaterThanOrEqual(44);
+    }
+  }
 });

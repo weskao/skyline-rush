@@ -1,3 +1,16 @@
+# Track pack icon-only UI (2026-11-23, `fix/track-pack-icon-only`)
+
+- [x] Traced all per-track download/update buttons to `src/track-chooser.css`: legacy SVG progress ring was rendered over/under the icon atlas, and 28px artwork sat inside a 44px touch target.
+- [x] Added a regression test for missing/update/downloading states across 320×568, 390×844, 844×390, 1280×720. Missing/update use the 40px WebP only; downloading keeps its original, scaled-to-match SVG progress ring; all retain a 44px transparent target.
+- [x] Removed the duplicate SVG ring from idle/update states while preserving the active download progress ring and the separate footer download-all progress indicator; pack-state logic is unchanged.
+- [ ] Run Playwright RED/GREEN on a full checkout, `node --test tests/module-size.test.js`, typecheck, build, `make verify`, inspect real-game images in phone portrait/landscape, and verify the exact-HEAD GitHub CI before merging.
+
+# Download All: up to 10 concurrent track installations (2026-11-23)
+- [x] TDD RED on the old batch helper: 16 simultaneous downloads when a caller requested 100 (expected max 10), and missing aggregate progress for parallel downloads.
+- [x] Isolated Node 22 TDD GREEN: 6/6 batch unit tests including both new cases; files reconstructed from fetched project source. Full repository suite still pending.
+- [x] Reuse `MAX_CONCURRENT_TRACK_DOWNLOADS = 10` across the batch cap and the Download All caller. Keep per-map progress rings and update the summary using fractional progress from all active downloads.
+- [ ] Exact-HEAD remote CI, full browser regression, cancellation/partial failures on real devices, and `make verify` are not yet complete.
+
 # Touch AUTO integration (2026-11-22, `feature/touch-auto-integration`)
 
 - [x] Merged `feature/touch-gas-auto-layout` (d401b449) and `feature/tutorial-auto-lesson` (f69758b0) with `--no-ff`; only `TODO.md` conflicted (both sides kept).
@@ -6671,3 +6684,10 @@ Base `origin/develop` `f9735e4c`. Plan and checklist: `docs/designs/3d-pipeline/
 - [x] Fix is test-only: `waitForHome` after each load, poll the storage key between the click and the reload. `CI=1 --repeat-each=8 --workers=4 --retries=0`: 8 of 8 green.
 - [x] Prevention: rule in `.claude/rules/browser-test-stability.md` and guard *never reloads straight after the START click* in `tests/browser-timeouts.test.js`; RED on the old specs (names both lines), green now. `pnpm test` 3904/0 (4 skipped), `typecheck`, `module-size` 3/3.
 - [ ] `pnpm run test:layout` is NOT green: `tests/responsive-browser.spec.js:48` "start layout 568x320" fails 3 of 3 (pinned row covers the track cards, 270.03 > 266). Passes on d4d88553, fails on 7e9d9a57: introduced by the `feature/home-release-notes-entry` merge (`src/race-lobby.css`, `src/track-chooser.css`). Not fixed here.
+
+## 2026-11-23 — Shared Home / Garage camera control design (`feature/showcase-camera-controls-parity`)
+
+- [x] Root cause: Garage-only CSS showed WebP arrows while Home used typography glyphs and different button/label sizing. Keep the single reused DOM dock, replace both glyphs with crisp original SVG chevrons, and share the button/label CSS across both hosts.
+- [x] Author a cross-page browser regression for matching controls, 44px hit targets, previous/next and desktop/phone screenshots. Pre-fix source assertions failed on the old text/WebP icon split and Garage-only style overrides; the browser spec itself is awaiting execution.
+- [ ] Run local module-size, focused browser, unit, typecheck and build suites; compare real WebGL screenshots on both pages.
+- [ ] Verify full exact-HEAD GitHub `quality-gate`, iOS/Android device painting and touch acceptance before merging.
