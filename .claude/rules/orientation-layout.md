@@ -131,9 +131,10 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
   ≤360 portrait shrinks them to 16px (`garage-preview-controls.css`, `wave3-demo-store.css`); 390 px keeps 24px.
   Guards: `garage-dense-layout`, `wave3-early-access` and `collectible-ui` browser specs.
 
-- **Per-track pack buttons display artwork only.** In the track chooser, the transparent 44×44
-  download/update action retains its accessible touch/focus target, but only the WebP atlas
-  image is painted (40×40 inside the target). Never expose an extra SVG ring, border or
-  shadow beneath the atlas. The bulk-download footer has independent progress visuals.
-  Guard all visible track buttons and download states at portrait, landscape and desktop
-  sizes in `tests/track-pack-browser.spec.js`.
+- **Per-track pack buttons use image-only idle/update states.** In the track chooser, the
+  44×44 download/update target stays transparent while its WebP artwork is 40×40.
+  During an active download, replace the atlas with the original SVG progress ring,
+  sized to the same visible footprint (~40px), with real percent progress. Never
+  stack two rings or paint an extra button border/shadow. The bulk-download footer
+  keeps its separate progress visuals. Guard desktop and phone portrait/landscape
+  in `tests/track-pack-browser.spec.js`.
