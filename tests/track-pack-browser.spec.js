@@ -220,3 +220,51 @@ test('up-to-date pack hides the corner icon while a new release restores the upd
   await expect(action).toBeVisible();
   await expect(action).toHaveAttribute('data-pack-progress', '0');
 });
+
+test('every track pack icon uses its atlas artwork without a second ring or visible padding', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#startup-enter').click();
+  await waitForHome(page);
+  await page.locator('#lobby-tracks-toggle').click();
+  await expect(page.locator('#lobby-track-options [data-pack-for="coast"]')).toBeVisible({ timeout: ciTimeout(12000) });
+
+  for (const [width, height] of [[320, 568], [390, 844], [844, 390], [1280, 720]]) {
+    await page.setViewportSize({ width, height });
+    const icons = await page.locator('#lobby-track-options .track-pack-action:not([hidden])').evaluateAll(nodes =>
+      nodes.flatMap(node => {
+        const original = node.dataset.packState;
+        const samples = ['missing', 'update', 'downloading'].map(state => {
+          node.dataset.packState = state;
+          const art = getComputedStyle(node, '::before');
+          const button = getComputedStyle(node);
+          const legacySvg = getComputedStyle(node.querySelector('svg'));
+          return {
+            state,
+            background: art.backgroundImage,
+            artVisible: art.display !== 'none',
+            artWidth: parseFloat(art.width),
+            artHeight: parseFloat(art.height),
+            svgDisplay: legacySvg.display,
+            borderWidth: parseFloat(button.borderTopWidth),
+            shadow: button.boxShadow,
+            targetWidth: node.getBoundingClientRect().width,
+            targetHeight: node.getBoundingClientRect().height,
+          };
+        });
+        node.dataset.packState = original;
+        return samples;
+      }));
+    expect(icons.length, `at least one visible track icon at ${width}x${height}`).toBeGreaterThan(0);
+    for (const icon of icons) {
+      expect(icon.background, `${icon.state} uses artwork`).toContain('track-pack-icons.webp');
+      expect(icon.artVisible, `${icon.state} artwork visible`).toBe(true);
+      expect(icon.artWidth, `${icon.state} has no extra visual gutter`).toBeGreaterThanOrEqual(38);
+      expect(icon.artHeight).toBeGreaterThanOrEqual(38);
+      expect(icon.svgDisplay, `${icon.state} does not render a second SVG ring`).toBe('none');
+      expect(icon.borderWidth).toBe(0);
+      expect(icon.shadow).toBe('none');
+      expect(icon.targetWidth).toBeGreaterThanOrEqual(44);
+      expect(icon.targetHeight).toBeGreaterThanOrEqual(44);
+    }
+  }
+});
