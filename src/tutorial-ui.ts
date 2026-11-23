@@ -200,7 +200,7 @@ export function setupTutorialUI({
       hintKeys: done || touch ? '' : keys ?? '',
       hintText: !done && touch ? t(tutorialHintKey(step, inputPrefs.mode, controlPrefs.flyMode, auto)) : '',
       celebration: done ? t('tutorial.freeDrive') : '',
-      guide: done || race.phase === 'countdown' ? '' : tutorial.guide ?? '', // the arrow starts at GO, with the throttle cue
+      guide: done || race.phase !== 'racing' ? '' : tutorial.guide ?? '', // direction arrows only during live practice
       skipHidden: done || race.phase === 'paused',
       ...tutorialCueView(cue, touch, controlPrefs.flyMode, keyMap, inputPrefs.mode, controlPrefs.hand),
       passed: passed ? t('tutorial.passed', { action: lessonTitle(passed) }) : '',

@@ -288,6 +288,8 @@ test('practice restores a paused race and uses the current custom throttle key',
   await step(page, 'left');
   await page.locator('#tutorial-exit').click();
   await expect(page.locator('#race-status')).toHaveText('PAUSED');
+  await expect(page.locator('#resume-button span')).toHaveText('Continue racing'); // regular races keep their copy
+  await expect(page.locator('#resume-button')).toHaveAttribute('aria-label', 'Resume race');
   await expect(page.locator('#distance')).toHaveText(distance);
 });
 
@@ -295,18 +297,29 @@ test('the gate arrow points the way and Skip step moves on by a real click', asy
   await begin(page);
   const skip = page.locator('#tutorial-skip-step');
   await expect(skip).toBeVisible();
-  await expect(page.locator('#tutorial-guide')).toHaveAttribute('data-dir', 'ahead'); // the throttle lesson points the way
+  const guide = page.locator('#tutorial-guide');
+  await expect(guide).toHaveAttribute('data-dir', 'ahead'); // the throttle lesson points the way
+  await page.locator('#pause-button').click();
+  await expect(guide).toHaveCount(0); // paused: no forward arrow behind the overlay
+  await page.locator('#resume-button').click();
+  await expect(guide).toHaveAttribute('data-dir', 'ahead');
   await skip.click();
   await step(page, 'left');
   await expect(page.locator('#tutorial-guide')).toHaveAttribute('data-dir', 'left');
   await expect(page.locator('#tutorial-instruction')).toContainText('gate');
   await page.locator('#pause-button').click();
   await expect(skip).toBeHidden();
+  await expect(guide).toHaveCount(0); // paused: no left arrow
   await page.locator('#resume-button').click();
   await expect(skip).toBeVisible();
+  await expect(guide).toHaveAttribute('data-dir', 'left');
   await skip.click();
   await step(page, 'right');
-  await expect(page.locator('#tutorial-guide')).toHaveAttribute('data-dir', 'right');
+  await expect(guide).toHaveAttribute('data-dir', 'right');
+  await page.locator('#pause-button').click();
+  await expect(guide).toHaveCount(0); // paused: no right arrow
+  await page.locator('#resume-button').click();
+  await expect(guide).toHaveAttribute('data-dir', 'right');
   await expect(skip).not.toBeFocused(); // a focused skip button would re-fire on Space or Enter
 });
 
@@ -325,8 +338,12 @@ test('switching language updates the active and paused lesson immediately', asyn
   await selectLocale(page,'zh-TW');
   await expect(page.locator('#tutorial-title')).toContainText('油門');
   await expect(page.locator('#overlay-copy')).toHaveText('練習已暫停，暫停時的操作不會計入。按下方按鈕繼續練習。');
+  await expect(page.locator('#resume-button span')).toHaveText('繼續練習');
+  await expect(page.locator('#resume-button')).toHaveAttribute('aria-label', '繼續練習');
   await selectLocale(page,'en');
   await expect(page.locator('#overlay-copy')).toContainText('Practice is paused');
+  await expect(page.locator('#resume-button span')).toHaveText('Continue practicing');
+  await expect(page.locator('#resume-button')).toHaveAttribute('aria-label', 'Resume practice');
 });
 
 test('the coach offers one control per action: no second pause, no second exit after completion', async ({ page }) => {
