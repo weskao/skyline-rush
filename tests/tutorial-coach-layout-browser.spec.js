@@ -16,7 +16,11 @@ for (const { width, height, mobile } of viewports) {
     test.use({ viewport: { width, height }, hasTouch: mobile, isMobile: mobile });
 
     test('keeps a compact, readable lesson and stable nonblocking cue', async ({ page }) => {
-      await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low' })));
+      await page.addInitScript(() => {
+        localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low' }));
+        // AUTO suppresses the GAS cue by design; exercise the visible cue layout in manual mode.
+        localStorage.setItem('skyline-rush-auto', 'off');
+      });
       await page.goto('/');
       await toggleSettingsSection(page, 'driving');
       await page.locator('#tutorial-open').click();
