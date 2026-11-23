@@ -38,11 +38,13 @@ for (const viewport of [
     const dock = page.locator('#showcase-camera-dock');
     await expect(dock).toBeVisible();
     await expect(dock.locator('.showcase-camera-chevron')).toHaveCount(2);
+    await page.mouse.move(1, 1); // Avoid comparing a hovered button with an unhovered one.
     const home = await cameraAppearance(page);
     await page.screenshot({ path: info.outputPath(`camera-home-${viewport.width}.png`), animations: 'disabled' });
 
     await openGarage(page);
     await expect(page.locator('#garage-screen #showcase-camera-dock')).toBeVisible();
+    await page.mouse.move(1, 1);
     const garage = await cameraAppearance(page);
     expect(home).toEqual(garage);
     await page.screenshot({ path: info.outputPath(`camera-garage-${viewport.width}.png`), animations: 'disabled' });
