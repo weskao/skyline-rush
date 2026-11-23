@@ -378,6 +378,10 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 320, height: 568 }
       const resume = page.locator('#resume-button');
       await expect(resume.locator('span')).toHaveText('Continue practicing');
       const enBox = await resume.boundingBox();
+      if (viewport.width === 852) { // iPhone 16 landscape screenshot: keep the original 196 × 44 button
+        expect(enBox.width).toBeCloseTo(196, 0);
+        expect(enBox.height).toBeCloseTo(44, 0);
+      }
       await selectLocale(page, 'zh-TW'); // the drift lesson in zh-TW is the tallest coach card
       await expect(resume.locator('span')).toHaveText('繼續練習');
       const zhBox = await resume.boundingBox();
