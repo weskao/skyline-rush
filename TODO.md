@@ -6699,3 +6699,5 @@ Base `origin/develop` `f9735e4c`. Plan and checklist: `docs/designs/3d-pipeline/
 - [x] Author a cross-page browser regression for matching controls, 44px hit targets, previous/next and desktop/phone screenshots. Pre-fix source assertions failed on the old text/WebP icon split and Garage-only style overrides; the browser spec itself is awaiting execution.
 - [ ] Run local module-size, focused browser, unit, typecheck and build suites; compare real WebGL screenshots on both pages.
 - [ ] Verify full exact-HEAD GitHub `quality-gate`, iOS/Android device painting and touch acceptance before merging.
+
+- Landscape tutorial coach overlap (2026-11-23): reproduced the fixed top offset in the RED layout guard. Updated the shared landscape placement and removed the duplicate decorative completion panel on short screens. Chrome passed 743×340 and 844×390 HUD/control geometry and the zh-TW turn/completion flow at 844×390. Layout and module-size guards passed. Type checks, unit tests and production build passed; full browser verification stopped after sandboxed Chrome launch failures. Physical-device and exact-commit CI verification remain open.

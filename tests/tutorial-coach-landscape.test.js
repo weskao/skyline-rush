@@ -22,3 +22,9 @@ test('compact coach preserves readable prompt and full-size action targets', () 
   assert.match(css, /\.tutorial-copy p\s*\{[^}]*font-size:\s*13px/, 'instructions remain at least 13px in compact mode');
   assert.match(css, /\.tutorial-actions button\s*\{[^}]*min-width:\s*44px;\s*min-height:\s*44px/, 'Skip and Exit retain 44px targets');
 });
+
+test('landscape uses the free space above the coach and a single completion panel', () => {
+  const active = landscapeCSS.match(/body\[data-tutorial\] \.tutorial-coach\s*\{([^}]*)\}/)?.[1] ?? '';
+  assert.match(active, /top: max\(8px, var\(--safe-top\)\)/);
+  assert.match(landscapeCSS, /\.tutorial-celebration \{ display: none; \}/);
+});

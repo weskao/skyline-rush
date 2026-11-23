@@ -51,7 +51,7 @@ for (const { width, height, mobile } of viewports) {
         )].filter(el => {
           const style = getComputedStyle(el);
           return el.getClientRects().length && style.visibility !== 'hidden' && style.display !== 'none';
-        }).map(bounds);
+        }).map(el => ({ ...bounds(el), name: el.id || el.className }));
         const background = getComputedStyle(coach).backgroundColor;
         const alpha = background.startsWith('rgba(') ? Number(background.split(',').at(-1).replace(')', '')) : 1;
         return {
@@ -60,7 +60,7 @@ for (const { width, height, mobile } of viewports) {
           inputsCovered: controls.some(box => intersects(card, box) || intersects(toast, box)),
           coachCoversCue: intersects(card, toast),
           coachCoversHud: hud.some(box => intersects(card, box)),
-          cueCoversHud: hud.some(box => intersects(toast, box)),
+          cueCoversHud: hud.filter(box => intersects(toast, box)),
         };
       });
 
@@ -79,7 +79,7 @@ for (const { width, height, mobile } of viewports) {
       expect(layout.inputsCovered).toBe(false);
       expect(layout.coachCoversCue).toBe(false);
       expect(layout.coachCoversHud).toBe(false);
-      expect(layout.cueCoversHud).toBe(false);
+      expect(layout.cueCoversHud).toEqual([]);
       for (const rect of [card, toast]) {
         expect(rect.left).toBeGreaterThanOrEqual(0);
         expect(rect.right).toBeLessThanOrEqual(screen.width + 1);
@@ -91,3 +91,28 @@ for (const { width, height, mobile } of viewports) {
     });
   });
 }
+
+test.describe('Traditional Chinese landscape practice', () => {
+  test.use({ viewport: { width: 844, height: 390 }, locale: 'zh-TW', isMobile: true, hasTouch: true });
+
+  test('keeps the turn instruction and completion actions readable', async ({ page }, testInfo) => {
+    await page.goto('/');
+    await toggleSettingsSection(page, 'driving');
+    await page.locator('#tutorial-open').click();
+    const skip = page.locator('#tutorial-skip-step');
+    await expect(page.locator('#tutorial-coach')).toHaveAttribute('data-step', 'throttle');
+    for (const next of ['left', 'right', 'brake', 'drift', 'fly', 'boost', 'airChain', 'barrelRoll', 'nitro', 'complete']) {
+      await skip.tap();
+      await expect(page.locator('#tutorial-coach')).toHaveAttribute('data-step', next);
+      if (next === 'right') {
+        await expect(page.locator('#tutorial-title')).toContainText('3/11');
+        await testInfo.attach('turn', { body: await page.screenshot(), contentType: 'image/png' });
+      }
+    }
+    await expect(page.locator('#tutorial-done')).toBeInViewport();
+    await expect(page.locator('.tutorial-celebration')).toBeHidden();
+    const fits = await page.locator('.tutorial-copy').evaluate(el => el.scrollHeight <= el.clientHeight + 1);
+    expect(fits).toBe(true);
+    await testInfo.attach('complete', { body: await page.screenshot(), contentType: 'image/png' });
+  });
+});
