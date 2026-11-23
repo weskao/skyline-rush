@@ -1,7 +1,7 @@
 import { getLocale } from './i18n.ts';
 import { trackAssetPack } from './track-asset-packs.ts';
 import { createTrackPackStore, type PackProgress, type PackStatus, type TrackAssetPack } from './track-pack-store.ts';
-import { downloadTrackPackBatch, type BatchProgress } from './track-pack-batch.ts';
+import { downloadTrackPackBatch, MAX_CONCURRENT_TRACK_DOWNLOADS, type BatchProgress } from './track-pack-batch.ts';
 
 type Graphics = { quality: 'low' | 'medium' | 'high'; ultra: boolean };
 type UiStatus = PackStatus | 'checking' | 'downloading' | 'error';
@@ -61,7 +61,7 @@ export function setupTrackPackUI(getGraphics: () => Graphics) {
     const packs = cards.map(card => packFor(idOf(card))).filter((pack): pack is TrackAssetPack => !!pack);
     const ready = packs.filter(pack => stateFor(pack) === 'ready').length;
     const fraction = batchProgress && batchProgress.total
-      ? (batchProgress.completed + batchProgress.fileDone / Math.max(1, batchProgress.fileTotal)) / batchProgress.total
+      ? (batchProgress.completed + batchProgress.activeFraction) / batchProgress.total
       : packs.length ? ready / packs.length : 0;
     const active = !!batch;
     const label = active ? chinese() ? '取消下載' : 'Cancel downloads'
@@ -169,7 +169,7 @@ export function setupTrackPackUI(getGraphics: () => Graphics) {
     const packs = cards.map(card => packFor(idOf(card))).filter((pack): pack is TrackAssetPack => !!pack);
     if (!packs.some(pack => stateFor(pack) !== 'ready')) return;
     const current = batch = new AbortController();
-    batchProgress = { completed: 0, total: packs.length, activeId: null, fileDone: 0, fileTotal: 0, failed: 0 };
+    batchProgress = { completed: 0, total: packs.length, activeId: null, fileDone: 0, fileTotal: 0, failed: 0, activeFraction: 0 };
     paintAll();
     try {
       await downloadTrackPackBatch(packs, {
@@ -179,7 +179,7 @@ export function setupTrackPackUI(getGraphics: () => Graphics) {
       (pack, ok) => {
         cached.set(pack.trackId, { signature: pack.signature, status: ok ? 'ready' : 'error' });
         paintAll();
-      }, current.signal, 2);
+      }, current.signal, MAX_CONCURRENT_TRACK_DOWNLOADS);
     } catch (error) {
       if (!current.signal.aborted) console.warn('Track batch download failed:', error);
     } finally {
