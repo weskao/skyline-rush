@@ -375,8 +375,8 @@ body[data-fold-axis] #track-chooser .track-select {
 #track-required-update button:disabled { opacity: .65; cursor: progress; }
 #track-required-update button:focus-visible { outline: 2px solid #f7fbff; outline-offset: 3px; }
 
-/* ChatGPT-generated transparent WebP icon atlas: download/hover/update/hover.
-   Artwork is only 28px wide; keyboard/touch actions remain 44px. */
+/* Shared transparent WebP atlas: download/hover/update/hover.
+   Visible artwork is 40px; the transparent keyboard/touch target remains 44px. */
 .track-chooser .track-pack-action {
   border: 0; background: transparent; box-shadow: none; padding: 0;
 }
