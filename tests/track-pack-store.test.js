@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { createTrackPackStore, assetCacheKey, ASSET_CACHE } from '../src/track-pack-store.ts';
+import { createTrackPackStore, assetCacheKey, ASSET_CACHE, PACK_CACHE } from '../src/track-pack-store.ts';
 
 class MemoryCache {
   values = new Map();
@@ -135,4 +135,30 @@ test('failed update cannot clear a previous mandatory update', async () => {
   await create(storage, requests).download(pack());
   await assert.rejects(create(storage, requests, 'wrong-data').download(pack('1.0.1', 'new-data')), /checksum/i);
   assert.equal(await create(storage, requests).updateRequired(pack('1.0.1', 'new-data')), true);
+});
+
+test('a new pack cannot publish assets against an older cleanup receipt snapshot', async () => {
+  const storage = new MemoryStorage();
+  const store = createTrackPackStore({ storage, baseUrl: 'https://game.example/', fetchAsset: async () => new Response('track') });
+  const one = { trackId: 'coast', version: '1.0.0', tier: 'low', preset: 'track', signature: 'coast', assets: [{ url: 'coast.jpg', sha256: '', bytes: 5 }] };
+  const two = { ...one, trackId: 'neon', signature: 'neon', assets: [{ ...one.assets[0], url: 'neon.jpg' }] };
+  const receipts = await storage.open(PACK_CACHE), keys = receipts.keys.bind(receipts);
+  let snapshotTaken, releaseSnapshot;
+  const snapshot = new Promise(resolve => { snapshotTaken = resolve; });
+  const release = new Promise(resolve => { releaseSnapshot = resolve; });
+  let first = true;
+  receipts.keys = async () => {
+    const saved = await keys();
+    if (first) { first = false; snapshotTaken(); await release; }
+    return saved;
+  };
+  const previous = store.download(one);
+  await snapshot;
+  const next = store.download(two);
+  // Allow the new install to run while the earlier cleanup is suspended.
+  await new Promise(resolve => setImmediate(resolve));
+  releaseSnapshot();
+  await Promise.all([previous, next]);
+  assert.equal(await store.status(one), 'ready');
+  assert.equal(await store.status(two), 'ready');
 });

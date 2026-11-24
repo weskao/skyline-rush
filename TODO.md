@@ -1,3 +1,10 @@
+# CI #45378073238 — track pack cleanup race (2026-11-24)
+
+- [x] Reproduced a stale receipt-snapshot race in the exact GitHub store blob (`189f3bc7`): the new pack status was `missing` rather than `ready` (RED).
+- [x] Gate installs on outstanding cleanup; isolated Node 22 `node --experimental-strip-types --test tests/track-pack-store.test.js` passes 12/12 (GREEN). Existing receipt/hash validation unchanged.
+- [ ] Verify the exact-HEAD Download All browser case and full `make verify` / quality-gate; original run has additional unrelated browser failures.
+- [ ] Verify real phone portrait/landscape and cache use after reload.
+
 # Home track swipe first frame (2026-11-24)
 
 - [x] RED on develop `02d3348c`. A pending Neon draw returned false, yet the swipe copied Coast into the incoming page. The timed handoff then exposed the full-screen still before Neon painted. Chrome reproduced both at Medium and High with the tier-specific Neon asphalt request held.

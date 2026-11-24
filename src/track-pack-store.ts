@@ -23,6 +23,7 @@ export function createTrackPackStore({
   fetchAsset = globalThis.fetch,
 }: { storage?: Pick<CacheStorage, 'open'>; baseUrl?: string; fetchAsset?: typeof fetch } = {}) {
   const working = new Map<string, Promise<PackProgress>>();
+  let cleanup = Promise.resolve();
   const receiptKey = (pack: TrackAssetPack): string => new URL(
     `.skyline-packs/${encodeURIComponent(pack.trackId)}/${pack.tier}/${encodeURIComponent(pack.preset)}`, baseUrl,
   ).href;
@@ -128,9 +129,13 @@ export function createTrackPackStore({
     download(pack: TrackAssetPack, onProgress?: (state: PackProgress) => void, signal?: AbortSignal): Promise<PackProgress> {
       const existing = working.get(pack.signature);
       if (existing) return existing;
-      const task = install(pack, onProgress, signal).finally(async () => {
+      // New installs must not publish bytes while cleanup uses an older receipt snapshot.
+      const task = cleanup.then(() => install(pack, onProgress, signal)).finally(async () => {
         if (working.get(pack.signature) === task) working.delete(pack.signature);
-        if (!working.size) await pruneUnused().catch(error => console.warn('Track cache cleanup skipped:', error));
+        if (!working.size) {
+          cleanup = pruneUnused().catch(error => console.warn('Track cache cleanup skipped:', error));
+          await cleanup;
+        }
       });
       working.set(pack.signature, task);
       return task;
