@@ -43,9 +43,10 @@ for (const [width, height, locale, caption, enterLabel] of [
       expect(box.height, 'version tap target').toBeGreaterThanOrEqual(44);
       expect(badge.y, 'badge clears Enter game').toBeGreaterThan(launchBox.y + launchBox.height);
       expect(badge.y + badge.height).toBeLessThan(box.y + box.height / 3);
+      // The badge is a text-free dot (80f10fd1): its fill and ring are its colors; text `color` is only inherited.
       const badgeStyle = el => {
-        const { backgroundColor, boxShadow, color, width, height } = getComputedStyle(el);
-        return { backgroundColor, boxShadow, color, width, height };
+        const { backgroundColor, boxShadow, width, height } = getComputedStyle(el);
+        return { backgroundColor, boxShadow, width, height };
       };
       const openerBadgeStyle = await unreadBadge.evaluate(badgeStyle);
       if (height === 900) await opener.press('Enter');

@@ -68,7 +68,7 @@ const scene = computed(() => SCENES[mode.value] ?? 'grid');
 .home-mode-preview__heading { display: flex; align-items: center; gap: 9px; }
 .home-mode-preview__heading svg { width: 28px; height: 28px; flex: none; color: var(--mode-accent); }
 .home-mode-preview__heading > div { min-width: 0; display: grid; gap: 2px; }
-.home-mode-preview__heading small { color: var(--mode-accent); font: 800 9px/1.1 system-ui, sans-serif; letter-spacing: .12em; }
+.home-mode-preview__heading small { color: var(--mode-accent); font: 800 10px/1.1 system-ui, sans-serif; letter-spacing: .12em; }
 .home-mode-preview__heading strong { font: 800 16px/1.15 'Barlow Condensed', system-ui, sans-serif; }
 .home-mode-preview__stage {
   position: relative;
@@ -102,7 +102,6 @@ const scene = computed(() => SCENES[mode.value] ?? 'grid');
   .home-mode-preview__stage { height: 30px; margin-top: 5px; }
   .home-mode-preview__hero { height: 13px; width: 9px; }
   .home-mode-preview p { margin: 5px 0 2px; font-size: 10px; }
-  #home-mode-preview-rules { -webkit-line-clamp: 1; font-size: 9px; }
 }
 @media (max-height: 500px) and (orientation: landscape) {
   .home-mode-preview { top: calc(66px + var(--safe-top, 0px)); }

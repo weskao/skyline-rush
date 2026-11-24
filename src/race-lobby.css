@@ -153,10 +153,8 @@ details.performance-notice {
   .intro .intro-actions { z-index: 3; }
   .intro .race-rules-row:has([aria-expanded="true"]) { z-index: 5; }
   body[data-phase="ready"]:not(.airflow-active) .intro #start-button { height: 44px; }
-  body[data-phase="ready"]:not(.airflow-active) .showcase-camera-dock {
-    bottom: calc(var(--edge-bottom) + 48px);
-    padding-block: 2px;
-  }
+  /* No dock padding: the 52px stepper frame (62065c2c) fills the 52px band between Start and Daily. */
+  body[data-phase="ready"]:not(.airflow-active) .showcase-camera-dock { bottom: calc(var(--edge-bottom) + 48px); }
   body[data-phase="ready"]:not(.airflow-active) .daily-card {
     bottom: calc(var(--edge-bottom) + 100px);
     padding-block: 3px;
