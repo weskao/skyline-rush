@@ -3,6 +3,11 @@
 - [ ] Verify updated startup unread-tab, historical release media and launch-flare browser contracts against exact-HEAD CI. RED: startup selected-tab badge missing, Freeze/EMP and enlarged picture locators timed out, old static countdown pool assertion failed on both attempts. These assertions assumed the superseded behavior; checks now select the media-owning tab, assert per-tab read state and record actual animated countdown GLB frames. Local Playwright/build unavailable in connector environment; GREEN not yet observed.
 - [ ] Resolve remaining CI failures: coastal/Taipei showcase occlusion, tutorial cue/pass and telemetry/paused layout, tutorial DOM contract and first-visit return, race GO notice telemetry, Home short-landscape rail/labels, Neon fallback status. Confirm full quality-gate and real-device visuals; do not mark complete before evidence.
 
+# Home wordmark interaction (2026-11-25)
+
+- [x] Superseded: the wordmark no longer reloads; `197386b0` makes it a same-document `#intro` link, so the non-interactive variant was dropped.
+- [ ] Complete regression gates, visual evidence and exact-commit CI. `make verify` blocked by missing pnpm 11.28.13 executable.
+
 # Announcement unread indicators (2026-11-24)
 
 - [x] Trace the shared release controller: opening marked all versions read; closing forcibly hid the Home dot. Isolated storage-logic regression reproduced the out-of-order read bug (RED).
