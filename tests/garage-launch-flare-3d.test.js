@@ -119,7 +119,9 @@ test('every equipped launch flare animates from countdown entry through GO, then
     assert.ok(pool.visible && glow.visible, 'the last wave remains visible before GO');
     race.countdown = 0; race.phase = 'racing'; update();
     assert.ok(pool.visible && glow.visible && u.age.value > beforeGo, 'GO continues the existing wave rather than restarting it');
-    for (let i = 0; i < 12; i++) update();
+    for (let i = 0; i < 71; i++) update();
+    assert.equal(pool.visible, true, 'the 1.4 s final wave must not be cut short');
+    update(); update();
     assert.equal(pool.visible || glow.visible, false, 'the final wave ends naturally after GO');
     for (let i = 0; i < 60; i++) update();
     assert.equal(pool.visible, false, 'no new wave begins during racing');
@@ -132,7 +134,7 @@ test('every equipped launch flare animates from countdown entry through GO, then
   assert.equal(pool.visible, false, 'no launch flare skin, no countdown flare');
 });
 
-test('all countdown waves preserve the original .78 second motion and intensity', () => {
+test('countdown waves match the reference branch 1.4 second motion and intensity', () => {
   const scene = new Scene(), car = new Group();
   car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
   car.add(car.userData.body); scene.add(car);
@@ -143,22 +145,22 @@ test('all countdown waves preserve the original .78 second motion and intensity'
   const pool = scene.getObjectByName('Launch flare burst'), u = pool.material.uniforms;
   const at = remaining => { race.countdown = remaining; aero.update(race, .05, origin, settings, false); };
   at(3); const power = u.power.value;
-  for (const remaining of [2.61, 1.83, 1.05]) {
+  for (const remaining of [2.3, .9]) {
     at(remaining);
-    assert.ok(Math.abs(u.age.value - .5) < 1e-6, 'each full wave reaches half age after .39 s, not .475 s');
+    assert.ok(Math.abs(u.age.value - .5) < 1e-6, 'each reference wave reaches half age after .7 s');
     assert.equal(u.power.value, power, 'ordinary waves retain their original intensity');
   }
-  at(.56); const age = u.age.value;
-  assert.ok(Math.abs(age - .1 / .78) < 1e-6, 'the fourth wave begins at its original cadence');
-  at(.35);
-  assert.equal(u.power.value, power, 'the final wave keeps the original power uniform and shader fade');
-  at(.2);
-  assert.ok(u.age.value > age && u.power.value === power, 'no extra countdown fade or speed change');
+  at(.21);
+  assert.ok(u.age.value > .99, 'the second wave is still finishing');
+  at(.19);
+  assert.ok(u.age.value < .01, 'the third wave begins at 2.8 s');
+  at(.1); const age = u.age.value;
+  assert.ok(Math.abs(age - .1 / 1.4) < 1e-6, 'the third wave retains the reference cadence');
   at(.01);
-  assert.ok(pool.visible && u.power.value === power, 'no artificial cutoff before GO');
+  assert.ok(pool.visible && u.age.value > age && u.power.value === power, 'no artificial cutoff or power change before GO');
 });
 
-test('a skipped final countdown frame continues the same wave on GO', () => {
+test('a skipped final countdown frame samples the active reference wave at GO', () => {
   const scene = new Scene(), car = new Group();
   car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
   car.add(car.userData.body); scene.add(car);
@@ -170,10 +172,11 @@ test('a skipped final countdown frame continues the same wave on GO', () => {
   assert.ok(pool.visible);
   race.phase = 'racing'; race.countdown = 0; aero.update(race, .05, origin, settings, false);
   assert.ok(pool.visible);
-  assert.ok(Math.abs(pool.material.uniforms.age.value - .66 / .78) < 1e-6, 'GO continues at the actual countdown age');
-  aero.update(race, .05, origin, settings, false);
+  assert.ok(Math.abs(pool.material.uniforms.age.value - .2 / 1.4) < 1e-6, 'a skipped frame samples the current reference wave at GO');
+  for (let i = 0; i < 11; i++) aero.update(race, .1, origin, settings, false);
   assert.ok(pool.visible, 'the last wave still has time left');
   aero.update(race, .1, origin, settings, false);
+  aero.update(race, .01, origin, settings, false);
   assert.equal(pool.visible, false, 'the last wave completes without starting another');
 });
 
@@ -187,7 +190,10 @@ test('direct race entry without a countdown still fires the equipped flare once'
   race.phase = 'racing'; aero.update(race, .05, origin, settings, false);
   const pool = scene.getObjectByName('Launch flare burst');
   assert.ok(pool.visible);
-  for (let i = 0; i < 20; i++) aero.update(race, .1, origin, settings, false);
+  assert.ok(Math.abs(pool.material.uniforms.age.value - .05 / 1.1) < 1e-6, 'direct launch uses the reference 1.1 s burst');
+  for (let i = 0; i < 10; i++) aero.update(race, .1, origin, settings, false);
+  assert.ok(pool.visible, 'direct launch is still animating after 1.05 s');
+  aero.update(race, .1, origin, settings, false);
   assert.equal(pool.visible, false);
 });
 

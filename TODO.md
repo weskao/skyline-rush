@@ -6,6 +6,9 @@
 
 # Launch flare on race entry (2026-11-24)
 
+- [x] User identified the actual speed reference: `feature/3d-pipeline-phase-continuation` (`95e1bcdf`). Restore 1.4 s countdown waves / 1.1 s direct-start burst instead of 0.78 s; preserve existing Studio cadence, current rendering/brightness fixes, and natural last-wave completion after GO. Isolated reference cadence RED/GREEN checks passed; renderer regression updated.
+- [ ] Compare real WebGL captures with the reference branch at the same countdown moments and after GO (all eight styles; current shader/brightness changes intentionally retained).
+
 - [x] Follow-up: sustain animated waves from entry until 0.15 s before GO; use the actual countdown clock, preserve pause/resume, direct start and restart, and prevent a skipped final frame from leaving the effect visible on GO. Isolated age/routing checks pass; renderer regression updated.
 - [x] Restore the original 0.78 s wave cadence (rather than the intermediate 0.95 s stretch), with only the last partial wave fading; unchanged shader speed, Studio cadence and direct-start burst. Isolated RED/GREEN cadence and fade checks pass; full Three.js/WebGL verification remains pending.
 - [x] Latest UX requirement supersedes the pre-GO cutoff: preserve 0.78 s cadence and original power/decay, allow the current wave to finish naturally after GO, and do not schedule a new racing wave. Isolated RED/GREEN timing tests passed; Three.js regression updated.

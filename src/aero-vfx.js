@@ -256,7 +256,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       // Play on the first race frame; GO is not another launch. A direct start may skip countdown.
       const launching = launchSkinActive && (race.phase === 'countdown' || active) && lastPhase === 'ready';
       const countdownFlare = launchSkinActive && (race.phase === 'countdown' || lastPhase === 'countdown' && (race.phase === 'paused' || active && race.countdown === 0)) ? race.countdown : undefined;
-      const flared = launching && flare.trigger(current, vehicle.quaternion, .78);
+      const flared = launching && flare.trigger(current, vehicle.quaternion, 1.1); // reference direct-start burst; countdown renderer uses 1.4 s
       if (!flared && ((boost && !wasBoosting) || (nitroActive && !wasNitro) || launching)) {
         shockAge = 0; shockPosition.copy(current); shock.quaternion.copy(vehicle.quaternion);
       }

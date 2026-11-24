@@ -120,8 +120,8 @@ export function createLaunchFlare(effects, vehicle, ground) {
     },
     // Low keeps the pool and rays but skips the full-body overdraw; VFX Off / Reduced Motion pass enabled=false.
     update(dt, time, origin, enabled, quality, power, detail = 0, countdownRemaining = undefined) {
-      // Keep the original .78 s cadence; on GO, sample the last wave at countdown zero, then let it finish.
-      if (countdownRemaining !== undefined) age = (Math.max(0, 3 - countdownRemaining) % .78) / .78;
+      // Reference 3D pipeline cadence: 1.4 s per countdown wave; GO releases the current wave unchanged.
+      if (countdownRemaining !== undefined) { duration = 1.4; age = (Math.max(0, 3 - countdownRemaining) % duration) / duration; }
       else if (age < 1) age = Math.min(1, age + dt / duration);
       const on = !!style && enabled && (held || age < 1);
       const bursting = on && !held;
