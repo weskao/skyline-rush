@@ -83,7 +83,7 @@ async function captureRace(page, quality = 'high') {
   await page.locator('#start-button').click();
   await expect.poll(() => page.evaluate(() => {
     const pool = window.gameScene.player.getObjectByName('Launch flare burst');
-    return !!pool?.visible && pool.material.uniforms.charging.value === 1;
+    return window.gameplay.race.phase === 'countdown' && !!pool?.visible && pool.material.uniforms.charging.value === 0 && pool.material.uniforms.age.value < 1;
   }), { timeout: ciTimeout(15000) }).toBe(true);
   shots.launch = await png(page.locator('body'));
   await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(15000) });

@@ -83,33 +83,54 @@ test('flare parts follow quality and comfort settings and never re-upload instan
   assert.notEqual(rays.rotation.y, turn, 'the magenta vortex swirls its rays around the car');
 });
 
-test('countdown holds a dim, steady charge and GO triggers one short burst', () => {
+test('every equipped launch flare animates on the first countdown frame, not GO', () => {
   const scene = new Scene(), car = new Group();
   car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
   car.add(car.userData.body); scene.add(car);
   const aero = createAeroVFX(scene, car), race = createRace(), settings = vfxSettings({ enabled: true, quality: 'high' });
-  aero.setSkins({ 'launch-flare': 'launch-flare-gold' });
-  const pool = scene.getObjectByName('Launch flare burst');
-  race.phase = 'countdown';
-  const u = pool.material.uniforms;
-  const moving = ['Launch flare rays', 'Launch flare rings', 'Launch flare sparks', 'Launch flare body glow'].map(name => scene.getObjectByName(name));
-  const origin = new Vector3();
-  const chargeAges = new Set();
-  for (let i = 0; i < 3 * 60; i++) {
-    aero.update(race, 1 / 60, origin, settings, false);
-    chargeAges.add(u.age.value);
-    assert.ok(pool.visible && moving.every(mesh => !mesh.visible), 'only the ground charge is visible');
-    assert.equal(u.charging.value, 1);
+  const pool = scene.getObjectByName('Launch flare burst'), u = pool.material.uniforms;
+  const rays = scene.getObjectByName('Launch flare rays'), rings = scene.getObjectByName('Launch flare rings');
+  const glow = scene.getObjectByName('Launch flare body glow'), origin = new Vector3();
+  const update = (dt = 1 / 60) => aero.update(race, dt, origin, settings, false);
+  for (const [id, style] of Object.entries(LAUNCH_FLARE_STYLES)) {
+    aero.reset(); aero.setSkins({ 'launch-flare': id });
+    race.phase = 'ready'; update();
+    assert.equal(pool.visible, false, `${id}: no flare on Home`);
+    race.phase = 'countdown'; update();
+    assert.ok(pool.visible && glow.visible, `${id}: animated flare is visible on entering the race`);
+    assert.equal(style.shape === 'ring' ? rings.visible : rays.visible, true);
+    assert.equal(u.charging.value, 0, 'no static countdown-only pool');
+    const firstAge = u.age.value;
+    assert.ok(firstAge > 0 && firstAge < 1);
+    race.phase = 'paused'; update(0);
+    assert.equal(u.age.value, firstAge, 'pausing freezes the burst');
+    race.phase = 'countdown'; update();
+    assert.ok(u.age.value > firstAge, 'resume continues rather than restarting');
+    for (let i = 0; i < 30; i++) update(.1);
+    assert.equal(pool.visible, false, 'the burst fades during a full countdown');
+    race.phase = 'racing'; update();
+    assert.equal(pool.visible || glow.visible, false, 'GO does not fire a second launch burst');
+    aero.reset();
+    race.phase = 'countdown'; update();
+    assert.ok(pool.visible && glow.visible, 'a new race or restart plays its own burst');
   }
-  assert.equal(chargeAges.size, 1);
-  race.phase = 'racing'; aero.update(race, 1 / 60, new Vector3(), settings, false);
-  assert.ok(pool.visible && moving[0].visible, 'GO fires the launch burst');
-  assert.equal(u.charging.value, 0);
-  for (let i = 0; i < 60; i++) aero.update(race, 1 / 60, new Vector3(), settings, false);
-  assert.equal(pool.visible, false, 'the flare ends once the race is under way');
-  race.phase = 'countdown'; aero.setSkins({});
-  aero.update(race, 1 / 60, new Vector3(), settings, false);
+  aero.reset(); aero.setSkins({});
+  race.phase = 'countdown'; update();
   assert.equal(pool.visible, false, 'no launch flare skin, no countdown flare');
+});
+
+test('direct race entry without a countdown still fires the equipped flare once', () => {
+  const scene = new Scene(), car = new Group();
+  car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
+  car.add(car.userData.body); scene.add(car);
+  const aero = createAeroVFX(scene, car), race = createRace(), origin = new Vector3();
+  const settings = vfxSettings({ enabled: true, quality: 'high' });
+  aero.setSkins({ 'launch-flare': 'launch-flare-gold' });
+  race.phase = 'racing'; aero.update(race, .05, origin, settings, false);
+  const pool = scene.getObjectByName('Launch flare burst');
+  assert.ok(pool.visible);
+  for (let i = 0; i < 20; i++) aero.update(race, .1, origin, settings, false);
+  assert.equal(pool.visible, false);
 });
 
 test('flares other than the shock ring are slim shooting streaks with rising sparks and a ground ripple, not solid spikes', () => {

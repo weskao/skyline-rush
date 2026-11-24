@@ -1,3 +1,9 @@
+# Launch flare on race entry (2026-11-24)
+
+- [x] Trace the old countdown-only static charge and GO trigger in `src/aero-vfx.js`; isolated execution of the actual phase block reproduced zero triggers on countdown entry (RED).
+- [x] Move the existing one-shot launch animation to the first countdown frame (direct racing fallback), preserve pause/resume and avoid a duplicate GO burst. Isolated phase-block regression passed 4/4 (GREEN); updated the renderer regression and optional real-game audit to the new contract.
+- [ ] Run the Three.js launch-flare tests, full `pnpm test`, module-size, typecheck, production build and `make verify`; confirm the exact-HEAD quality-gate. Capture the real first countdown frame and GO on flat Coast and sloped Alpine, desktop and both phone orientations, including VFX Off / Low / Reduced Motion. The connector environment cannot run the full checkout or WebGL capture.
+
 # Upcoming release announcement (2026-11-24)
 - [x] Stamp the published v0.33.0 entry with its tag date (2026-11-22); preserve reviewed copy and media references. Add one unnumbered Upcoming entry, in English and Traditional Chinese, based on changes after v0.33.0.
 - [ ] Release Phase N: record the final locked game, inspect frames, and attach the media marked `MEDIA PENDING` in `src/release-notes-data.ts`. No nonexistent media is referenced by the player UI.

@@ -253,14 +253,13 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       if (!hadPosition || car.impact !== lastImpact || !enabled) {
         previous.copy(current); previousRotation.copy(vehicle.quaternion); hadPosition = true;
       }
-      const countingDown = launchSkinActive && race.phase === 'countdown';
-      flare.hold(countingDown);
-      const launching = launchSkinActive && active && (lastPhase === 'ready' || lastPhase === 'countdown');
+      // Play on the first race frame; GO is not another launch. A direct start may skip countdown.
+      const launching = launchSkinActive && (race.phase === 'countdown' || active) && lastPhase === 'ready';
       const flared = launching && flare.trigger(current, vehicle.quaternion, .78);
       if (!flared && ((boost && !wasBoosting) || (nitroActive && !wasNitro) || launching)) {
         shockAge = 0; shockPosition.copy(current); shock.quaternion.copy(vehicle.quaternion);
       }
-      wasBoosting = boost; wasNitro = nitroActive; lastPhase = race.phase; lastImpact = car.impact;
+      wasBoosting = boost; wasNitro = nitroActive; lastPhase = race.phase === 'paused' ? lastPhase : race.phase; lastImpact = car.impact;
       shock.material.color.copy(nitroActive && !studioDemo ? nitroShockColor : shockColor);
       shockAge += dt;
       const fu = flow.material.uniforms;
