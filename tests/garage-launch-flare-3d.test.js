@@ -94,29 +94,51 @@ test('every equipped launch flare animates on the first countdown frame, not GO'
   const update = (dt = 1 / 60) => aero.update(race, dt, origin, settings, false);
   for (const [id, style] of Object.entries(LAUNCH_FLARE_STYLES)) {
     aero.reset(); aero.setSkins({ 'launch-flare': id });
-    race.phase = 'ready'; update();
+    race.phase = 'ready'; race.countdown = 3; update();
     assert.equal(pool.visible, false, `${id}: no flare on Home`);
     race.phase = 'countdown'; update();
     assert.ok(pool.visible && glow.visible, `${id}: animated flare is visible on entering the race`);
     assert.equal(style.shape === 'ring' ? rings.visible : rays.visible, true);
     assert.equal(u.charging.value, 0, 'no static countdown-only pool');
     const firstAge = u.age.value;
-    assert.ok(firstAge > 0 && firstAge < 1);
+    assert.ok(firstAge >= 0 && firstAge < 1);
+    race.countdown = 2.7; update(.1);
+    const pausedAge = u.age.value;
+    assert.ok(pausedAge > firstAge, 'animation advances with the countdown');
     race.phase = 'paused'; update(0);
-    assert.equal(u.age.value, firstAge, 'pausing freezes the burst');
-    race.phase = 'countdown'; update();
-    assert.ok(u.age.value > firstAge, 'resume continues rather than restarting');
-    for (let i = 0; i < 30; i++) update(.1);
-    assert.equal(pool.visible, false, 'the burst fades during a full countdown');
-    race.phase = 'racing'; update();
+    assert.equal(u.age.value, pausedAge, 'pausing freezes the burst');
+    race.phase = 'countdown'; race.countdown = 2.6; update();
+    assert.ok(u.age.value > pausedAge, 'resume continues rather than restarting');
+    for (let i = 1; i <= 144; i++) {
+      race.countdown = 2.6 - i / 60; update();
+      assert.ok(pool.visible && glow.visible, `${id}: animation continues at ${race.countdown}s remaining`);
+      assert.equal(u.charging.value, 0, 'each wave is animated');
+    }
+    race.countdown = .1; update(.1);
+    assert.equal(pool.visible || glow.visible, false, 'the last wave finishes just before GO');
+    race.countdown = 0; race.phase = 'racing'; update();
     assert.equal(pool.visible || glow.visible, false, 'GO does not fire a second launch burst');
     aero.reset();
-    race.phase = 'countdown'; update();
+    race.phase = 'countdown'; race.countdown = 3; update();
     assert.ok(pool.visible && glow.visible, 'a new race or restart plays its own burst');
   }
   aero.reset(); aero.setSkins({});
   race.phase = 'countdown'; update();
   assert.equal(pool.visible, false, 'no launch flare skin, no countdown flare');
+});
+
+test('a skipped final countdown frame cannot leak a flare into GO', () => {
+  const scene = new Scene(), car = new Group();
+  car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
+  car.add(car.userData.body); scene.add(car);
+  const aero = createAeroVFX(scene, car), race = createRace(), origin = new Vector3();
+  const settings = vfxSettings({ enabled: true, quality: 'high' });
+  aero.setSkins({ 'launch-flare': 'launch-flare-gold' });
+  race.phase = 'countdown'; race.countdown = .45; aero.update(race, .05, origin, settings, false);
+  const pool = scene.getObjectByName('Launch flare burst');
+  assert.ok(pool.visible);
+  race.phase = 'racing'; race.countdown = 0; aero.update(race, .05, origin, settings, false);
+  assert.equal(pool.visible, false);
 });
 
 test('direct race entry without a countdown still fires the equipped flare once', () => {

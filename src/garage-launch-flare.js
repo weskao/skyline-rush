@@ -119,8 +119,10 @@ export function createLaunchFlare(effects, vehicle, ground) {
       return true;
     },
     // Low keeps the pool and rays but skips the full-body overdraw; VFX Off / Reduced Motion pass enabled=false.
-    update(dt, time, origin, enabled, quality, power, detail = 0) {
-      if (age < 1) age = Math.min(1, age + dt / duration);
+    update(dt, time, origin, enabled, quality, power, detail = 0, countdownRemaining = undefined) {
+      // Three .95 s waves from 3 to .15 seconds remaining; the actual race clock owns their progress.
+      if (countdownRemaining !== undefined) age = countdownRemaining <= .15 ? 1 : (Math.max(0, 3 - countdownRemaining) % .95) / .95;
+      else if (age < 1) age = Math.min(1, age + dt / duration);
       const on = !!style && enabled && (held || age < 1);
       const bursting = on && !held;
       pool.visible = on; glow.visible = bursting && quality > 0.25;

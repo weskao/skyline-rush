@@ -255,6 +255,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       }
       // Play on the first race frame; GO is not another launch. A direct start may skip countdown.
       const launching = launchSkinActive && (race.phase === 'countdown' || active) && lastPhase === 'ready';
+      const countdownFlare = launchSkinActive && (race.phase === 'countdown' || lastPhase === 'countdown' && (race.phase === 'paused' || active && race.countdown === 0)) ? race.countdown : undefined;
       const flared = launching && flare.trigger(current, vehicle.quaternion, .78);
       if (!flared && ((boost && !wasBoosting) || (nitroActive && !wasNitro) || launching)) {
         shockAge = 0; shockPosition.copy(current); shock.quaternion.copy(vehicle.quaternion);
@@ -373,7 +374,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       shock.scale.setScalar(studioDemo ? 0.7 + shockAge * 4.5 : 0.5 + shockAge * 20);
       shock.material.opacity = Math.max(0, 1 - shockAge / shockDuration) ** 2
         * settings.shockwave * (studioDemo ? 0.95 : nitroActive ? 0.3 : 0.45);
-      flare.update(dt, time, origin, enabled && !calm, quality, Math.min(1, settings.shockwave * (studioDemo ? 2 : 1.4)), detail); // default 0.5 → full in Studio, 0.7 racing
+      flare.update(dt, time, origin, enabled && !calm, quality, Math.min(1, settings.shockwave * (studioDemo ? 2 : 1.4)), detail, countdownFlare); // default 0.5 → full in Studio, 0.7 racing
       previous.copy(current); previousRotation.copy(vehicle.quaternion);
       direction.set(0, 0.64, 3).applyMatrix4(vehicle.matrixWorld);
       return { strength, ignition: boost ? Math.max(0, 1 - shockAge / 0.25) : 0, nozzle: direction, reveal };
