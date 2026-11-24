@@ -115,25 +115,20 @@ written with `version: UPCOMING` (never a version number) until it ships; see se
 
 ## 5. State and trigger contract
 
-- Key: `localStorage['skyline-rush-whats-new-seen-v1'] = '<newest version the player has seen>'`,
-  a device preference (not a Firestore save). Storage errors never block play; when storage is
-  blocked the dialog never opens by itself (it could not remember the visit and would cover Start on
-  every load), but the version label still opens it.
-- **Auto-show** when the newest released entry is **newer** (numeric `major.minor.patch`) than the
-  stored version. A stored version that is equal or newer stays silent; an unreadable value counts
-  as older.
-- **No stored version** (first visit, incognito window, cleared storage): the notes open on load,
-  exactly as for an older stored version; showing them records the version. Blocked storage and
-  unreleased (`UPCOMING`) notes stay silent.
+- Key: `localStorage['skyline-rush-whats-new-seen-v1']` stores a device preference (not a Firestore save).
+  Legacy version strings remain a read-through watermark; new reads store JSON with `through` (the
+  original watermark or null) and `read` (individually viewed release versions). Storage errors never
+  block play; blocked storage prevents automatic opening but manual entry still works.
+- **Auto-show** when the first tab is a published release that has not been read. With no stored
+  version, the released tabs are unread; Upcoming remains silent and never records a read.
+  Once the newest published tab has been viewed, older unread tabs do not trigger repeated auto-opening.
 - The check runs on the ready/home screen once the 3D world is up, and again whenever another
   dialog closes. It defers behind dialogs, the tutorial and a hidden page.
-- **Showing the dialog records it**: the stored version moves to the newest release and the unread
-  dot clears the moment it opens, automatically or by hand, so a reload or crash never repeats it.
-- **Unread marks**: while that visit's dialog is open, every listed release newer than the previous
-  stored version shows a **New / 未讀** corner tag (straddling the tab's top border at its top-right
-  corner, so it adds no width to the tab) on its tab, so a player who missed several updates
-  sees each one. No extra key is stored — the single seen version is the watermark — and the next
-  opening shows no badges.
+- **Viewing a version records only that version**: the initially displayed tab counts as read on
+  open, as do tabs selected by click or keyboard. Unvisited tabs keep their New / 未讀 corner dots,
+  including after closing, reopening, switching locale or reloading. Upcoming has no unread dot.
+- **Home dot**: the bottom-center announcement opener shows a dot if and only if at least one
+  displayed release tab is unread; it clears when the last unread tab is viewed.
 - Manual entry: the version label always reopens the dialog on the newest tab. Close, Escape and
   Continue restore focus to the opener; game hotkeys never leak through the modal.
 

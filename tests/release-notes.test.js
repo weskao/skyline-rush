@@ -18,13 +18,32 @@ test('a release newer than the version the player last saw shows once and record
   const release = { version: '9.9.9', highlights: [{ id: 'new-track' }] };
   assert.equal(shouldAnnounce(release, store), true, 'no record (first visit, incognito, cleared storage) is always announced');
   markAnnouncementSeen(release, store);
-  assert.equal(store.getItem(NOTES_SEEN_KEY), '9.9.9');
+  assert.deepEqual(JSON.parse(store.getItem(NOTES_SEEN_KEY)), { through: null, read: ['9.9.9'] });
   assert.equal(shouldAnnounce(release, store), false, 'same version');
   assert.equal(shouldAnnounce({ ...release, version: '9.9.10' }, store), true, 'newer version');
   store.setItem(NOTES_SEEN_KEY, '10.0.0');
   assert.equal(shouldAnnounce(release, store), false, 'player already saw a newer version');
   store.setItem(NOTES_SEEN_KEY, 'garbage');
   assert.equal(shouldAnnounce(release, store), true, 'unreadable record counts as older');
+});
+
+test('reading versions out of order preserves each unread version and the legacy watermark', () => {
+  const store = storage();
+  store.setItem(NOTES_SEEN_KEY, '1.0.0');
+  const old = { version: '1.0.0' }, middle = { version: '1.1.0' }, newest = { version: '1.2.0' };
+  markAnnouncementSeen(newest, store);
+  assert.equal(shouldAnnounce(newest, store), false);
+  assert.equal(shouldAnnounce(middle, store), true);
+  assert.equal(shouldAnnounce(old, store), false);
+  markAnnouncementSeen(middle, store);
+  assert.equal(shouldAnnounce(newest, store), false);
+  assert.equal(shouldAnnounce(middle, store), false);
+  assert.equal(shouldAnnounce(old, store), false);
+  assert.equal(shouldAnnounce({ version: '1.3.0' }, store), true);
+  const saved = store.getItem(NOTES_SEEN_KEY);
+  markAnnouncementSeen(middle, store);
+  markAnnouncementSeen({ version: UPCOMING }, store);
+  assert.equal(store.getItem(NOTES_SEEN_KEY), saved);
 });
 
 test('no announcement without a release; a release with no highlights follows the same seen-version rules', () => {

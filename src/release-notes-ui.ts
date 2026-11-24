@@ -28,13 +28,16 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
   const portrait = matchMedia('(orientation: portrait)');
   const compact = matchMedia('(orientation: landscape) and (max-height: 420px)');
   const RECENT_RELEASES = recentReleases();
-  const latestPublished = RECENT_RELEASES.find(release => release.version !== UPCOMING) ?? null;
   let releaseIndex = 0;
   let releaseOpener: HTMLElement | null = null;
   let releaseShownHere = false;
-  let releaseUnread = new Set<string>();
   const releaseStorage = (): Storage | null => { try { return localStorage; } catch { return null; } };
-  const hasUnreadRelease = () => !releaseShownHere && shouldAnnounce(latestPublished, releaseStorage());
+  const releaseUnread = new Set(RECENT_RELEASES.filter(release => shouldAnnounce(release, releaseStorage())).map(release => release.version));
+  const hasUnreadRelease = () => releaseUnread.size > 0;
+  function readSelectedRelease() {
+    const release = RECENT_RELEASES[releaseIndex];
+    if (release && releaseUnread.delete(release.version)) markAnnouncementSeen(release, releaseStorage());
+  }
   const releaseDay = (date: string, options: Intl.DateTimeFormatOptions): string => formatDate(new Date(date + 'T00:00:00'), options);
   const versionLabel = (version: string): string => version === UPCOMING ? t('release.upcoming') : 'v' + version;
   // Absolute, so the address matches what Cache Storage records for it.
@@ -134,6 +137,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
   });
   function selectRelease(index: number): void {
     releaseIndex = (index + RECENT_RELEASES.length) % RECENT_RELEASES.length;
+    readSelectedRelease();
     renderReleaseNotes();
     nextTick(() => {
       const tab = $('#release-tab-' + releaseIndex);
@@ -147,13 +151,10 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     if (!CURRENT_RELEASE || !canOpen() || releaseDialog.open || document.querySelector('dialog[open]')) return false;
     releaseOpener = opener;
     beforeOpen();
-    // Showing the notes is what counts as read: record it now so a reload or crash never repeats them.
-    // Everything newer than the previous record stays marked for this visit only.
-    const storage = releaseStorage();
-    releaseUnread = new Set(RECENT_RELEASES.filter(release => shouldAnnounce(release, storage)).map(release => release.version));
-    markAnnouncementSeen(CURRENT_RELEASE, storage);
+    // Only the displayed version counts as read; Upcoming never counts.
     releaseShownHere = true;
     releaseIndex = 0;
+    readSelectedRelease();
     renderReleaseNotes();
     navigation.open();
     releaseDialog.scrollTop = 0;
@@ -187,7 +188,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
   });
   releaseDialog.addEventListener('close', () => {
     syncReleaseVideo();
-    updateReleaseView({ openHasUpdate: false });
+    updateReleaseView({ openHasUpdate: hasUnreadRelease() });
     (releaseOpener ?? releaseOpen).focus({ preventScroll: true });
     afterClose();
   });

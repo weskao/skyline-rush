@@ -1,3 +1,9 @@
+# Announcement unread indicators (2026-11-24)
+
+- [x] Trace the shared release controller: opening marked all versions read; closing forcibly hid the Home dot. Isolated storage-logic regression reproduced the out-of-order read bug (RED).
+- [x] Persist individual viewed versions, retain legacy watermark compatibility, and derive Home dot from remaining unread tabs. Isolated storage-logic checks passed 2/2 (GREEN); update unit and browser regressions for tab selection, keyboard, locale, reopening and reload.
+- [ ] Run the full checkout's module-size, unit, build, browser and `make verify` gates; inspect exact-HEAD CI and real desktop/mobile visuals. Connector environment cannot clone the full repository or capture the real game.
+
 # Launch flare on race entry (2026-11-24)
 
 - [x] Follow-up: sustain animated waves from entry until 0.15 s before GO; use the actual countdown clock, preserve pause/resume, direct start and restart, and prevent a skipped final frame from leaving the effect visible on GO. Isolated age/routing checks pass; renderer regression updated.

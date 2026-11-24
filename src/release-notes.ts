@@ -54,17 +54,33 @@ export const recentReleases = (current: string = version, notes: readonly Releas
 export const releaseForVersion = (v: string = version): ReleaseEntry | null => RELEASE_NOTES.find(release => release.version === v) ?? null;
 export const CURRENT_RELEASE = recentReleases()[0] ?? null;
 
-// Shows when the player last saw an older version, or has no record at all (first visit, incognito, cleared storage).
-// Blocked storage cannot remember the visit, so it stays silent rather than reopening on every load; unreleased notes never pop up.
+// Legacy records remain a read-through watermark; new reads are individual versions.
+function readAnnouncementState(storage: ReleaseStore): { through: string | null; read: string[] } {
+  const raw = storage.getItem(NOTES_SEEN_KEY);
+  if (raw?.startsWith('{')) {
+    try {
+      const state = JSON.parse(raw);
+      if ((state.through === null || typeof state.through === 'string') && Array.isArray(state.read))
+        return { through: state.through, read: state.read.filter((v: unknown) => typeof v === 'string') };
+    } catch { /* fall back to the legacy version parser */ }
+  }
+  return { through: raw, read: [] };
+}
+// Blocked storage stays silent; upcoming notes are never unread.
 export function shouldAnnounce(release: Pick<ReleaseEntry, 'version'> | null, storage?: ReleaseStore | null): boolean {
   if (!release || release.version === UPCOMING || !storage) return false;
-  let seen;
-  try { seen = storage.getItem(NOTES_SEEN_KEY); } catch { return false; }
-  return seen == null || compareVersions(release.version, seen) > 0;
+  try {
+    const { through, read } = readAnnouncementState(storage);
+    return compareVersions(release.version, through) > 0 && !read.includes(release.version);
+  } catch { return false; }
 }
 export function markAnnouncementSeen(release: Pick<ReleaseEntry, 'version'> | null, storage?: ReleaseStore | null): void {
-  if (!release || release.version === UPCOMING) return;
-  try { storage?.setItem(NOTES_SEEN_KEY, release.version); } catch { /* remembered in memory by the app */ }
+  if (!storage || !shouldAnnounce(release, storage) || !release) return;
+  try {
+    const state = readAnnouncementState(storage);
+    state.read.push(release.version);
+    storage.setItem(NOTES_SEEN_KEY, JSON.stringify(state));
+  } catch { /* remembered in memory by the app */ }
 }
 // Display order inside a release: NEW first, then improvements, then fixes; unknown kinds last.
 const KIND_ORDER: readonly string[] = ['new', 'improvement', 'fix'];

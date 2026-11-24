@@ -10,7 +10,7 @@ const SEEN_KEY = 'skyline-rush-whats-new-seen-v1';
 const announced = recentReleases().map(release => release.version).filter(v => v !== UPCOMING);
 const hasUpcoming = recentReleases().some(release => release.version === UPCOMING);
 const tabFor = (dialog, v) => dialog.locator(`[role="tab"][data-version="${v}"]`);
-// Upcoming notes stop the automatic opening, so the reader opens the dialog; opening marks the unread releases alike.
+// Upcoming notes stop automatic opening; manually opening them reads no published version.
 const openIfNotAuto = page => hasUpcoming ? page.locator('#whats-new-open').click() : Promise.resolve();
 // Page scripts run after the helper's context script, so this replaces its "already seen" record on the first load only.
 const seedSeen = (page, value) => page.addInitScript(([key, seen]) => {
@@ -126,8 +126,8 @@ test('a returning player on an older version gets the notes once, and the record
   }
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('tab').first()).toHaveAttribute('aria-selected', 'true');
-  await expect.poll(() => page.evaluate(key => localStorage.getItem(key), SEEN_KEY)).toBe(version);
-  await expect(page.locator('#whats-new-open')).not.toHaveClass(/has-update/);
+  await expect.poll(() => page.evaluate(key => localStorage.getItem(key), SEEN_KEY)).toContain(version);
+  await expect(page.locator('#whats-new-open')).toHaveClass(/has-update/); // older visible releases remain unread
   await page.locator('#release-continue').click();
   await page.reload();
   await settle(page);
@@ -136,32 +136,53 @@ test('a returning player on an older version gets the notes once, and the record
 
 test.describe('several releases missed', () => {
   const shown = announced;
-  test.use({ whatsNewSeen: shown[2] });
-  test('every release newer than the last one read is marked new until the notes are reopened', async ({ page }) => {
+  test.use({ whatsNewSeen: null });
+  test('each displayed release clears only its own dot, and Home keeps its dot until all are read', async ({ page }) => {
+    await seedSeen(page, shown[2]);
     await page.goto('/');
     await openIfNotAuto(page);
-    const dialog = page.locator('#whats-new-screen');
+    const dialog = page.locator('#whats-new-screen'), opener = page.locator('#whats-new-open');
+    const newest = tabFor(dialog, shown[0]), older = tabFor(dialog, shown[1]);
+    const dot = '.release-tab-unread';
     await expect(dialog).toBeVisible();
-    const marked = dialog.getByRole('tab').filter({ has: page.locator('.release-tab-unread') });
-    await expect(marked).toHaveCount(2);
-    await expect(marked.nth(0)).toHaveAttribute('data-version', shown[0]);
-    await expect(marked.nth(1)).toHaveAttribute('data-version', shown[1]);
-    await expect(marked.nth(1)).toContainText('New');
-    await marked.nth(1).click(); // switching releases keeps the marks for this visit
+    await expect(newest.locator(dot)).toHaveCount(hasUpcoming ? 1 : 0);
+    await expect(older.locator(dot)).toHaveCount(1);
+    await expect(older.locator(dot)).toHaveText('New');
+    await expect(opener).toHaveClass(/has-update/);
+    if (hasUpcoming) await newest.click();
+    await expect(newest.locator(dot)).toHaveCount(0);
+    await expect(older.locator(dot)).toHaveCount(1);
     await page.locator('#locale-select').selectOption('zh-TW', { force: true });
-    await expect(marked).toHaveCount(2);
-    await expect(marked.nth(1)).toContainText('未讀');
+    await expect(older.locator(dot)).toHaveText('未讀');
     await page.locator('#release-continue').click();
-    await page.locator('#whats-new-open').click(); // opening the notes counted as reading every release
-    // ...unless Upcoming notes lead: they record no read, so the marks stay until the release is named
-    await expect(dialog.locator('.release-tab-unread')).toHaveCount(hasUpcoming ? 2 : 0);
+    await expect(opener.locator(dot)).toBeVisible();
+    await page.reload();
+    await settle(page);
+    await expect(dialog).toBeHidden();
+    await expect(opener.locator(dot)).toBeVisible();
+    await opener.click();
+    await expect(newest.locator(dot)).toHaveCount(0);
+    await expect(older.locator(dot)).toHaveCount(1);
+    await newest.click();
+    await page.keyboard.press('ArrowRight');
+    await expect(older).toHaveAttribute('aria-selected', 'true');
+    await expect(dialog.locator(dot)).toHaveCount(0);
+    await expect(opener).not.toHaveClass(/has-update/);
+    await page.locator('#release-continue').click();
+    await expect(opener.locator(dot)).toHaveCount(0);
+    await page.reload();
+    await settle(page);
+    await expect(opener.locator(dot)).toHaveCount(0);
+    await opener.click();
+    await expect(dialog.locator(dot)).toHaveCount(0);
   });
 
   for (const [width, height] of [[1440,900],[390,844]]) test(`the unread badge sits on the tab's top-right corner at ${width}x${height}`, async ({ page }) => {
     await page.setViewportSize({ width, height });
+    await seedSeen(page, shown[2]);
     await page.goto('/');
     await openIfNotAuto(page);
-    const tab = tabFor(page.locator('#whats-new-screen'), announced[0]);
+    const tab = tabFor(page.locator('#whats-new-screen'), shown[1]);
     await expect(tab.locator('.release-tab-unread')).toBeVisible();
     const [t, badge, label, rail] = await Promise.all([tab, tab.locator('.release-tab-unread'), tab.locator('.release-tab-version'), page.locator('#release-versions')].map(l => l.boundingBox()));
     expect(Math.abs(badge.width - badge.height)).toBeLessThanOrEqual(1); // a round dot, not a text tag
@@ -194,7 +215,7 @@ test.describe('first visit', () => {
       return;
     }
     await expect(page.locator('#whats-new-screen')).toBeVisible();
-    await expect.poll(() => page.evaluate(key => localStorage.getItem(key), SEEN_KEY)).toBe(version);
+    await expect.poll(() => page.evaluate(key => localStorage.getItem(key), SEEN_KEY)).toContain(version);
   });
 });
 
