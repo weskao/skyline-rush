@@ -1,4 +1,4 @@
-import { expect } from './helpers/test.js';
+import { expect, settled } from './helpers/test.js';
 import { openSettingsSection } from './helpers/settings-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { captureHooks, test } from './helpers/gameplay-browser.js';
@@ -314,7 +314,7 @@ for (const [name, viewport, segments] of [
       if (segments) await expect(page.locator('.scene-shade')).toHaveCSS('background-image', 'none');
       await page.locator('#lobby-tracks-toggle').tap();
       const dialog = page.locator('#track-chooser');
-      await expect(dialog).toBeVisible();
+      await settled(dialog);
       const box = await dialog.boundingBox();
       if (segments) {
         expect(segments.some(pane => box.x >= pane.left - 1 && box.y >= pane.top - 1 &&

@@ -77,8 +77,6 @@ body[data-phase="ready"] :is(.scene-shade, .topbar),
   line-height: 1.15;
   word-break: keep-all;
 }
-/* Same label typography in Home and Garage, even when the dock shrinks into the landscape rail. */
-.showcase-camera-dock { container-type: inline-size; }
 .intro .upcoming-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 60%; }
 
 details.performance-notice {

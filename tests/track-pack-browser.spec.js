@@ -1,4 +1,4 @@
-import { expect, test, waitForHome } from './helpers/test.js';
+import { expect, settled, test, waitForHome } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
 
 test.use({ startupSeen: false });
@@ -135,6 +135,8 @@ test('generated WebP atlas switches hover/update frames without resizing touch t
   const originalSize = (await frame()).size;
   await action.hover();
   await expect.poll(async () => (await frame()).position).toBe('100% 0%');
+  // The generic `.track-select button:hover` surface (#2a3b4d) must not paint behind the image-only action.
+  await expect.poll(() => action.evaluate(node => getComputedStyle(node).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
   await action.evaluate(node => { node.dataset.packState = 'update'; });
   await expect.poll(async () => (await frame()).position).toBe('100% 100%');
   await page.mouse.move(0, 0);
@@ -147,6 +149,7 @@ test('download controls preserve mobile sightlines and accessible touch area', a
   await page.locator('#startup-enter').click();
   await waitForHome(page);
   await page.locator('#lobby-tracks-toggle').click();
+  await settled(page.locator('#track-chooser'));
   for (const [width, height] of [[320, 568], [390, 844], [844, 390], [1024, 768], [1280, 720]]) {
     await page.setViewportSize({ width, height });
     const measured = await page.evaluate(() => {
@@ -172,6 +175,7 @@ test('per-track icon stays bottom-right without covering distance on desktop and
   await page.locator('#lobby-tracks-toggle').click();
   const action = page.locator('#lobby-track-options [data-pack-for="coast"]');
   await expect(action).toBeVisible({ timeout: ciTimeout(12000) });
+  await settled(page.locator('#track-chooser'));
   for (const [width, height] of [[320, 568], [390, 844], [844, 390], [1280, 720]]) {
     await page.setViewportSize({ width, height });
     const geometry = await page.evaluate(() => {
@@ -227,6 +231,7 @@ test('each track pack shows only WebP artwork except a same-size progress ring w
   await waitForHome(page);
   await page.locator('#lobby-tracks-toggle').click();
   await expect(page.locator('#lobby-track-options [data-pack-for="coast"]')).toBeVisible({ timeout: ciTimeout(12000) });
+  await settled(page.locator('#track-chooser'));
 
   for (const [width, height] of [[320, 568], [390, 844], [844, 390], [1280, 720]]) {
     await page.setViewportSize({ width, height });

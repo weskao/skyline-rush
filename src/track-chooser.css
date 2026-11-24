@@ -376,19 +376,21 @@ body[data-fold-axis] #track-chooser .track-select {
 #track-required-update button:focus-visible { outline: 2px solid #f7fbff; outline-offset: 3px; }
 
 /* Shared transparent WebP atlas: download/hover/update/hover.
-   Visible artwork is 40px; the transparent keyboard/touch target remains 44px. */
-.track-chooser .track-select .track-pack-action {
+   Visible artwork is 40px; the transparent keyboard/touch target remains 44px.
+   The :hover selector outranks `.track-select button:hover:not(:disabled)` (style.css), which painted #2a3b4d. */
+.track-chooser .track-select .track-pack-action,
+.track-chooser .track-select .track-pack-action:hover {
   border: 0; background: transparent; box-shadow: none; padding: 0;
 }
 .track-chooser .track-pack-action::before {
   content: '';
   position: absolute; inset: 2px;
   width: 40px; height: 40px;
-  background: url('./assets/track-pack-icons.webp') 0 0 / 200% 200% no-repeat;
+  background: url('./assets/track-pack-icons.webp') 0% 0% / 200% 200% no-repeat;
   pointer-events: none;
 }
 .track-chooser .track-pack-action[data-pack-state="update"]::before,
-.track-chooser .track-pack-action[data-pack-state="error"]::before { background-position: 0 100%; }
+.track-chooser .track-pack-action[data-pack-state="error"]::before { background-position: 0% 100%; }
 .track-chooser .track-pack-action:is([data-pack-state="ready"], [data-pack-state="downloading"])::before { display: none; }
 /* Image-only in idle/update states; retain the real progress ring only while downloading.
    The SVG scales its 38px ring to the same ~40px visual footprint as the WebP.
@@ -398,12 +400,12 @@ body[data-fold-axis] #track-chooser .track-select {
   display: block; width: 44px; height: 44px;
 }
 @media (hover: hover) and (pointer: fine) {
-  .track-chooser .track-pack-action[data-pack-state="missing"]:hover::before { background-position: 100% 0; }
+  .track-chooser .track-pack-action[data-pack-state="missing"]:hover::before { background-position: 100% 0%; }
   .track-chooser .track-pack-action:is([data-pack-state="update"], [data-pack-state="error"]):hover::before { background-position: 100% 100%; }
   .track-chooser .track-pack-action:not(:disabled):hover::before { filter: drop-shadow(0 0 5px #65dafa); }
   #track-choose-download-all:not(:disabled):hover { filter: brightness(1.1); }
 }
-.track-chooser .track-pack-action[data-pack-state="missing"]:focus-visible::before { background-position: 100% 0; }
+.track-chooser .track-pack-action[data-pack-state="missing"]:focus-visible::before { background-position: 100% 0%; }
 .track-chooser .track-pack-action:is([data-pack-state="update"], [data-pack-state="error"]):focus-visible::before { background-position: 100% 100%; }
 @media (prefers-reduced-motion: no-preference) {
   .track-chooser .track-pack-action::before { transition: filter 150ms ease-out; }

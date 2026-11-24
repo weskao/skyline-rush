@@ -316,8 +316,10 @@ test('a slow-frame shim stalls each frame once, not each animation-frame callbac
 // thumbnail measured 144.00001526 px in 1 of 30 runs, the paused Race again button 43.99998474 px (2026-11-15).
 // After opening the Garage, pause, results or history, a spec settles the overlay (settled()/openGarage()) before measuring.
 // An incoming-debuff card enters the same way (player-hit-in): its 40 px artwork measured 39.99996948 px (2026-11-22).
-const OVERLAY_OPENER = /#garage-button'\)\.(?:click|tap)\(|#pause-button'\)\.(?:click|tap)\(|data-open-history[^;]*\.(?:click|tap)\(|#race-overlay'\)\)\.toBeVisible\(|\bhit\('(?:freeze|emp)'/;
-const OVERLAY_SETTLE = /\b(?:settled|openGarage)\(/;
+// The track chooser too (chooser-in, scale .98): a 44 px pack action measured 43.35 px and the 320x568 footer ran 5.7 px
+// past the viewport (track-pack, 2026-11-23). Closing it with #track-choose-close ends the window as settling does.
+const OVERLAY_OPENER = /#garage-button'\)\.(?:click|tap)\(|#pause-button'\)\.(?:click|tap)\(|data-open-history[^;]*\.(?:click|tap)\(|#race-overlay'\)\)\.toBeVisible\(|\bhit\('(?:freeze|emp)'|#lobby-tracks-toggle'\)\.(?:click|tap)\(/;
+const OVERLAY_SETTLE = /\b(?:settled|openGarage)\(|#track-choose-close'\)\.(?:click|tap)\(/;
 const RECT_READ = /getBoundingClientRect|\.boundingBox\(\)/;
 
 test('overlay geometry is measured after the entry animation settles', () => {
