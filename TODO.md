@@ -1,3 +1,10 @@
+# Full car-heading physics (deferred, large; 2026-11-25)
+
+- [ ] Real-car / kart-style handling: steering turns the car's nose (yaw), so after a lane change on a straight the player must counter-steer to straighten up. Today the simulation is road-relative: the car always faces along the road centreline, steering moves it sideways and corners push it outward.
+- [ ] Scope if taken: steering feel (`src/game.js` `stepRace`); keyboard and touch input; AUTO / lane assist; tutorial driving lessons (`docs/tutorial-driving.md`); rival AI and traffic; drift; fork lane choice (`forkLateral`); test bots (`scripts/pickup-economy.mjs`); corner-force and drift tests; the legacy race replay fixture (`tests/fixtures/legacy-race-replay.json`); saved Ghost data.
+- [ ] Blocked on an owner decision: it conflicts with `.claude/rules/vehicle-road-stability.md` ("Keep the arcade driving feel; do not replace it with a new physics engine."). Change that rule first.
+- [ ] Smaller step chosen instead (2026-11-25): build heading offset only in corners. When the player does not steer in a bend, the nose keeps its line and runs into the outer rail.
+
 # CI 45403054733 regression follow-up (2026-11-25)
 
 - [ ] Verify updated startup unread-tab, historical release media and launch-flare browser contracts against exact-HEAD CI. RED: startup selected-tab badge missing, Freeze/EMP and enlarged picture locators timed out, old static countdown pool assertion failed on both attempts. These assertions assumed the superseded behavior; checks now select the media-owning tab, assert per-tab read state and record actual animated countdown GLB frames. Local Playwright/build unavailable in connector environment; GREEN not yet observed.
