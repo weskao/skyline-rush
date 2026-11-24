@@ -13,3 +13,8 @@
 - Open: run fixed-step matrix and full-app replay; physical 5/15/30 min soak; visual evidence;
   validate timer-query availability and overhead on physical GPUs. Existing CPU-only bench
   and Frostbite scene-cost tool remain separate sources.
+
+- CI run 45448006733 caught TS2345 in deep-perf.ts: Three's context type is WebGL1 | WebGL2.
+  Added WebGL1 fallback regression, observed RED (createQuery is not a function), then GREEN:
+  all five isolated timer tests and standalone strict TypeScript check passed. Full CI must rerun
+  on the new HEAD; earlier failure is not evidence of final success.

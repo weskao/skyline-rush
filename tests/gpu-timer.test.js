@@ -36,3 +36,9 @@ test('ends and discards queries when drawing throws', () => {
   assert.throws(() => t.measure(() => assert.fail(), () => { throw Error('draw'); }), /draw/);
   assert.equal(f.counts().deleted, 1); t.measure(() => {}, () => {}); t.dispose(); assert.equal(f.counts().deleted, 2);
 });
+test('WebGL1 without query methods still draws and reports unsupported', () => {
+  const gl = { getExtension: () => ({ TIME_ELAPSED_EXT: 3, GPU_DISJOINT_EXT: 4 }), isContextLost: () => false, getParameter: () => false };
+  const timer = createGpuTimer(gl); let drawn = false;
+  timer.measure(() => assert.fail(), () => { drawn = true; }); timer.poll();
+  assert.equal(drawn, true); assert.equal(timer.status, 'unsupported'); timer.dispose();
+});

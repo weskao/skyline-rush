@@ -1,7 +1,18 @@
 /** Non-blocking WebGL2 timer queries. Never read QUERY_RESULT before availability. */
 type TimerExtension = { TIME_ELAPSED_EXT: number; GPU_DISJOINT_EXT: number };
 export type GpuTimerStatus = 'available' | 'unsupported' | 'disjoint' | 'context-lost' | 'disposed';
-export function createGpuTimer(gl: WebGL2RenderingContext, limit = 32) {
+export function createGpuTimer(context: WebGL2RenderingContext | WebGLRenderingContext, limit = 32) {
+  if (!('createQuery' in context)) {
+    let status: GpuTimerStatus = 'unsupported';
+    return {
+      get status() { return status; }, poll() {},
+      measure(_receive: (ms: number) => void, draw: () => void) { draw(); },
+      contextLost() { status = 'context-lost'; },
+      restore() { if (status !== 'disposed') status = 'unsupported'; },
+      dispose() { status = 'disposed'; },
+    };
+  }
+  const gl = context;
   let ext = gl.getExtension('EXT_disjoint_timer_query_webgl2') as TimerExtension | null;
   let status: GpuTimerStatus = ext ? 'available' : 'unsupported';
   let active = false;
