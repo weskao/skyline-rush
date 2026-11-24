@@ -38,8 +38,14 @@ explicitly rather than treating them as passes. Record initial asset warmup sepa
 Use fixed seed 12345, same car, skins/VFX, mode, input replay and camera route; record exact route
 segments, distance/time, orientation and FPS preference. Use fixed 60 FPS for matched comparison,
 then repeat existing Auto separately. Never teleport and call it continuous driving.
-Use 3 alternating before/after rounds, same warmup and 20 s measured window. Capture camera
-route/video and input trace; browser automation of exact input/camera remains open until verified.
+For a fixed-step scene probe, run `node scripts/thermal-baseline.mjs volcanic-crown taipei tokyo`
+(or omit IDs for the complete matrix). Uses real WebGL on the Vite dev fixture, fixed seed 12345,
+60 simulation warmup ticks, fixed throttle/boost/steer input, fixed camera time and 180 measured ticks.
+Configure THERMAL_FRAMES, THERMAL_VIEWPORT and THERMAL_DPR. This probe is not production
+frame pacing, not a full race and not a physical-device thermal result. Its fixed step can run slower
+than real time. Record starting/ending distance and drawn count; do not compare mismatched paths.
+For the real application use 3 alternating before/after rounds, same warmup and 20 s measured window.
+Capture camera route/video and input trace; automated exact full-app replay remains open.
 Run existing CPU/scene scripts separately, retain their provenance. Test desktop, portrait and landscape.
 
 ## Physical device soak
@@ -57,6 +63,9 @@ trustworthy device temperature, power or native thermal status; record unavailab
 Mac pmset warning, if actually available, is a warning level, not temperature. Android adb sensors
 are platform-specific and not a substitute for iPhone. Never publish raw personal logs,
 device serials, local addresses, URLs with credentials, account names or personal filesystem paths.
+All device-specific reports and raw probe output live only under the ignored `docs/performance/local/`.
+Verify with `git check-ignore -v docs/performance/local/example.json`; never force-add. Follow
+`docs/designs/3d-pipeline/phase0-multi-device-acceptance.md` for device evidence privacy.
 
 ## Acceptance / current status
 
@@ -66,4 +75,4 @@ Use [report template](report-template.md). Keep full regression gate unchanged.
 Wave 1 consumers: createDeepPerf, createGpuTimer, existing inspectRenderLoad/inspectPrograms,
 frame-pacing target/scale, legacy evidence parser, and the versioned data-deep JSON export.
 Record new measurements, limitations and follow-up in this directory; do not claim baseline complete
-until fixed browser replay, visual regression, exact-HEAD CI and physical-device matrix are verified.
+until fixed-step probe, full-app replay, visual regression, exact-HEAD CI and physical-device matrix are verified.

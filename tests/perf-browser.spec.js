@@ -41,3 +41,27 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     console.log(`Optimized CI software-WebGL ${viewport.width}x${viewport.height}: p50=${p50}ms p95=${p95}ms fps=${fps} window=${seconds}s (not physical device or before/after)`);
   });
 }
+
+test('deep diagnostics separate home, race and pause with explicit GPU availability', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('skyline-rush-target-fps-v1', '30'));
+  await page.goto('/?perf=deep&seed=12345');
+  const meter = page.locator('#perf-overlay');
+  const snapshot = () => meter.evaluate(el => JSON.parse(el.dataset.deep || '{}'));
+  await expect.poll(async () => (await snapshot()).reports?.['home/coast']?.load?.drawCalls ?? 0).toBeGreaterThan(0);
+  if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+  await page.locator('#start-button').click();
+  await expect(page.locator('#race-status')).toHaveText('RACING');
+  await expect.poll(async () => (await snapshot()).reports?.['racing/coast']?.metrics?.frameIntervalMs?.count ?? 0).toBeGreaterThan(1);
+  const current = await snapshot(), race = current.reports['racing/coast'];
+  expect(race.metrics.cpuSimulationMs.count).toBeGreaterThan(0);
+  expect(race.metrics.cpuRenderSubmissionMs.count).toBeGreaterThan(0);
+  expect(race.metrics.frameIntervalMs.p99).toBeGreaterThanOrEqual(race.metrics.frameIntervalMs.p95);
+  expect(race.config.targetWidth).toBeGreaterThan(0);
+  expect(race.config.msaa).toBeGreaterThan(0);
+  expect(race.config.targetFps).toBe(30);
+  expect(race.config.renderScale).toBe(1);
+  expect(['available','unsupported','disjoint','context-lost']).toContain(current.gpuStatus);
+  await page.locator('#pause-button').click();
+  await expect.poll(async () => (await snapshot()).current).toBe('paused/coast');
+  expect((await snapshot()).reports['racing/coast']).toBeDefined();
+});

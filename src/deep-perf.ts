@@ -62,13 +62,16 @@ export function createDeepPerf(search: string, renderer: WebGLRenderer, composer
     return () => { pass.render = original; };
   });
   function publish() {
-    if (!bucket) return;
+    if (!bucket) return null;
     reports[bucket.phase + '/' + bucket.track] = summarize(bucket, at);
+    const snapshot = { version: 1, source: 'unclassified-browser-webgl',
+      windowSeconds: PERF_WINDOW, gpuStatus: gpu.status, current: bucket.phase + '/' + bucket.track, reports };
     const output = document.getElementById('perf-overlay');
-    if (!output) return;
-    output.dataset.deep = JSON.stringify({ version: 1, source: 'unclassified-browser-webgl',
-      windowSeconds: PERF_WINDOW, gpuStatus: gpu.status, current: bucket.phase + '/' + bucket.track, reports });
-    if (bucket.phase !== 'racing') output.textContent = 'DEEP ' + bucket.phase + ' · ' + bucket.track + ' · GPU ' + gpu.status;
+    if (output) {
+      output.dataset.deep = JSON.stringify(snapshot);
+      if (bucket.phase !== 'racing') output.textContent = 'DEEP ' + bucket.phase + ' · ' + bucket.track + ' · GPU ' + gpu.status;
+    }
+    return snapshot;
   }
   return {
     start(now: number, rawDelta: number, racePhase: string, track: string) {
@@ -112,6 +115,7 @@ export function createDeepPerf(search: string, renderer: WebGLRenderer, composer
       }
       if (at - shownAt >= 500) { shownAt = at; publish(); }
     },
+    snapshot: publish,
     dispose() {
       undo.forEach(restore => restore()); gpu.dispose();
       canvas.removeEventListener('webglcontextlost', lost);

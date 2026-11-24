@@ -31,3 +31,6 @@ assets-src/**/*.blend[0-9]*
 
 # Local pnpm content-addressable store (pnpm store-dir fallback when cwd is the repo).
 .pnpm-store/
+
+# Thermal/device evidence remains local; never force-add.
+docs/performance/local/
