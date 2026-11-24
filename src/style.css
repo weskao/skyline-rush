@@ -2290,7 +2290,7 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
   /* Share the row: English GARAGE / HISTORY / PRACTICE at 14px padding overflowed the 276px panel at 568px wide. */
   .intro :is(.history-button, .garage-button, .practice-button) { flex: 1 1 auto; min-width: 0; height: 44px; padding-inline: 8px; white-space: nowrap; }
   body[data-phase="ready"]:not(.airflow-active) .intro #start-button { position: fixed; z-index: 3; right: calc(max(16px, var(--safe-right)) / var(--z)); bottom: var(--edge-bottom); width: var(--rail); min-width: 0; max-width: none; height: 52px; }
-  body[data-phase="ready"]:not(.airflow-active) .showcase-camera-dock { position: fixed; right: calc(max(16px, var(--safe-right)) / var(--z)); bottom: calc(var(--edge-bottom) + 62px); top: auto; width: var(--rail); margin: 0; padding: 4px 6px; gap: 0; }
+  body[data-phase="ready"]:not(.airflow-active) .showcase-camera-dock { position: fixed; right: calc(max(16px, var(--safe-right)) / var(--z)); bottom: calc(var(--edge-bottom) + 62px); top: auto; width: var(--rail); margin: 0; gap: 0; }
   body[data-phase="ready"]:not(.airflow-active) :is(.showcase-camera-heading, .showcase-camera-dots) { display: none; }
   body[data-phase="ready"]:not(.airflow-active) .daily-card { position: fixed; right: calc(max(16px, var(--safe-right)) / var(--z)); bottom: calc(var(--edge-bottom) + 120px); width: var(--rail); max-width: none; box-sizing: border-box; margin: 0; padding: 6px 6px 6px 10px; gap: 8px; }
   /* One-line Daily (title + route, best hidden) so the rail stays below the AIRFLOW / VFX row at 320px tall in en too. */
