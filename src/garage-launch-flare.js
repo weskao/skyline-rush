@@ -120,8 +120,8 @@ export function createLaunchFlare(effects, vehicle, ground) {
     },
     // Low keeps the pool and rays but skips the full-body overdraw; VFX Off / Reduced Motion pass enabled=false.
     update(dt, time, origin, enabled, quality, power, detail = 0, countdownRemaining = undefined) {
-      // Keep the original .78 s motion cadence, even when the last wave is partial.
-      if (countdownRemaining !== undefined) age = countdownRemaining <= .15 ? 1 : (Math.max(0, 3 - countdownRemaining) % .78) / .78;
+      // Keep the original .78 s cadence; on GO, sample the last wave at countdown zero, then let it finish.
+      if (countdownRemaining !== undefined) age = (Math.max(0, 3 - countdownRemaining) % .78) / .78;
       else if (age < 1) age = Math.min(1, age + dt / duration);
       const on = !!style && enabled && (held || age < 1);
       const bursting = on && !held;
@@ -137,8 +137,7 @@ export function createLaunchFlare(effects, vehicle, ground) {
         roadUp.set(0, 0, 1).applyQuaternion(ground.quaternion).applyQuaternion(carFrame.copy(vehicle.quaternion).invert());
         pool.quaternion.setFromUnitVectors(UP, roadUp).multiply(FLAT);
       }
-      const countdownFade = countdownRemaining === undefined ? 1 : Math.min(1, Math.max(0, (countdownRemaining - .15) / .25));
-      uniforms.age.value = age; uniforms.time.value = time; uniforms.power.value = power * style.intensity * countdownFade;
+      uniforms.age.value = age; uniforms.time.value = time; uniforms.power.value = power * style.intensity;
       uniforms.charging.value = Number(held);
       rays.rotation.y = style.swirl * time * 0.8; // the magenta vortex swirls its rays around the car
     },

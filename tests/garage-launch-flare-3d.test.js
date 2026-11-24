@@ -83,7 +83,7 @@ test('flare parts follow quality and comfort settings and never re-upload instan
   assert.notEqual(rays.rotation.y, turn, 'the magenta vortex swirls its rays around the car');
 });
 
-test('every equipped launch flare animates on the first countdown frame, not GO', () => {
+test('every equipped launch flare animates from countdown entry through GO, then ends naturally', () => {
   const scene = new Scene(), car = new Group();
   car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
   car.add(car.userData.body); scene.add(car);
@@ -115,9 +115,14 @@ test('every equipped launch flare animates on the first countdown frame, not GO'
       assert.equal(u.charging.value, 0, 'each wave is animated');
     }
     race.countdown = .1; update(.1);
-    assert.equal(pool.visible || glow.visible, false, 'the last wave finishes just before GO');
+    const beforeGo = u.age.value;
+    assert.ok(pool.visible && glow.visible, 'the last wave remains visible before GO');
     race.countdown = 0; race.phase = 'racing'; update();
-    assert.equal(pool.visible || glow.visible, false, 'GO does not fire a second launch burst');
+    assert.ok(pool.visible && glow.visible && u.age.value > beforeGo, 'GO continues the existing wave rather than restarting it');
+    for (let i = 0; i < 12; i++) update();
+    assert.equal(pool.visible || glow.visible, false, 'the final wave ends naturally after GO');
+    for (let i = 0; i < 60; i++) update();
+    assert.equal(pool.visible, false, 'no new wave begins during racing');
     aero.reset();
     race.phase = 'countdown'; race.countdown = 3; update();
     assert.ok(pool.visible && glow.visible, 'a new race or restart plays its own burst');
@@ -127,7 +132,7 @@ test('every equipped launch flare animates on the first countdown frame, not GO'
   assert.equal(pool.visible, false, 'no launch flare skin, no countdown flare');
 });
 
-test('countdown repeats the original .78 second motion, only fading the final partial wave', () => {
+test('all countdown waves preserve the original .78 second motion and intensity', () => {
   const scene = new Scene(), car = new Group();
   car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
   car.add(car.userData.body); scene.add(car);
@@ -145,15 +150,15 @@ test('countdown repeats the original .78 second motion, only fading the final pa
   }
   at(.56); const age = u.age.value;
   assert.ok(Math.abs(age - .1 / .78) < 1e-6, 'the fourth wave begins at its original cadence');
-  at(.35); const fading = u.power.value;
-  assert.ok(fading > 0 && fading < power, 'only the final wave fades');
+  at(.35);
+  assert.equal(u.power.value, power, 'the final wave keeps the original power uniform and shader fade');
   at(.2);
-  assert.ok(u.age.value > age && u.power.value > 0 && u.power.value < fading, 'motion keeps its speed while intensity falls');
-  at(.15);
-  assert.equal(pool.visible, false);
+  assert.ok(u.age.value > age && u.power.value === power, 'no extra countdown fade or speed change');
+  at(.01);
+  assert.ok(pool.visible && u.power.value === power, 'no artificial cutoff before GO');
 });
 
-test('a skipped final countdown frame cannot leak a flare into GO', () => {
+test('a skipped final countdown frame continues the same wave on GO', () => {
   const scene = new Scene(), car = new Group();
   car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
   car.add(car.userData.body); scene.add(car);
@@ -164,7 +169,12 @@ test('a skipped final countdown frame cannot leak a flare into GO', () => {
   const pool = scene.getObjectByName('Launch flare burst');
   assert.ok(pool.visible);
   race.phase = 'racing'; race.countdown = 0; aero.update(race, .05, origin, settings, false);
-  assert.equal(pool.visible, false);
+  assert.ok(pool.visible);
+  assert.ok(Math.abs(pool.material.uniforms.age.value - .66 / .78) < 1e-6, 'GO continues at the actual countdown age');
+  aero.update(race, .05, origin, settings, false);
+  assert.ok(pool.visible, 'the last wave still has time left');
+  aero.update(race, .1, origin, settings, false);
+  assert.equal(pool.visible, false, 'the last wave completes without starting another');
 });
 
 test('direct race entry without a countdown still fires the equipped flare once', () => {
