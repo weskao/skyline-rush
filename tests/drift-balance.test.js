@@ -28,7 +28,8 @@ function drive(speed, seconds, pressNitro = false) {
 
 // User, 2026-11-14: a full-lock drift crossed the 20 m road at 9 m/s and hit the far rail before the 2 s tier.
 test('a drift slides sideways at DRIFT_LATERAL of the steering rate, so a full-lock drift from the kerb reaches the top tier', () => {
-  const slide = input => { const race = cruising(70); race.player.x = 8; for (let t = 0; t < 0.5; t += DT) stepRace(race, input, DT); return 8 - race.player.x; };
+  // On a straight (Coast 1256 m): a drift skips the corner push, so a bend would skew the plain-steering slide.
+  const slide = input => { const race = cruising(70); race.player.x = 8; race.player.distance = 1256; for (let t = 0; t < 0.5; t += DT) stepRace(race, input, DT); return 8 - race.player.x; };
   assert.ok(Math.abs(slide({ brake: true, steer: -1 }) / slide({ steer: -1 }) - DRIFT_LATERAL) < 0.02);
   const race = cruising(70); race.player.x = 8;
   for (let t = 0; t < TIER_TIMES.at(-1) + 0.05; t += DT) stepRace(race, { brake: true, steer: -1 }, DT);

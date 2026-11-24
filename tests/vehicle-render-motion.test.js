@@ -77,6 +77,13 @@ test('drift yaw eases into and out of a slide instead of snapping 25 degrees on 
   assert.equal(smoothDriftYaw(release, null, 0), release, 'paused rendering cannot animate drift');
 });
 
+test('the drawn nose follows the heading a corner built, easing toward it like a drift', () => {
+  let angle = 0;
+  for (let i = 0; i < 60; i++) angle = smoothDriftYaw(angle, null, 1 / 60, -.2); // nose toward -x
+  assert.ok(Math.abs(angle - .2) < .001, `nose toward -x draws as +yaw: ${angle}`);
+  assert.ok(smoothDriftYaw(0, null, 1 / 60, -.2) < .2, 'eases in, no snap');
+});
+
 test('car presentation reuses one mesh-owned render buffer and preserves exact simulation flags', async () => {
   const { poseFor } = await import('../src/vehicle-render-motion.js');
   const mesh = { userData: {} };
