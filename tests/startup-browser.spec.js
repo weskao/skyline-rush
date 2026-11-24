@@ -77,6 +77,11 @@ for (const [width, height, locale, caption, enterLabel] of [
       await expect(startup).toBeVisible();
       await launch.click();
       await expect(startup).toBeHidden();
+      const origin = await page.evaluate(() => performance.timeOrigin);
+      await page.locator('.brand:visible, .intro-wordmark:visible').first().click();
+      await expect(startup).toBeHidden();
+      await expect(page.locator('#intro')).toBeVisible();
+      expect(await page.evaluate(() => performance.timeOrigin)).toBe(origin);
       const lobbyOpener = page.locator('.bottomline #whats-new-open');
       await expect(lobbyOpener).toHaveAccessibleName(`${caption} · ${version}`);
       await expect(lobbyOpener.locator('.build-version-caption')).toBeVisible();

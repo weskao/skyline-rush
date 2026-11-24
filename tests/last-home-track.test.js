@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { backHomeHref, bootHomeTrack, lastHomeTrack, rememberLastHomeTrack, restoreHomeTrack, withoutRacedQuery } from '../src/last-home-track.ts';
+import { bootHomeTrack, lastHomeTrack, rememberLastHomeTrack, restoreHomeTrack, withoutRacedQuery } from '../src/last-home-track.ts';
 
 const playable = id => ['coast', 'neon', 'canyon'].includes(id);
 const upcoming = id => id === 'dune-tempest' || id === 'frostbite-canyon';
@@ -39,9 +39,8 @@ test('blocked storage still allows selecting and restoring a course during the s
   }
 });
 
-test('Back to home opens the raced course once before subsequent visits use the saved course', () => {
+test('legacy raced-course URLs open the raced course once before subsequent visits use the saved course', () => {
   const playable = id => id === 'taipei' || id === 'neon';
-  assert.equal(backHomeHref('taipei'), './?raced=taipei');
   assert.equal(bootHomeTrack('?raced=taipei', 'neon', playable), 'taipei');
   assert.equal(bootHomeTrack('', 'neon', playable), 'neon');
   assert.equal(bootHomeTrack('', null, playable), null);
