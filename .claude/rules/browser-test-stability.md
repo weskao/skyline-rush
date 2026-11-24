@@ -94,6 +94,12 @@ and the duplicate import failed all 16 browser shards. Enforced by `tests/browse
 
 ## Judge a feature in its own frame, by its own assets
 
+- Vite can inline small raster assets as data URLs or emit hashed filenames. A browser artwork
+  assertion compares the bytes of the actual CSS image with the committed artwork, not its URL spelling
+  (track-pack atlas, develop CI 45355866805). A raceable track-confirmation scenario explicitly seeds
+  the track unlock; locked and Coming Soon preview-only labels remain independently covered by
+  `tests/track-chooser-states-browser.spec.js`.
+
 Trap (2026-11-14): three merges changed intended behaviour and left sibling browser specs red on develop for a
 day, unseen because each develop push cancelled the previous full CI run. Classic tracks now curve
 (`fbbfb8e5`), Endless shows a rolling minimap (same commit) and pickups are always-on meshopt + KTX2 GLBs (`e30ee752`).

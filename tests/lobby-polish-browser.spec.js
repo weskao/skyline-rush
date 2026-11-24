@@ -258,6 +258,8 @@ test('Photo Studio uses the same dropdown for lighting and fog', async ({ page }
 });
 
 test('track selection is staged until confirmed and Escape keeps the current route', async ({ page }, info) => {
+  // This scenario exercises a raceable confirmation, not the locked-track Home preview.
+  await page.addInitScript(() => localStorage.setItem('skyline-rush-unlocked', '["coast","neon"]'));
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.goto('/');
   const opener = page.locator('#lobby-tracks-toggle');

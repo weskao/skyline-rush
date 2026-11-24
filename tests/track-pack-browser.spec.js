@@ -1,5 +1,18 @@
 import { expect, settled, test, waitForHome } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
+import { readFileSync } from 'node:fs';
+
+const atlas = readFileSync(new URL('../src/assets/track-pack-icons.webp', import.meta.url));
+
+// Vite may inline small WebP assets or emit hashed filenames. Check the actual atlas bytes in either build.
+async function usesTrackPackAtlas(page, backgroundImage) {
+  const url = /^url\("([^"]+)"\)$/.exec(backgroundImage)?.[1];
+  if (!url) return false;
+  if (url.startsWith('data:')) return url === `data:image/webp;base64,${atlas.toString('base64')}`;
+  const response = await page.request.get(url);
+  try { return response.ok() && (await response.body()).equals(atlas); }
+  finally { await response.dispose(); }
+}
 
 test.use({ startupSeen: false });
 
@@ -130,7 +143,7 @@ test('generated WebP atlas switches hover/update frames without resizing touch t
     const style = getComputedStyle(node, '::before');
     return { image: style.backgroundImage, position: style.backgroundPosition, size: getComputedStyle(node).width };
   });
-  await expect.poll(async () => (await frame()).image).toContain('track-pack-icons');
+  await expect.poll(async () => usesTrackPackAtlas(page, (await frame()).image)).toBe(true);
   await expect.poll(async () => (await frame()).position).toBe('0% 0%');
   const originalSize = (await frame()).size;
   await action.hover();
@@ -270,8 +283,10 @@ test('each track pack shows only WebP artwork except a same-size progress ring w
         return samples;
       }));
     expect(icons.length, `at least one visible track icon at ${width}x${height}`).toBeGreaterThan(0);
+    for (const image of new Set(icons.map(icon => icon.image))) {
+      expect(await usesTrackPackAtlas(page, image), 'every state references the original WebP atlas').toBe(true);
+    }
     for (const icon of icons) {
-      expect(icon.image, `${icon.state} uses artwork`).toContain('track-pack-icons.webp');
       if (icon.state === 'downloading') {
         expect(icon.artVisible, 'the download spinner replaces WebP artwork').toBe(false);
         expect(icon.svgDisplay, 'keep the original progress ring visible during download').not.toBe('none');
