@@ -28,3 +28,6 @@ __pycache__/
 # Blender saves numbered .blend backups; keep only verified editable masters in Git.
 assets-src/**/*.blend[0-9]*
 *.swp
+
+# Local pnpm content-addressable store (pnpm store-dir fallback when cwd is the repo).
+.pnpm-store/
