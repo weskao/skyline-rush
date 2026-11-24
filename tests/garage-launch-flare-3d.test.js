@@ -127,6 +127,32 @@ test('every equipped launch flare animates on the first countdown frame, not GO'
   assert.equal(pool.visible, false, 'no launch flare skin, no countdown flare');
 });
 
+test('countdown repeats the original .78 second motion, only fading the final partial wave', () => {
+  const scene = new Scene(), car = new Group();
+  car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
+  car.add(car.userData.body); scene.add(car);
+  const aero = createAeroVFX(scene, car), race = createRace(), origin = new Vector3();
+  const settings = vfxSettings({ enabled: true, quality: 'high' });
+  aero.setSkins({ 'launch-flare': 'launch-flare-gold' });
+  race.phase = 'countdown';
+  const pool = scene.getObjectByName('Launch flare burst'), u = pool.material.uniforms;
+  const at = remaining => { race.countdown = remaining; aero.update(race, .05, origin, settings, false); };
+  at(3); const power = u.power.value;
+  for (const remaining of [2.61, 1.83, 1.05]) {
+    at(remaining);
+    assert.ok(Math.abs(u.age.value - .5) < 1e-6, 'each full wave reaches half age after .39 s, not .475 s');
+    assert.equal(u.power.value, power, 'ordinary waves retain their original intensity');
+  }
+  at(.56); const age = u.age.value;
+  assert.ok(Math.abs(age - .1 / .78) < 1e-6, 'the fourth wave begins at its original cadence');
+  at(.35); const fading = u.power.value;
+  assert.ok(fading > 0 && fading < power, 'only the final wave fades');
+  at(.2);
+  assert.ok(u.age.value > age && u.power.value > 0 && u.power.value < fading, 'motion keeps its speed while intensity falls');
+  at(.15);
+  assert.equal(pool.visible, false);
+});
+
 test('a skipped final countdown frame cannot leak a flare into GO', () => {
   const scene = new Scene(), car = new Group();
   car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));

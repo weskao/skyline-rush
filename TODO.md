@@ -1,6 +1,7 @@
 # Launch flare on race entry (2026-11-24)
 
-- [x] Follow-up: sustain three animated waves from entry until 0.15 s before GO; use the actual countdown clock, preserve pause/resume, direct start and restart, and prevent a skipped final frame from leaving the effect visible on GO. Isolated age/routing checks pass; renderer regression updated.
+- [x] Follow-up: sustain animated waves from entry until 0.15 s before GO; use the actual countdown clock, preserve pause/resume, direct start and restart, and prevent a skipped final frame from leaving the effect visible on GO. Isolated age/routing checks pass; renderer regression updated.
+- [x] Restore the original 0.78 s wave cadence (rather than the intermediate 0.95 s stretch), with only the last partial wave fading; unchanged shader speed, Studio cadence and direct-start burst. Isolated RED/GREEN cadence and fade checks pass; full Three.js/WebGL verification remains pending.
 - [ ] Visually verify all eight equipped styles remain animated across the countdown and fade before GO on desktop and phones at different frame rates.
 
 - [x] Trace the old countdown-only static charge and GO trigger in `src/aero-vfx.js`; isolated execution of the actual phase block reproduced zero triggers on countdown entry (RED).
