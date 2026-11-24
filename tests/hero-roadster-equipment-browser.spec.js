@@ -126,15 +126,34 @@ test('race with the heaviest skin of each category: launch flare wraps the GLB, 
   await modelReady(page);
   await expect.poll(async () => Object.keys(await instances(page))).toEqual(['home']);
 
+  // Record the actual countdown frames before Start: two short animated waves replace the old static charge.
+  await page.evaluate(() => {
+    window.launchFlareFrames = { animated: false, glb: false };
+    const frame = () => {
+      const race = window.gameplay?.race, scene = window.gameScene;
+      if (race?.phase === 'countdown' && scene?.player) {
+        const car = scene.player, pool = car.getObjectByName('Launch flare burst');
+        const glow = car.getObjectByName('Launch flare body glow');
+        const body = car.children.find(c => c.userData.garageModel)?.getObjectByName('body');
+        if (pool?.visible && pool.material.uniforms.charging.value === 0) {
+          window.launchFlareFrames.animated = true;
+          if (glow?.visible && body && glow.parent === body && glow.layers.test(scene.camera.layers))
+            window.launchFlareFrames.glb = true;
+        }
+      }
+      if (race?.phase !== 'racing') requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  });
   await page.locator('#start-button').click();
+  await expect.poll(() => page.evaluate(() => window.launchFlareFrames), { timeout: ciTimeout(15000) })
+    .toEqual({ animated: true, glb: true });
+  await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(15000) });
   await expect.poll(() => page.evaluate(() => {
     const car = window.gameScene.player;
-    const pool = car.getObjectByName('Launch flare burst');
-    return !!pool?.visible && pool.material.uniforms.charging.value === 1 && !car.getObjectByName('Launch flare body glow')?.visible;
-  }), { timeout: ciTimeout(15000) }).toBe(true);
-  await expect.poll(() => glowOnGlb(page), { timeout: ciTimeout(15000) }).toBe(true);
-  await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(15000) });
-  await attach(page, 'race-launch-flare');
+    return !!car.getObjectByName('Launch flare burst')?.visible || !!car.getObjectByName('Launch flare body glow')?.visible;
+  })).toBe(false);
+  await attach(page, 'race-after-launch-flare');
   await page.waitForTimeout(ciTimeout(300));
   const before = await programs(page);
   await page.evaluate(() => {

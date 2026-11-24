@@ -339,3 +339,6 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   `toggle-feedback-browser.spec.js` asserted the settled switch state first and, on a starved CI page, those checks
   outlived it (main run 44953782730, red on both attempts). Assert settled state after `expectToast`. Guard: "a spec
   reads the setting toast straight after the action that raises it".
+
+- Upcoming is the first release tab and can have no media; historical clip and picture-viewer specs must select the release that owns the media before testing it. A read tab clears its own dot immediately; compare styling on a still-unread tab and clear every unread version before asserting the aggregate Home dot is gone (CI 45403054733).
+- Arm a page-side frame recorder before Start for launch-flare assertions: countdown waves are transient, animated, and end before GO, not a static pool followed by a GO glow. Keep the GLB attachment, visibility and GPU program-count checks (CI 45403054733).

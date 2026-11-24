@@ -279,7 +279,13 @@ for (const [width, height, shape] of [[1440, 900, 'desktop'], [844, 390, 'deskto
     await page.setViewportSize({ width, height });
     await page.goto('/');
     await page.locator('#whats-new-open').click();
-    const entry = page.locator('.release-entry').filter({ hasText: 'Rivals fight back with Freeze and EMP' });
+    // Upcoming can be text-only; open the published version that owns this recording.
+    const release = recentReleases().find(notes => notes.highlights.some(item => item.id === 'rival-items'));
+    expect(release, 'Freeze and EMP recording belongs to a visible published release').toBeDefined();
+    const dialog = page.locator('#whats-new-screen');
+    await tabFor(dialog, release.version).click();
+    await expect(tabFor(dialog, release.version)).toHaveAttribute('aria-selected', 'true');
+    const entry = dialog.locator('.release-entry').filter({ hasText: 'Rivals fight back with Freeze and EMP' });
     const poster = entry.locator('button.release-play img');
     await poster.scrollIntoViewIfNeeded();
     await expect.poll(() => poster.evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);

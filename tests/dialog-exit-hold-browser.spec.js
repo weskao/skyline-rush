@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
+import { recentReleases } from '../src/release-notes.ts';
 
 // A dialog that fades out closes on an async history pop (src/dialog-navigation.ts). Its exit animation must hold the
 // last frame until the dialog really closes, or it repaints at full opacity over whatever it covered: a flash on close.
@@ -41,6 +42,12 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
     await home(page, gameplayURL);
     const notes = page.locator('#whats-new-screen'), viewer = page.locator('#release-media-viewer');
     if (!(await notes.isVisible())) await page.locator('#whats-new-open').click();
+    // The default Upcoming tab may have no media; select a release with a still picture before testing its viewer.
+    const release = recentReleases().find(notes => notes.image || notes.highlights.some(item => item.image && !item.video));
+    expect(release, 'a visible release has an enlargeable picture').toBeDefined();
+    const tab = notes.locator(`[role="tab"][data-version="${release.version}"]`);
+    await tab.click();
+    await expect(tab).toHaveAttribute('aria-selected', 'true');
     const thumb = page.locator('#whats-new-screen .release-zoom:visible, #release-preview:visible').first();
     await thumb.scrollIntoViewIfNeeded();
     await press(thumb);

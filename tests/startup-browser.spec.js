@@ -55,9 +55,20 @@ for (const [width, height, locale, caption, enterLabel] of [
       const currentTab = dialog.locator(`.release-tab[data-version="${version.slice(1)}"]`);
       if (await currentTab.getAttribute('aria-selected') === 'false') await currentTab.click();
       await expect(dialog.locator('#release-version')).toHaveText(version);
-      const unreadTab = dialog.locator('.release-tab[aria-selected="true"] .release-tab-unread');
-      await expect(unreadTab).toBeVisible();
-      expect(openerBadgeStyle, 'unread badges use the same colors and dimensions').toEqual(await unreadTab.evaluate(badgeStyle));
+      await expect(currentTab.locator('.release-tab-unread')).toHaveCount(0);
+      // Reading the current version clears only that tab; other published versions still keep the Home dot lit.
+      const unreadTabs = dialog.locator('.release-tab:has(.release-tab-unread)');
+      await expect(unreadTabs.first()).toBeVisible();
+      await expect(unreadBadge).toBeVisible();
+      expect(openerBadgeStyle, 'unread badges use the same colors and dimensions').toEqual(await unreadTabs.first().locator('.release-tab-unread').evaluate(badgeStyle));
+      const unreadVersions = await unreadTabs.evaluateAll(tabs => tabs.map(tab => tab.dataset.version));
+      for (const unreadVersion of unreadVersions) {
+        const tab = dialog.locator(`.release-tab[data-version="${unreadVersion}"]`);
+        await tab.click();
+        await expect(tab.locator('.release-tab-unread')).toHaveCount(0);
+      }
+      await expect(unreadTabs).toHaveCount(0);
+      await expect(unreadBadge).toBeHidden();
       if (height === 900) await page.keyboard.press('Escape');
       else await dialog.locator('#release-close').tap();
       await expect(dialog).toBeHidden();
