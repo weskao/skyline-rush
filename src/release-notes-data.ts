@@ -12,7 +12,72 @@ import { RECENT_ARCHIVED_RELEASE_NOTES } from './release-notes-archive-recent.ts
 export const UPCOMING = 'upcoming';
 export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
   {
-    version: UPCOMING, date: '2026-11-20', image: null,
+    version: UPCOMING, date: '2026-11-24', image: null,
+    // MEDIA PENDING (release Phase N): hero tokyo-hyperdrive, recorded from the final locked game.
+    highlights: [
+      {
+        // MEDIA PENDING (release Phase N): Hero video: tokyo-hyperdrive; public/whats-new/tokyo-hyperdrive/.
+        id: 'tokyo-hyperdrive', kind: 'new', image: null,
+        title: { en: 'Two powered roads in Tokyo Afterdark', 'zh-TW': '東京夜行雙充能路段' },
+        description: { en: 'Drive through two glowing energy corridors to recharge while racing. Watch the charge indicator and time your next BOOST or FLY.', 'zh-TW': '駛過兩段發光的充能道路即可在行駛中補充電量，留意充能提示，掌握下一次 BOOST 或 FLY 的時機。' }
+      },
+      {
+        // MEDIA PENDING (release Phase N): Video: track-downloads; public/whats-new/track-downloads/.
+        id: 'track-downloads', kind: 'new', image: null,
+        title: { en: 'Download and update tracks at your pace', 'zh-TW': '賽道下載與更新更自由' },
+        description: { en: 'Get individual tracks or choose Download All to install up to ten at once. Follow the combined progress and cancel the batch when needed.', 'zh-TW': '可逐一下載或更新賽道，也可一次下載全部，最多同時處理十條；隨時查看整體進度，並可取消整批下載。' }
+      },
+      {
+        // MEDIA PENDING (release Phase N): Video: home-mode-preview; public/whats-new/home-mode-preview/.
+        id: 'home-mode-preview', kind: 'new', image: null,
+        title: { en: 'Preview each race mode before you start', 'zh-TW': '開跑前預覽各種賽事模式' },
+        description: { en: 'See a distinct preview and quick rules for each mode. Browse tracks by swiping, and see whether a course is ready to race or still a preview.', 'zh-TW': '每種賽事模式都有專屬預覽與簡明玩法；滑動即可瀏覽賽道，並分辨可開跑與僅供預覽的賽道。' }
+      },
+      {
+        // MEDIA PENDING (release Phase N): Video: tutorial-coach; public/whats-new/tutorial-coach/.
+        id: 'tutorial-coach', kind: 'improvement', image: null,
+        title: { en: 'A clearer driving coach', 'zh-TW': '駕駛教學全面改版' },
+        description: { en: 'The compact coach sits above the road, leaving your controls clear. Lessons follow your AUTO setting and pause until you are ready to resume.', 'zh-TW': '精簡教學提示位於車道上方，不遮擋操作；課程配合 AUTO 狀態引導，暫停後可依提示繼續。' }
+      },
+      {
+        // MEDIA PENDING (release Phase N): Still: touch-auto-nitro; public/whats-new/touch-auto-nitro/.
+        id: 'touch-auto-nitro', kind: 'improvement', image: null,
+        title: { en: 'More room for NITRO with AUTO', 'zh-TW': 'AUTO 開啟時 NITRO 更好按' },
+        description: { en: 'On touch screens, AUTO hides the accelerator and expands NITRO into the freed space. Turn AUTO off to get your accelerator back.', 'zh-TW': '觸控裝置開啟 AUTO 時會收起油門，讓 NITRO 按鈕加寬；關閉 AUTO 即可恢復油門。' }
+      },
+      {
+        // MEDIA PENDING (release Phase N): Video: corner-driving; public/whats-new/corner-driving/.
+        id: 'corner-driving', kind: 'improvement', image: null,
+        title: { en: 'Feel the pull of every corner', 'zh-TW': '每個彎道都更有駕駛感' },
+        description: { en: 'Corners push your car outward, so steering matters more. AUTO softens outward forces near the rail without steering the car for you.', 'zh-TW': '過彎時車身會自然向外偏移，需要主動掌握方向；AUTO 會減弱護欄附近的外推力，但不代替你轉向。' }
+      },
+      {
+        // MEDIA PENDING (release Phase N): Still: race-notice-lane; public/whats-new/race-notice-lane/.
+        id: 'race-notice-lane', kind: 'improvement', image: null,
+        title: { en: 'Race alerts stay out of your way', 'zh-TW': '賽中提示更清楚不擋操作' },
+        description: { en: 'Halfway, Freeze and EMP notices sit higher on the race screen, keeping the road and controls clearer. Your race readings stay visible at the start.', 'zh-TW': '半程、冰凍與 EMP 提示移至畫面較上方，減少遮擋道路及操作區；起跑倒數時也能看見賽事資訊。' }
+      },
+      {
+        // MEDIA PENDING (release Phase N): Still: showcase-camera; public/whats-new/showcase-camera/.
+        id: 'showcase-camera', kind: 'improvement', image: null,
+        title: { en: 'Consistent camera controls in the Garage', 'zh-TW': '首頁與車庫鏡頭操作更一致' },
+        description: { en: 'Use the same compact camera arrows on Home and in the Garage. Switch views easily and keep more room for the car.', 'zh-TW': '首頁與車庫使用一致的精簡鏡頭切換按鈕，輕鬆切換視角，也保留更多空間欣賞愛車。' }
+      },
+      {
+        // MEDIA PENDING (release Phase N): Still: whats-new-entry; public/whats-new/whats-new-entry/.
+        id: 'whats-new-entry', kind: 'improvement', image: null,
+        title: { en: 'Find What\'s New more easily', 'zh-TW': '新版公告更容易找到' },
+        description: { en: 'Open What\'s New from the welcome screen or Home. A small dot marks unread releases without taking up extra space.', 'zh-TW': '從歡迎畫面或首頁即可開啟新版本公告，未讀版本以小圓點提示，不額外占用版面。' }
+      },
+      {
+        id: 'race-restart', kind: 'fix', image: null,
+        title: { en: 'Smoother race starts and restarts', 'zh-TW': '開始與重新比賽更順暢' },
+        description: { en: 'The selected track stays visible while loading, and restarting refreshes the route for your next race. Open Driving Controls again after finishing.', 'zh-TW': '載入時保留所選賽道的畫面，重新比賽時會更新路線；完賽後也能再次開啟駕駛操作設定。' }
+      }
+    ]
+  },
+  {
+    version: '0.33.0', date: '2026-11-22', image: null,
     video: {
       desktop: {
         src: { en: 'whats-new/gt-premiere/gt-premiere.desktop.en.mp4', 'zh-TW': 'whats-new/gt-premiere/gt-premiere.desktop.zh-TW.mp4' },
@@ -190,204 +255,6 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
         description: {
           en: 'Switching accounts, importing and deleting Cloud Save now ask in a game dialog instead of a browser pop-up.',
           'zh-TW': '切換帳號、匯入與刪除雲端存檔，現在都在遊戲內視窗確認，不再跳出瀏覽器視窗。'
-        }
-      }
-    ]
-  },
-  {
-    version: '0.32.0', date: '2026-11-17', image: null,
-    video: {
-      desktop: {
-        src: { en: 'whats-new/nitro-chain/nitro-chain.desktop.en.mp4', 'zh-TW': 'whats-new/nitro-chain/nitro-chain.desktop.zh-TW.mp4' },
-        poster: { en: 'whats-new/nitro-chain/nitro-chain.desktop.en.jpg', 'zh-TW': 'whats-new/nitro-chain/nitro-chain.desktop.zh-TW.jpg' }
-      },
-      mobile: {
-        src: { en: 'whats-new/nitro-chain/nitro-chain.mobile.en.mp4', 'zh-TW': 'whats-new/nitro-chain/nitro-chain.mobile.zh-TW.mp4' },
-        poster: { en: 'whats-new/nitro-chain/nitro-chain.mobile.en.jpg', 'zh-TW': 'whats-new/nitro-chain/nitro-chain.mobile.zh-TW.jpg' }
-      }
-    },
-    highlights: [
-      {
-        id: 'crimson-gt', kind: 'new', image: 'whats-new/crimson-gt/crimson-gt.webp',
-        title: {
-          en: `A second car: ${GARAGE_CARS_COPY.en['car.crimson-gt']}`,
-          'zh-TW': `第二款車：${GARAGE_CARS_COPY['zh-TW']['car.crimson-gt']}`,
-        },
-        description: {
-          en: 'Switch cars in the Garage. Every paint and effect fits both cars, and your paint comes along when you switch.',
-          'zh-TW': '在車庫即可切換車款。所有車漆與特效兩款車都能用，換車時車漆也會跟著帶過去。'
-        }
-      },
-      {
-        id: 'drift-flip', kind: 'improvement', image: null,
-        title: { en: 'Drifts flow through corners', 'zh-TW': '漂移過彎更順暢' },
-        description: {
-          en: 'Flip your steering mid-drift to swing the other way without breaking it. Corners no longer push a drifting car wide, and you keep more speed through the slide.',
-          'zh-TW': '漂移中反打方向就能甩向另一側，漂移不會中斷；過彎不再被往外推，側滑時也保留更多車速。'
-        }
-      },
-      {
-        id: 'drift-tiers', kind: 'new', image: null,
-        video: {
-          desktop: {
-            src: { en: 'whats-new/drift-tiers/drift-tiers.desktop.en.mp4', 'zh-TW': 'whats-new/drift-tiers/drift-tiers.desktop.zh-TW.mp4' },
-            poster: { en: 'whats-new/drift-tiers/drift-tiers.desktop.en.jpg', 'zh-TW': 'whats-new/drift-tiers/drift-tiers.desktop.zh-TW.jpg' }
-          },
-          mobile: {
-            src: { en: 'whats-new/drift-tiers/drift-tiers.mobile.en.mp4', 'zh-TW': 'whats-new/drift-tiers/drift-tiers.mobile.zh-TW.mp4' },
-            poster: { en: 'whats-new/drift-tiers/drift-tiers.mobile.en.jpg', 'zh-TW': 'whats-new/drift-tiers/drift-tiers.mobile.zh-TW.jpg' }
-          }
-        },
-        title: { en: 'Drifts charge NITRO in three stages', 'zh-TW': '漂移分三段累積 NITRO' },
-        description: {
-          en: 'Hold a drift longer to earn NITRO at each of three stages. The car glows a new colour at every stage, and your tyres leave skid marks.',
-          'zh-TW': '漂移撐得越久，三個階段都能各自累積 NITRO；每到一段車身就換色發光，輪胎也會在路面留下胎痕。'
-        }
-      },
-      {
-        id: 'nitro-chain', kind: 'new', image: null,
-        title: { en: 'Chain NITRO for a stronger burst', 'zh-TW': '連發 NITRO 推力更強' },
-        description: {
-          en: 'Press NITRO again while it burns to add a full charge. Chain up to three for a stronger push, shown on the HUD. Watch out: rivals chain theirs too.',
-          'zh-TW': 'NITRO 噴發中再按一次就多加一整格，最多連發三段、推力更強，畫面上也會顯示連發段數。小心，對手也會連發！'
-        }
-      },
-      {
-        id: 'pickups-3d', kind: 'new', image: null,
-        video: {
-          desktop: {
-            src: { en: 'whats-new/pickups-3d/pickups-3d.desktop.en.mp4', 'zh-TW': 'whats-new/pickups-3d/pickups-3d.desktop.zh-TW.mp4' },
-            poster: { en: 'whats-new/pickups-3d/pickups-3d.desktop.en.jpg', 'zh-TW': 'whats-new/pickups-3d/pickups-3d.desktop.zh-TW.jpg' }
-          },
-          mobile: {
-            src: { en: 'whats-new/pickups-3d/pickups-3d.mobile.en.mp4', 'zh-TW': 'whats-new/pickups-3d/pickups-3d.mobile.zh-TW.mp4' },
-            poster: { en: 'whats-new/pickups-3d/pickups-3d.mobile.en.jpg', 'zh-TW': 'whats-new/pickups-3d/pickups-3d.mobile.zh-TW.jpg' }
-          }
-        },
-        title: { en: 'Pickups you can see and feel', 'zh-TW': '補給品更立體、更有感' },
-        description: {
-          en: 'Pickups now spin on the road as 3D models, each with its own burst and sound. The fuel bar flashes what you gained, and supported phones buzz lightly.',
-          'zh-TW': '補給品變成在路面旋轉的 3D 模型，各有專屬特效與音效；油量條會閃出補充量，支援的手機還會輕微震動。'
-        }
-      },
-      {
-        id: 'rival-cues', kind: 'new', image: null,
-        video: {
-          desktop: {
-            src: { en: 'whats-new/rival-cues/rival-cues.desktop.en.mp4', 'zh-TW': 'whats-new/rival-cues/rival-cues.desktop.zh-TW.mp4' },
-            poster: { en: 'whats-new/rival-cues/rival-cues.desktop.en.jpg', 'zh-TW': 'whats-new/rival-cues/rival-cues.desktop.zh-TW.jpg' }
-          },
-          mobile: {
-            src: { en: 'whats-new/rival-cues/rival-cues.mobile.en.mp4', 'zh-TW': 'whats-new/rival-cues/rival-cues.mobile.zh-TW.mp4' },
-            poster: { en: 'whats-new/rival-cues/rival-cues.mobile.en.jpg', 'zh-TW': 'whats-new/rival-cues/rival-cues.mobile.zh-TW.jpg' }
-          }
-        },
-        title: { en: 'See what your rivals are up to', 'zh-TW': '對手狀態一眼看穿' },
-        description: {
-          en: 'Rival tail lights flare when they fire NITRO or BOOST. Rivals slowed by FREEZE glow icy blue, and EMP lights them up yellow-green.',
-          'zh-TW': '對手啟動 NITRO 或 BOOST 時尾燈會亮起；被凍結減速的對手泛著冰藍光，被電磁脈衝擊中則泛出黃綠色電光。'
-        }
-      },
-      {
-        id: 'race-onboarding', kind: 'new', image: { en: 'whats-new/race-onboarding/race-onboarding.en.webp', 'zh-TW': 'whats-new/race-onboarding/race-onboarding.zh-TW.webp' },
-        title: { en: 'Practice first, or jump straight in', 'zh-TW': '先練習，或直接開跑' },
-        description: {
-          en: 'Your first Start asks whether to practise or race now. Controls are grouped into steering, touch layout and keyboard so they are easier to find.',
-          'zh-TW': '第一次按開始時，可選擇先練習或直接比賽；操作設定分成轉向、觸控配置與鍵盤三組，更好找。'
-        }
-      },
-      {
-        id: 'halfway', kind: 'new', image: { en: 'whats-new/halfway/halfway.en.webp', 'zh-TW': 'whats-new/halfway/halfway.zh-TW.webp' },
-        title: { en: 'A clearer halfway signal', 'zh-TW': '賽事過半，抬眼就看見' },
-        description: {
-          en: 'Pass the halfway mark and a banner lights up at the centre of the screen, showing the distance left, with a short chime.',
-          'zh-TW': '跑過半程時，畫面中央會亮起提示，顯示距終點還有多遠，並響起短促的提示音。'
-        }
-      },
-      {
-        id: 'race-camera', kind: 'improvement', image: null,
-        video: {
-          desktop: {
-            src: { en: 'whats-new/race-camera/race-camera.desktop.en.mp4', 'zh-TW': 'whats-new/race-camera/race-camera.desktop.zh-TW.mp4' },
-            poster: { en: 'whats-new/race-camera/race-camera.desktop.en.jpg', 'zh-TW': 'whats-new/race-camera/race-camera.desktop.zh-TW.jpg' }
-          },
-          mobile: {
-            src: { en: 'whats-new/race-camera/race-camera.mobile.en.mp4', 'zh-TW': 'whats-new/race-camera/race-camera.mobile.zh-TW.mp4' },
-            poster: { en: 'whats-new/race-camera/race-camera.mobile.en.jpg', 'zh-TW': 'whats-new/race-camera/race-camera.mobile.zh-TW.jpg' }
-          }
-        },
-        title: { en: 'A closer, punchier race camera', 'zh-TW': '更貼近、更有衝擊感的鏡頭' },
-        description: {
-          en: 'The chase view sits closer and swings into drifts. NITRO and BOOST hit with a camera punch and a bigger flame, and every race starts from behind the car.',
-          'zh-TW': '追車視角更貼近，漂移時會跟著擺動；NITRO 與 BOOST 啟動時鏡頭更有衝擊感、火焰更大，每場比賽都從車後視角開始。'
-        }
-      },
-      {
-        id: 'classic-corners', kind: 'improvement', image: null,
-        title: { en: 'New corners and more rings on classic tracks', 'zh-TW': '經典賽道新彎道，圓環與補給更多' },
-        description: {
-          en: 'Coast, Canyon Skyway and Aurora Pass get their own corners, Sky Spiral gains wide sweeping bends, and the first five tracks carry 40% more rings and pickups.',
-          'zh-TW': '海岸公路、峽谷天橋與極光山道有了各自的彎道，天際螺旋多了大弧度彎；前五條賽道的圓環與補給品也多了四成。'
-        }
-      },
-      {
-        id: 'neon-3d', kind: 'improvement', image: null,
-        video: {
-          desktop: {
-            src: { en: 'whats-new/neon-3d/neon-3d.desktop.en.mp4', 'zh-TW': 'whats-new/neon-3d/neon-3d.desktop.zh-TW.mp4' },
-            poster: { en: 'whats-new/neon-3d/neon-3d.desktop.en.jpg', 'zh-TW': 'whats-new/neon-3d/neon-3d.desktop.zh-TW.jpg' }
-          },
-          mobile: {
-            src: { en: 'whats-new/neon-3d/neon-3d.mobile.en.mp4', 'zh-TW': 'whats-new/neon-3d/neon-3d.mobile.zh-TW.mp4' },
-            poster: { en: 'whats-new/neon-3d/neon-3d.mobile.en.jpg', 'zh-TW': 'whats-new/neon-3d/neon-3d.mobile.zh-TW.jpg' }
-          }
-        },
-        title: { en: 'Neon Downtown: a 10 km rainy-night lap', 'zh-TW': '霓虹都會：10 公里雨夜長圈' },
-        description: {
-          en: 'The city course is now one 10 km lap through eight districts, with fresh best times. On Medium graphics and up, wet streets mirror the neon past a busy harbour.',
-          'zh-TW': '城市賽道改為穿越八個街區的 10 公里大圈，最佳成績重新計算。畫質「中」以上，濕亮街道倒映霓虹，沿途經過熱鬧港口。'
-        }
-      },
-      {
-        id: 'coast-3d', kind: 'improvement', image: null,
-        video: {
-          desktop: {
-            src: { en: 'whats-new/coast-3d/coast-3d.desktop.en.mp4', 'zh-TW': 'whats-new/coast-3d/coast-3d.desktop.zh-TW.mp4' },
-            poster: { en: 'whats-new/coast-3d/coast-3d.desktop.en.jpg', 'zh-TW': 'whats-new/coast-3d/coast-3d.desktop.zh-TW.jpg' }
-          },
-          mobile: {
-            src: { en: 'whats-new/coast-3d/coast-3d.mobile.en.mp4', 'zh-TW': 'whats-new/coast-3d/coast-3d.mobile.zh-TW.mp4' },
-            poster: { en: 'whats-new/coast-3d/coast-3d.mobile.en.jpg', 'zh-TW': 'whats-new/coast-3d/coast-3d.mobile.zh-TW.jpg' }
-          }
-        },
-        title: { en: 'Coast, rebuilt in 3D', 'zh-TW': '海岸公路換上 3D 新貌' },
-        description: {
-          en: 'On Medium graphics and up, race past sailboats and seagulls, grassy cliff tops and far headlands, beside a sea that mirrors a new sky.',
-          'zh-TW': '畫質「中」以上時，沿途有帆船與海鷗、長滿草叢的崖頂與遠方岬角，海面還會倒映全新的天空。'
-        }
-      },
-      {
-        id: 'track-cards', kind: 'improvement', image: { en: 'whats-new/track-cards/track-cards.en.webp', 'zh-TW': 'whats-new/track-cards/track-cards.zh-TW.webp' },
-        title: { en: 'Illustrated cards for the classic tracks', 'zh-TW': '經典賽道換上插畫卡片' },
-        description: {
-          en: 'Each of the ten classic tracks now has its own illustration on the home screen.',
-          'zh-TW': '十條經典賽道在首頁都有了專屬插畫。'
-        }
-      },
-      {
-        id: 'smoother-traffic', kind: 'fix', image: null,
-        title: { en: 'Smoother racing in heavy traffic', 'zh-TW': '車多時跑起來更順' },
-        description: {
-          en: 'Busy roads run more smoothly, the starting countdown no longer stalls on slower devices, and the music starts before the track finishes loading.',
-          'zh-TW': '車流多的路段更流暢，較慢的裝置起跑倒數不再卡住，音樂也會在賽道載入完成前就開始播放。'
-        }
-      },
-      {
-        id: 'garage-art', kind: 'fix', image: null,
-        title: { en: 'Garage pictures and preview camera fixed', 'zh-TW': '車庫圖片與預覽鏡頭修正' },
-        description: {
-          en: 'Garage car and paint pictures show again, full size on tablets. The Studio camera is easier to steer, keeps its angle and zoom, and switches views with ‹ ›.',
-          'zh-TW': '車庫的車款與車漆圖片恢復正常顯示，平板上也維持完整大小；Studio 預覽鏡頭更好操作，會保留角度與縮放，按 ‹ › 即可切換視角。'
         }
       }
     ]

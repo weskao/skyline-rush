@@ -1,3 +1,11 @@
+# Upcoming release announcement (2026-11-24)
+- [x] Stamp the published v0.33.0 entry with its tag date (2026-11-22); preserve reviewed copy and media references. Add one unnumbered Upcoming entry, in English and Traditional Chinese, based on changes after v0.33.0.
+- [ ] Release Phase N: record the final locked game, inspect frames, and attach the media marked `MEDIA PENDING` in `src/release-notes-data.ts`. No nonexistent media is referenced by the player UI.
+- [ ] Hero: `public/whats-new/tokyo-hyperdrive/tokyo-hyperdrive.{desktop,mobile}.{en,zh-TW}.{mp4,jpg}` — show both energy corridors and the charge cue. Existing `artifacts/tokyo-hyperdrive/` is reference evidence, not an approved final announcement capture.
+- [ ] Clips: `track-downloads` (individual / Download All progress), `home-mode-preview` (switch modes and swipe tracks), `tutorial-coach` (road-centred guidance and pause/resume), `corner-driving` (cornering and AUTO edge assist). Use `public/whats-new/<slug>/<slug>.{desktop,mobile}.{en,zh-TW}.{mp4,jpg}`; real game, 960×600 desktop and 390×844 mobile framing, CRF 20, max 4 MB each, silent, with posters.
+- [ ] Stills: `touch-auto-nitro` (AUTO on / off, touch layout), `race-notice-lane` (halfway/debuff and visible race readings), `showcase-camera` (Home / Garage), `whats-new-entry` (welcome / Home entry). Use `public/whats-new/<slug>/<slug>.{en,zh-TW}.webp`; add responsive variants where a single still cannot show the change clearly.
+- [ ] Run the existing release-notes copy/media tests, the full quality gate, and the fresh-eyes review; get user approval before recording the review fingerprint or releasing.
+
 # CI #45378073238 — asynchronous race restart (2026-11-24)
 
 - [x] Browser RED: NEXT entered the Neon race but heading stayed COAST; isolated Node VM with the actual restart/handler source reproduces stale heading and premature refresh on cancelled update (2 failures).
