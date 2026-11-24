@@ -109,6 +109,7 @@ for (const [name, viewport, hasTouch] of [
     await expect(next).toContainText('Neon Downtown');
     await next.click();
     await expect(page.locator('#race-status')).toHaveText('COUNTDOWN');
+    await expect.poll(() => page.evaluate(() => window.gameplay.race.trackId)).toBe('neon');
     await expect(page.locator('.route-heading')).toHaveText('NEON DOWNTOWN');
     await expect(page.locator('#race-overlay')).toBeHidden();
   });

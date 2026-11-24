@@ -43,7 +43,8 @@ for (const [name, viewport, hasTouch] of [
     await page.evaluate(() => { window.firstRace = window.gameplay.race; window.gameplay.race.player.distance = 900; });
     if (hasTouch) { await pause(); await page.locator('#again-button').tap(); } else await page.keyboard.press('Backspace');
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
-    expect(await page.evaluate(() => window.gameplay.race !== window.firstRace && window.gameplay.race.mode === 'free' &&
+    // Free Drive is already racing before restart; wait for the asynchronous pack gate to replace the actual race.
+    await expect.poll(() => page.evaluate(() => window.gameplay.race !== window.firstRace && window.gameplay.race.mode === 'free' &&
       window.gameplay.race.player.distance < 900)).toBe(true);
     await page.locator('.brand').click();
     await page.locator('#leave-end').click();

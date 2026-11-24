@@ -123,7 +123,7 @@ const touchUI = setupTouchControlsUI({
 });
 const vfx = setupVfxUI({ getWorld: () => world, onAirflowShown: () => showSwipeHint(), reducedMotion, deviceSelection: startup.deviceSelection });
 const calmMotion = vfx.calm;
-const { motionOptions, enter } = createMotion(calmMotion);
+const { motionOptions, enter, raceWipe } = createMotion(calmMotion);
 const hud = createRaceHud({
   ui,
   getRace: () => race,
@@ -314,20 +314,15 @@ async function restart(trackId = race.trackId) {
   if (!await raceSelect.requireUpdated(trackId) || deferWave3RaceStart(() => restart(trackId))) return;
   if (touchUI.isEditing()) touchUI.editLayout(false);
   controls.clear();
-  const wipe = $('#race-wipe');
   const nextGrid = cup && cup.results.length && cup.tracks[cup.results.length] === trackId ? nextCupGrid(cup) : sprintSeries?.results.length ? nextSprintGrid(sprintSeries) : null;
   if (cup) cup = cupRecovery.retry(cup, trackId);
-  wipe.getAnimations().forEach(animation => animation.cancel());
-  wipe.hidden = calmMotion();
-  if (!wipe.hidden) {
-    const animation = wipe.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)', offset: 0.45 }, { transform: 'translateX(100%)' }], motionOptions('slow'));
-    animation.finished.catch(() => {}).then(() => { if (!wipe.getAnimations().length) wipe.hidden = true; });
-  }
+  raceWipe($('#race-wipe'));
   race = race.eventCourse ? raceSelect.recreate(race, trackId) : createRace(trackId, race.modifier ?? (race.mode === 'classic' ? null : race.config), race.session.presentation, nextGrid ?? undefined);
   if (cup) race.rivalVisualSeed = cupRivalVisualSeed(cup);
   if (stunt && race.mode === 'stunt') race.stuntLimit = stuntHeatLimit(stunt);
   hud.resetMemory();
   goUntil = 0;
+  showTracks();
   startRace(race);
   sound.update(race, false, world.raceFramePending(race));
   focusRace();
@@ -390,7 +385,7 @@ $('#next-stage').addEventListener('click', () => {
   else if (cup && race.phase === 'finished' && !cupComplete(cup)) restart(cup.tracks[cup.results.length]);
   else if (stunt && race.phase === 'finished' && stuntHeatContinues(stunt, race.result.endReason)) restart(stunt.trackId);
 });
-$('#next-button').addEventListener('click', ({ currentTarget }) => { restart(currentTarget.dataset.next); showTracks(); });
+$('#next-button').addEventListener('click', ({ currentTarget }) => restart(currentTarget.dataset.next));
 ui['pause-button'].addEventListener('click', pause);
 ui['resume-button'].addEventListener('click', pause);
 setupPhotoUI({ getRace: () => race, getWorld: () => world, cue: name => sound.cue(name) });

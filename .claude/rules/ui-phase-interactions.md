@@ -72,3 +72,5 @@ event propagation without proving the cause.
   a tappable Next Track before scrolling. Compact the decorative badge and style summary
   before reducing space for controls. The portrait reward layout browser test also opens
   History, checks Escape returns focus to its results opener, and taps Next Track.
+
+- Asynchronous asset-version checks run before restarting. Refresh the selected route and HUD only after the new race instance exists, never immediately after calling an async restart; a declined update must not change the route. Free Drive may already be in `racing` before restart, so browser tests must wait for a new race instance rather than only the unchanged phase. Guards: `tests/result-actions-browser.spec.js` and `tests/mode-acceptance-browser.spec.js`.

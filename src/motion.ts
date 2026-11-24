@@ -14,5 +14,13 @@ export function createMotion(calm: () => boolean) {
     element.getAnimations().forEach(animation => animation.cancel());
     if (!calm()) element.animate([{ opacity: 0, transform: from }, { opacity: 1, transform: 'none' }], motionOptions(duration));
   }
-  return { motionOptions, enter };
+  function raceWipe(wipe: HTMLElement): void {
+    wipe.getAnimations().forEach(animation => animation.cancel());
+    wipe.hidden = calm();
+    if (!wipe.hidden) {
+      const animation = wipe.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)', offset: 0.45 }, { transform: 'translateX(100%)' }], motionOptions('slow'));
+      animation.finished.catch(() => {}).then(() => { if (!wipe.getAnimations().length) wipe.hidden = true; });
+    }
+  }
+  return { motionOptions, enter, raceWipe };
 }

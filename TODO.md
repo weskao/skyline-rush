@@ -1,3 +1,9 @@
+# CI #45378073238 — asynchronous race restart (2026-11-24)
+
+- [x] Browser RED: NEXT entered the Neon race but heading stayed COAST; isolated Node VM with the actual restart/handler source reproduces stale heading and premature refresh on cancelled update (2 failures).
+- [x] Refresh route after replacing race; extract the existing wipe into the motion owner without changing keyframes or timing. Isolated restart checks pass 2/2 and wipe check passes 1/1. Retain browser heading assertions and add actual track ID assertion.
+- [ ] Free Drive browser assertion waits for a genuinely new race instance, not an already-racing phase; verify keyboard and touch in Playwright. Full `make verify`, module-size, typecheck, build, WebGL/mobile and exact-HEAD CI remain pending.
+
 # CI #45378073238 — track pack cleanup race (2026-11-24)
 
 - [x] Reproduced a stale receipt-snapshot race in the exact GitHub store blob (`189f3bc7`): the new pack status was `missing` rather than `ready` (RED).
