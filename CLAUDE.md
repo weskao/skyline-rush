@@ -38,6 +38,7 @@ exactly. Topics whose work often starts before a scoped file is open:
 | Tutorial lessons, cues or transitions | `docs/tutorial-driving.md` |
 | Anything the player newly acquires or unlocks (car, track, paint, equipment, clothing, medal, currency, reward, store or mission claim) | `.claude/rules/acquisition-reveal.md` (one shared reveal via `presentAcquisition`) |
 | Any confirm, alert, prompt, dropdown, search box or picker; turning an important setting off | `.claude/rules/no-native-ui.md` (in-game `confirmDialog()`, never the browser's native UI) |
+| Performance, thermal diagnostics, frame pacing, new tracks/models/VFX/Garage | `.claude/rules/performance.md`, `docs/performance/README.md` |
 | Pushing, reading CI, merging, releasing | `.claude/rules/ci-gates.md`, `.claude/rules/branch-release.md` |
 
 **Gap difficulty and recovery rule:** Missing road is a physical chasm at every graphics tier. Throttle-only speed must not bypass BOOST-range ground jumps; deliberate FLY may cross. On classic gaps, a fall in the first 50% (including exactly half) returns before the jump; after half, respawn on safe ground beyond it. Three consecutive falls at the **same** gap trigger an anti-stuck forward rescue, without free rewards or checkpoint credit; normal race time and fall penalties continue. Clear the streak when the gap is cleared, do not increment it for R, and never spawn past FINISH. Match simulation/mesh/minimap, preserve safe run-ups, and test both sides of the midpoint and repeated failures. CourseGraph branch/checkpoint recovery retains its own rules; see the course template.
@@ -86,6 +87,8 @@ removes it, and a guard test that is RED on the old code.
 Merge-ready only when the latest `develop` is integrated, required checks are green and the
 user-visible symptoms were retested. Never merge into `develop`/`main`, open a PR or deploy
 without explicit user approval.
+
+**Global performance invariant:** Preserve the selected graphics fidelity and fixed 60 Hz simulation; do not hide regressions behind quality reductions, disabled off-screen simulation, or weaker gates. Follow the measured-evidence contract in `.claude/rules/performance.md`.
 
 ## Verification
 

@@ -16,6 +16,8 @@ export function setupFpsUI(setRenderScale: (scale: number) => void) {
     try { localStorage.setItem(FPS_STORAGE_KEY, pacer.preference); } catch { /* In-memory fallback. */ }
   });
   return {
+    get targetFps() { return pacer.targetFps; },
+    get renderScale() { return pacer.renderScale; },
     shouldRender(now: number, dt: number, racing: boolean, hidden: boolean): boolean {
       elapsed += dt;
       const render = pacer.tick(now, { racing, hidden });

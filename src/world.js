@@ -29,6 +29,7 @@ import { createRearLight } from './rear-light.ts';
 import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.ts';
 import { createGarageStage, GARAGE_LIGHTING } from './garage-stage.ts';
 import { applyCarReflections, createCarEnvironment, outdoorCarRoughness } from './car-reflections.ts';
+import { createDeepPerf } from './deep-perf.ts';
 import { createCarBounds } from './car-bounds.ts'; import { drawnTriangles } from './perf.ts';
 import { currentFoldableLayout, updateFoldableProjection } from './foldable-viewport.ts';
 import { createUpcomingShowcase } from './upcoming-showcase.ts';
@@ -102,6 +103,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
   const lens = createLensPass();
   composer.addPass(lens);
   composer.addPass(new OutputPass());
+  const deepPerf = createDeepPerf(location.search, renderer, composer, () => visual.quality);
   const environment = createRoomEnvironment(renderer);
   scene.environment = environment.texture;
   scene.environmentIntensity = 0.42; let garageStage = null, garagePaint = null, garagePreviewSkins = {};
@@ -374,7 +376,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
   const frames = createWorldFrameReadiness(canvas);
   function drawFrame(race, dt, snapshot, showcaseId = race.trackId) {
     renderer.info.reset(); // Exclude shader warmup draws and previous frames from the counters.
-    composer.render(dt);
+    if (deepPerf && !snapshot) deepPerf.draw(dt); else composer.render(dt);
     if (renderer.getContext().isContextLost()) return frames.wait(snapshot);
     if (!snapshot) frames.presented(race, showcaseId);
     return true;
@@ -433,6 +435,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
     });
   }
   return {
+    deepPerf,
     resize: sizing.resize, invalidateFrame() { frames.invalidate(); }, preloadTrackAssets(id) { coastAssets.prefetch(id, visual.quality, visual.ultra); void coastLook.preload(id, 'track', visual.quality); }, setUpcomingTrack(id) { return upcomingStage.setTrack(id); }, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture, carEnvironment); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; syncGarageLighting(); }, setCosmeticSkins(ids) { aero.setSkins(ids); effects.setDriftTrail(ids?.['drift-trail']); effects.setNitroTrail(ids); upcomingStage.setAirflowSkin(ids?.airflow); }, setGaragePose(pose) { garagePose = pose; syncGarageLighting(); }, setGarageLighting(level) { garageLighting = level; syncGarageLighting(); },
     setGarageSkinPreview(ids, home = false, visible = true) {
       garagePreviewSkins = ids;
@@ -923,6 +926,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
       signTextures.forEach(texture => texture.dispose());
       Object.values(signs).forEach(mat => mat.dispose());
       disposeContactShadow();
+      deepPerf?.dispose();
       composer.passes.forEach(pass => pass.dispose());
       composer.dispose();
       renderer.dispose();
