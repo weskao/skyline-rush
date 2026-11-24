@@ -1,4 +1,4 @@
-#world[data-frame-loading] { visibility: hidden; }
+#world[data-frame-loading]:not(:has(~ #track-swipe-scenes:not(:empty))) { visibility: hidden; }
 
 /* Keep the selected track in view while 3D models, textures and shaders finish loading.
    Reuse the lobby teaser URL (browser cache); never expose a half-rendered race frame. */
@@ -13,7 +13,31 @@
   pointer-events: none;
   visibility: hidden;
 }
-#world[data-frame-loading] ~ #race-frame-still { visibility: visible; }
+#world[data-frame-loading]:not(:has(~ #track-swipe-scenes:not(:empty))) ~ #race-frame-still { visibility: visible; }
+#track-swipe-scenes:not(:empty) ~ #upcoming-scene img { visibility: hidden; }
+
+#track-swipe-scenes:not(:empty) { visibility: visible; }
+#track-swipe-scenes > .track-swipe-card { flex: none; width: 100vw; height: 100%; }
+#track-swipe-scenes .track-swipe-card { display: flex; align-items: center; background: #0b1724; }
+.track-swipe-card > div {
+  --swipe-card-width: min(52vw, 568px);
+  width: var(--swipe-card-width);
+  color: #e3f5ff;
+  background: #081b2b;
+  transform: translateX(var(--swipe-card-x, calc(62vw - var(--swipe-card-width) / 2)));
+}
+.track-swipe-card[data-edge="left"] { --swipe-card-x: 0px; }
+.track-swipe-card[data-edge="right"] { --swipe-card-x: calc(100vw - var(--swipe-card-width)); }
+.track-swipe-card[data-edge="center"] > div { transition: transform var(--dur-base) var(--ease-out); }
+@media (orientation: portrait) {
+  .track-swipe-card[data-edge="center"] { --swipe-card-x: calc(50vw - var(--swipe-card-width) / 2); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .track-swipe-card[data-edge="center"] > div { transition: none; }
+}
+.vfx-comfort .track-swipe-card[data-edge="center"] > div { transition: none; }
+.track-swipe-card img { display: block; width: 100%; aspect-ratio: 568 / 205; object-fit: cover; }
+.track-swipe-card strong { display: block; padding: 8px 12px; text-align: center; }
 
 .race-loading-rail { display: none; }
 

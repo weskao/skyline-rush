@@ -76,7 +76,8 @@ test('Coming Soon cards share the track chooser and retain route maps and distan
   assert.doesNotMatch(shell, /class="coming-soon-card"/);
   assert.match(chooser, /querySelectorAll<HTMLButtonElement>\('\[data-track\], \[data-upcoming-track\]'\)/);
   assert.match(chooser, /confirm.addEventListener\('click', \(\) => \{[\s\S]*?applyTrack\(trackId\(pending\)\)/);
-  assert.match(select, /upcomingSelection = upcoming && !options\.isUpcomingEnterable\(upcoming\) \? upcoming : null;/);
+  assert.match(select, /const previewOnlyTrack = .*isUpcomingTrack\(id\) && !options\.isUpcomingEnterable\(id\) \? id : null;/);
+  assert.match(select, /upcomingSelection = previewOnlyTrack\(id\);/);
   assert.match(select, /isUpcomingTrack\(id\) \? options\.isUpcomingEnterable\(id\) : unlockedTracks\.has\(id\)/, 'preview race is forbidden regardless of saved unlock');
 });
 

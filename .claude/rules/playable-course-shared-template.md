@@ -275,3 +275,16 @@ floor against all solid road edges and both flight pads before streaming road ch
 Keep the pads and fork surfaces level where they meet other lanes, and check the
 actual mesh along the centre and both shoulders at every quality. Both minimaps
 must use the same authored graph as race movement after a route edit.
+
+### Swipe snapshots and first-frame handoff
+
+- Copy a canvas only when the requested track's trial render returns true. For a preview-only
+  map, require its stage to be active. A failed trial uses the target's localized teaser card at
+  its original aspect ratio. A pointer update within the same direction only moves the pages.
+- Trial draws do not complete frame loading or emit Home telemetry. Release the swipe layer after
+  both the slide and the formal target's composed WebGL frame. Preview-only stage IDs can differ
+  from the underlying Race. Garage frames and context loss never satisfy the track handoff.
+- While the swipe owns Home, keep the full-screen loading still behind it and preserve canvas
+  input. Give up the input lock on timeout, retain the card, and allow only the current target's
+  late frame to replace it. Cancel stale input and callbacks when the selection or screen changes.
+  Guards: `tests/track-swipe-ui.test.js` and `tests/track-swipe-browser.spec.js`.

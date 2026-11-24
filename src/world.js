@@ -23,6 +23,7 @@ import { raceCameraView, rigBack, rigLook, rigHeight, rigFov, rigShake, rigKick,
 import { observeRenderSize, renderPixelRatioForQuality, renderSamples } from './render-resolution.ts';
 import { warmupShaders } from './shader-warmup.ts';
 import { createRenderer } from './webgl-renderer.ts';
+import { createWorldFrameReadiness } from './world-frame-readiness.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
 import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.ts';
@@ -367,22 +368,15 @@ export function createWorld(canvas, visual = vfxSettings()) {
   const syncGarageLighting = () => { lens.uniforms.gain.value = garageCamera || garagePose ? GARAGE_LIGHTING[garageLighting] : 1; };
   const raceVisuals = createRaceVisuals({ scene, renderer, sky: sky.material.uniforms });
   let warmupPending = true, garageWarmupPending = true;
-  const restoreWarmup = () => { warmupPending = garageWarmupPending = true; };
+  const restoreWarmup = () => { warmupPending = garageWarmupPending = true; frames.invalidate(); };
   canvas.addEventListener('webglcontextrestored', restoreWarmup);
   const sizing = observeRenderSize(canvas, renderer, composer, camera, visual.quality);
-  let paintedGrid = null, frameLoading = true, lastHomePaint = null;
-  canvas.setAttribute('data-frame-loading', '');
-  function waitForFrame() {
-    if (!frameLoading) canvas.setAttribute('data-frame-loading', '');
-    frameLoading = true;
-    return false;
-  }
-  function drawFrame(race, dt) {
+  const frames = createWorldFrameReadiness(canvas);
+  function drawFrame(race, dt, snapshot, showcaseId = race.trackId) {
     renderer.info.reset(); // Exclude shader warmup draws and previous frames from the counters.
     composer.render(dt);
-    if (race.phase === 'ready' && lastHomePaint !== race) { lastHomePaint = race; canvas.dispatchEvent(new CustomEvent('skyline:showcase-frame', { detail: race.trackId })); } else if (race.phase !== 'ready' && paintedGrid !== race) { paintedGrid = race; canvas.dispatchEvent(new CustomEvent('skyline:race-grid-frame', { detail: race.trackId })); }
-    if (frameLoading) canvas.removeAttribute('data-frame-loading');
-    frameLoading = false;
+    if (renderer.getContext().isContextLost()) return frames.wait(snapshot);
+    if (!snapshot) frames.presented(race, showcaseId);
     return true;
   }
   function updateCar(mesh, car, distance, center, time, dt, isPlayer = false, input = {}, pose = car) {
@@ -439,7 +433,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
     });
   }
   return {
-    resize: sizing.resize, invalidateFrame() { waitForFrame(); }, preloadTrackAssets(id) { coastAssets.prefetch(id, visual.quality, visual.ultra); void coastLook.preload(id, 'track', visual.quality); }, setUpcomingTrack(id) { return upcomingStage.setTrack(id); }, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture, carEnvironment); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; syncGarageLighting(); }, setCosmeticSkins(ids) { aero.setSkins(ids); effects.setDriftTrail(ids?.['drift-trail']); effects.setNitroTrail(ids); upcomingStage.setAirflowSkin(ids?.airflow); }, setGaragePose(pose) { garagePose = pose; syncGarageLighting(); }, setGarageLighting(level) { garageLighting = level; syncGarageLighting(); },
+    resize: sizing.resize, invalidateFrame() { frames.invalidate(); }, preloadTrackAssets(id) { coastAssets.prefetch(id, visual.quality, visual.ultra); void coastLook.preload(id, 'track', visual.quality); }, setUpcomingTrack(id) { return upcomingStage.setTrack(id); }, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture, carEnvironment); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; syncGarageLighting(); }, setCosmeticSkins(ids) { aero.setSkins(ids); effects.setDriftTrail(ids?.['drift-trail']); effects.setNitroTrail(ids); upcomingStage.setAirflowSkin(ids?.airflow); }, setGaragePose(pose) { garagePose = pose; syncGarageLighting(); }, setGarageLighting(level) { garageLighting = level; syncGarageLighting(); },
     setGarageSkinPreview(ids, home = false, visible = true) {
       garagePreviewSkins = ids;
       garageHomePreview = home && !garageCamera;
@@ -458,7 +452,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
       player.userData.lightColor.fromArray(paint.light);
     },
     setRenderScale: sizing.setScale,
-    raceFramePending: race => paintedGrid !== race || frameLoading,
+    raceFramePending: frames.racePending,
     configureVFX(options) {
       visual=vfxSettings(options); garageHomeVisual = { ...visual, airflow: true }; garageHiddenVisual = { ...visual, enabled: false }; garageStage?.configureVFX(visual);
       sizing.setQuality(visual.quality);
@@ -478,18 +472,19 @@ export function createWorld(canvas, visual = vfxSettings()) {
       if (photoCapture) return Promise.reject(new Error('Photo capture already in progress'));
       return new Promise((resolve,reject) => { photoCapture = { resolve, reject }; });
     },
-    render(race, dt, idleTime, input = {}, presentation = {}, ghost = null, motion = null) {
+    renderSnapshot(race, time) { return this.render(race, 0, time, undefined, undefined, null, null, true); },
+    render(race, dt, idleTime, input = {}, presentation = {}, ghost = null, motion = null, snapshot = false) {
       const modelPending = garageModel.frame(visual.quality === 'low' ? 'low' : 'high', race.phase, garageHomePreview || !!garageCamera, garageCamera ? garageStage?.modelHost ?? null : null, race.phase === 'ready' ? upcomingStage.modelHost : null, homeModelHost, race.mode === 'free' && (!initialized || lastRace !== race));
       const preview = race.phase === 'ready', recovery = recoveryView.update(race.phase, race.player.recovery);
       updateFoldableProjection(camera, garageCamera || photoView ? null : currentFoldableLayout(), preview, preview && !garageCamera && !garageHomePreview && !upcomingStage.scene && !framedRoad(race.trackId) && !(visual.enabled && visual.airflow));
-      if (garageCamera && garageStage && preview) { renderPass.scene = garageStage.scene; garageStage.update(camera, garageCamera, idleTime, motionPreference.matches || visual.comfortable); lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0; configureBloom(bloom, visual.quality, .01, 1.1); if (garageWarmupPending) { garageWarmupPending = false; warmupShaders(renderer, garageStage.scene, camera, composer.renderTarget1); } return drawFrame(race, dt); } // r186 bloom is stronger in the Studio's bright environment.
+      if (garageCamera && garageStage && preview) { renderPass.scene = garageStage.scene; garageStage.update(camera, garageCamera, idleTime, motionPreference.matches || visual.comfortable); lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0; configureBloom(bloom, visual.quality, .01, 1.1); if (garageWarmupPending) { garageWarmupPending = false; warmupShaders(renderer, garageStage.scene, camera, composer.renderTarget1); } return drawFrame(race, dt, snapshot, null); } // r186 bloom is stronger in the Studio's bright environment.
       if (preview && upcomingStage.scene) {
-        if (modelPending && !garageHomePreview) return waitForFrame();
+        if (modelPending && !garageHomePreview) return frames.wait(snapshot);
         renderPass.scene = upcomingStage.scene;
         upcomingStage.update(camera, idleTime, visual, motionPreference.matches || visual.comfortable);
         lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0;
         configureBloom(bloom, visual.quality, UPCOMING_HOME_BLOOM, UPCOMING_BLOOM_THRESHOLD);
-        return drawFrame(race, dt);
+        return drawFrame(race, dt, snapshot, upcomingStage.activeTrack ?? race.trackId);
       }
       renderPass.scene = scene;
       endlessActive = !!race.endless;
@@ -536,7 +531,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
       if (coastAssets.update(trackId, visual.quality, race.phase === 'racing', visualPreset, visual.ultra, curvedClassic ? classicRoute : undefined, distance, race.endless ? race.seed : undefined)) warmupPending = true; // new materials compile before GO
       if (race.phase !== 'racing' && !garageHomePreview && (modelPending || coastLook.pending
         || coastAssets.sceneryPending(trackId, visual.quality, visual.ultra)
-        || (race.pickups.length > 0 && effects.pickupsLoading))) return waitForFrame();
+        || (race.pickups.length > 0 && effects.pickupsLoading))) return frames.wait(snapshot);
       if (fleet.sync(race, visual.quality)) flightVehicles.splice(1, rivals.length, ...rivals);
       if (lastRace !== race) { effects.reset(); aero.reset(); sprintVisual.reset(); rearLight.reset(); lastRace = race; initialized = false; carBank = 0; for (const mesh of [player, ...rivals, ...traffic]) mesh.userData.driftYaw = 0; }
       if(trackId==='coast'){coastScenery.show();coastScenery.update(classicRoute,distance,visual.quality,race.endless ? race.seed : undefined,reducedMotion ? 0 : race.elapsed + idleTime);} else coastScenery.hide();
@@ -840,7 +835,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
       const bloomStrength = lighting ? upcomingRaceBloom(boostGlow) : TOUR_IDS.has(trackId) ? .085 : coastLook.bloomStrength(trackId === 'coast' ? COAST_LIGHTING.bloom : .42) + boostGlow;
       configureBloom(bloom, visual.quality, bloomStrength, lighting ? UPCOMING_BLOOM_THRESHOLD : coastLook.bloomThreshold(1.1));
       if (warmupPending) { warmupPending = false; warmupShaders(renderer, scene, camera, composer.renderTarget1); }
-      drawFrame(race, dt);
+      if (!drawFrame(race, dt, snapshot, garageHomePreview ? null : race.trackId)) return false;
       if (photoCapture) {
         const request = photoCapture;
         photoCapture = null;

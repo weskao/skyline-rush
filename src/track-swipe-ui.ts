@@ -15,11 +15,12 @@ interface SwipeStart {
   width: number;
 }
 interface SwipeRace { phase: string; trackId: string }
-interface SwipeWorld { render(race: object, interpolation: number, time: number): void; setUpcomingTrack(id: PreviewTrackId | null): boolean }
+interface SwipeWorld { renderSnapshot(race: SwipeRace, time: number): boolean; setUpcomingTrack(id: PreviewTrackId | null): boolean }
 interface SwipeOptions {
   getRace(): SwipeRace;
   getWorld(): SwipeWorld | null | undefined;
-  selectedRace(trackId: string): object;
+  selectedRace(trackId: string): SwipeRace;
+  previewOnlyTrack(trackId: string): PreviewTrackId | null;
   applyTrack(trackId: string): void;
   calmMotion(): boolean;
   motionOptions(speed: string): KeyframeAnimationOptions;
@@ -28,9 +29,23 @@ interface SwipeOptions {
   touchMatches(): boolean;
   getSelectedTrackId(): string;
 }
+interface SwipeHandoff {
+  id: string;
+  race: SwipeRace | null;
+  page: HTMLElement;
+  painted: boolean;
+  slid: boolean;
+  listen(event: Event): void;
+  timer?: ReturnType<typeof setTimeout>;
+}
+const SHOWCASE_FRAME = 'skyline:showcase-frame';
+const HANDOFF_TIMEOUT_MS = 1800;
+const swipeTrackName = (id: string) => isUpcomingTrack(id) ? upcomingTrackName(id, getLocale()) : trackName(id, getLocale());
+
 type SwipeSample = [number, number];
-interface DragState { id: number; x: number; y: number; axis: 'x' | 'y' | null; samples: SwipeSample[] }
-interface WheelState { dx: number; spent: boolean; stamp: number; timer?: ReturnType<typeof setTimeout> }
+interface SwipeOrigin { id: string; race: SwipeRace }
+interface DragState { id: number; origin: SwipeOrigin; x: number; y: number; axis: 'x' | 'y' | null; samples: SwipeSample[] }
+interface WheelState { dx: number; origin: SwipeOrigin; spent: boolean; stamp: number; timer?: ReturnType<typeof setTimeout> }
 
 /** The existing carousel handles playable and preview-only cards with one ordering. */
 export const swipeTrackId = (button: Pick<HTMLButtonElement, 'dataset'>): string => button.dataset.track ?? button.dataset.upcomingTrack ?? '';
@@ -49,9 +64,10 @@ export function acceptsTrackWheelTarget(target: Pick<Element, 'closest'>, deskto
   );
 }
 
-export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, applyTrack, calmMotion, motionOptions, isTutorialActive, isEditingLayout, touchMatches, getSelectedTrackId }: SwipeOptions) {
+export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, previewOnlyTrack, applyTrack, calmMotion, motionOptions, isTutorialActive, isEditingLayout, touchMatches, getSelectedTrackId }: SwipeOptions) {
   const $ = <T extends Element = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
-  trackLandscapeHomeScale($('#intro'), $('.toolbar')); // the home strip's short-landscape panel + rail scale
+  const home = $('#intro');
+  trackLandscapeHomeScale(home, $('.toolbar')); // the home strip's short-landscape panel + rail scale
   // Home screen: swipe (touch) or drag (mouse) the 3D preview to change track, like a carousel page.
   const worldCanvas = $<HTMLCanvasElement>('#world');
   const swipeChip = $('#track-swipe');
@@ -61,15 +77,17 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, applyTrack,
   let swipeBusy = false;
   let swipeChipTimer: ReturnType<typeof setTimeout> | undefined;
   let swipeHintSeen = false;
+  const selection = (): SwipeOrigin => ({ id: getSelectedTrackId(), race: getRace() });
   const swipeTracks = (): HTMLButtonElement[] => Array.from(document.querySelectorAll<HTMLButtonElement>('[data-track]:not(:disabled), [data-upcoming-track]:not(:disabled)'));
   const swipeNeighbour = (step: number): HTMLButtonElement | undefined => {
     const tracks = swipeTracks();
-    return tracks[tracks.findIndex(button => swipeTrackId(button) === getSelectedTrackId()) + step];
+    const current = tracks.findIndex(button => swipeTrackId(button) === getSelectedTrackId());
+    return current < 0 ? undefined : tracks[current + step];
   };
   function showSwipeChip(state: string, id: string, note = ''): void {
     clearTimeout(swipeChipTimer);
     swipeChip.dataset.state = state;
-    $('#track-swipe-name').textContent = (isUpcomingTrack(id) ? upcomingTrackName(id, getLocale()) : trackName(id, getLocale())).toUpperCase();
+    $('#track-swipe-name').textContent = swipeTrackName(id).toUpperCase();
     $('#track-swipe-note').textContent = note;
     swipeChip.querySelector('.swipe-dots')!.replaceChildren(...swipeTracks().map(button => {
       const dot = document.createElement('i');
@@ -83,16 +101,41 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, applyTrack,
     swipeHintSeen = true; // Per page load, not localStorage: reload makes the gesture discoverable again.
     showSwipeChip('hint', getSelectedTrackId(), t(touchMatches() ? 'swipe.hintTouch' : 'swipe.hintMouse'));
   }
-  // Keep both 3D scenes edge-to-edge while swiping. Only the active scene renders each frame;
-  // the neighbor is drawn once into a temporary 2D snapshot (no second WebGL context).
+  // Snapshot both pages on the existing renderer. A missing frame gets that track's own card.
   const swipeScenes = document.createElement('div');
   swipeScenes.id = 'track-swipe-scenes';
   swipeScenes.setAttribute('aria-hidden', 'true');
   worldCanvas.after(swipeScenes);
   let swipeSceneStep = 0;
+  let sceneRace: SwipeRace | null = null;
+  let sceneTrack: string | null = null;
   let swipeSnapback: Animation | null = null;
-  function captureSwipeFrame() {
+  let handoff: SwipeHandoff | null = null;
+
+  function fallbackPage(id: string, step: number): HTMLElement {
+    const page = document.createElement('div');
+    page.className = 'track-swipe-card';
+    page.dataset.swipeTrack = id;
+    page.dataset.edge = step > 0 ? 'left' : step < 0 ? 'right' : 'center';
+    const source = swipeTracks().find(button => swipeTrackId(button) === id)
+      ?.querySelector<HTMLImageElement>('.track-preview img')?.getAttribute('src');
+    const card = document.createElement('div');
+    if (source) {
+      const image = document.createElement('img');
+      image.src = source;
+      image.alt = '';
+      card.append(image);
+    }
+    const label = document.createElement('strong');
+    label.textContent = swipeTrackName(id);
+    card.append(label);
+    page.append(card);
+    return page;
+  }
+
+  function captureSwipeFrame(id: string): HTMLCanvasElement {
     const canvas = document.createElement('canvas');
+    canvas.dataset.swipeTrack = id;
     canvas.width = worldCanvas.width;
     canvas.height = worldCanvas.height;
     const context = canvas.getContext('2d');
@@ -100,95 +143,192 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, applyTrack,
     context.drawImage(worldCanvas, 0, 0);
     return canvas;
   }
+
+  function stopHandoff() {
+    if (!handoff) return;
+    worldCanvas.removeEventListener(SHOWCASE_FRAME, handoff.listen);
+    clearTimeout(handoff.timer);
+    handoff = null;
+  }
+
   function clearSwipeScenes() {
+    stopHandoff();
     swipeSnapback = null;
     swipeScenes.getAnimations().forEach(animation => animation.cancel());
     swipeScenes.replaceChildren();
     swipeScenes.style.transform = '';
     swipeSceneStep = 0;
+    sceneRace = null; sceneTrack = null;
     worldCanvas.style.opacity = '';
     swipeBusy = false;
   }
-  function prepareSwipeScenes(step: number): boolean {
-    const button = swipeNeighbour(step);
-    const world = getWorld();
-    if (!button || !world || calmMotion()) return false;
-    swipeSnapback = null;
-    swipeScenes.getAnimations().forEach(animation => animation.cancel());
-    if (step === swipeSceneStep && swipeScenes.childElementCount === 2) return true;
-    try {
-      const time = performance.now() / 1000;
-      // A non-preserved WebGL drawing buffer may be empty after compositing;
-      // explicitly render both frames immediately before copying their pixels.
-      world.render(getRace(), 0, time);
-      const current = captureSwipeFrame();
-      const nextId = swipeTrackId(button);
-      world.setUpcomingTrack(isUpcomingTrack(nextId) ? nextId : null);
-      world.render(isUpcomingTrack(nextId) ? getRace() : selectedRace(nextId), 0, time);
-      const neighbor = captureSwipeFrame();
-      swipeScenes.replaceChildren(...(step > 0 ? [current, neighbor] : [neighbor, current]));
-      swipeSceneStep = step;
-      // Opacity preserves pointer capture; visibility:hidden would lose hit-testing.
-      worldCanvas.style.opacity = '0';
-      return true;
-    } catch (error) {
-      clearSwipeScenes();
-      console.warn('Preview snapshot unavailable:', error);
-      return false;
-    } finally {
-      const selectedId = getSelectedTrackId();
-      world.setUpcomingTrack(isUpcomingTrack(selectedId) ? selectedId : null);
-      world.render(getRace(), 0, performance.now() / 1000);
+
+  function prepareSwipeScenes(button: HTMLButtonElement, step: number): void {
+    if (calmMotion()) return;
+    if (swipeSnapback) {
+      swipeSnapback.cancel();
+      swipeSnapback = null;
     }
+    if (swipeSceneStep === step) return;
+    swipeScenes.getAnimations().forEach(animation => animation.cancel());
+    const world = getWorld();
+    const fromId = getSelectedTrackId();
+    const outgoing = (swipeSceneStep > 0 ? swipeScenes.firstElementChild : swipeScenes.lastElementChild) as HTMLElement | null;
+    let current = sceneRace === getRace() && outgoing?.tagName === 'CANVAS' && outgoing.dataset.swipeTrack === fromId
+      ? outgoing : undefined;
+    sceneTrack = fromId;
+    sceneRace = getRace();
+    const toId = swipeTrackId(button);
+    const fromStage = previewOnlyTrack(fromId);
+    const toStage = previewOnlyTrack(toId);
+    const time = performance.now() / 1000;
+    let neighbor: HTMLElement | undefined;
+    let neighborDrawn = false;
+    if (world) try {
+      const fromStageReady = world.setUpcomingTrack(fromStage);
+      if (!current && (!fromStage || fromStageReady) && world.renderSnapshot(getRace(), time)) {
+        current = captureSwipeFrame(fromId);
+      }
+      const target = toStage ? getRace() : selectedRace(toId);
+      const stageReady = world.setUpcomingTrack(toStage);
+      if (toStage ? stageReady : target.trackId === toId) {
+        neighborDrawn = world.renderSnapshot(target, time);
+        if (neighborDrawn) neighbor = captureSwipeFrame(toId);
+      }
+    } catch (error) {
+      console.warn('Preview snapshot unavailable:', error);
+    } finally {
+      world.setUpcomingTrack(fromStage);
+      if (neighborDrawn) world.renderSnapshot(getRace(), time);
+    }
+    current ??= handoff?.page ?? fallbackPage(fromId, -step);
+    neighbor ??= fallbackPage(toId, step);
+    swipeScenes.replaceChildren(...(step > 0 ? [current, neighbor] : [neighbor, current]));
+    swipeSceneStep = step;
+    // Keep pointer capture and hit testing on the single live canvas.
+    worldCanvas.style.opacity = '0';
   }
   function positionSwipeScenes(offset: number): void {
     swipeScenes.style.transform = `translateX(calc(${swipeSceneStep > 0 ? 0 : -100}vw + ${offset.toFixed(1)}px))`;
   }
-  // On cancellation, the joined pages snap back without showing any underlying background.
+
+  function presentHandoff(next: SwipeHandoff) {
+    if (!next.painted || !next.slid || swipeSceneStep || handoff !== next) return;
+    clearTimeout(next.timer);
+    worldCanvas.style.opacity = '';
+    if (next.page.className !== 'track-swipe-card' || calmMotion()) { clearSwipeScenes(); return; }
+    swipeBusy = false;
+    const fade = swipeScenes.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, fill: 'forwards' });
+    void fade.finished.catch(() => {}).then(() => { if (handoff === next && next.painted && !swipeSceneStep) clearSwipeScenes(); });
+  }
+
+  function holdPage(next: SwipeHandoff) {
+    swipeSceneStep = 0;
+    swipeScenes.style.transform = '';
+    next.page.dataset.edge = 'center';
+    swipeScenes.replaceChildren(next.page);
+    presentHandoff(next);
+  }
+
+  function resetSwipe() {
+    swipe = null; swipeTarget = null;
+    clearTimeout(wheelSwipe?.timer);
+    wheelSwipe = null;
+    if (swipeChip.dataset.state === 'drag') swipeChip.dataset.state = '';
+    clearSwipeScenes();
+  }
+
   function cancelSwipe() {
     swipe = null; swipeTarget = null;
     if (swipeChip.dataset.state === 'drag') swipeChip.dataset.state = '';
-    if (!swipeScenes.childElementCount) return;
+    if (getRace().phase !== 'ready') { resetSwipe(); return; }
+    if (!swipeSceneStep) return;
+    const restore = () => {
+      swipeBusy = false;
+      if (handoff) holdPage(handoff); else clearSwipeScenes();
+    };
+    if (calmMotion()) { restore(); return; }
+    swipeBusy = true;
     const from = swipeScenes.style.transform;
     const to = swipeSceneStep > 0 ? 'translateX(0px)' : 'translateX(-100vw)';
-    if (calmMotion()) { clearSwipeScenes(); return; }
-    swipeBusy = true;
-    // Keep the last keyframe painted until the snapshot layer is removed.
-    // Without fill, Web Animations reverts to the drag's inline transform for a frame.
-    // A resumed swipe cancels this snap-back and owns the snapshots from then on.
     const animation = swipeSnapback = swipeScenes.animate([{ transform: from }, { transform: to }], { ...motionOptions('fast'), fill: 'forwards' });
-    animation.finished.catch(() => {}).then(() => { if (swipeSnapback === animation) clearSwipeScenes(); });
+    void animation.finished.catch(() => {}).then(() => {
+      if (swipeSnapback !== animation) return;
+      swipeSnapback = null;
+      animation.cancel();
+      restore();
+    });
   }
-  // Slide the outgoing and incoming track as adjacent full-screen pages, never as faded empty canvas.
+
   async function commitSwipe(button: HTMLButtonElement, step: number): Promise<void> {
     swipe = null; swipeTarget = null; swipeBusy = true;
-    const prepared = prepareSwipeScenes(step);
-    // Commit the choice before the transition: software WebGL can delay animation frames in CI.
-    applyTrack(swipeTrackId(button));
-    showSwipeChip('done', getSelectedTrackId());
-    if (prepared && !calmMotion()) {
+    prepareSwipeScenes(button, step);
+    const id = swipeTrackId(button);
+    const page = (step > 0 ? swipeScenes.lastElementChild : swipeScenes.firstElementChild) as HTMLElement | null;
+    stopHandoff();
+    const next: SwipeHandoff = { id, race: null, page: swipeSceneStep && page ? page : fallbackPage(id, 0),
+      painted: false, slid: false, listen(event) {
+        if (next.painted || (event as CustomEvent<string>).detail !== next.id || getSelectedTrackId() !== next.id ||
+          getRace().phase !== 'ready' || (next.race && getRace() !== next.race)) return;
+        next.painted = true;
+        presentHandoff(next);
+      },
+    };
+    handoff = next;
+    worldCanvas.addEventListener(SHOWCASE_FRAME, next.listen);
+    if (!swipeSceneStep) holdPage(next);
+    worldCanvas.style.opacity = '0';
+    applyTrack(id);
+    next.race = getRace();
+    if (getSelectedTrackId() !== id) { clearSwipeScenes(); return; }
+    showSwipeChip('done', id);
+    if (swipeSceneStep && !calmMotion()) {
       const from = swipeScenes.style.transform || (step > 0 ? 'translateX(0px)' : 'translateX(-100vw)');
       const to = step > 0 ? 'translateX(-100vw)' : 'translateX(0px)';
+      next.page.dataset.edge = 'center';
       const animation = swipeScenes.animate([{ transform: from }, { transform: to }], { ...motionOptions('base'), fill: 'forwards' });
       await animation.finished.catch(() => {});
-      // Persist the final (incoming-only) position before cancelling the finished animation.
-      // Otherwise its original dragged transform briefly uncovers the outgoing track again.
+      if (handoff !== next) return;
       swipeScenes.style.transform = to;
       animation.cancel();
     }
-    // Selection happened before the slide. Clicking again recreated the race and restarted the 3D scene.
-    // Wait for the live WebGL scene to reflect the new track before uncovering it.
-    if (prepared) await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    clearSwipeScenes();
+    next.slid = true;
+    holdPage(next);
+    if (!next.painted) next.timer = setTimeout(() => {
+      if (handoff !== next) return;
+      if (next.page.className !== 'track-swipe-card') next.page = fallbackPage(id, step);
+      swipeBusy = false;
+      holdPage(next);
+    }, HANDOFF_TIMEOUT_MS);
   }
+
+  worldCanvas.addEventListener('webglcontextlost', () => {
+    if (!handoff) return;
+    handoff.painted = false;
+    worldCanvas.style.opacity = '0';
+    if (handoff.slid && !swipeSceneStep) {
+      swipeScenes.getAnimations().forEach(animation => animation.cancel());
+    }
+  });
+  const observeSelection = new MutationObserver(() => {
+    const origin = handoff ?? swipe?.origin ?? (wheelSwipe?.spent ? null : wheelSwipe?.origin);
+    const changed = origin ? origin.race !== getRace() || origin.id !== getSelectedTrackId()
+      : swipeSceneStep && (sceneRace !== getRace() || sceneTrack !== getSelectedTrackId());
+    if (changed || worldCanvas.parentElement !== swipeScenes.parentElement) resetSwipe();
+  });
+  observeSelection.observe(home, { attributes: true, attributeFilter: ['data-lobby-track'] });
+  observeSelection.observe(swipeScenes.parentElement!, { childList: true }); // Garage moves the single canvas.
   // The two complete scenes stay touching at the center seam throughout the drag.
   function dragSwipe(dx: number): void {
     swipeBusy = false;
     const step = dx < 0 ? 1 : -1;
     const neighbour = swipeNeighbour(step);
-    if (!calmMotion() && neighbour && prepareSwipeScenes(step)) {
+    if (!calmMotion() && neighbour) {
+      prepareSwipeScenes(neighbour, step);
       positionSwipeScenes(swipeOffset(dx, innerWidth, true));
-    } else if (swipeScenes.childElementCount) clearSwipeScenes();
+    } else if (swipeSceneStep) {
+      if (handoff) holdPage(handoff); else clearSwipeScenes();
+    }
     const target = neighbour ? swipeTrackId(neighbour) : getSelectedTrackId();
     if (target !== swipeTarget) { swipeTarget = target; showSwipeChip('drag', target, isUpcomingTrack(target) ? t('track.comingSoon') : neighbour?.classList.contains('is-locked') ? t('track.locked') : ''); }
     swipeChip.style.setProperty('--swipe', Math.min(1, Math.abs(dx) / swipeDistance(innerWidth)).toFixed(3));
@@ -199,7 +339,7 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, applyTrack,
       tutorial: isTutorialActive(), editing: isEditingLayout(), busy: swipeBusy,
       dialogOpen: !!document.querySelector('dialog[open]'), pointerType: event.pointerType,
       clientX: event.clientX, width: innerWidth })) return;
-    swipe = { id: event.pointerId, x: event.clientX, y: event.clientY, axis: null, samples: [[event.timeStamp, event.clientX]] };
+    swipe = { id: event.pointerId, origin: selection(), x: event.clientX, y: event.clientY, axis: null, samples: [[event.timeStamp, event.clientX]] };
     worldCanvas.setPointerCapture(event.pointerId);
   });
   worldCanvas.addEventListener('pointermove', event => {
@@ -226,7 +366,7 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, applyTrack,
     if (swipe || getRace().phase !== 'ready' || isTutorialActive() || isEditingLayout() || document.querySelector('dialog[open]')) return;
     event.preventDefault(); // also keeps the browser's two-finger back/forward swipe off the preview
     clearTimeout(wheelSwipe?.timer);
-    const gesture = wheelSwipe ?? { dx: 0, spent: swipeBusy, stamp: event.timeStamp };
+    const gesture = wheelSwipe ?? { dx: 0, origin: selection(), spent: swipeBusy, stamp: event.timeStamp };
     wheelSwipe = gesture;
     gesture.stamp = event.timeStamp;
     // A stale timer must never cancel a newer gesture.
@@ -247,7 +387,6 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, applyTrack,
     const button = step && swipeNeighbour(step);
     if (button) commitSwipe(button, step); else cancelSwipe();
   });
-  
-  
+
   return { showSwipeHint, cancelSwipe };
 }

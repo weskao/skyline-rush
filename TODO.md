@@ -1,3 +1,13 @@
+# Home track swipe first frame (2026-11-24)
+
+- [x] RED on develop `02d3348c`. A pending Neon draw returned false, yet the swipe copied Coast into the incoming page. The timed handoff then exposed the full-screen still before Neon painted. Chrome reproduced both at Medium and High with the tier-specific Neon asphalt request held.
+- [x] GREEN. Trial draws copy only a composed target frame and never publish showcase telemetry. If a target is still loading, its own localized 568:205 teaser fills the card. The single renderer takes over after the slide and the formal frame. Preview stages publish their actual ID, including when the underlying race is unchanged.
+- [x] Unit regressions cover early and late first frames, stage failure, context loss, the 1.8 s input unlock, cancel and reverse. A reversal now reuses the outgoing snapshot. RED captured Coast twice during one reversal, GREEN captured it once.
+- [x] Recorded real Chrome WebGL before and after at 1440×900, Coast → Neon. The target edge changes from Coast pixels to Neon teaser art. The full-screen still fell from 53 to 0 sampled frames at Medium and 77 to 0 at High. Videos, phase screenshots and per-frame timings are local in `artifacts/home-track-swipe-2026-11-24/{before,after}/`.
+- [x] Observed max drag intervals (before → after) were 178.4 → 56.3 ms at Medium and 86.5 → 86.6 ms at High. Selection to first frame was 1347.6 → 666.7 ms at Medium and 1534.9 → 777.3 ms at High. These single runs include a deliberately delayed request and host scheduling variance.
+- [ ] Complete the full `make verify` browser and World Tour gate and check GitHub Actions for the exact fix commit.
+- [ ] Recheck handheld portrait and landscape, physical trackpad input, and frame time on device. The attached iPhone was unavailable and ADB listed no device.
+
 # Desktop Home showcase camera layout
 
 - [x] RED at 1440×900 in `tests/showcase-camera-actions-parity-browser.spec.js`. Inline-size containment collapsed the max-content dock to zero width, and Playwright reported the dock hidden.
