@@ -300,7 +300,7 @@ test('one kit alone draws its own pools; detaching it removes them', () => {
   assert.throws(() => createNeonScenery(new THREE.Scene()).attachKit('city', new THREE.Group()), /neon-city: missing mesh/);
 });
 
-test('Neon rail landmark instances clear the full flight envelope at medium and high quality', () => {
+test('Neon rail landmark instances keep their original uniform scale at medium and high quality', () => {
   const { kit, pool } = rig();
   for (const quality of ['medium', 'high']) {
     kit.update(route, 800, quality);
@@ -311,7 +311,7 @@ test('Neon rail landmark instances clear the full flight envelope at medium and 
         for (let i = 0; i < (mesh?.count ?? 0); i++) {
           count++;
           const scale = new THREE.Vector3().setFromMatrixScale(matrixOf(mesh, i));
-          assert.ok(5.6 * scale.y > 13.2, `${quality} ${piece} ${band}: clear height ${5.6 * scale.y}`);
+          assert.ok(Math.abs(scale.y - 1) < .001, `${quality} ${piece} ${band}: original height scale ${scale.y}`);
           assert.ok(Math.abs(scale.x - 1) < .001 && Math.abs(scale.z - 1) < .001, 'road footprint remains unchanged');
         }
       }

@@ -1855,3 +1855,13 @@ test('Neon still collides with solid scenery in the underpass', () => {
   assert.equal(race.player.impact?.kind, 'barrier');
   assert.equal(race.player.collisions, 1);
 });
+
+
+test('Neon retains ordinary roof collision for a tunnel outside the first kilometre', () => {
+  const race = airborne(6, 'neon');
+  Object.assign(race, { props: [], hazards: [], traffic: [], sections: [...race.sections, { from: 1200, to: 1400, type: 'tunnel' }].sort((a, b) => a.from - b.from) });
+  Object.assign(race.player, { distance: 1250, x: 0, speed: 50 });
+  stepRace(race, { fly: true }, 1 / 60);
+  assert.ok(race.player.altitude < TUNNEL_CEILING);
+  assert.equal(race.player.impact?.kind, 'barrier');
+});
