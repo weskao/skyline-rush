@@ -4,9 +4,9 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
-export const PICKUP_SIZES = Object.freeze({ cell: .82, can: .94, tank: 1.08, overcharge: 1.24 });
+export const PICKUP_SIZES = Object.freeze({ cell: 1.23, can: 1.41, tank: 1.51, overcharge: 1.74 });
 // Render-only clearance: preserve the simulation's authored altitude and collision volume.
-export const PICKUP_GROUND_LIFT = Object.freeze({ cell: .23, can: .28, tank: .82, overcharge: 1.50 });
+export const PICKUP_GROUND_LIFT = Object.freeze({ cell: .65, can: .70, tank: 1.37, overcharge: 2.30 });
 export const PICKUP_ACCENTS = Object.freeze({ cell: 0x2bc9ff, can: 0xff9d35, tank: 0xffcf48, overcharge: 0xe180ff });
 const ACCENTS = PICKUP_ACCENTS;
 const STEEL = 0x6c819d, DARK = 0x162840, WHITE = 0xeaf6ff;

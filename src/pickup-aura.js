@@ -3,7 +3,8 @@ import * as THREE from 'three';
 import { PICKUP_ACCENTS, PICKUP_SIZES, pickupPulse } from './pickup-art.js';
 import { glowTexture } from './pickup-collect-vfx.js';
 
-const HALO_SCALE = 2.6, HALO_LEVEL = .5;
+export const PICKUP_HALO_SCALE = 2.6;
+const HALO_LEVEL = .6;
 const PARKED = new THREE.Matrix4().makeTranslation(0, -1e4, 0);
 const scratch = new THREE.Object3D(), tint = new THREE.Color();
 
@@ -24,12 +25,12 @@ export function createPickupAura(capacity) {
     mesh,
     begin() { used = 0; },
     /** One halo at a pickup's animated position, facing the camera and breathing with its emissive pulse. */
-    add(tier, position, facing, time, reducedMotion) {
+    add(tier, position, facing, time, reducedMotion, visibility = 1) {
       if (used >= capacity) return;
       const pulse = pickupPulse(tier, time, reducedMotion);
       scratch.position.copy(position);
       scratch.quaternion.copy(facing);
-      scratch.scale.setScalar((PICKUP_SIZES[tier] ?? PICKUP_SIZES.cell) * HALO_SCALE * (.9 + .1 * pulse));
+      scratch.scale.setScalar((PICKUP_SIZES[tier] ?? PICKUP_SIZES.cell) * PICKUP_HALO_SCALE * visibility * (.9 + .1 * pulse));
       scratch.updateMatrix();
       mesh.setMatrixAt(used, scratch.matrix);
       mesh.setColorAt(used++, tint.set(PICKUP_ACCENTS[tier] ?? 0xffffff).multiplyScalar(HALO_LEVEL * pulse));

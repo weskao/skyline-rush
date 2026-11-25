@@ -108,3 +108,33 @@ test('plainGeometry turns a quantized, node-scaled mesh into plain local vertice
   assert.deepEqual([...position.array].map(v => +v.toFixed(3)), [0, 1, 0, 2, 1, 0, 0, -1, 1]);
   assert.equal(geometry.getAttribute('position').array.constructor, Int16Array, 'the cached source mesh is untouched');
 });
+
+test('all four race pickups and halos grow at distance without moving the item or changing LOD scale', () => {
+  const markers = createPickupMarkers(4, { distant: true });
+  const camera = new THREE.PerspectiveCamera(58, 844 / 390, .1, 3000);
+  const aura = markers.objects[1];
+  try {
+    for (const tier of tiers) {
+      const item = Object.freeze({ tier, distance: 150, altitude: 0 });
+      const draw = depth => {
+        markers.frame(0, true, true, camera, 390);
+        const marker = new THREE.Object3D();
+        marker.position.set(1.5, .85, -depth);
+        markers.place(marker, item, 0, true, camera.quaternion);
+        markers.end();
+        const halo = new THREE.Matrix4();
+        aura.getMatrixAt(0, halo);
+        assert.equal(marker.position.x, 1.5);
+        assert.equal(marker.position.z, -depth);
+        return { scale: marker.scale.x, y: marker.position.y, halo: halo.getMaxScaleOnAxis() };
+      };
+      const near = draw(10), far = draw(150);
+      assert.equal(near.scale, PICKUP_SIZES[tier]);
+      assert.ok(far.scale > near.scale && far.scale <= near.scale * 1.65);
+      assert.ok(far.y >= near.y && far.halo > near.halo);
+      assert.ok(Math.abs(draw(149.99).scale - draw(150.01).scale) < .001);
+      assert.equal(markers.key(tier, 150), tier);
+      assert.equal(markers.key(tier, 151), tier + '-distant');
+    }
+  } finally { markers.dispose(); }
+});

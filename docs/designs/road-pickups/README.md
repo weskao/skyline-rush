@@ -21,15 +21,25 @@ its own sun and sky.
 
 | Tier | Model | Triangles | GLB | Scene scale | Reward |
 | --- | --- | ---: | ---: | --- | --- |
-| cell | Armoured energy cell, glowing blue core | 1,626 | 296 KB | 0.82 | +0.25 NITRO |
-| can | Orange pressure canister | 1,870 | 283 KB | 0.94 | +0.5 NITRO |
-| tank | Twin gold high-capacity tank | 1,822 | 287 KB | 1.08 | +1.0 NITRO |
-| overcharge | Four-hue prism core, gold caps, two gyro rings | 2,508 | 283 KB | 1.24 | Top up 3 NITRO |
+| cell | Armoured energy cell, glowing blue core | 1,626 | 296 KB | 1.23 | +0.25 NITRO |
+| can | Orange pressure canister | 1,870 | 283 KB | 1.41 | +0.5 NITRO |
+| tank | Twin gold high-capacity tank | 1,822 | 287 KB | 1.51 | +1.0 NITRO |
+| overcharge | Four-hue prism core, gold caps, two gyro rings | 2,508 | 283 KB | 1.74 | Top up 3 NITRO |
 
 Each GLB has a 300 KB budget (`src/model-manifest.ts`); the cell is 3.9 KB under it, so a rebuild that
 grows its textures fails `check-glb` rather than shipping.
 
 Collision volumes, rewards, placement, respawn timers and balance are unchanged.
+
+The race applies additional projection-aware visibility to every quality (Low, Medium, High, Ultra).
+The guide and collection transfer retain the enlarged base size. The race uses logical CSS viewport
+height and camera projection, never DPR or render quality. Model compensation eases in at 30–100 m
+of camera depth, capped at 1.65× the base size; the existing halo is capped at 2.5×. Targets are
+24 CSS px (28 on short landscape viewports), not a guarantee beyond the cap. Ground pickups lift
+visually with scale to avoid clipping; no pickup position or collision volume is changed.
+The existing distant LOD and bounded instanced pools remain in use, including with VFX disabled.
+No new light, mesh pool, post-process, or third-party dependency is needed. Physical-device and
+full CI visual verification are required before merge.
 
 ## Loading and fallbacks
 
