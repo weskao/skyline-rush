@@ -440,3 +440,12 @@ body[data-fold-axis] #track-chooser .track-select {
 @media (max-width: 760px) and (max-height: 500px) and (orientation: landscape) {
   .intro .lobby-race-heading { padding-inline-end: 96px; }
 }
+
+/* Ultra-short landscape: recover the wallet clearance without pushing the track card
+   under the fixed Garage row. Keep the grid content and 44px tap target intact. */
+@media (max-height: 330px) and (orientation: landscape) {
+  .intro .lobby-race-heading { min-height: 62px; }
+}
+@media (max-width: 760px) and (max-height: 330px) and (orientation: landscape) {
+  .intro .lobby-race-heading { min-height: 49px; }
+}
