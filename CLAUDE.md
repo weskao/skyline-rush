@@ -124,7 +124,9 @@ All four road energy pickup tiers share `pickup-markers.js`, `pickup-art.js` and
 `pickup-visibility.js`. Keep model scale and projection-aware halo independent of Low/Medium/High/Ultra,
 DPR and dynamic render scale; use logical CSS viewport height and camera projection. Preserve the
 near-collection size, ground clearance, reduced-motion behavior, existing instanced pools and
-LOD. Never change simulation collision, reward, respawn or pickup placement to improve readability.
+LOD. Projected size must increase, never shrink, as camera depth decreases at fixed projection;
+fit distant geometry bounds to the active close geometry on creation/model swap. Never change
+simulation collision, reward, respawn or pickup placement to improve readability.
 See `docs/designs/road-pickups/README.md` and the pickup visibility/presentation tests.
 
 ## Branches

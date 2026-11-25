@@ -138,3 +138,31 @@ test('all four race pickups and halos grow at distance without moving the item o
     }
   } finally { markers.dispose(); }
 });
+
+test('distant pickup bounds match close bounds before and after authored model swap', async () => {
+  const models = loadedModels();
+  // A non-identical authored asset tests real geometry rather than just matching marker.scale.
+  for (const tier of tiers) models.geometries[tier].scale(1.7, 1.3, .8).translate(.05, -.2, .1);
+  const markers = createPickupMarkers(4, { distant: true, models: Promise.resolve(models) });
+  const check = () => {
+    for (const tier of tiers) {
+      const close = markers.pool.group.getObjectByName(tier).geometry;
+      const far = markers.pool.group.getObjectByName(tier + '-distant').geometry;
+      close.computeBoundingBox(); far.computeBoundingBox();
+      assert.ok(close.boundingBox.min.distanceTo(far.boundingBox.min) < 1e-5, tier + ' lower bounds');
+      assert.ok(close.boundingBox.max.distanceTo(far.boundingBox.max) < 1e-5, tier + ' upper bounds');
+    }
+  };
+  try {
+    check();
+    await markers.ready;
+    assert.equal(markers.frame(0, true, true), true);
+    check();
+  } finally {
+    markers.dispose();
+    for (const tier of tiers) {
+      models.geometries[tier].dispose();
+      models.materials[tier].dispose();
+    }
+  }
+});

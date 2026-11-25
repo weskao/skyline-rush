@@ -13,6 +13,21 @@ const UNTURNED = new THREE.Quaternion();
 const DISTANT_PICKUP_METRES = 150;
 const distantKey = tier => tier + '-distant';
 
+// Fit the simplified mesh once, not per frame. A GLB can have different authored bounds from
+// its procedural stand-in; crossing the LOD boundary must not change its overall dimensions.
+function fitDistantGeometry(geometry, reference) {
+  geometry.computeBoundingBox();
+  reference.computeBoundingBox();
+  const from = geometry.boundingBox, to = reference.boundingBox;
+  const sx = (to.max.x - to.min.x) / (from.max.x - from.min.x);
+  const sy = (to.max.y - to.min.y) / (from.max.y - from.min.y);
+  const sz = (to.max.z - to.min.z) / (from.max.z - from.min.z);
+  const x = to.min.x - from.min.x * sx, y = to.min.y - from.min.y * sy, z = to.min.z - from.min.z * sz;
+  geometry.scale(sx, sy, sz);
+  geometry.translate(x, y, z);
+  geometry.computeBoundingSphere();
+}
+
 /**
  * `renderer` starts the GLB load; without one (unit tests, no WebGL) the procedural stand-in models stay.
  * @param {number} capacity
@@ -26,6 +41,7 @@ export function createPickupMarkers(capacity, { renderer, envMap = null, models 
   const poolShapes = { ...shapes }, poolMaterials = { ...materials };
   for (const tier in distantShapes) {
     const key = distantKey(tier);
+    fitDistantGeometry(distantShapes[tier], shapes[tier]);
     poolShapes[key] = distantShapes[tier];
     poolMaterials[key] = distantMaterials[tier];
   }
@@ -55,7 +71,10 @@ export function createPickupMarkers(capacity, { renderer, envMap = null, models 
         disposeStandIn();
         loaded = pending; pending = null;
         ({ geometries: shapes, materials } = loaded);
-        for (const tier in materials) pool.swap(tier, shapes[tier], materials[tier]);
+        for (const tier in materials) {
+          if (distantShapes[tier]) fitDistantGeometry(distantShapes[tier], shapes[tier]);
+          pool.swap(tier, shapes[tier], materials[tier]);
+        }
       }
       for (const tier in materials) pulsePickupMaterial(materials[tier], tier, time, reducedMotion);
       for (const tier in distantMaterials) pulsePickupMaterial(distantMaterials[tier], tier, time, reducedMotion);

@@ -33,11 +33,15 @@ Collision volumes, rewards, placement, respawn timers and balance are unchanged.
 
 The race applies additional projection-aware visibility to every quality (Low, Medium, High, Ultra).
 The guide and collection transfer retain the enlarged base size. The race uses logical CSS viewport
-height and camera projection, never DPR or render quality. Model compensation eases in at 30–100 m
-of camera depth, capped at 1.65× the base size; the existing halo is capped at 2.5×. Targets are
+height and camera projection, never DPR or render quality. Partial perspective compensation starts
+at a smooth knee (at least 30 m), capped at 1.65× for models and 2.5× for the existing halo.
+At fixed projection, the projected size increases monotonically as depth decreases; a distance-based
+fade of an already amplified scale is not safe. Targets are
 24 CSS px (28 on short landscape viewports), not a guarantee beyond the cap. Ground pickups lift
 visually with scale to avoid clipping; no pickup position or collision volume is changed.
 The existing distant LOD and bounded instanced pools remain in use, including with VFX disabled.
+Match the simplified geometry's bounds to the active detailed geometry at creation and GLB swap;
+never resize the displayed item merely because it crossed the 150 m LOD boundary.
 No new light, mesh pool, post-process, or third-party dependency is needed. Physical-device and
 full CI visual verification are required before merge.
 

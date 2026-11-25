@@ -27,3 +27,19 @@ test('a bounded halo can remain more visible than the model at long range', () =
   assert.equal(pickupVisibilityScale(500, 320, 3, 28, 2.5), 2.5);
   assert.ok(pickupVisibilityScale(150, 320, 3, 28, 2.5) >= 1.65);
 });
+
+test('projected pickup and halo never shrink as a fixed camera approaches', () => {
+  // Sweep all practical silhouette sizes, viewport/FOV scales and model/halo caps.
+  for (const pixelsPerMetre of [180, 320, 600, 1100]) {
+    for (const worldSize of [1.4, 2, 3, 5, 8]) {
+      for (const [target, cap] of [[24, 1.65], [28, 1.65], [43.2, 2.5], [50.4, 2.5]]) {
+        let previous = 0;
+        for (let depth = 900; depth >= 5; depth -= .5) {
+          const projected = pixelsPerMetre * worldSize * pickupVisibilityScale(depth, pixelsPerMetre, worldSize, target, cap) / depth;
+          assert.ok(projected >= previous - 1e-9, `shrinks at ${depth} m: ${previous} -> ${projected} px (${pixelsPerMetre}, ${worldSize}, ${target}, ${cap})`);
+          previous = projected;
+        }
+      }
+    }
+  }
+});
