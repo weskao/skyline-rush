@@ -170,7 +170,6 @@ export const UI = Object.freeze({
     // Shell (App.vue)
     'locale.switch': 'Language',
     'nav.home': 'Skyline Rush home',
-    'nav.homeReload': 'Skyline Rush home (reload)',
     'nav.toolbar': 'Game controls',
     'nav.history': 'History',
     'nav.garage': 'Garage',
@@ -746,7 +745,6 @@ export const UI = Object.freeze({
     'doc.description': '3D 海岸公路競速遊戲。全速駕駛、點燃推進器，把比賽帶上天際。',
     'locale.switch': '語言',
     'nav.home': 'Skyline Rush 首頁',
-    'nav.homeReload': 'Skyline Rush 首頁（重新載入）',
     'nav.toolbar': '遊戲控制',
     'nav.history': '歷史紀錄',
     'nav.garage': '車庫',

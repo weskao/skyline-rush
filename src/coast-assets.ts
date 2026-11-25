@@ -134,7 +134,7 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
   const spiralKit = spiral && lateModel('spiral-landmarks', 'landmarks', 'spiralLandmarks', source => spiral.attachKit(source), () => spiral.detachKit());
   const requiredScenery = [scan, boats, cityKit, landmarks, spiralKit];
 
-  function loadRoad(id: string, tier: MaterialTier, key: string, { load, anisotropy }: Road, failed: () => void): void {
+  function loadRoad(id: string, tier: MaterialTier, key: string, { load, anisotropy }: Road): void {
     roads.set(key, 'loading');
     const files = coastRoadFiles(TIERS[tier], id);
     void Promise.allSettled([files.baseColor, files.normal, files.packed].map(load)).then(([base, normals, data]) => {
@@ -147,15 +147,15 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
       for (const entry of [base, normals, data]) if (entry?.status === 'fulfilled') entry.value.dispose();
       if (controller.signal.aborted) return;
       roads.set(key, 'failed');
-      failed();
       console.warn(`[coast-assets] ${id} ${tier} → procedural (texture load failed)`);
     });
   }
   /** The loaded set for `id` at this tier, requested on first use; null while it loads, after a failure and on Low. */
   function roadSet(id: string | undefined, tier: MaterialTier | null, key: string, failed: () => void): CoastRoad | null {
     if (!id || !tier) return null;
-    if (!roads.has(key)) loadRoad(id, tier, key, road!, failed);
+    if (!roads.has(key)) loadRoad(id, tier, key, road!);
     const ready = roads.get(key);
+    if (ready === 'failed') failed(); // prefetch may have started the request without a surface status callback
     return typeof ready === 'object' ? ready : null;
   }
   function roadPending(id: string | undefined, tier: MaterialTier | null, key: string, material?: Material | Material[]): boolean {
@@ -178,7 +178,7 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
     const target = want?.material ?? procedural!, swap = road.mesh.material !== target && !racing;
     if (swap) {
       road.mesh.material = target;
-      dataset.coastRoad = want ? tier! : 'procedural';
+      dataset.coastRoad = want ? tier! : roads.get(roadKey) === 'failed' ? 'fallback' : 'procedural';
       dataset.coastRoadSet = want ? look!.road : 'none';
       sweep();
     }

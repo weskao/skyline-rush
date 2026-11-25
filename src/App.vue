@@ -84,7 +84,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
   <div class="flight-director" aria-hidden="true"><span data-i18n="hud.flightVector">FLIGHT VECTOR</span><svg viewBox="0 0 300 100" fill="none"><path d="M5 48h75l12 12h16m84 0h16l12-12h75M150 15v13m0 48v10M135 50h30m-15-8v16"/><path class="director-level" d="M88 20h34m56 0h34M105 80h17m56 0h17"/></svg><span class="director-climb" id="climb-rate">+0.0 M/S</span></div>
   <div class="altitude-ladder" aria-hidden="true"><span>12</span><i></i><span>06</span><i></i><span>00</span><b id="height-indicator"></b><small data-i18n="hud.altLadder">ALT / M</small></div>
   <header class="topbar">
-    <a class="brand" href="./" aria-label="Skyline Rush home" data-i18n-aria-label="nav.home">
+    <a class="brand" href="#intro" aria-label="Skyline Rush home" data-i18n-aria-label="nav.home">
       <svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><path :d="LOGO_PATH" stroke="currentColor" stroke-width="3"/></svg>
       <span lang="en">SKYLINE<span class="brand-rush">RUSH</span></span>
     </a>
@@ -149,7 +149,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
           class="home-resource-strip" :experience="wave3DemoExperience" :locale="homeWalletLocale" />
       </div>
       <div class="lobby-setup">
-      <a class="intro-wordmark" href="./" aria-label="Skyline Rush home (reload)" data-i18n-aria-label="nav.homeReload"><svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><path :d="LOGO_PATH" stroke="currentColor" stroke-width="3"/></svg><span lang="en">SKYLINE <b>RUSH</b></span></a>
+      <a class="intro-wordmark" href="#intro" aria-label="Skyline Rush home" data-i18n-aria-label="nav.home"><svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><path :d="LOGO_PATH" stroke="currentColor" stroke-width="3"/></svg><span lang="en">SKYLINE <b>RUSH</b></span></a>
       <div class="lobby-race-heading">
         <img id="lobby-hero-art" alt="" decoding="async" />
         <span class="track-route-map" id="lobby-hero-map" aria-hidden="true"></span>
@@ -328,7 +328,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
     <div class="leave-actions">
       <button class="primary-button" id="leave-keep" autofocus><span id="leave-keep-label" data-i18n="leave.keep">Keep racing</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
       <button class="controls-reset" id="leave-end" data-i18n="leave.end">End race · choose track</button>
-      <a class="text-button" id="leave-home" href="./" data-i18n="leave.home">Back to home</a>
+      <a class="text-button" id="leave-home" href="#intro" data-i18n="leave.home">Back to home</a>
     </div>
   </dialog>
   <ConfirmDialog />

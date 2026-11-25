@@ -66,7 +66,8 @@ export function setupLobbyPickers(applyTrack: (id: string) => void, getTrack: ()
   dialog.addEventListener('close', () => {
     stage(cards.find(card => trackId(card) === getTrack()));
     opener.setAttribute('aria-expanded', 'false');
-    opener.focus({ preventScroll: true });
+    // Native close restores the opener; do not steal focus from the next keyboard action.
+    if (document.activeElement === document.body || dialog.contains(document.activeElement)) opener.focus({ preventScroll: true });
   });
   dialog.addEventListener('cancel', event => { event.preventDefault(); navigation.close(true); });
   dialog.querySelector('#track-choose-close')!.addEventListener('click', () => navigation.close(true));

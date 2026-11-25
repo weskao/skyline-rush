@@ -295,6 +295,9 @@ export function createWorld(canvas, visual = vfxSettings()) {
     probe.updateMatrixWorld(true);
     showcaseOccluders.updateMatrixWorld(true);
     player.updateMatrixWorld(true);
+    // Raycaster includes invisible descendants by default (including the shader rack and retired placeholders).
+    const visibleMeshes=[];
+    showcaseOccluders.traverseVisible(object=>{if(object.isMesh)visibleMeshes.push(object);});
     let clear=0;
     for(const local of carSightPoints) {
       sightTarget.copy(local).applyMatrix4(player.matrixWorld);
@@ -307,7 +310,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
       if(length<.5)continue;
       showcaseRay.set(eye,sightDirection.multiplyScalar(1/length));
       showcaseRay.far=length-.4;
-      const obscured=showcaseRay.intersectObject(showcaseOccluders,true).some(hit=>{
+      const obscured=showcaseRay.intersectObjects(visibleMeshes,false).some(hit=>{
         if(!hit.object.isMesh)return false;
         const materials=[].concat(hit.object.material||[]);
         // Transparent ghost particles and non-depth-writing water should not
@@ -328,11 +331,14 @@ export function createWorld(canvas, visual = vfxSettings()) {
     if(visual.view!=='drive') right.crossVectors(forward.copy(player.position).sub(desiredCamera).setY(0).normalize(),camera.up);
     const offset=([side,up,back])=>right.clone().multiplyScalar(side).addScaledVector(forward,-back).add(new THREE.Vector3(0,up,0));
     // One decision per mode; orbit judges each move around its whole circle and re-aims it as it turns.
-    const key=[trackId,visual.view,visual.airflow,visual.quality,camera.aspect<.8].join(':');
+    const key=[trackId,visual.view,visual.airflow,visual.quality,camera.aspect.toFixed(3),garageHomePreview,garagePose?.mode].join(':');
     if(key!==clearanceKey) {
       clearanceKey=key;
       clearancePlan=[0,0,0];
-      const turns=visual.view==='orbit'?orbitTurns:[0];
+      // Include road-relative bearings every 15° (and their midpoints) instead of eight samples tied to boot time.
+      const delta=desiredCamera.clone().sub(player.position);
+      const bearing=Math.atan2(delta.dot(new THREE.Vector3(...frame.right)),-delta.dot(new THREE.Vector3(...frame.forward)));
+      const turns=visual.view==='orbit'?Array.from({length:48},(_,i)=>i*Math.PI/24-bearing):[0];
       const share=eye=>Math.min(...turns.map(a=>showroomClearShare(spin(eye,a),spin(lookTarget,a))));
       let best=share(desiredCamera);
       // Try a small dolly-back first: for a high landmark aim (Tokyo/Alpine),
@@ -401,7 +407,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
       // Compose every visual offset in local car axes, retaining the actual road pitch/bank.
       // Reading/writing Euler rotation after setting the track quaternion used to
       // overwrite its banking and snap near 90-degree spiral headings.
-      const driftYaw = mesh.userData.driftYaw = smoothDriftYaw(mesh.userData.driftYaw ?? 0, car.drift, dt);
+      const driftYaw = mesh.userData.driftYaw = smoothDriftYaw(mesh.userData.driftYaw ?? 0, car.drift, dt, car.heading);
       const bank = isPlayer ? -(pose.steering || 0) * (pose.altitude > 0.8 ? 0.12 : 0.045) : 0;
       const trick = !(motionPreference.matches || visual.comfortable) && car.trick;
       const trickRoll = trick ? trick.dir * Math.PI * 2 * THREE.MathUtils.smoothstep(trick.time, 0, TRICK_ROLL_TIME) : 0;
@@ -409,7 +415,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
       orientCarOnRoad(mesh, frame, bank + trickRoll, pitch + squat, driftYaw).translateY(squatLift); mesh.userData.altitude += squatLift; // NITRO/BOOST squat on the rear tyres; the shadow stays on the road
     } else {
       mesh.position.set(roadCenter(pose.distance) - center + pose.x, pose.altitude || 0, -relative);
-      const driftYaw = mesh.userData.driftYaw = smoothDriftYaw(mesh.userData.driftYaw ?? 0, car.drift, dt);
+      const driftYaw = mesh.userData.driftYaw = smoothDriftYaw(mesh.userData.driftYaw ?? 0, car.drift, dt, car.heading);
       mesh.rotation.y = -roadHeading(pose.distance) + driftYaw;
       const bank = isPlayer ? -(pose.steering || 0) * (pose.altitude > 0.8 ? 0.12 : 0.045) : 0;
       const trick = !(motionPreference.matches || visual.comfortable) && car.trick;

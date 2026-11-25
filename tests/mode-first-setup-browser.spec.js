@@ -112,6 +112,8 @@ test('keyboard alone can pick a mode, a track, restore rules and start', async (
   await page.locator('#lobby-tracks-toggle').press('Enter');
   await expect(page.locator('[data-track="coast"]')).toBeFocused();
   await page.locator('#track-choose-confirm').press('Enter');
+  await expect(page.locator('#track-chooser')).toBeHidden();
+  await expect(page.locator('#lobby-tracks-toggle')).toHaveAttribute('aria-expanded', 'false');
   await page.locator('#rules-restore').focus();
   await expect(page.locator('#rules-restore')).toBeFocused();
   await page.keyboard.press('Enter');

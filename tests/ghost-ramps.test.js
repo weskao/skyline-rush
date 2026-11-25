@@ -29,10 +29,12 @@ function drive(race) {
   const samples = [], truth = [];
   startRace(race);
   for (let frame = 0; race.phase !== 'finished' && frame < 60 * 400; frame++) {
-    const ramp = race.ramps.find(r => r.distance - race.player.distance > 0 && r.distance - race.player.distance < 60);
-    // The test follows the marked ramp lane. The 10 Hz chord is only exact
-    // between samples wholly inside the airborne arc, where no lane snap occurs.
-    if (ramp && race.player.altitude === 0) race.player.x = ramp.x;
+    const ramp = race.ramps.find(r => r.distance - race.player.distance > 0 && r.distance - race.player.distance < 60)
+      ?? race.ramps.findLast(r => r.distance <= race.player.distance);
+    // The test follows the marked ramp lane with the nose on the road, in the air too (a flying car meets half the
+    // corner, owner 2026-11-25), so no bend carries the car into the rail clamp, a kink no 10 Hz chord follows.
+    // This test is about the altitude arc; the lane stays fixed as it did before corners acted in the air.
+    if (ramp) Object.assign(race.player, { x: ramp.x, heading: 0 });
     stepRace(race, { throttle: true }, SIM_STEP);
     recordGhost(samples, race);
     if (race.phase === 'racing') truth.push([race.elapsed, race.player.distance, race.player.x, race.player.altitude]);

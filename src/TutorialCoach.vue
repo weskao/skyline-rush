@@ -6,16 +6,13 @@ import { TUTORIAL_STEPS } from './interactive-tutorial.ts';
 import { rewardParts } from './tutorial-ui.ts';
 </script>
 <template>
+  <div class="tutorial-slot">
   <aside id="tutorial-coach" class="tutorial-coach" aria-labelledby="tutorial-title" :hidden="!coachView.visible" :data-step="coachView.step">
     <header class="tutorial-heading"><div class="tutorial-heading-text"><strong id="tutorial-title">{{ coachView.title }}</strong><small id="tutorial-assist" :hidden="coachView.assistHidden" data-i18n="tutorial.assist">Practice only · no career rewards</small></div><div class="tutorial-actions"><button id="tutorial-skip-step" class="controls-reset" :hidden="coachView.skipHidden" data-i18n="tutorial.skipStep">Skip step</button><button id="tutorial-exit" class="controls-reset" :hidden="!coachView.completeActionsHidden" data-i18n="tutorial.exit">Exit</button></div></header>
     <div class="tutorial-meter"><progress id="tutorial-progress" :max="TUTORIAL_STEPS.length" value="0" aria-label="Practice progress" data-i18n-aria-label="tutorial.progress"></progress><small id="tutorial-auto-status" class="tutorial-auto-status">{{ coachView.autoStatus }}</small></div>
     <div class="tutorial-copy"><p id="tutorial-instruction" role="status" aria-live="polite"><template v-for="(part, i) in rewardParts(coachView.instruction)" :key="i"><mark v-if="part.reward" class="tutorial-reward">{{ part.text }}</mark><template v-else>{{ part.text }}</template></template></p><div id="tutorial-input" :data-keys="coachView.hintKeys || undefined">{{ coachView.hintText }}</div></div>
     <div id="tutorial-complete-actions" class="tutorial-actions" :hidden="coachView.completeActionsHidden"><button id="tutorial-retry" class="controls-reset" data-i18n="tutorial.retry">Practice again</button><button id="tutorial-done" class="controls-reset" data-i18n="tutorial.done">Back to game</button></div>
   </aside>
-  <!-- Decorative: the instruction names the gate; the arrow only points the way to it. -->
-  <div v-if="coachView.visible && coachView.guide" id="tutorial-guide" class="tutorial-guide" :data-dir="coachView.guide" aria-hidden="true">
-    <svg v-for="n in 3" :key="n" viewBox="0 0 24 24" :style="{ '--n': n }"><path d="M9 5l7 7-7 7" /></svg>
-  </div>
   <!-- Live cue: the next control and its timing; the countdown digits are decorative. -->
   <div v-if="coachView.visible && coachView.cue" id="tutorial-cue" :key="coachView.step === 'nitro' ? coachView.step : coachView.cueId" class="tutorial-cue" :data-cue="coachView.cueId" role="status" aria-live="polite">
     <span v-if="coachView.cueKeys.length" class="tutorial-cue-keys"><kbd v-for="key in coachView.cueKeys" :key="key">{{ key }}</kbd></span>
@@ -27,6 +24,11 @@ import { rewardParts } from './tutorial-ui.ts';
     <span class="tutorial-pass-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg></span>
     <strong>{{ coachView.passed }}</strong>
     <mark v-if="coachView.passedReward" class="tutorial-reward">{{ coachView.passedReward }}</mark>
+  </div>
+  </div>
+  <!-- Decorative: the instruction names the gate; the arrow only points the way to it. -->
+  <div v-if="coachView.visible && coachView.guide" id="tutorial-guide" class="tutorial-guide" :data-dir="coachView.guide" aria-hidden="true">
+    <svg v-for="n in 3" :key="n" viewBox="0 0 24 24" :style="{ '--n': n }"><path d="M9 5l7 7-7 7" /></svg>
   </div>
   <!-- Decorative: the coach title and role=status copy already announce completion. -->
   <div v-if="coachView.visible && coachView.celebration" class="tutorial-celebration" aria-hidden="true">

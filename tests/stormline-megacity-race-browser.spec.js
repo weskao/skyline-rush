@@ -45,9 +45,13 @@ for (const [name, viewport, hasTouch] of [
     for (const [stop, distance] of STOPS) {
       await page.evaluate(d => { Object.assign(window.gameplay.race.player, { distance: d, x: 0, altitude: 0, speed: 60 }); }, distance);
       await page.waitForTimeout(700);
-      // The player is drawn on the CourseGraph road frame (camera-relative origin at the car).
-      const pose = await page.evaluate(() => window.gameScene.player.position.toArray());
-      expect(Math.hypot(pose[0], pose[2]), `${stop} player near origin`).toBeLessThan(3);
+      // The origin is the road centreline, not the car. The new corner handling may carry the car sideways.
+      const pose = await page.evaluate(() => {
+        const { course } = window.gameplay.race, { travel, pose } = course.cars.get('YOU');
+        const expected = pose.right.map((right, i) => right * travel.lateral + pose.up[i] * travel.altitude);
+        return { actual: window.gameScene.player.position.toArray(), expected };
+      });
+      expect(Math.hypot(pose.actual[0] - pose.expected[0], pose.actual[2] - pose.expected[2]), `${stop} player follows the graph's lateral and altitude frame`).toBeLessThan(0.75);
       await capture(page, `${name}-${stop}`);
     }
     // Every fork (skyway cut, tunnel cut, rooftop flight) is a shortcut corridor over its safe edge: a car inside it

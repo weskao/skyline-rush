@@ -1,7 +1,31 @@
+# CI 45480093600 follow-up batch 2 (2026-11-25)
+
+- [x] Isolated RED/GREEN: independent BOOST/NITRO phases (200 samples, max ratio 0.9008 before and 0.7622 after); prefetch-cached road failure (old active callback not called, new callback called once in isolated invocation). Full existing browser guards retained.
+- [ ] Verify exact HEAD CI for tutorial shared slot/paused layout, short landscape action row, GO telemetry, keyboard modal focus, first-start modal readiness, tutorial DOM order, Neon fallback and orbit visibility/sampling. Stormline graph test now compares the rendered horizontal pose against the actual graph-frame lateral/altitude rather than assuming steering stays within 3m of center after corner handling changed.
+- [ ] Full-suite local commands and real-device/WebGL visual verification unavailable in connector environment; GitHub Actions must confirm all fixes and any remaining failures.
+
+# CI 45480093600 follow-up (2026-11-25)
+
+- [x] Isolated tutorial cue/pass entrance transform regression: Chromium RED reproduced a negative coach-to-prompt gap (-8.7px at entry); opacity-only entrance maintained a 10px gap across six sampled times for both cue and pass (GREEN in isolated reproduction). Existing real-game frame-by-frame overlap guard remains intact.
+- [ ] Full regression verification for the new commit: module-size, unit, typecheck, build, real-game browser suites, device screenshots and exact-HEAD quality-gate. Connector environment cannot clone the repository or install dependencies (GitHub DNS unavailable); isolated browser evidence is not full-suite GREEN.
+- [ ] Remaining failures from run 45480093600: tutorial steady-state telemetry/coach and paused layout, main UI contract, first-visit navigation, keyboard mode setup, Neon fallback, Home pinned-row and label geometry, GO telemetry, Taipei/coastal camera occlusion, Stormline outlet pose, flaky rival BOOST flame ratio. Re-evaluate tutorial overlap guards after the animation fix. Do not weaken checks or mark these complete without evidence.
+
+# Full car-heading physics (deferred, large; 2026-11-25)
+
+- [ ] Real-car / kart-style handling: steering turns the car's nose (yaw), so after a lane change on a straight the player must counter-steer to straighten up. Today the simulation is road-relative: the car always faces along the road centreline, steering moves it sideways and corners push it outward.
+- [ ] Scope if taken: steering feel (`src/game.js` `stepRace`); keyboard and touch input; AUTO / lane assist; tutorial driving lessons (`docs/tutorial-driving.md`); rival AI and traffic; drift; fork lane choice (`forkLateral`); test bots (`scripts/pickup-economy.mjs`); corner-force and drift tests; the legacy race replay fixture (`tests/fixtures/legacy-race-replay.json`); saved Ghost data.
+- [ ] Blocked on an owner decision: it conflicts with `.claude/rules/vehicle-road-stability.md` ("Keep the arcade driving feel; do not replace it with a new physics engine."). Change that rule first.
+- [ ] Smaller step chosen instead (2026-11-25): build heading offset only in corners. When the player does not steer in a bend, the nose keeps its line and runs into the outer rail.
+
 # CI 45403054733 regression follow-up (2026-11-25)
 
 - [ ] Verify updated startup unread-tab, historical release media and launch-flare browser contracts against exact-HEAD CI. RED: startup selected-tab badge missing, Freeze/EMP and enlarged picture locators timed out, old static countdown pool assertion failed on both attempts. These assertions assumed the superseded behavior; checks now select the media-owning tab, assert per-tab read state and record actual animated countdown GLB frames. Local Playwright/build unavailable in connector environment; GREEN not yet observed.
 - [ ] Resolve remaining CI failures: coastal/Taipei showcase occlusion, tutorial cue/pass and telemetry/paused layout, tutorial DOM contract and first-visit return, race GO notice telemetry, Home short-landscape rail/labels, Neon fallback status. Confirm full quality-gate and real-device visuals; do not mark complete before evidence.
+
+# Home wordmark interaction (2026-11-25)
+
+- [x] Superseded: the wordmark no longer reloads; `197386b0` makes it a same-document `#intro` link, so the non-interactive variant was dropped.
+- [ ] Complete regression gates, visual evidence and exact-commit CI. `make verify` blocked by missing pnpm 11.28.13 executable.
 
 # Announcement unread indicators (2026-11-24)
 

@@ -188,10 +188,12 @@ function resolveVehicles(race, previousDistance, previousX, retention, exit) {
   }
 }
 
-function resolveRail(race, lateralPosition, intensity) {
+function resolveRail(race, lateralPosition, intensity, previousX, previousDistance) {
   const car = race.player, side = Math.sign(lateralPosition);
   if (Math.abs(lateralPosition) <= ROAD_LIMIT || car.altitude >= 1.3 || car.speed <= 12 || car.railContactSide === side) return;
-  if (Math.abs(car.steering) < 0.9 && Math.abs(car.steering * Math.min(9, car.speed * 0.22)) / car.speed < SCRAPE_RATIO) {
+  // The impact angle: sideways over forward travel this step, whether the steering or the nose's own line carried it there.
+  const angle = Math.abs(lateralPosition - previousX) / Math.max(1e-6, car.distance - previousDistance);
+  if (Math.abs(car.steering) < 0.9 && angle < SCRAPE_RATIO) {
     car.x = side * (ROAD_LIMIT - 0.3);
     if (car.cooldown > 0 || car.scrapeCooldown > 0) return;
     car.speed *= 0.92;
@@ -226,6 +228,6 @@ export function resolvePlayerContacts(race, previousDistance, previousX, lateral
     contact(race, 'barrier', pylon.x, intensity, 0.75);
     car.x = pylon.x + Math.sign(section.x - pylon.x) * (PYLON_HALF_WIDTH + 0.86);
   }
-  resolveRail(race, lateralPosition, intensity);
+  resolveRail(race, lateralPosition, intensity, previousX, previousDistance);
   if (race.course) syncCourseContact(race, car);
 }

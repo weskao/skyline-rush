@@ -10,11 +10,17 @@ function tick(race, distance, speed, input = {}, altitude = 0) {
   return race.player.x;
 }
 
+// A bend first turns the road away from the car's nose (owner, 2026-11-25); the slide follows from that heading.
+function nose(race, distance, speed, altitude = 0) {
+  tick(race, distance, speed, {}, altitude);
+  return race.player.heading;
+}
+
 test('Neon corners pull a fast grounded car outward in each direction and steering can correct', () => {
   const race = () => createRace('neon', { mode: 'time' });
   // 10 km lap (2026-11-15): the same bends at their new lap metres, underpass corner 663-942 and market left bend 1685-1932.
-  assert.ok(tick(race(), 1878, 88) > .005, 'the night-market left bend pushes right');
-  assert.ok(tick(race(), 800, 88) < -.005, 'the underpass right corner pushes left');
+  assert.ok(nose(race(), 1878, 88) > 1e-3, 'the night-market left bend pushes right');
+  assert.ok(nose(race(), 800, 88) < -1e-3, 'the underpass right corner pushes left');
   const correcting = race();
   Object.assign(correcting, { phase: 'racing', traffic: [], rivals: [], rings: [], pickups: [] });
   Object.assign(correcting.player, { distance: 1878, speed: 88, x: 0, steering: -1, cooldown: 1 });
@@ -26,15 +32,22 @@ test('corner load preserves the grid, slow handling, flight and tutorial steerin
   const race = () => createRace('neon', { mode: 'time' });
   assert.equal(tick(race(), 40, 88), 0);
   assert.equal(tick(race(), 800, 24), 0);
-  assert.equal(tick(race(), 800, 88, {}, 5), 0);
   assert.equal(tick(createInteractiveTutorial().race, 330, 88), 0);
+});
+
+// Owner, 2026-11-25: taking off must not skip a corner's difficulty, so flight carries half of it.
+test('a flying car meets half the corner a grounded car does', () => {
+  const race = () => createRace('neon', { mode: 'time' });
+  const ground = nose(race(), 800, 88), air = nose(race(), 800, 88, 5);
+  assert.ok(ground < -1e-3, `the underpass corner turns the nose: ${ground}`);
+  assert.ok(Math.abs(air - ground / 2) < 1e-12, `in the air ${air}, on the ground ${ground}`);
 });
 
 test('both streaming modes carry corner load beyond the original finish', () => {
   for (const mode of ['endless', 'elimination']) {
     const race = createRace('neon', { mode });
     // Neon is a closed lap (layout 7): the second lap bends the same way as the first.
-    assert.ok(tick(race, RACE_TRACKS.neon.length + 800, 88) < -.005, mode);
+    assert.ok(nose(race, RACE_TRACKS.neon.length + 800, 88) < -1e-3, mode);
   }
 });
 

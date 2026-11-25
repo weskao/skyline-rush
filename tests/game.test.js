@@ -1220,7 +1220,8 @@ test('slipstream behind traffic pays +0.25 nitro and +6 speed cap only after the
 
 test('slipstream behind a rival counts too, and leaving the draft re-arms it', () => {
   const race = drafting(70, 70, 'rival');
-  const cruise = seconds => { for (let frame = 0; frame < Math.ceil(seconds * 60); frame++) { race.player.speed = race.rivals[0].speed = 70; stepRace(race, {}, 1 / 60); } };
+  // The lane is held too: hands-free, the corner push would carry the car out of the draft.
+  const cruise = seconds => { for (let frame = 0; frame < Math.ceil(seconds * 60); frame++) { race.player.speed = race.rivals[0].speed = 70; race.player.x = race.rivals[0].x; stepRace(race, {}, 1 / 60); } };
   cruise(SLIPSTREAM_TIME + 0.2);
   assert.equal(race.player.nitro, 0.25);
   race.rivals[0].distance += 100; // break away
