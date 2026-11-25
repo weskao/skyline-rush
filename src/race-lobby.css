@@ -520,3 +520,14 @@ body[data-phase="ready"] .toolbar :is(#camera-button, #pause-button) { display: 
   }
 }
 @keyframes build-version-sheen { 0% { background-position: 100% 0; } 16%, 100% { background-position: 0 0; } }
+
+/* Landscape actions keep their complete labels within their 44px targets. */
+@media (max-height: 500px) and (orientation: landscape) {
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) #intro .intro-actions > :is(.garage-button, .history-button, .practice-button) {
+    flex-direction: column; gap: 2px; padding-inline: 2px; letter-spacing: 0; line-height: 1.1; font-size: 10px;
+  }
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) #intro .intro-actions .lobby-action-art { width: 16px; height: 16px; }
+}
+@media (max-height: 330px) and (orientation: landscape) {
+  .lobby-compact .lobby-race-heading { margin-block-end: 0; padding-block: 2px; }
+}

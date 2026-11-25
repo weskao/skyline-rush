@@ -44,7 +44,9 @@ test('closing the first choice and returning from practice keep the selected rac
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await chooseNeonTimeAttack(page);
   await page.locator('#start-button').click();
+  await expect(page.locator('#guide-screen')).toBeVisible(); // the asset update check precedes opening the first-start choice
   await page.keyboard.press('Escape');
+  await expect(page.locator('#guide-screen')).toBeHidden();
   await expect(page.locator('#start-button')).toBeFocused();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
   expect(await page.evaluate(() => localStorage.getItem('skyline-rush-guide-seen'))).toBeNull();

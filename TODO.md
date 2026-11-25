@@ -1,3 +1,9 @@
+# CI 45480093600 follow-up batch 2 (2026-11-25)
+
+- [x] Isolated RED/GREEN: independent BOOST/NITRO phases (200 samples, max ratio 0.9008 before and 0.7622 after); prefetch-cached road failure (old active callback not called, new callback called once in isolated invocation). Full existing browser guards retained.
+- [ ] Verify exact HEAD CI for tutorial shared slot/paused layout, short landscape action row, GO telemetry, keyboard modal focus, first-start modal readiness, tutorial DOM order, Neon fallback and orbit visibility/sampling. Stormline graph test now compares the rendered horizontal pose against the actual graph-frame lateral/altitude rather than assuming steering stays within 3m of center after corner handling changed.
+- [ ] Full-suite local commands and real-device/WebGL visual verification unavailable in connector environment; GitHub Actions must confirm all fixes and any remaining failures.
+
 # CI 45480093600 follow-up (2026-11-25)
 
 - [x] Isolated tutorial cue/pass entrance transform regression: Chromium RED reproduced a negative coach-to-prompt gap (-8.7px at entry); opacity-only entrance maintained a 10px gap across six sampled times for both cue and pass (GREEN in isolated reproduction). Existing real-game frame-by-frame overlap guard remains intact.

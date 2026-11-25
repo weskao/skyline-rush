@@ -293,6 +293,9 @@ export function createWorld(canvas, visual = vfxSettings()) {
     probe.updateMatrixWorld(true);
     showcaseOccluders.updateMatrixWorld(true);
     player.updateMatrixWorld(true);
+    // Raycaster includes invisible descendants by default (including the shader rack and retired placeholders).
+    const visibleMeshes=[];
+    showcaseOccluders.traverseVisible(object=>{if(object.isMesh)visibleMeshes.push(object);});
     let clear=0;
     for(const local of carSightPoints) {
       sightTarget.copy(local).applyMatrix4(player.matrixWorld);
@@ -305,7 +308,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
       if(length<.5)continue;
       showcaseRay.set(eye,sightDirection.multiplyScalar(1/length));
       showcaseRay.far=length-.4;
-      const obscured=showcaseRay.intersectObject(showcaseOccluders,true).some(hit=>{
+      const obscured=showcaseRay.intersectObjects(visibleMeshes,false).some(hit=>{
         if(!hit.object.isMesh)return false;
         const materials=[].concat(hit.object.material||[]);
         // Transparent ghost particles and non-depth-writing water should not
@@ -326,11 +329,14 @@ export function createWorld(canvas, visual = vfxSettings()) {
     if(visual.view!=='drive') right.crossVectors(forward.copy(player.position).sub(desiredCamera).setY(0).normalize(),camera.up);
     const offset=([side,up,back])=>right.clone().multiplyScalar(side).addScaledVector(forward,-back).add(new THREE.Vector3(0,up,0));
     // One decision per mode; orbit judges each move around its whole circle and re-aims it as it turns.
-    const key=[trackId,visual.view,visual.airflow,visual.quality,camera.aspect<.8].join(':');
+    const key=[trackId,visual.view,visual.airflow,visual.quality,camera.aspect.toFixed(3),garageHomePreview,garagePose?.mode].join(':');
     if(key!==clearanceKey) {
       clearanceKey=key;
       clearancePlan=[0,0,0];
-      const turns=visual.view==='orbit'?orbitTurns:[0];
+      // Include road-relative bearings every 15° (and their midpoints) instead of eight samples tied to boot time.
+      const delta=desiredCamera.clone().sub(player.position);
+      const bearing=Math.atan2(delta.dot(new THREE.Vector3(...frame.right)),-delta.dot(new THREE.Vector3(...frame.forward)));
+      const turns=visual.view==='orbit'?Array.from({length:48},(_,i)=>i*Math.PI/24-bearing):[0];
       const share=eye=>Math.min(...turns.map(a=>showroomClearShare(spin(eye,a),spin(lookTarget,a))));
       let best=share(desiredCamera);
       // Try a small dolly-back first: for a high landmark aim (Tokyo/Alpine),

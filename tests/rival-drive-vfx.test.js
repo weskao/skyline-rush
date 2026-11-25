@@ -36,6 +36,15 @@ test('BOOST shows a smaller NITRO flame from Medium, only within RIVAL_CUE_RANGE
   const { light, flame, trail } = cue(IDLE, 'high'); assert.deepEqual({ light, flame, trail }, { light: 1, flame: 0, trail: 0 });
 });
 
+test('independent rival flicker phases never make BOOST as large as NITRO', () => {
+  for (let i = 0; i < 200; i++) {
+    const time = i * .17;
+    const boost = rivalDriveCue(BOOST, 'high', true, false, time, 2.4, { light: 0, flame: 0, trail: 0 }, 0);
+    const nitro = rivalDriveCue(NITRO, 'high', true, false, time, 6.1, { light: 0, flame: 0, trail: 0 }, 0);
+    assert.ok(boost.flame < nitro.flame * .8, `time ${time}: ${boost.flame} vs ${nitro.flame}`);
+  }
+});
+
 test('BOOST ignition flashes the tail light once on the rising edge, on every tier', () => {
   for (const [quality, enabled, reducedMotion] of [['low', true, false], ['high', false, false], ['high', true, true]]) {
     const out = { light: 0, flame: 0, trail: 0 };

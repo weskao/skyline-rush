@@ -12,7 +12,7 @@ type DriveState = { nitroTime?: number; boosting?: boolean; distance?: number };
 type DriveVisual = { enabled: boolean; quality: VfxQuality };
 
 const NITRO_LIGHT = 1.8, BOOST_LIGHT = 1.3; // braking is 2.3 (world.js); BOOST stays mild, it fires often
-const BOOST_FLAME = 0.65; // a held BOOST drives the player's plume at power ~0.65 (sprint-plume.ts)
+const BOOST_FLAME = 0.55, BOOST_OPACITY = 0.65; // independent rival flicker must keep BOOST below 80% of NITRO size
 const IGNITION = { gain: 1.4, time: 0.3 }; // one decaying tail-light pulse when a BOOST starts: the surge has a cause
 const FLAME = { width: 0.95, height: 0.62 }, TRAIL = { width: 0.55, length: 3.4 };
 
@@ -38,7 +38,7 @@ function materials() {
   const glow = { map, transparent: true, depthTest: true, depthWrite: false, blending: THREE.AdditiveBlending };
   shared = {
     flame: new THREE.SpriteMaterial({ ...glow, color: new THREE.Color(0.62, 0.84, 1), opacity: 0.9 }), // the plume's blue-white core
-    boostFlame: new THREE.SpriteMaterial({ ...glow, color: new THREE.Color(0.62, 0.84, 1), opacity: 0.9 * BOOST_FLAME }), // same program
+    boostFlame: new THREE.SpriteMaterial({ ...glow, color: new THREE.Color(0.62, 0.84, 1), opacity: 0.9 * BOOST_OPACITY }), // same program
     trail: new THREE.MeshBasicMaterial({ ...glow, color: new THREE.Color(0.55, 0.42, 1), opacity: 0.55, side: THREE.DoubleSide }),
     plane: new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), // flat on the car's floor plane
   };

@@ -26,3 +26,5 @@ The tutorial is a safe practice environment, not an autopilot.
 - Test real keyboard and mobile touch input in the browser, including pause/resume and lesson transitions, before claiming the change verified. Run the project's required unit, build, browser and CI gates; report any test that could not be run.
 
 - **Coach prompt animations must preserve the layout slot throughout every frame.** The live cue and pass toast are top-anchored below the coach; never reuse the old vertically centred `cue-in` transform for them. Keep fade and pulse without translating into the coach buttons. Guard: `tests/tutorial-hand-layout-browser.spec.js` records overlaps each frame.
+
+- Keep the coach and live cue/pass in one centered normal-flow slot so geometry never depends on a stale ResizeObserver measurement during lesson transitions. Preserve the standalone guide arrow, accessible copy and the measured coach bottom for paused layout. Test the shortest portrait and landscape sizes.
