@@ -34,7 +34,7 @@ test('Neon underpass preserves thrust, gravity, fuel, steering and landing acros
       ...Array.from({ length: 3 * hz }, () => ({ steer: -.2 })),
     ];
     const race = compareWithOpenRoad(r => {
-      Object.assign(r.player, { distance: 700, altitude: 5, verticalSpeed: 0, fuel: 10 });
+      Object.assign(r.player, { distance: 700, altitude: 1, verticalSpeed: 0, fuel: 10 });
     }, inputs, dt);
     assert.equal(race.player.altitude, 0, 'normal descent ends on the road');
     assert.ok(race.player.landing, 'normal touchdown event');
@@ -75,4 +75,41 @@ test('the real Neon roadworks barrier at 980 m still blocks ground cars but perm
     assert.equal(obstacle.hit, altitude === 0);
     if (altitude === 0) assert.equal(race.player.impact?.kind, 'barrier');
   }
+});
+
+// The original roof must support a car without FLY, without an altitude clamp from below.
+test('Neon roof supports a stopped car, driving, taking off and driving off the edge', () => {
+  for (const hz of [30, 60, 120]) {
+    const dt = 1 / hz, race = fresh();
+    Object.assign(race.player, { distance: 760, altitude: 10, verticalSpeed: -3, speed: 0, fuel: 30 });
+    for (let i = 0; i < 2 * hz; i++) stepRace(race, {}, dt);
+    assert.equal(race.player.altitude, 7.2);
+    assert.equal(race.player.verticalSpeed, 0);
+    assert.ok(race.player.landing);
+    const landing = race.player.landing;
+    for (let i = 0; i < hz; i++) stepRace(race, {}, dt);
+    assert.equal(race.player.altitude, 7.2);
+    assert.equal(race.player.landing, landing, 'no repeated touchdown');
+    assert.ok(race.player.fuel > 30, 'ordinary grounded fuel recovery');
+    for (let i = 0; i < hz; i++) stepRace(race, { throttle: true }, dt);
+    assert.ok(race.player.distance > 760);
+    assert.equal(race.player.altitude, 7.2);
+    Object.assign(race.player, { speed: 40, fuel: 100 });
+    stepRace(race, { fly: true }, dt);
+    assert.ok(race.player.altitude > 7.2, 'takeoff from roof');
+    Object.assign(race.player, { distance: 909.9, altitude: 7.2, verticalSpeed: 0, speed: 40 });
+    stepRace(race, { throttle: true }, dt);
+    stepRace(race, { throttle: true }, dt);
+    assert.ok(race.player.distance > 910);
+    assert.ok(race.player.altitude < 7.2, 'gravity after leaving roof');
+    assert.equal(race.player.collisions, 0);
+  }
+});
+
+test('Neon underpass can still ascend through the opening roof and fly to 12 m', () => {
+  const race = fresh();
+  Object.assign(race.player, { distance: 740, altitude: 2, speed: 20, fuel: 100 });
+  for (let i = 0; i < 120; i++) stepRace(race, { fly: true, throttle: true }, 1 / 60);
+  assert.equal(race.player.altitude, 12);
+  assert.equal(race.player.collisions, 0);
 });
