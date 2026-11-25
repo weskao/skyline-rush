@@ -98,3 +98,19 @@ test('the rebuilt Canyon ribbon follows the same elevations as its road centreli
   assert.ok(Math.abs(pos.getY(row * 2) + meshes.road.position.y - (route.elevation(d) - origin)) < .001);
   assert.ok(Math.abs(normal.getY(row * 2) - 1) > .000001, 'sloped road has a sloped normal');
 });
+
+test('the procedural Neon underpass roof and walls clear full flight at both mesh densities', () => {
+  const { meshes, renderer } = makeRoad(), route = classicRoadRoute('neon');
+  const matrix = new Matrix4();
+  for (const sparse of [true, false]) {
+    renderer.update('neon', route, 800, RACE_TRACKS.neon.sections, sparse, true);
+    meshes.tunnelRoofs.getMatrixAt(5, matrix);
+    const roof = matrix.elements[13] - matrix.elements[5] / 2;
+    assert.ok(roof > 13.2, `roof clearance ${roof}`);
+    for (const i of [10, 11]) {
+      meshes.tunnelWalls.getMatrixAt(i, matrix);
+      assert.ok(Math.abs(matrix.elements[13] - matrix.elements[5] / 2) < .001, 'wall starts at road');
+      assert.ok(Math.abs(matrix.elements[13] + matrix.elements[5] / 2 - roof) < .001, 'wall reaches roof');
+    }
+  }
+});

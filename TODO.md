@@ -1,3 +1,9 @@
+# Neon Downtown flight clearance (2026-11-25)
+
+- [ ] Reproduce roof clamping at 690–910 m; normal 0–12 m flight must remain available, including the first kilometre, with no phantom impact at 30/60/120 Hz.
+- [ ] Match procedural and GLB landmark clearance in every graphics quality; preserve solid scenery, road, vehicle and barrier contacts, other tracks, and item/route placement.
+- [ ] Verify RED/GREEN, module-size, pnpm test, make verify, exact-HEAD CI and real-game desktop/mobile captures. Local repository clone currently blocked by DNS; do not mark unobserved gates green.
+
 # CI 45577036521 Tilt follow-up (2026-11-25)
 
 - [x] Original browser shard 7 failed twice at Tilt radio check; the denied-permission sibling passed. The existing 2.5s no-reading fallback can race the cross-process test driver. Isolated Chromium DOM reconstruction with delayed driver reproduced unchecked Tilt; observing waiting and feeding a simulated reading in-page kept Tilt checked after the same delay. This is a plausible timing root cause, not proof of the exact remote failure mechanism.

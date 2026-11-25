@@ -1831,3 +1831,23 @@ test('a rival with no room to avoid a Tokyo train crashes into it like the playe
   assert.ok(rival.x <= train.left - 1.1, 'pushed out to the open road');
   assert.equal(rival.cooldown, 1.5);
 });
+
+test('Neon permits the full ordinary flight envelope through the first kilometre', () => {
+  for (const dt of [1 / 30, 1 / 60, 1 / 120]) for (const distance of [150, 330, 689, 690, 700, 800, 909, 910, 950]) {
+    const race = airborne(12, 'neon');
+    Object.assign(race, { props: [], hazards: [] });
+    Object.assign(race.player, { distance, x: 0, speed: 50, altitude: 12, verticalSpeed: 0 });
+    stepRace(race, { fly: true }, dt);
+    assert.equal(race.player.altitude, 12, `flight at ${distance} m, dt=${dt}`);
+    assert.equal(race.player.collisions, 0, `contact at ${distance} m, dt=${dt}`);
+  }
+});
+
+test('Neon still collides with solid scenery in the underpass', () => {
+  const race = airborne(0, 'neon');
+  Object.assign(race, { hazards: [], props: [{ from: 799, to: 801, left: 2, right: 5, bottom: 0, top: 3 }] });
+  Object.assign(race.player, { distance: 798, x: 3.5, speed: 50 });
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.player.impact?.kind, 'barrier');
+  assert.equal(race.player.collisions, 1);
+});
