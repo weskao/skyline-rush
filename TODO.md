@@ -1,6 +1,6 @@
 # Neon Downtown flight clearance (2026-11-25)
 
-- [ ] Reproduce roof clamping at 690–910 m; normal 0–12 m flight must remain available, including the first kilometre, with no phantom impact at 30/60/120 Hz.
+- [ ] Verify full-race regression at 690–910 m and the first kilometre at 30/60/120 Hz. Isolated RED executed the original roof branch: altitude 12 -> 2.8 m, roofHit true. Isolated GREEN on the changed branch: Neon altitude 12, roofHit false; Aurora/Tokyo still clamp to 2.8 m and hit. Full-race regression remains unverified. New physics and both render paths use the same 14 m clearance.
 - [ ] Match procedural and GLB landmark clearance in every graphics quality; preserve solid scenery, road, vehicle and barrier contacts, other tracks, and item/route placement.
 - [ ] Verify RED/GREEN, module-size, pnpm test, make verify, exact-HEAD CI and real-game desktop/mobile captures. Local repository clone currently blocked by DNS; do not mark unobserved gates green.
 

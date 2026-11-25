@@ -7,7 +7,10 @@ import { NEON_CHUNK_METRES, NEON_GROUND, NEON_LAP, NEON_MAX_CHUNKS, NEON_PIECES,
 import { REFLECT_LAYER } from './wet-reflection.ts';
 import { createBlossomMaterial } from './neon-blossom.ts';
 import type { VfxQuality } from './vfx-settings.ts';
+import { NEON_TUNNEL_CEILING } from './race-tracks.ts';
 
+// Both GLB LODs have a 5.6 m opening; keep the full procedural roof inside that opening.
+const RAIL_HEIGHT_SCALE = (NEON_TUNNEL_CEILING + .8) / 5.6;
 const PARKED = new THREE.Matrix4().makeTranslation(0, -1000, 0);
 /** emissiveIntensity under the Neon race bloom (nightRain, threshold 0.9). The GLBs carry their offline-render
  *  strengths (city 6, landmarks 1 to 3), which clip to white. Each kit's neon tubes stay above the threshold so they
@@ -132,6 +135,7 @@ export function createNeonScenery(scene: THREE.Object3D) {
       p.set(x, placement.y, z);
       q.setFromAxisAngle(up, placement.yaw - route.heading(distance));
       s.setScalar(placement.scale ?? 1);
+      if (placement.piece === 'rail_portal' || placement.piece === 'rail_segment') s.y *= RAIL_HEIGHT_SCALE;
     }
     transform.compose(p, q, s);
     return true;

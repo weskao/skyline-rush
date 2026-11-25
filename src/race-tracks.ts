@@ -15,6 +15,10 @@ import { NEON_RING_LINES } from './neon-ring-lines.ts';
 // the World Tour BOOST/NITRO median. Every other track keeps the defaults bit-for-bit.
 // User, 2026-11-13: the first five maps (Coast → Sky Spiral) felt sparse, so they carry 40% more ring and pickup
 // slots (a new layoutVersion each).
+// Keep the rail underpass clear of the entire normal flight envelope (12 m + car body).
+export const TUNNEL_CEILING = 4;
+export const NEON_TUNNEL_CEILING = 14;
+export const tunnelCeiling = (trackId: string): number => trackId === 'neon' ? NEON_TUNNEL_CEILING : TUNNEL_CEILING;
 const OPENING_ITEMS = 1.4;
 // Keep the number of full-width rows and trains in check as the longer profiles add item slots.
 const PROFILE_RING_SHAPES = [.065, .23] as const;
