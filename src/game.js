@@ -325,7 +325,7 @@ export function stepRace(race, input, dt) {
   const ramp = STEER_RAMP * (car.section === 'ice' ? ICE_RAMP_FACTOR : 1);
   car.steering += clamp(assistSteer(car, steer, input.laneAssist === true) - car.steering, -dt / ramp, dt / ramp);
   let lateralPosition = car.x + car.steering * Math.min(9, car.speed * 0.22) * (drifting ? DRIFT_LATERAL : 1) * dt;
-  lateralPosition += roadDrift(race, car, section, drifting, dt);
+  lateralPosition += roadDrift(race, car, section, drifting, dt, input.laneAssist === true && steer === 0);
   const previousX = car.x;
   car.x = meetRail(car, lateralPosition, input.laneAssist === true);
   // Re-arm sustained rail contact only after the car pulls clear.
