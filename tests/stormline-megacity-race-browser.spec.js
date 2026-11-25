@@ -55,7 +55,7 @@ for (const [name, viewport, hasTouch] of [
     expect(shortcuts.length).toBe(3);
     await page.keyboard.down('Space');
     for (const [i, s] of shortcuts.entries()) {
-      await page.evaluate(c => Object.assign(window.gameplay.race.player, { distance: (c.from + c.to) / 2, x: c.x, altitude: c.altitude, verticalSpeed: 0, speed: 60, fuel: 100 }), s);
+      await page.evaluate(c => Object.assign(window.gameplay.race.player, { distance: (c.from + c.to) / 2, x: c.x, heading: 0, altitude: c.altitude, verticalSpeed: 0, speed: 60, fuel: 100 }), s);
       await page.waitForTimeout(500);
       const lift = await page.evaluate(() => { const p = window.gameplay.race.player;
         return [window.gameScene.player.position.y, document.body.dataset.phase, JSON.stringify({ d: p.distance, x: p.x, alt: p.altitude, fuel: p.fuel, falls: p.falls })]; });
