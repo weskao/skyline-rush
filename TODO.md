@@ -1,3 +1,8 @@
+# Neon rooftop support (2026-11-25)
+
+- [ ] User follow-up: remove artificial flight ceiling in first km and support parking, driving and takeoff on the existing roof. One-way landing at 7.2 m simulation altitude; render-only pose adapts to original procedural 4.5 m and detailed 7.2/9.24 m roof heights; no scenery mesh or assets changed. Upward passage is intentional. Real-device roof contact, edge interpolation, full CI and browser evidence remain unverified.
+- [ ] RED isolated previous integrator descends through roof to road; regression now covers landing/parking/fuel/drive/relaunch/exit at 30/60/120 Hz and visual alignment, with existing collision tests retained.
+
 # Neon Downtown flight clearance (2026-11-25)
 
 - [ ] Owner correction: keep the original procedural road and GLB model geometry exactly unchanged. Only the artificial overhead clamp for Neon's opening tunnel (690–910 m) is disabled; the normal 12 m flight cap, rail/vehicle/prop/hazard contacts, fuel, gravity and landing remain unchanged. The overhead is intentionally non-solid to player flight; intersecting the visible roof is possible. Other tunnels retain the original roof contact.

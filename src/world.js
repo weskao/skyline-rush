@@ -1,4 +1,4 @@
-import { updateSkyline } from './skyline-scenery.ts';
+import { updateSkyline } from './skyline-scenery.ts'; import { onNeonRoof, neonRoofVisualAltitude } from './neon-roof.ts';
 import * as THREE from 'three';
 import { photoFov } from './photo-export.ts';
 import { capturePhoto } from './photo-capture.ts';
@@ -378,11 +378,11 @@ export function createWorld(canvas, visual = vfxSettings()) {
   }
   function updateCar(mesh, car, distance, center, time, dt, isPlayer = false, input = {}, pose = car) {
     const graphView = lastRace?.course && isCourseRuntime(trackId) ? graphCarVisual(lastRace.course, isPlayer ? 'YOU' : car.id, courseOriginPoint) : null;
-    const relative = graphView ? graphView.separation : physicalGap(trackId, distance, pose.distance);
+    const relative = graphView ? graphView.separation : physicalGap(trackId, distance, pose.distance), rooftop = isPlayer && onNeonRoof(trackId, car);
     const pastLine = !endlessActive && pose.distance > lastRace.length;
     const offRoad = car.finishTime == null && (graphView?.finished || (pastLine && trackId !== CIRCUIT_ID && (trackId === 'spiral' || framedRoad(trackId))));
     mesh.visible = isPlayer || (!offRoad && relative < 900 && (graphView != null || relative > -55));
-    if (!mesh.visible) return; mesh.userData.roadDistance = pose.distance; mesh.userData.span = !!car.span; mesh.userData.altitude = (pose.altitude || 0) - (car.span ? FROSTBITE_SPAN.altitude - SHORTCUT_TOLERANCE : 0); // the pose the shadow sits under (a span car's on the deck)
+    if (!mesh.visible) return; mesh.userData.roadDistance = pose.distance; mesh.userData.span = !!car.span; mesh.userData.altitude = rooftop ? 0 : (pose.altitude || 0) - (car.span ? FROSTBITE_SPAN.altitude - SHORTCUT_TOLERANCE : 0); // the pose the shadow sits under (a span car's on the deck)
     if (curvedClassic || trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
       const frame = graphView?.frame ?? (pastLine && car.finishTime != null ? trackRunoutFrame(trackId, pose.distance) : trackFrame(trackId, pose.distance, car.span));
       if (curvedClassic) mesh.position.fromArray(classicPosition(pose.distance, pose.x, pose.altitude || 0, distance));
@@ -397,7 +397,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
       // Reading/writing Euler rotation after setting the track quaternion used to
       // overwrite its banking and snap near 90-degree spiral headings.
       const driftYaw = mesh.userData.driftYaw = smoothDriftYaw(mesh.userData.driftYaw ?? 0, car.drift, dt, car.heading);
-      const bank = isPlayer ? -(pose.steering || 0) * (pose.altitude > 0.8 ? 0.12 : 0.045) : 0;
+      const bank = isPlayer ? -(pose.steering || 0) * (!rooftop && pose.altitude > 0.8 ? 0.12 : 0.045) : 0;
       const trick = !(motionPreference.matches || visual.comfortable) && car.trick;
       const trickRoll = trick ? trick.dir * Math.PI * 2 * THREE.MathUtils.smoothstep(trick.time, 0, TRICK_ROLL_TIME) : 0;
       const pitch = car.thrusting ? -0.06 : Math.min(0.08, -(pose.verticalSpeed || 0) * 0.006), squat = isPlayer ? squatPitch(sprintVisual.frame.squat) : 0, squatLift = rearAxleLift(mesh, squat);
@@ -406,7 +406,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
       mesh.position.set(roadCenter(pose.distance) - center + pose.x, pose.altitude || 0, -relative);
       const driftYaw = mesh.userData.driftYaw = smoothDriftYaw(mesh.userData.driftYaw ?? 0, car.drift, dt, car.heading);
       mesh.rotation.y = -roadHeading(pose.distance) + driftYaw;
-      const bank = isPlayer ? -(pose.steering || 0) * (pose.altitude > 0.8 ? 0.12 : 0.045) : 0;
+      const bank = isPlayer ? -(pose.steering || 0) * (!rooftop && pose.altitude > 0.8 ? 0.12 : 0.045) : 0;
       const trick = !(motionPreference.matches || visual.comfortable) && car.trick;
       const bankFrom = THREE.MathUtils.euclideanModulo(mesh.rotation.z + Math.PI, Math.PI * 2) - Math.PI;
       mesh.rotation.z = trick ? bank + trick.dir * Math.PI * 2 * THREE.MathUtils.smoothstep(trick.time, 0, TRICK_ROLL_TIME) : THREE.MathUtils.damp(bankFrom, bank, 8, dt);
@@ -419,10 +419,10 @@ export function createWorld(canvas, visual = vfxSettings()) {
     const { wing } = mesh.userData;
     const downforce = isPlayer && visual.enabled && visual.airflow && visual.aeroMode === 'downforce';
     const boosting = car.boosting || car.nitroTime > 0 || car.miniBoost > 0;
-    if (wing.userData.lift) stepWing(wing, boosting || car.braking, downforce || pose.altitude > 0.8, dt);
+    if (wing.userData.lift) stepWing(wing, boosting || car.braking, downforce || !rooftop && pose.altitude > 0.8, dt);
     else wing.rotation.x = THREE.MathUtils.damp(wing.rotation.x, car.braking || downforce ? -0.35 : boosting ? 0.08 : 0, 8, dt);
     mesh.userData.wheels.forEach(wheel => {
-      const target = (pose.altitude > 0.8 ? Math.PI / 2.6 : 0) * Math.sign(wheel.position.x);
+      const target = (!rooftop && pose.altitude > 0.8 ? Math.PI / 2.6 : 0) * Math.sign(wheel.position.x);
       wheel.rotation.z = THREE.MathUtils.damp(wheel.rotation.z, target, 7, dt);
       wheel.rotation.y = wheel.position.z < 0 ? -(pose.steering || 0) * 0.3 : 0;
       if (wheel.children[2]) wheel.children[2].rotation.x -= pose.speed * dt / 0.44;
@@ -490,7 +490,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
       classicRoute = authoredClassic ?? legacyClassicRoad;
       const lighting = upcomingRaceLighting(race.trackId);
       const car = race.player;
-      const alpha = race.phase === 'racing' ? motion?.alpha ?? 1 : 1, visualCar = poseFor(player, car, motion?.previous?.player, alpha);
+      const alpha = race.phase === 'racing' ? motion?.alpha ?? 1 : 1; let visualCar = poseFor(player, car, motion?.previous?.player, alpha);
       const reducedMotion = motionPreference.matches || visual.comfortable;
       const motionDt = preview || race.phase === 'racing' || race.phase === 'countdown' ? dt : 0;
       if (trackId !== race.trackId) {
@@ -525,7 +525,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
       coastLook.update(trackId, visualPreset, visual.quality);
       raceVisuals.apply(visualPreset); const blizzard = preview ? 0 : blizzardLevel(trackId, visualCar.distance, !!race.config.themes); raceVisuals.blizzard(blizzard);
       const distance = preview ? previewDistance(trackId) : visualCar.distance;
-      if (coastAssets.update(trackId, visual.quality, race.phase === 'racing', visualPreset, visual.ultra, curvedClassic ? classicRoute : undefined, distance, race.endless ? race.seed : undefined)) warmupPending = true; // new materials compile before GO
+      if (coastAssets.update(trackId, visual.quality, race.phase === 'racing', visualPreset, visual.ultra, curvedClassic ? classicRoute : undefined, distance, race.endless ? race.seed : undefined)) warmupPending = true; if (trackId === 'neon' && !preview && !car.recovery) { const y = neonRoofVisualAltitude(visualCar.distance, visualCar.altitude, tunnelRoofs.visible); if (y !== visualCar.altitude) visualCar = Object.assign(player.userData.roofPose ??= {}, visualCar, { altitude: y }); } // new materials compile before GO; only player pose adapts to original roof
       if (race.phase !== 'racing' && !garageHomePreview && (modelPending || coastLook.pending
         || coastAssets.sceneryPending(trackId, visual.quality, visual.ultra)
         || (race.pickups.length > 0 && effects.pickupsLoading))) return frames.wait(snapshot);
@@ -714,7 +714,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
       }
       const { roadDistance, altitude: lift, span } = player.userData; // Classic: equals player.position.y; banked/sloped roads: height above the road
       if (classicRoute.elevation || trackId === 'spiral' || framedRoad(trackId, endlessActive)) placeGroundShadow(shadow, graphCentre ? race.course.cars.get('YOU').pose : trackId === 'spiral' ? skyFrame(roadDistance) : trackFrame(trackId, roadDistance, span), player.position, lift);
-      else { shadow.position.set(player.position.x, 0.03, player.position.z); shadow.rotation.set(-Math.PI / 2, 0, 0); }
+      else { shadow.position.set(player.position.x, onNeonRoof(trackId, car) && !preview ? visualCar.altitude + .03 : .03, player.position.z); shadow.rotation.set(-Math.PI / 2, 0, 0); }
       updateContactShadow(lift, visual.quality, !recovery || recovery.reseated);
       const graphFinish = graphCentre ? graphFinishVisual(race.course, courseOriginPoint) : null;
       if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) {

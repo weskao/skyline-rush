@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, stepRace, ROAD_LIMIT } from '../src/game.js';
 import { hazardPose } from '../src/hazard-race.ts';
+import { neonRoofVisualAltitude, NEON_ROOF_HEIGHT } from '../src/neon-roof.ts';
 
 function fresh(options = {}) {
   const race = createRace('neon', { mode: 'custom', rivals: 0, traffic: 'off', items: false, ...options });
@@ -112,4 +113,15 @@ test('Neon underpass can still ascend through the opening roof and fly to 12 m',
   for (let i = 0; i < 120; i++) stepRace(race, { fly: true, throttle: true }, 1 / 60);
   assert.equal(race.player.altitude, 12);
   assert.equal(race.player.collisions, 0);
+});
+
+
+test('roof contact renders on original fallback and detailed surfaces without changing flight maximum', () => {
+  assert.equal(neonRoofVisualAltitude(800, NEON_ROOF_HEIGHT, true), 4.5);
+  assert.equal(neonRoofVisualAltitude(800, NEON_ROOF_HEIGHT, false), 7.2);
+  assert.equal(neonRoofVisualAltitude(698, NEON_ROOF_HEIGHT, false), 9.24);
+  for (const fallback of [true, false]) for (const distance of [690, 800, 909, 920]) {
+    assert.equal(neonRoofVisualAltitude(distance, 0, fallback), 0);
+    assert.equal(neonRoofVisualAltitude(distance, 12, fallback), 12);
+  }
 });
