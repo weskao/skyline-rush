@@ -43,7 +43,7 @@ import { createTrafficFleet } from './traffic-fleet.ts';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
 import { createWorldCoastAssets } from './coast-assets.ts';
 import { nearestLandmark } from './landmark-bounds.ts';
-import { chooseShowcaseFraming } from './showcase-framing.ts';
+import { chooseShowcaseFraming, visibleShowcaseMeshes, isOpaqueShowcaseMesh } from './showcase-framing.ts';
 import { createContactShadow } from './contact-shadow.ts';
 import { isRaining, racePreset } from './board-effects.ts';
 import { createClassicTrackScenery } from './classic-track-scenery.ts';
@@ -293,9 +293,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
     probe.updateMatrixWorld(true);
     showcaseOccluders.updateMatrixWorld(true);
     player.updateMatrixWorld(true);
-    // Raycaster includes invisible descendants by default (including the shader rack and retired placeholders).
-    const visibleMeshes=[];
-    showcaseOccluders.traverseVisible(object=>{if(object.isMesh)visibleMeshes.push(object);});
+    const visibleMeshes = visibleShowcaseMeshes(showcaseOccluders);
     let clear=0;
     for(const local of carSightPoints) {
       sightTarget.copy(local).applyMatrix4(player.matrixWorld);
@@ -308,14 +306,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
       if(length<.5)continue;
       showcaseRay.set(eye,sightDirection.multiplyScalar(1/length));
       showcaseRay.far=length-.4;
-      const obscured=showcaseRay.intersectObjects(visibleMeshes,false).some(hit=>{
-        if(!hit.object.isMesh)return false;
-        const materials=[].concat(hit.object.material||[]);
-        // Transparent ghost particles and non-depth-writing water should not
-        // count as opaque obstacles; multi-material facades still must count.
-        return materials.some(material=>material &&
-          material.depthWrite!==false && !(material.transparent && material.opacity<.65));
-      });
+      const obscured = showcaseRay.intersectObjects(visibleMeshes, false).some(hit => isOpaqueShowcaseMesh(hit.object));
       if(!obscured)clear++;
     }
     return clear/carSightPoints.length;

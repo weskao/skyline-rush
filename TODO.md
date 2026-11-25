@@ -1,3 +1,11 @@
+# CI 45538479486 follow-up (2026-11-25)
+
+- [ ] Verify module-size extraction and showcase occlusion guard; original unit gate reported world.js 937/936 lines.
+- [ ] Verify tutorial landscape media scope and 320x568 HUD clearance, 320x740 countdown/fuel clearance, 568x320 lobby pinned row clearance, portrait and landscape, with unchanged browser guards.
+- [ ] Verify measured-route pose assertions in Frostbite and Stormline desktop/phone, including forks, finishes and shader count; avoid assuming a CourseGraph runtime or zero lateral motion.
+- [ ] Investigate Crimson GT drift-trail GLB timeout (passed on retry); distinguish fetch/decode/resource contention before changing timeout policy.
+- [ ] Run focused tests, pnpm test, typecheck, build, make verify, actual device/WebGL evidence, and exact-HEAD quality-gate. Connector environment lacks repository checkout and pnpm; no local full-suite or browser GREEN claimed.
+
 # CI 45480093600 follow-up batch 2 (2026-11-25)
 
 - [x] Isolated RED/GREEN: independent BOOST/NITRO phases (200 samples, max ratio 0.9008 before and 0.7622 after); prefetch-cached road failure (old active callback not called, new callback called once in isolated invocation). Full existing browser guards retained.

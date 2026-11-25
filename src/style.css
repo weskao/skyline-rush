@@ -2695,6 +2695,7 @@ body[data-tutorial] .tutorial-cue-keys { flex-wrap: wrap; }
   }
   /* The coach already shows the completion check, title and next actions. */
   body[data-tutorial] .tutorial-celebration { display: none; }
+  body[data-tutorial] .race-overlay .overlay-content { width: calc(32vw - 24px); margin-right: 12px; }
   body[data-tutorial] :is(.tutorial-cue, .tutorial-pass) { padding: 5px 10px; font-size: 13px; }
   body[data-tutorial] .tutorial-cue kbd { min-width: 22px; padding: 2px 4px; font-size: 12px; }
   body[data-tutorial] .tutorial-pass-badge { width: 22px; height: 22px; }
@@ -2780,11 +2781,11 @@ body[data-tutorial] .tutorial-pass { animation-name: tutorial-slot-in; }
 body[data-tutorial] .tutorial-slot { position: fixed; z-index: 12; top: var(--coach-top); left: 50%; width: var(--coach-width); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 10px; pointer-events: none; }
 body[data-tutorial] .tutorial-slot > .tutorial-coach { position: relative; inset: auto; width: 100%; box-sizing: border-box; transform: none; }
 body[data-tutorial] .tutorial-slot > :is(.tutorial-cue, .tutorial-pass) { position: relative; inset: auto; transform: none; flex: none; }
-@media (max-width: 340px) and (max-height: 600px) and (orientation: portrait) {
-  body[data-tutorial] { --coach-top: max(calc(var(--safe-top) + 174px), 28dvh); }
-}
-@media (max-height: 500px) and (orientation: landscape) {
-  body[data-tutorial] .race-overlay .overlay-content { width: calc(32vw - 24px); margin-right: 12px; }
+/* Keep narrow portrait countdown compact, between the progress strip and flight instruments. */
+@media (max-width: 340px) and (orientation: portrait) {
+  .countdown { top: 34%; font-size: 70px; }
+  .start-lights { margin-bottom: 5px; }
+  .countdown > span { margin-top: 5px; }
 }
 /* GO does not hide the instruments; event-callout placement must reserve their space. */
 body[data-phase="racing"]:has(#countdown[data-step="GO"]:not([hidden])) .flight-telemetry { visibility: visible; }

@@ -79,3 +79,17 @@ export function chooseShowcaseFraming(options: FramingOptions): { back: number; 
   }
   return best;
 }
+
+/** Raycaster itself includes invisible descendants, including the shader rack. */
+export function visibleShowcaseMeshes(root: Object3D): Mesh[] {
+  const meshes: Mesh[] = [];
+  root.traverseVisible(object => { if (object instanceof Mesh) meshes.push(object); });
+  return meshes;
+}
+
+/** Transparent particles and non-depth-writing water are not opaque obstacles. */
+export function isOpaqueShowcaseMesh(object: Object3D): boolean {
+  if (!(object instanceof Mesh)) return false;
+  const materials = Array.isArray(object.material) ? object.material : [object.material];
+  return materials.some(material => material && material.depthWrite !== false && !(material.transparent && material.opacity < .65));
+}
