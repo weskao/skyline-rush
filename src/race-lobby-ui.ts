@@ -59,6 +59,7 @@ export function setupLobbyPickers(applyTrack: (id: string) => void, getTrack: ()
     const enabled = cards.filter(card => !card.disabled);
     mode.setAttribute('aria-expanded', 'false');
     stage(enabled.find(card => trackId(card) === getTrack()) ?? enabled[0]);
+    opener.focus({ preventScroll: true });
     navigation.open();
     opener.setAttribute('aria-expanded', 'true');
     pending?.focus();
