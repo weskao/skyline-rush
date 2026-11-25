@@ -31,7 +31,7 @@ test('Neon underpass preserves thrust, gravity, fuel, steering and landing acros
     const dt = 1 / hz;
     const inputs = [
       ...Array.from({ length: hz }, () => ({ fly: true, throttle: true, steer: -.2 })),
-      ...Array.from({ length: 2 * hz }, () => ({ steer: -.2 })),
+      ...Array.from({ length: 3 * hz }, () => ({ steer: -.2 })),
     ];
     const race = compareWithOpenRoad(r => {
       Object.assign(r.player, { distance: 700, altitude: 5, verticalSpeed: 0, fuel: 10 });
