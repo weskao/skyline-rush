@@ -68,6 +68,13 @@ for (const [width, height, hasTouch] of START_LAYOUT_SIZES) {
         const [card, garage, start] = await Promise.all(['#lobby-tracks-toggle', '#garage-button', '#start-button']
           .map(selector => intro.locator(selector).first().boundingBox()));
         expect(card.y + card.height, 'pinned row covers the track cards').toBeLessThanOrEqual(garage.y);
+        if (width === 568 && height === 320) {
+          const [copy, action] = await Promise.all(['.lobby-track-copy', '#lobby-tracks-toggle > span']
+            .map(selector => intro.locator(selector).boundingBox()));
+          expect(copy.y + copy.height, 'short landscape track text clears the action label').toBeLessThanOrEqual(action.y);
+          expect(garage.y - (card.y + card.height), 'short landscape keeps real clearance above Garage').toBeGreaterThanOrEqual(4);
+          expect(card.height, 'the whole track card remains a touch target').toBeGreaterThanOrEqual(44);
+        }
         expect(Math.abs(garage.y + garage.height - (start.y + start.height)), 'pinned row bottom matches Start').toBeLessThanOrEqual(2);
       }
       for (const selector of ['#start-button', '.history-button', '.flight-tip']) {

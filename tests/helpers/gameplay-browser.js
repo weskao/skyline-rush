@@ -80,11 +80,17 @@ export const landed = page => page.evaluate(async () => {
  * (`timeoutMs` in src/asset-model-loader.ts) and see `fallback:timeout`. Serve the dev module with a wider deadline;
  * the shipped value is untouched, and the timeout/fallback paths have their own tests. Gameplay (Vite dev) server only.
  */
-export const widenModelDeadline = page => page.route(url => url.pathname === '/src/asset-model-loader.ts', async route => {
+export const widenModelDeadline = (page, includeDecode = false) => page.route(url => url.pathname === '/src/asset-model-loader.ts', async route => {
   const response = await route.fetch();
   const source = await response.text();
   const deadline = /\btimeoutMs\s*=\s*(?:15000|15e3)\b/;
   if (!deadline.test(source)) throw new Error('src/asset-model-loader.ts no longer holds the normal model download deadline');
-  await route.fulfill({ response, body: source.replace(deadline, 'timeoutMs = 90000') });
+  let body = source.replace(deadline, 'timeoutMs = 90000');
+  if (includeDecode) {
+    const decodeDeadline = /\bdecodeTimeoutMs\s*=\s*(?:30000|3e4)\b/;
+    if (!decodeDeadline.test(body)) throw new Error('Model decode deadline changed');
+    body = body.replace(decodeDeadline, 'decodeTimeoutMs = 90000');
+  }
+  await route.fulfill({ response, body });
 });
 export const modelInstances = async page => JSON.parse((await page.locator('#world').getAttribute('data-garage-model-instances')) ?? '{}');

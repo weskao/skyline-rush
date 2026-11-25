@@ -18,3 +18,13 @@
   Added WebGL1 fallback regression, observed RED (createQuery is not a function), then GREEN:
   all five isolated timer tests and standalone strict TypeScript check passed. Full CI must rerun
   on the new HEAD; earlier failure is not evidence of final success.
+
+- 2026-11-26 owner accepts the manual acceptance gate by waiver (not a measured result).
+  Physical-device soak, visual sign-off and hardware overhead measurements are not blockers to proceeding.
+  No hardware numbers are asserted. Automated checks remain mandatory.
+- HEAD e4fea693fc1dade5a14b3927dafee8c6bc563ff7: full CI 45595454328 passed install, typecheck, unit, build, cloud and both World Tour jobs;
+  browser shards 4 and 11 failed. Shard 11 reproduced 0.03125 px overlap at 568x320 twice;
+  reuse develop's short-landscape layout correction and stricter 4 px clearance regression.
+  Shard 4 twice reported fallback:timeout loading the Crimson GT on software WebGL;
+  reuse the test-only widened deadline for fetch and decode. The timeout stage is not identified by the logs.
+  Production model deadlines remain unchanged; exact-HEAD CI must verify both changes.

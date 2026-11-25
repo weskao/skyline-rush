@@ -75,4 +75,13 @@ Use [report template](report-template.md). Keep full regression gate unchanged.
 Wave 1 consumers: createDeepPerf, createGpuTimer, existing inspectRenderLoad/inspectPrograms,
 frame-pacing target/scale, legacy evidence parser, and the versioned data-deep JSON export.
 Record new measurements, limitations and follow-up in this directory; do not claim baseline complete
-until fixed-step probe, full-app replay, visual regression, exact-HEAD CI and physical-device matrix are verified.
+until fixed-step probe, full-app replay, automated visual regression and exact-HEAD CI are verified.
+
+### Owner acceptance decision (2026-11-26)
+
+The owner explicitly accepts the manual/physical-device acceptance items for Wave 0 as passed by waiver.
+This is permission to proceed without manual sign-off, not measured physical-device evidence.
+The 5/15/30 minute physical soak, manual visual inspection and physical GPU/profiler overhead measurements
+remain unmeasured; do not assign them numeric results or claim hardware improvements. Automated regression,
+fixed-step matrix and replay checks remain required. Future Wave 1 comparisons must distinguish CI/software
+WebGL from actual devices and report missing data explicitly.

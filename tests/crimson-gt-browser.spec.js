@@ -376,6 +376,9 @@ for (const category of SKIN_CATEGORIES) test(`every Garage ${category} skin prev
   test.setTimeout(ciTimeout(120000));
   // A drift-trail click opens the live drift preview, a second WebGL renderer; still frames keep both off CI's CPU.
   await page.emulateMedia({ reducedMotion: 'reduce' });
+  // CPU WebGL can starve the real fetch/decode deadlines while the initial scene loads.
+  // Keep asserting the actual GT GLB; timeout/fallback behavior is tested separately.
+  if (process.env.CI) await widenModelDeadline(page, true);
   const { errors } = await prepare(page, gameplayURL, { storage: GT });
   await page.locator('#garage-button').click();
   await modelReady(page);
