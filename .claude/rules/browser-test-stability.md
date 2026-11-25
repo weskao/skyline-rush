@@ -342,3 +342,5 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
 
 - Upcoming is the first release tab and can have no media; historical clip and picture-viewer specs must select the release that owns the media before testing it. A read tab clears its own dot immediately; compare styling on a still-unread tab and clear every unread version before asserting the aggregate Home dot is gone (CI 45403054733).
 - Arm a page-side frame recorder before Start for launch-flare assertions: countdown waves are transient, animated, and end before GO, not a static pool followed by a GO glow. Keep the GLB attachment, visibility and GPU program-count checks (CI 45403054733).
+
+- Measured-route tracks (Stormline, Frostbite, Monsoon, Volcanic) do not have a CourseGraph runtime. For their rendered player position, use the authored road frame and the rendered/interpolated lateral pose rather than `race.course.cars` or an arbitrary distance from the centreline; keep the strict horizontal error assertion in the measured-race pose helper.

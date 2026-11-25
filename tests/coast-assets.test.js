@@ -382,3 +382,17 @@ test('Sky Spiral scenery is pending until the selected road set is installed', a
     assets.dispose();
   }
 });
+
+test('a failed Neon prefetch reports fallback on the selected road and pavement', async () => {
+  const dataset = {}, { road } = roadFakes();
+  road.load = async () => { throw new Error('offline'); };
+  const neon = { pave() {}, update() {}, hide() {}, dispose() {}, detachKit() {} };
+  const assets = createCoastAssets({ scenery, cache: never, road, neon, dataset });
+  assets.prefetch('neon', 'high');
+  await tick();
+  assets.update('neon', 'high', false);
+  assert.equal(dataset.coastRoad, 'fallback');
+  assert.equal(dataset.coastRoadSet, 'none');
+  assert.equal(dataset.neonGround, 'fallback');
+  assets.dispose();
+});
