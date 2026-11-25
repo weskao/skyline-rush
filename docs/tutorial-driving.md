@@ -24,3 +24,5 @@ The tutorial is a safe practice environment, not an autopilot.
 - **Final NITRO cue:** keep the shared live cue and current desktop key visible during the lesson, from the first press through the sprint, finishing effect and any interrupted attempt. Update the message to match the current action. Outline the touch control only when the practice charge is ready for a new press.
 - **Boost lesson:** a timed stretch of blue charge-ring rows (`BOOST_LIMIT` s), normal finite BOOST, no slipstream auto-dash. A timeout re-arms a fresh stretch ahead.
 - Test real keyboard and mobile touch input in the browser, including pause/resume and lesson transitions, before claiming the change verified. Run the project's required unit, build, browser and CI gates; report any test that could not be run.
+
+- **Coach prompt animations must preserve the layout slot throughout every frame.** The live cue and pass toast are top-anchored below the coach; never reuse the old vertically centred `cue-in` transform for them. Keep fade and pulse without translating into the coach buttons. Guard: `tests/tutorial-hand-layout-browser.spec.js` records overlaps each frame.

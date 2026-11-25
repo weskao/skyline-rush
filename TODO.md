@@ -1,3 +1,9 @@
+# CI 45480093600 follow-up (2026-11-25)
+
+- [x] Isolated tutorial cue/pass entrance transform regression: Chromium RED reproduced a negative coach-to-prompt gap (-8.7px at entry); opacity-only entrance maintained a 10px gap across six sampled times for both cue and pass (GREEN in isolated reproduction). Existing real-game frame-by-frame overlap guard remains intact.
+- [ ] Full regression verification for the new commit: module-size, unit, typecheck, build, real-game browser suites, device screenshots and exact-HEAD quality-gate. Connector environment cannot clone the repository or install dependencies (GitHub DNS unavailable); isolated browser evidence is not full-suite GREEN.
+- [ ] Remaining failures from run 45480093600: tutorial steady-state telemetry/coach and paused layout, main UI contract, first-visit navigation, keyboard mode setup, Neon fallback, Home pinned-row and label geometry, GO telemetry, Taipei/coastal camera occlusion, Stormline outlet pose, flaky rival BOOST flame ratio. Re-evaluate tutorial overlap guards after the animation fix. Do not weaken checks or mark these complete without evidence.
+
 # Full car-heading physics (deferred, large; 2026-11-25)
 
 - [ ] Real-car / kart-style handling: steering turns the car's nose (yaw), so after a lane change on a straight the player must counter-steer to straighten up. Today the simulation is road-relative: the car always faces along the road centreline, steering moves it sideways and corners push it outward.

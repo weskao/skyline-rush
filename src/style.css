@@ -2768,3 +2768,10 @@ body.tokyo-charge-zone #fuel-caption { color: #b6f5ff; text-shadow: 0 0 8px rgba
   outline: 2px solid #ffd880;
   outline-offset: 2px;
 }
+
+/* Tutorial prompts are top-anchored below the coach, not centre-anchored as in cue-in.
+   A vertical entrance transform crosses the coach's buttons during the first frames. */
+@keyframes tutorial-slot-in { from { opacity: 0; } }
+body[data-tutorial] .tutorial-cue { animation-name: tutorial-slot-in, cue-pulse; }
+body[data-tutorial] .tutorial-pass { animation-name: tutorial-slot-in; }
+@media (prefers-reduced-motion: reduce) { body[data-tutorial] :is(.tutorial-cue, .tutorial-pass) { animation: none; } }
