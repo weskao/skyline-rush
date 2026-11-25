@@ -2,7 +2,6 @@ import type { BufferGeometry, InstancedMesh, Mesh } from 'three';
 import { setRoadRow } from './geometry.ts';
 import type { ClassicRoad } from './classic-road-routes.ts';
 import type { TrackConfig } from './game-types.ts';
-import { tunnelCeiling } from './race-tracks.ts';
 
 type Put = (mesh: InstancedMesh, index: number, x: number, y: number, z: number,
   width: number, height: number, depth: number, yaw?: number, pitch?: number) => void;
@@ -32,8 +31,7 @@ export function createClassicRoadRender(meshes: RoadMeshes, segments: number, pu
       width, height, Math.hypot(dx, dy, dz) + overlap, -Math.atan2(dx, -dz), Math.atan2(dy, Math.hypot(dx, dz)));
   }
 
-  function rebuild(track: string, route: ClassicRoad, tile: number, sections: readonly Section[], sparse: boolean, curved: boolean) {
-    const ceiling = tunnelCeiling(track);
+  function rebuild(route: ClassicRoad, tile: number, sections: readonly Section[], sparse: boolean, curved: boolean) {
     const origin: RoadOrigin = [...route.point(tile), route.elevation?.(tile) ?? 0];
     const index = geometry.index!;
     const start = tile - 5 * STEP;
@@ -54,9 +52,9 @@ export function createClassicRoadRender(meshes: RoadMeshes, segments: number, pu
       // Keep boxed sections overlapped so the inside wall stays solid through a turn.
       if (tunnelRoofs.visible) {
         const tunnel = section?.type === 'tunnel';
-        strip(tunnelRoofs, i, route, origin, d, next, 0, tunnel ? ceiling + .25 : -1000, 24, .5, 1);
+        strip(tunnelRoofs, i, route, origin, d, next, 0, tunnel ? 4.25 : -1000, 24, .5, 1);
         for (const side of [-1, 1]) strip(tunnelWalls, i * 2 + (side + 1) / 2, route, origin, d, next,
-          side * 12.6, tunnel ? ceiling / 2 : -1000, 1, ceiling, 1);
+          side * 12.6, tunnel ? 2 : -1000, 1, 4, 1);
       }
       const deck = section?.type === 'shortcut' && (i % 2 === 0 || !sparse);
       strip(shortcutDeck, i, route, origin, d, next, deck ? section.x ?? 0 : 0,
@@ -85,7 +83,7 @@ export function createClassicRoadRender(meshes: RoadMeshes, segments: number, pu
     update(track: string, route: ClassicRoad, distance: number, sections: readonly Section[], sparse: boolean, curved: boolean) {
       const tile = Math.floor(distance / STEP) * STEP;
       if (tile !== activeTile || track !== activeTrack || route !== activeRoute || sections !== activeSections || sparse !== activeSparse) {
-        rebuild(track, route, tile, sections, sparse, curved);
+        rebuild(route, tile, sections, sparse, curved);
         activeTile = tile; activeTrack = track; activeRoute = route; activeSections = sections; activeSparse = sparse;
       }
       const [x, z] = route.point(distance), [originX, originZ] = route.point(tile);

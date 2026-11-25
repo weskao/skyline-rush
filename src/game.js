@@ -31,7 +31,7 @@ import { skyJumpGap, SKY_JUMPS } from './sky-track.ts'; import { startRoadRecove
 import { planGapRecovery, clearGapFallStreak } from './gap-recovery-seat.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 
-import { RACE_TRACKS, raceTrack, assertTrackMode, itemScale, tunnelCeiling } from './race-tracks.ts';
+import { RACE_TRACKS, raceTrack, assertTrackMode, itemScale } from './race-tracks.ts';
 export { RACE_TRACKS } from './race-tracks.ts';
 export const RACE_LENGTH = RACE_TRACKS.coast.length;
 import { MAX_SPEED, NITRO_TIME, pressNitro, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, boostFuel, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_LATERAL, grantMiniBoost } from './drive-rules.ts';
@@ -42,7 +42,7 @@ export const STEER_RAMP = 0.15;
 export const TAKEOFF_BUFFER = 1.5; // seconds a FLY press below takeoff speed stays remembered
 export const SCRAPE_RATIO = 0.1; // lateral/forward speed below this is a shallow-angle scrape
 
-export { TUNNEL_CEILING } from './race-tracks.ts'; // default roof height; track-specific clearance uses tunnelCeiling
+export const TUNNEL_CEILING = 4; // m; the car's roof (altitude + CAR_HEIGHT) may not pass it
 export const CAR_HEIGHT = 1.2;
 export const GAP_CLEARANCE = 1; // altitude needed to fly over a missing bridge section
 export const GAP_WARN_DISTANCE = 300; // m ahead of a broken bridge where too little charge to cross is flagged
@@ -363,9 +363,9 @@ export function stepRace(race, input, dt) {
     car.verticalSpeed = Math.max(car.verticalSpeed, launchImpulse(car.speed));
   }
   car.altitude = clamp(car.altitude + car.verticalSpeed * dt, 0, 12);
-  const roofHit = car.section === 'tunnel' && car.altitude + CAR_HEIGHT > tunnelCeiling(race.trackId);
+  const roofHit = car.section === 'tunnel' && !(race.trackId === 'neon' && section.to <= 1000) && car.altitude + CAR_HEIGHT > TUNNEL_CEILING; // Neon opening railway is visual-only overhead
   if (roofHit) {
-    car.altitude = tunnelCeiling(race.trackId) - CAR_HEIGHT;
+    car.altitude = TUNNEL_CEILING - CAR_HEIGHT;
     car.verticalSpeed = Math.min(0, car.verticalSpeed);
     car.trick = null;
   }

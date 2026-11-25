@@ -1,9 +1,8 @@
 # Neon Downtown flight clearance (2026-11-25)
 
-- [ ] Verify full-race regression at 690–910 m and the first kilometre at 30/60/120 Hz. Isolated RED executed the original roof branch: altitude 12 -> 2.8 m, roofHit true. Isolated GREEN on the changed branch: Neon altitude 12, roofHit false; Aurora/Tokyo still clamp to 2.8 m and hit. Full-race regression remains unverified. New physics and both render paths use the same 14 m clearance.
-- [ ] Match procedural and GLB landmark clearance in every graphics quality; preserve solid scenery, road, vehicle and barrier contacts, other tracks, and item/route placement.
-- [ ] Verify RED/GREEN, module-size, pnpm test, make verify, exact-HEAD CI and real-game desktop/mobile captures. Local repository clone currently blocked by DNS; do not mark unobserved gates green.
-- [ ] Physics parity follow-up: added a real stepRace open-road/underpass A/B regression for thrust, fuel depletion, gravity, touchdown, steering, rail and vehicle contact, plus authored 980 m roadworks contact/overflight. No further runtime physics changes; full test execution and real-game device verification remain pending.
+- [ ] Owner correction: keep the original procedural road and GLB model geometry exactly unchanged. Only the artificial overhead clamp for Neon's opening tunnel (690–910 m) is disabled; the normal 12 m flight cap, rail/vehicle/prop/hazard contacts, fuel, gravity and landing remain unchanged. The overhead is intentionally non-solid to player flight; intersecting the visible roof is possible. Other tunnels retain the original roof contact.
+- [ ] Isolated RED: previous visual values were a 14 m roof and 2.642857x rail Y scale, instead of 4 m and 1x. Restore both renderer files and track table to exact base blobs; regression tests assert original dimensions and normal flight/contacts, including other tunnels and the authored roadworks. Isolated GREEN covers the real roof predicate; full simulation and renderer test execution are not verified.
+- [ ] Verify full regression, module-size, pnpm test, make verify, exact-HEAD CI and real-game desktop/mobile captures. Local repository clone blocked by DNS; do not mark unobserved gates green.
 
 # CI 45577036521 Tilt follow-up (2026-11-25)
 
