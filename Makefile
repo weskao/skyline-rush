@@ -41,22 +41,24 @@ reclaim-port = @pids=$$(lsof -nP -tiTCP:$(1) -sTCP:LISTEN 2>/dev/null | sort -u)
 reclaim-dev-port:
 	$(call reclaim-port,5173)
 
+# Serve at localhost, not 127.0.0.1: Chrome extension site access and storage are per hostname. `pnpm run dev` keeps
+# 127.0.0.1 for the Playwright configs.
 dev: stop-old-dev reclaim-dev-port node_modules ## `make dev [procedural=1]`: dev server; procedural=1 previews the procedural Roadster
-	VITE_PROCEDURAL_ROADSTER=$(if $(filter 1,$(procedural)),1,0) $(WITH_EMULATORS) '$(PNPM) run dev'
+	VITE_PROCEDURAL_ROADSTER=$(if $(filter 1,$(procedural)),1,0) $(WITH_EMULATORS) '$(PNPM) exec vite --host localhost'
 
 # VITE_DIAG=1 compiles in src/crash-log.ts: a live banner with frame counter, lifecycle and input events plus the
 # stored crash log. Production builds never include it (scripts/assert-production-locked.mjs refuses the marker).
 # Both also stream it to diag-logs/*.jsonl on this Mac (scripts/diag-relay-plugin.mjs; read live: `pnpm run diag:tail`),
 # from localhost and Tailscale only; `via=wifi` serves Wi-Fi, whose logs need DIAG_ALLOW_LAN=1 (unencrypted).
 dev-diag: stop-old-dev reclaim-dev-port node_modules ## `make dev-diag`: like `make`, with the on-screen diagnostic panel compiled in
-	VITE_DIAG=1 $(WITH_EMULATORS) '$(PNPM) run dev'
+	VITE_DIAG=1 $(WITH_EMULATORS) '$(PNPM) exec vite --host localhost'
 
 phone-diag: ## `make phone-diag [name|off] [y=1]`: like `make phone`, with the on-screen diagnostic panel compiled in
 	VITE_DIAG=1 $(MAKE) phone $(if $(y),y=$(y)) $(if $(via),PHONE_VITE_ARGS="--via $(via)") $(if $(DEV_FEATURE_NAME),DEV_FEATURE_NAME=$(DEV_FEATURE_NAME))
 
 # Compile with the development-only access implementation. Never produces a distributable build.
 dev-unlocked: stop-old-dev reclaim-dev-port node_modules ## `make dev-unlocked`: local Vite playtest with all race-ready tracks, cars, paints and equipment
-	$(WITH_EMULATORS) '$(PNPM) run dev --config vite.unlocked.config.js'
+	$(WITH_EMULATORS) '$(PNPM) exec vite --host localhost --config vite.unlocked.config.js'
 
 test-unlocked: dev-unlocked ## Alias: `make test-unlocked` also opens the all-unlocked local dev server
 
