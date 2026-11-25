@@ -5,16 +5,19 @@ import { fileURLToPath } from 'node:url';
 import { CARS } from '../../src/car-catalog.ts';
 
 // Inspect the real scene and seed distant scenarios without shipping test hooks in the app.
-export async function captureHooks(page) {
+export async function captureHooks(page, mainEdits = []) {
   await markStartupSeen(page);
   for (const [file, anchor, replacement] of [
     ['main.js', 'let race = createRace();', 'let race = createRace(); window.gameplay = { get race() { return race; } };'],
     ['world.js', 'scene.add(player);', 'scene.add(player); window.gameScene = { scene, player, renderer, camera, composer, get rivals() { return rivals; } };'],
   ]) await page.route(url => url.pathname === `/src/${file}`, async route => {
     const response = await route.fetch();
-    const source = await response.text();
-    if (!source.includes(anchor)) throw new Error(`Missing capture anchor in ${file}`);
-    await route.fulfill({ response, body: source.replace(anchor, replacement) });
+    let source = await response.text();
+    for (const [from, to] of [[anchor, replacement], ...(file === 'main.js' ? mainEdits : [])]) {
+      if (source.split(from).length !== 2) throw new Error(`Missing or repeated capture anchor in ${file}: ${from}`);
+      source = source.replace(from, to);
+    }
+    await route.fulfill({ response, body: source });
   });
 }
 

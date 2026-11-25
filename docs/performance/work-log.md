@@ -31,3 +31,5 @@
 
 - Added shared registry scenario matrix and strict evidence validation; local isolated validator RED was missing function, GREEN 2/2 tests (valid unsupported-GPU report and six invalid records). Full project execution still needs CI.
   CI now schedules a 32-tick real WebGL smoke for each playable Home/Racing and Coming Soon showcase; existing 180-tick CLI rejects empty/invalid results. Added live Garage/Countdown/Results and Photo/Paused state coverage. No hardware evidence claimed. Exact full-app input replay remains open.
+
+- Added actual-app fixed-tick replay smoke: identical 180-tick input sequence and seed, exact simulation comparison, three sampled chase-camera poses with tolerances, CI-only evidence artifact. Hooks are served only by the Playwright dev module; production main.js unchanged. Full-length race replay and physical measurements remain unverified. Browser execution requires exact-HEAD CI.

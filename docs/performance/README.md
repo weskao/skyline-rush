@@ -51,7 +51,11 @@ configuration fail rather than being treated as successful. CI-only records are 
 not a reason to manufacture timing samples. These short smoke records are not the 180-tick comparison.
 The app browser suite also checks the seven phase transitions (Results uses a seeded finish solely for UI state).
 For the real application use 3 alternating before/after rounds, same warmup and 20 s measured window.
-Capture camera route/video and input trace; automated exact full-app replay remains open.
+A dev-only actual-app replay now drives 180 fixed 60 Hz simulation ticks twice through main.js, with the same
+seed and tick-indexed inputs, the real chase-camera renderer, and a one-draw-per-tick test hook. It compares
+simulation state exactly and camera samples with a documented sub-metre tolerance. It is a deterministic
+opening-segment check, not a full-length race replay or production frame-pacing benchmark. Longer route
+segments and full-race comparisons remain separate acceptance evidence. Capture input trace and camera route.
 Run existing CPU/scene scripts separately, retain their provenance. Test desktop, portrait and landscape.
 
 ## Physical device soak
