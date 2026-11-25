@@ -105,8 +105,9 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
 - **The short-landscape Resources list expands in the lobby's scroll flow.** A list positioned below the whole lobby can fall under the pinned Progress button. Keep the currency buttons reachable after opening. Guard: the ultra-short landscape test in `tests/wave3-currency-browser.spec.js`.
 
 - **Short-landscape Home keeps the wallet row distinct from the selected-track hero.** Preserve at least 6 px between
-  `.home-intro-topbar` and `.lobby-race-heading` when the compact resource strip is shown; do not zero the
-  topbar's bottom margin. Guard 345×206, 667×375, 743×340 and 852×393 in `tests/lobby-polish-browser.spec.js`.
+  `.home-intro-topbar` and `.lobby-race-heading` when the compact resource strip is shown; do not reduce the
+  topbar's bottom margin below 6 px. On ultra-short landscape, compact the card minimum height instead, keeping its
+  grid content, 44px target and pinned Garage clearance. Guard 345×206, 568×320, 667×375, 743×340, 756×265 and 852×393 in `tests/lobby-polish-browser.spec.js`.
 
 - **Home displays the track at its original brightness.** Keep the viewport-wide shade out of the ready phase,
   including the concept-image fallback. Any contrast treatment belongs to the controls that need it.

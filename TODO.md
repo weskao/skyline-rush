@@ -1,3 +1,9 @@
+# CI wallet spacing follow-up (2026-11-25)
+
+- [x] Exact-HEAD CI RED: 345x206 wallet-to-track gap was 2px, expected at least 6px; the <=330px override caused the regression.
+- [x] Isolated Chromium geometry RED/GREEN: 345x206 and 756x265 gap 2px -> 6px; compact card min-height 55px -> 49px; card bottom moves 2px upward with the same fixture. Wider ultra-short fixture also retains 6px and moves card bottom 2px upward. Not a full-game capture.
+- [ ] Verify full game layout at 345x206, 568x320, 756x265 and other existing sizes, pinned Garage clearance, focused browser suite and exact-HEAD full CI. Local checkout/dependencies unavailable.
+
 # CI 45538479486 follow-up (2026-11-25)
 
 - [ ] Verify module-size extraction and showcase occlusion guard; original unit gate reported world.js 937/936 lines.
