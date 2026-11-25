@@ -28,3 +28,6 @@
   Shard 4 twice reported fallback:timeout loading the Crimson GT on software WebGL;
   reuse the test-only widened deadline for fetch and decode. The timeout stage is not identified by the logs.
   Production model deadlines remain unchanged; exact-HEAD CI must verify both changes.
+
+- Added shared registry scenario matrix and strict evidence validation; local isolated validator RED was missing function, GREEN 2/2 tests (valid unsupported-GPU report and six invalid records). Full project execution still needs CI.
+  CI now schedules a 32-tick real WebGL smoke for each playable Home/Racing and Coming Soon showcase; existing 180-tick CLI rejects empty/invalid results. Added live Garage/Countdown/Results and Photo/Paused state coverage. No hardware evidence claimed. Exact full-app input replay remains open.

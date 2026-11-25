@@ -44,6 +44,12 @@ For a fixed-step scene probe, run `node scripts/thermal-baseline.mjs volcanic-cr
 Configure THERMAL_FRAMES, THERMAL_VIEWPORT and THERMAL_DPR. This probe is not production
 frame pacing, not a full race and not a physical-device thermal result. Its fixed step can run slower
 than real time. Record starting/ending distance and drawn count; do not compare mismatched paths.
+The full-regression Playwright suite now runs every registry scenario at 32 measured ticks using the same
+fixture and validation as the CLI. Missing draws, stationary driving, missing CPU/frame evidence or mixed
+configuration fail rather than being treated as successful. CI-only records are named
+`render-performance-thermal-*.json` for the existing shard artifact upload. GPU unavailability is explicit,
+not a reason to manufacture timing samples. These short smoke records are not the 180-tick comparison.
+The app browser suite also checks the seven phase transitions (Results uses a seeded finish solely for UI state).
 For the real application use 3 alternating before/after rounds, same warmup and 20 s measured window.
 Capture camera route/video and input trace; automated exact full-app replay remains open.
 Run existing CPU/scene scripts separately, retain their provenance. Test desktop, portrait and landscape.

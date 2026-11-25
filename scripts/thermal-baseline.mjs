@@ -3,6 +3,7 @@
 // THERMAL_FRAMES=180 THERMAL_VIEWPORT=390x844 THERMAL_DPR=3
 import { chromium } from '@playwright/test';
 import { createServer } from 'vite';
+import { validateThermalRecord } from './thermal-report.mjs';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 const tracks = process.argv.slice(2);
@@ -28,6 +29,7 @@ try {
     await page.goto(url); await page.waitForFunction(() => !!window.thermalRun);
     try {
       const record = await page.evaluate(options => window.thermalRun(options), { ...scenario, frames });
+      validateThermalRecord(record, scenario, frames);
       records.push(record);
       console.log(scenario.id, scenario.phase, record.drawnCount, 'draws', record.endDistance, 'm');
     } catch (error) {

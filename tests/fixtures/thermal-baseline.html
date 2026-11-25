@@ -9,22 +9,14 @@
   import { createWorld } from '../../src/world.js';
   import { createRace } from '../../src/race-factory.ts';
   import { startRace, stepRace, setLayoutSeed } from '../../src/game.js';
-  import { RACE_TRACKS, COURSE_TRACKS } from '../../src/race-tracks.ts';
+  import { thermalScenarios } from './thermal-scenarios.js';
   import { CIRCUIT_ID } from '../../src/circuit-track.ts';
-  import { UPCOMING_TRACKS } from '../../src/upcoming-tracks.ts';
   import { vfxSettings } from '../../src/vfx-settings.ts';
   import { createPresentation } from '../../src/presentation.ts';
   import { untilDrawn } from './showcase-probe-draw.js';
   const STEP = 1/60, SEED = 12345, INPUT = Object.freeze({ throttle: true, boost: true, steer: 0 });
   const next = () => new Promise(requestAnimationFrame);
-  const priority = ['volcanic-crown','taipei','tokyo'];
-  const ordered = ids => [...new Set([...priority.filter(id => ids.includes(id)), ...ids])];
-  window.thermalScenarios = [
-    ...ordered([...Object.keys(RACE_TRACKS), ...Object.keys(COURSE_TRACKS), CIRCUIT_ID]).flatMap(id => [
-      { id, phase: 'home' }, { id, phase: 'racing' },
-    ]),
-    ...ordered(Object.keys(UPCOMING_TRACKS)).map(id => ({ id, phase: 'showcase' })),
-  ];
+  window.thermalScenarios = thermalScenarios;
   window.thermalRun = async ({ id, phase, frames = 180 }) => {
     const world = createWorld(document.getElementById('world'), vfxSettings({ quality: 'high', preset: 'cinematic' }));
     const perf = world.deepPerf;
