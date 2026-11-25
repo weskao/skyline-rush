@@ -151,11 +151,10 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
     });
   }
   /** The loaded set for `id` at this tier, requested on first use; null while it loads, after a failure and on Low. */
-  function roadSet(id: string | undefined, tier: MaterialTier | null, key: string, failed: () => void): CoastRoad | null {
+  function roadSet(id: string | undefined, tier: MaterialTier | null, key: string): CoastRoad | null {
     if (!id || !tier) return null;
     if (!roads.has(key)) loadRoad(id, tier, key, road!);
     const ready = roads.get(key);
-    if (ready === 'failed') failed(); // prefetch may have started the request without a surface status callback
     return typeof ready === 'object' ? ready : null;
   }
   function roadPending(id: string | undefined, tier: MaterialTier | null, key: string, material?: Material | Material[]): boolean {
@@ -173,14 +172,18 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
     if (!road) return false;
     const tier = look ? coastRoadTier(quality, ultra) : null;
     roadKey = `${look?.road}:${tier}`;
-    const want = roadSet(look?.road, tier, roadKey, () => { dataset.coastRoad = 'fallback'; dataset.coastRoadSet = 'none'; });
+    const want = roadSet(look?.road, tier, roadKey);
     want?.setWetness(coastWetness(preset, look!.wetness));
     const target = want?.material ?? procedural!, swap = road.mesh.material !== target && !racing;
     if (swap) {
       road.mesh.material = target;
-      dataset.coastRoad = want ? tier! : roads.get(roadKey) === 'failed' ? 'fallback' : 'procedural';
-      dataset.coastRoadSet = want ? look!.road : 'none';
       sweep();
+    }
+    if (road.mesh.material === target) {
+      const status = want ? tier! : roads.get(roadKey) === 'failed' ? 'fallback' : 'procedural';
+      if (dataset.coastRoad !== status) dataset.coastRoad = status;
+      const set = want ? look!.road : 'none';
+      if (dataset.coastRoadSet !== set) dataset.coastRoadSet = set;
     }
     updateMirror(!!want && road.mesh.material === want.material, quality, preset, racing, look?.wetness);
     return swap && !!want;
@@ -199,11 +202,13 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
         if (!road || !pave) return false;
         const id = look?.[slot], tier = id ? coastRoadTier(quality, ultra) : null;
         part.key = `${id}:${tier}:${slot}`;
-        const want = roadSet(id, tier, part.key, () => { dataset[status] = 'fallback'; });
+        const want = roadSet(id, tier, part.key);
         want?.setWetness(coastWetness(preset, look!.wetness));
-        if (want === part.laid || racing) return false;
+        if (want !== part.laid && racing) return false;
+        const state = want ? tier! : roads.get(part.key) === 'failed' ? 'fallback' : 'procedural';
+        if (dataset[status] !== state) dataset[status] = state;
+        if (want === part.laid) return false;
         pave((part.laid = want)?.material ?? null);
-        if (want || dataset[status] !== 'fallback') dataset[status] = want ? tier! : 'procedural';
         sweep();
         return !!want;
       },
@@ -236,7 +241,7 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
         if (!id) continue;
         if (slot === 'ground' && !neon || slot === 'helix' && !spiral) continue;
         const key = `${id}:${tier}${slot === 'road' ? '' : ':' + slot}`;
-        roadSet(id, tier, key, () => {});
+        roadSet(id, tier, key);
       }
     },
     sceneryPending(trackId: string, quality: VfxQuality, ultra = false): boolean {
