@@ -80,6 +80,8 @@ export function createSkyScene(scene) {
     halo.position.y = -25 + i * 25;
     landmark.add(halo);
   }
+  // Only these procedural meshes belong to this scene; the detailed kit attaches its own group later.
+  const heroMeshes = landmark.children.slice();
   // Fade the road's hero near the edge of its draw range. Clone the halo
   // materials so their opacity never changes the road rails or beacons.
   const towerCyan = cyan.clone(), towerMagenta = magenta.clone();
@@ -263,11 +265,12 @@ export function createSkyScene(scene) {
       group.removeFromParent();
       geometry.dispose();
       pavement.dispose();
-      for (const mesh of landmark.children) mesh.geometry.dispose();
+      for (const mesh of heroMeshes) mesh.geometry.dispose();
       for (const material of heroMaterials) material.dispose();
       for (const mat of [cyan, magenta, stripes, concrete, cloudMat, backdrop.material]) mat.dispose();
       backdrop.geometry.dispose();
       for (const mesh of [borders, rails, beacons, laneLines]) mesh.dispose();
+      skylineMesh.material.dispose();
       skylineMesh.dispose();
       skylineLights.material.dispose();
       skylineLights.dispose();

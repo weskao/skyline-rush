@@ -1,3 +1,9 @@
+# CI 45665976529 follow-up (2026-11-26)
+
+- [x] Original CI RED: Sky Spiral home/racing threw during disposal of an attached kit group; Crimson GT grid comparison timed out after the click-time countdown hold expired. Quality gate failed downstream.
+- [x] Isolated Node reproduction of the disposal ownership and delayed START boundary: 2 failures before, 2 passes after (synthetic fixtures, not full WebGL). Add actual Three.js ownership/order regression tests and keep all existing pose assertions.
+- [ ] Verify exact-HEAD full regression, including thermal home/spiral and racing/spiral, Crimson GT/Roadster grid, module-size, unit, typecheck, build and quality-gate. Local full checkout blocked by GitHub DNS and missing pnpm/Three.js dependencies; physical-device evidence remains separate.
+
 # CI wallet spacing follow-up (2026-11-25)
 
 - [x] Exact-HEAD CI RED: 345x206 wallet-to-track gap was 2px, expected at least 6px; the <=330px override caused the regression.

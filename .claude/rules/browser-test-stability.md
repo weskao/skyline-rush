@@ -344,3 +344,5 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
 - Arm a page-side frame recorder before Start for launch-flare assertions: countdown waves are transient, animated, and end before GO, not a static pool followed by a GO glow. Keep the GLB attachment, visibility and GPU program-count checks (CI 45403054733).
 
 - Measured-route tracks (Stormline, Frostbite, Monsoon, Volcanic) do not have a CourseGraph runtime. For their rendered player position, use the authored road frame and the rendered/interpolated lateral pose rather than `race.course.cars` or an arbitrary distance from the centreline; keep the strict horizontal error assertion in the measured-race pose helper.
+
+- A stationary-grid test must arm its countdown at the real START boundary, after asynchronous pack preflight. A click-time RAF watcher with a wall-clock expiry can stop before the countdown starts on CPU-only CI (run 45665976529). Retain the actual START click, phase assertion and pose comparisons; use the existing test-only capture hook, never change production countdown timing.
