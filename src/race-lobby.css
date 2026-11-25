@@ -532,4 +532,7 @@ body[data-phase="ready"] .toolbar :is(#camera-button, #pause-button) { display: 
 @media (max-height: 330px) and (orientation: landscape) {
   .lobby-compact .lobby-race-heading { margin-block-end: 0; padding-block: 2px; }
   body:not([data-fold-axis], .airflow-active) .lobby-setup .lobby-race-heading { margin-block-end: 0; padding-block: 2px; }
+  /* Keep a real clearance above the fixed Garage row, including fractional layout pixels. */
+  body:not([data-fold-axis], .airflow-active) #intro.lobby-compact .home-intro-topbar { margin-bottom: 2px; }
+  body:not([data-fold-axis], .airflow-active) #intro #race-mode-picker { padding-block: 0; }
 }
