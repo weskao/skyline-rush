@@ -43,6 +43,19 @@ test('materials blend from creation, so the first hit compiles no new shader mid
   for (const m of materialsOf(car)) assert.ok(m.transparent, `${m.type} is transparent before any hit`);
 });
 
+test('a solid car draws each double-sided part once; a translucent fade keeps both passes', () => {
+  const car = makeCar(CAR_STYLES.roadster);
+  const fade = createGraceFade(car);
+  const faded = materialsOf(car).filter(m => !(m instanceof THREE.ShaderMaterial) && m !== car.getObjectByName('Rear LED core').material);
+  assert.ok(faded.length > 0);
+  const single = () => faded.every(m => m.forceSinglePass === (m.opacity >= 1));
+  assert.ok(single(), 'solid at creation');
+  fade(0.4);
+  assert.ok(faded.every(m => m.forceSinglePass === false), 'translucent while fading');
+  fade(1);
+  assert.ok(single(), 'solid again after the fade');
+});
+
 test('the race renderer drives the player phase effect from live race state', () => {
   const world = readFileSync(new URL('../src/world.js', import.meta.url), 'utf8');
   assert.match(world, /createGhostPhase\(player\)/);

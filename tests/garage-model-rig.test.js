@@ -387,6 +387,28 @@ test('Ghost Phase fades the GLB body with the procedural car and preserves its r
   ctx.original.traverse(o => { if (o.isMesh) assert.ok(!o.material.transparent && o.material.opacity === (o.name === 'glass' ? 0.5 : 1), o.name); });
 });
 
+test('solid GLB car materials draw once; only a translucent fade keeps the back-then-front passes', async () => {
+  // A transparent DoubleSide material is drawn twice per frame with a program re-lookup between the passes (three r186
+  // renderObject). The glTF materials are double-sided, so every solid car part used to pay it for nothing.
+  const ctx = setup();
+  ctx.original.traverse(o => { if (o.isMesh) o.material.side = THREE.DoubleSide; });
+  const fade = createGraceFade(ctx.car);
+  ctx.model.sync(true, 'high', ctx.host);
+  await settle();
+  ctx.model.sync(true, 'high', ctx.host);
+  const materials = new Set();
+  glbBody(ctx.car).parent.traverse(o => { if (o.isMesh) materials.add(o.material); });
+  assert.ok(materials.size > 1);
+  const passes = () => Object.fromEntries([...materials].map(m => [m.name, m.forceSinglePass]));
+  const solid = Object.fromEntries([...materials].map(m => [m.name, m.name !== 'roadster_glass'])); // glass is authored at 0.5
+  assert.deepEqual(passes(), solid, 'solid parts draw once from dress time');
+  fade(0.4); ctx.model.sync(true, 'high', ctx.host);
+  assert.ok([...materials].filter(m => m.name !== 'roadster_light').every(m => m.forceSinglePass === false), 'a translucent body keeps both passes');
+  fade(1); ctx.model.sync(true, 'high', ctx.host);
+  assert.deepEqual(passes(), solid, 'solid again after the fade');
+  ctx.original.traverse(o => { if (o.isMesh) assert.equal(o.material.forceSinglePass, false, 'the cached original is untouched'); });
+});
+
 test('a car that never fades (Garage Studio, showcase) keeps the GLB opaque', async () => {
   const { glb } = await dressed();
   for (const name of ['body', 'tail_light', 'glass']) assert.equal(glb(name).material.transparent, false, name);
