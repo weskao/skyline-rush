@@ -154,6 +154,16 @@ Home, track swipe and World Tour.
 | 13 | No resource accumulation | DONE | `tests/scene-resource-cycles.test.js`. Coming Soon stages: a bounded cache with eviction disposal already exists (`src/upcoming-showcase.ts` `cachedStages`/`disposeStage`); showcase draw counts are identical before and after. |
 | 14 | Home and Garage modules | PARTIAL | Home draws: Taipei 471 → 346, Tokyo 305 → 249, Monsoon 294 → 260 through the shared scene modules. Garage-specific modules were **not** changed: no measured Garage bottleneck in this workstream's harness, so this is UNVERIFIED. |
 
+## Local gates (LOCAL, after merging the latest `feature/perf-thermal-00-baseline`)
+
+| Gate | Result |
+|------|--------|
+| `node --test tests/module-size.test.js` | 3/3 pass |
+| `pnpm test` | 3975 tests, 3971 pass, 0 fail, 0 cancelled |
+| `pnpm run typecheck` | exit 0 |
+| `pnpm run build` | exit 0 |
+| Focused browser specs (12 files: shader warmup, World Tour mid-race/showcase/routes, Monsoon, Volcanic, Stormline, Frostbite, Dune, Skyfall, Coming Soon home, track swipe), `--workers=1` against `dist/` | 56/56 pass (8.7 min), run before the baseline merge; the merge touched no scene code |
+
 ## Wiring needs (world.js / main.js are out of scope)
 
 - None are required. All changes sit behind existing factory APIs.
