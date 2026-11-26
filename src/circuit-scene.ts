@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { roadRibbon } from './geometry.ts';
+import { skipHiddenMatrixWork } from './scene-matrix-culling.ts';
 import { CIRCUIT_BEACON, CIRCUIT_HALF_WIDTH, CIRCUIT_LENGTH, CIRCUIT_RADIUS, circuitFrame } from './circuit-track.ts';
 
 // Immutable complete loop: geometry is built once, then translated by the same periodic origin as cars.
@@ -45,7 +46,7 @@ export function createCircuitScene(scene: THREE.Scene) {
     new THREE.MeshStandardMaterial({ color: '#c6d9d5', roughness: .8 }));
   column.position.y = 16; beacon.add(column);
   const crown = new THREE.Mesh(new THREE.ConeGeometry(4, 8, 12), new THREE.MeshStandardMaterial({ color: '#ed9959' }));
-  crown.position.y = 36; beacon.add(crown); group.add(beacon); scene.add(group);
+  crown.position.y = 36; beacon.add(crown); group.add(beacon); scene.add(skipHiddenMatrixWork(group)); // parked on every other track
   return {
     update(distance: number): void { const p = circuitFrame(distance).point; group.visible = true; group.position.set(-p.x, -p.y, -p.z); },
     hide(): void { group.visible = false; },

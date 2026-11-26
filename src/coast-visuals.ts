@@ -6,6 +6,7 @@ import { createCoastBoatLayer, type CoastBoatLayer } from './coast-boats.ts';
 import { coastChunkWindow, coastFarWindow, createCoastModelLayer, type CoastModelLayer, type ShoreSink } from './coast-scenery-glb.ts';
 import { coastGullWindow, createCoastSeagulls } from './coast-seagulls.ts';
 import { createCoastGreenery, type CoastGreenery } from './coast-greenery.ts';
+import { skipHiddenMatrixWork } from './scene-matrix-culling.ts';
 
 // Shared Coast palette, separate from the five authored World Tour routes.
 export const COAST_PALETTE = Object.freeze({
@@ -24,7 +25,7 @@ type ScenicMesh = THREE.InstancedMesh<THREE.BufferGeometry, THREE.MeshStandardMa
 export function createCoastScenery(scene: THREE.Scene) {
   const group = new THREE.Group();
   group.name = 'Coast scenic details';
-  scene.add(group);
+  scene.add(skipHiddenMatrixWork(group)); // parked on every other track
   const rock = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1,0),
     new THREE.MeshStandardMaterial({color:'#71848a',roughness:.92,metalness:0,flatShading:true}),TOTAL);
   const tree = new THREE.InstancedMesh(new THREE.ConeGeometry(1,1,6),
