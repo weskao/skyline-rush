@@ -4,6 +4,9 @@
 - [x] RED → GREEN: `tests/neon-underpass-physics.test.js` (solid ceiling vs Aurora, portal wall at 3.5/5/7 m, portal crossing above the roof, 30/60/120 Hz) 11/11; full `pnpm test` 3958/3964, 2 audio-reveal failures that pass 66/66 three times alone (load flake, unrelated); module-size, typecheck, build exit 0.
 - [x] Render bug fixed: the kits hide the fallback roof through `material.visible`, so `world.js` read `tunnelRoofs.visible` (always true) and drew the High car at 4.5 m inside the 7.2 m deck. RED/GREEN `tests/neon-look-browser.spec.js` (*draws a car on the rail roof on top of the roof it shows*, High 7.2 / Low 4.5); suite 14/14. WebGL captures at Low and High: roof, ceiling, portal crossing, portal wall.
 - [ ] Pending: real phones (both orientations), Medium tier capture, `make verify`, exact-HEAD CI.
+- [ ] Owner follow-up: the roof ends at the rail bridges (`rail_portal`, pivots 698 / 902 m: 9.24 m deck, railing top 10.6 m). Driving the roof into the exit bridge was drawn as a climb onto it while physics drove on. Now each bridge face (690, 705.8, 894.2, 910 m) between the tunnel ceiling and 10.6 m is one barrier hit that holds the car at the face (held speed ≤ 18 m/s so FLY still lifts it out); the bridge deck carries cars at 9.24 m; the detailed tier draws the true altitude (no portal lift). `blockNeonPortal` in `src/neon-roof.ts`.
+- [x] RED → GREEN: `tests/neon-underpass-physics.test.js` 13/13 (exit-bridge wall, bridge deck + railing, portal wall to 10 m, 30/60/120 Hz); browser *stops a roof car at the exit rail bridge* High/Low 2/2, existing *draws a car on the rail roof* 2/2; full `pnpm test` 3962 pass / 0 fail; module-size, typecheck, build exit 0. WebGL High capture: car held at 7.2 m against the girder face.
+- [ ] Known limits: Low draws no bridge, so its wall is invisible there (physics is the same on every tier); the HUD shows up to 65 km/h while the car is held at the face.
 
 # Neon rooftop support (2026-11-25)
 
