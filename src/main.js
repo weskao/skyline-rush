@@ -31,6 +31,7 @@ import { updateRaceHalfwayView } from './race-halfway-view.ts';
 import { equippedCar, loadCarPaint, saveCarPaint } from './car-catalog.ts';
 import { createPerfOverlay } from './perf-overlay.ts';
 import { setupFpsUI } from './fps-ui.ts';
+import { createRenderDemand, setupRenderLifecycle } from './render-lifecycle.ts';
 import { advanceCountdown, drainSteps, skipsCountdown, SIM_STEP } from './frame-pacing.ts';
 import { captureRaceMotion } from './vehicle-render-motion.js';
 import { createStuntRun, stuntHeatContinues, stuntHeatLimit } from './stunt-attack.ts';
@@ -506,6 +507,7 @@ try {
   let previousTime = performance.now(), accumulator = 0, hudElapsed = 0, wasCalm = calmMotion();
   const perfOverlay = createPerfOverlay(location.search, () => world.inspectRenderLoad(), !!import.meta.env.VITE_DIAG);
   const fps = setupFpsUI(scale => world.setRenderScale(scale), world.deepPerf);
+  const demand = createRenderDemand(), lifecycle = setupRenderLifecycle($('#world'), demand); // on-demand drawing: paused/covered only
   let motionRace = null; const previousMotion = {}, renderMotion = { previous: previousMotion, alpha: 1 };
   function frame(now) {
     // Requested first: a frame that throws still reports its error, but never freezes the game for good.
@@ -544,7 +546,7 @@ try {
     const ghost = touchUI.prefs().ghost && race.session.presentation.ghostEnabled && race.phase !== 'ready' ? ghosts.forRace(race) : null;
     const shouldRender = fps.shouldRender(now, dt, race.phase === 'racing', document.hidden);
     let drawn = false;
-    if (shouldRender) {
+    if (shouldRender && demand.wants({ phase: race.phase, covered: lifecycle.covered && !startup.waitingForFrame, contextLost, pending: world.raceFramePending(race) })) {
       const renderStarted = performance.now();
       renderMotion.alpha = Math.max(0, Math.min(1, accumulator / SIM_STEP));
       try {
