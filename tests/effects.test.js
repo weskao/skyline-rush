@@ -5,6 +5,8 @@ import { createRace, MAGNET_RANGE } from '../src/game.js';
 import { createEffects } from '../src/effects.js';
 import { drawnMarkers } from '../src/marker-pool.js';
 import { seededRng } from '../src/rng.ts';
+import { gpuUploadShadow, assertGpuMatchesCpu } from './helpers/gpu-upload-shadow.js';
+import { PARTICLE_FRAGMENT, PARTICLE_VERTEX } from '../src/effects-particle-shaders.js';
 
 test('a nonpositive first frame cannot revive dormant particles with uninitialized data', t => {
   globalThis.devicePixelRatio = 1;
@@ -26,7 +28,7 @@ function flight(t, altitude = 4, speed = 40) {
   race.phase = 'racing';
   Object.assign(race.player, { x: 0, altitude, speed, thrusting: true });
   const points = scene.children.find(object => object.isPoints);
-  return { effects, race, attributes: points.geometry.attributes };
+  return { effects, race, attributes: points.geometry.attributes, geometry: points.geometry };
 }
 
 function boostSparksAfterLanding(t, chain) {
@@ -383,4 +385,38 @@ test('11B: a Sky Spiral hoop sits on the helix road frame and swivels ±0.6 rad 
   race.rings = [{ ...hoop, spin: 0 }];
   assert.equal(held, pose(1.1).swivel, 'reduced motion draws the hoop exactly as an unspun one, square to the road');
   assert.ok(Math.abs(held) < 1e-6, 'square to the road at Float32 precision');
+});
+
+test('the particle pool uploads and draws only live particles, and the GPU copy matches them every frame', t => {
+  const { effects, race, geometry } = flight(t);
+  const attributes = Object.values(geometry.attributes), gpu = gpuUploadShadow();
+  gpu.sync(attributes);
+  t.mock.method(Math, 'random', seededRng(7, 'pool-upload'));
+  for (let frame = 0; frame < 40; frame++) {
+    effects.update(race, 0.016, 0, false, false);
+    if (frame >= 10 && frame < 20) continue; // a paused/hidden render must not lose or pile up pending writes
+    assert.ok(attributes.every(a => a.updateRanges.length <= 1), 'pending ranges stay bounded');
+    gpu.sync(attributes);
+    assertGpuMatchesCpu(assert, geometry, gpu, `frame ${frame}`);
+  }
+  race.player.thrusting = false;
+  for (let frame = 0; frame < 200; frame++) { effects.update(race, 0.016, 0, false, false); gpu.sync(attributes); }
+  assert.ok(geometry.attributes.alpha.array.every(a => a === 0), 'every particle expired');
+  effects.update(race, 0.016, 0, false, false);
+  assert.equal(gpu.sync(attributes), 0, 'an empty pool uploads nothing');
+  assert.equal(geometry.drawRange.count, 0, 'an empty pool draws nothing');
+  race.player.thrusting = true;
+  effects.update(race, 0.016, 0, false, false);
+  effects.reset();
+  gpu.sync(attributes);
+  assertGpuMatchesCpu(assert, geometry, gpu, 'after reset');
+  race.player.thrusting = false;
+  effects.update(race, 0.016, 0, false, false);
+  assert.equal(gpu.sync(attributes), 0, 'reset leaves nothing to upload');
+});
+
+test('a zero-alpha particle is clipped before rasterising, since its NormalBlending fragments change no pixel', () => {
+  // alpha 0 -> gl_FragColor.a = soft * 0 = 0 -> SRC_ALPHA/ONE_MINUS_SRC_ALPHA leaves colour and alpha untouched.
+  assert.match(PARTICLE_VERTEX, /if\(alpha<=0\.\)\{gl_Position=vec4\(2\.,2\.,2\.,1\.\);gl_PointSize=0\.;return;\}/);
+  assert.match(PARTICLE_FRAGMENT, /gl_FragColor=vec4\(vColor,soft\*vAlpha\)/);
 });
