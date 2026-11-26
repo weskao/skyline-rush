@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { skipHiddenMatrixWork } from './scene-matrix-culling.ts';
 import { FROSTBITE_CANYON_GRAPH as graph, FROSTBITE_SEED } from './courses/frostbite-canyon.ts';
 import { FROSTBITE_SPAN, FROSTBITE_TRACK, frostbiteFrame, frostbiteLeg } from './courses/frostbite-race.ts';
 import { routeLength } from './course-route-frame.ts';
@@ -251,7 +252,8 @@ export function createFrostbiteRaceScene(scene: THREE.Scene) {
   const mid = frostbiteFrame((from + to) / 2).point;
   chunks.push({ group: mist, x: mid.x, z: mid.z, radius: (to - from) / 2 + 60 });
   group.add(mist);
-  scene.add(group);
+  for (const chunk of chunks) skipHiddenMatrixWork(chunk.group); // culled chunks + parked scene: no hidden matrix work
+  scene.add(skipHiddenMatrixWork(group));
 
   return {
     group,

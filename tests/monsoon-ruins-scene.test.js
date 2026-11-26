@@ -216,9 +216,15 @@ test('rain/fern animation respects reduced motion and all scene-owned resources 
   chunk.update(3, false);
   assert.notEqual(dropArray[1], before);
   assert.ok(rain.visible);
+  // Twelve ferns per chunk are one instanced draw; each keeps its own sway phase.
+  assert.ok(fern.isInstancedMesh, 'ferns share one draw');
+  assert.equal(fern.count, 12);
+  const matrix = new THREE.Matrix4(), euler = new THREE.Euler();
+  const swayOf = i => { fern.getMatrixAt(i, matrix); return euler.setFromRotationMatrix(matrix).z; };
+  for (let i = 0; i < 12; i++) assert.ok(Math.abs(swayOf(i) - .12 * Math.sin(3 * .7 + i)) < 1e-6, `fern ${i} sway`);
   chunk.update(8, true);
   assert.equal(rain.visible, false);
-  assert.equal(fern.rotation.z, 0);
+  for (let i = 0; i < 12; i++) assert.equal(Math.abs(swayOf(i)), 0, `fern ${i} still under reduced motion`);
   const mesh = find(chunk.group, 'monsoon-course-mud-road');
   let disposed = 0;
   mesh.geometry.addEventListener('dispose', () => disposed++);

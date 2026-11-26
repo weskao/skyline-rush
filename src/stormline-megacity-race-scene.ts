@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { skipHiddenMatrixWork } from './scene-matrix-culling.ts';
 import { STORMLINE_TRACK, stormlineFrame } from './courses/stormline-megacity-race.ts';
 import { stormlineRuntimeLength as edgeLength, PLAYABLE_COURSE_GRAPH as graph } from './courses/stormline-megacity-runtime-adapter.ts';
 import { sampleStormlineRoad } from './courses/stormline-course-graph.ts';
@@ -89,7 +90,8 @@ export function createStormlineRaceScene(scene: THREE.Scene) {
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(size.x, size.z).rotateX(-Math.PI / 2), materials.ground);
   ground.position.set(centre.x, -.25, centre.z); ground.name = 'city-floor';
   group.add(pylons, ground);
-  scene.add(group);
+  for (const chunk of chunks) skipHiddenMatrixWork(chunk.group); // culled chunks + parked scene: no hidden matrix work
+  scene.add(skipHiddenMatrixWork(group));
 
   return {
     group,

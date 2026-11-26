@@ -5,8 +5,8 @@ import { roadRibbon } from './geometry.ts';
 import { makeLandmark } from './world-tour-landmarks.js';
 import { createSceneryKit, sceneryPlan, SCENERY_KINDS, SCENERY_CHUNK_METRES, ROAD_CHARACTER, terrainHeight, propParts, clearOfRoad, DETAIL_KINDS, detailSetPlan } from './world-tour-scenery.js';
 import { createTunnelKit } from './world-tour-tunnels.js'; import { createWorldTourMotion } from './world-tour-motion.js';
-import { batchStaticChunk, poolStaticChunks, releaseStaticPool } from './world-tour-batching.ts';
-import { createEndlessObstacleWindow } from './endless-world-tour-window.js';
+import { batchStaticChunk, poolStaticChunks, releaseStaticPool, mergeStaticMeshes } from './world-tour-batching.ts';
+import { createEndlessObstacleWindow } from './endless-world-tour-window.js'; import { skipHiddenMatrixWork } from './scene-matrix-culling.ts';
 // One scenery system for five distinct destinations. Locations are authored as
 // race-distance + roadside offsets; meshes follow the *real* 3D driving path.
 export const WORLD_THEMES = {
@@ -133,7 +133,7 @@ export function roadObstacles(id){
 
 export const endlessRoadObstacles=createEndlessObstacleWindow(WORLD_THEMES,landmarkSafePlan,solidParts,SCENERY_CHUNK_METRES);
 export function createWorldTourScene(scene){
-  const group=new THREE.Group();group.name='World Tour authored scenery';group.visible=false;scene.add(group);
+  const group=new THREE.Group();group.name='World Tour authored scenery';group.visible=false;scene.add(skipHiddenMatrixWork(group));
   const geometry=roadRibbon(ROWS);
   const [positions,normals,indices]=[geometry.attributes.position.array,geometry.attributes.normal.array,geometry.index.array];
   const roadMat=new THREE.MeshStandardMaterial({color:'#253446',metalness:.035,roughness:.93,side:THREE.DoubleSide});
@@ -280,8 +280,8 @@ export function createWorldTourScene(scene){
     mesh.setMatrixAt(index,dummy.matrix);
   };
   const clearHeroes=()=>{
-    for(const mat of heroMaterials)mat.dispose();
-    heroMaterials=[];
+    for(const mat of heroMaterials)mat.dispose();heroMaterials=[];
+    for(const hero of heroGroup.children)hero.traverse(o=>{if(o.userData.ownGeometry)o.geometry.dispose();}); // merged landmark buffers
     while(heroGroup.children.length)heroGroup.remove(heroGroup.children[0]);
   };
   function configure(id){
@@ -308,7 +308,7 @@ export function createWorldTourScene(scene){
     asteroids.visible=false; // Distance-anchored debris now comes from the scenery kit.
     shibuyaGroup.visible=id==='tokyo';
     for(const item of theme.landmarks){
-      const hero=makeLandmark(item.kind,theme);
+      const hero=makeLandmark(item.kind,theme);mergeStaticMeshes(hero); // one draw per landmark material
       hero.userData.entry=item;
       heroGroup.add(hero);
       hero.traverse(object=>{if(object.isMesh)heroMaterials.push(object.material);});
