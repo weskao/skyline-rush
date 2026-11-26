@@ -1,5 +1,5 @@
 import type { CourseGraph } from './course-graph.ts';
-import { routeLength } from './course-route-frame.ts';
+import { edgeOf, routeLength } from './course-route-frame.ts';
 import type { CourseFleet } from './course-fleet.ts';
 
 /** Deterministic branch hint for existing AI: no flight edge without flight authorization. */
@@ -39,7 +39,7 @@ export function rankCourseFleet(
   };
   const ranked = fleet.map((car, index) => {
     const travel = car.travel, cp = travel.nextCheckpoint;
-    const edge = graph.edges.find(candidate => candidate.id === travel.currentEdgeId);
+    const edge = edgeOf(graph, travel.currentEdgeId);
     const valid = edge && Number.isSafeInteger(cp) && cp >= 0 && cp <= graph.checkpoints.length &&
       Number.isFinite(travel.localS) && travel.localS >= 0 && travel.localS <= routeLength(graph, edge.id) &&
       (cp === 0 || Number.isFinite(distanceTo(graph.checkpoints[cp - 1], edge.from)));

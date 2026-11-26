@@ -1,6 +1,6 @@
 /** Pure per-car CourseGraph race runtime (spec §5.2, §6, §7). No DOM, no Three.js, no engine imports. */
 import type { CourseEdge, CourseGraph, CoursePoint3 } from './course-graph.ts';
-import { routeLength, sampleRoute, type CourseRouteFrame } from './course-route-frame.ts';
+import { edgeOf, routeLength, sampleRoute, type CourseRouteFrame } from './course-route-frame.ts';
 import { createCourseTravel, type CourseTravel } from './course-travel.ts';
 import { advanceMeasuredCourseTravel } from './course-measured-motion.ts';
 import type { GateHeightBand } from './course-signed-gates.ts';
@@ -23,7 +23,8 @@ export interface CourseRuntime { readonly spec: CourseRaceSpec; readonly cars: M
 export type CourseStepEvent = 'moved' | 'crossed' | 'finished' | 'rejected';
 
 function edgeById(graph: CourseGraph, id: string): CourseEdge {
-  for (const edge of graph.edges) if (edge.id === id) return edge;
+  const edge = edgeOf(graph, id);
+  if (edge) return edge;
   throw new RangeError(`Unknown CourseGraph edge: ${id}`);
 }
 function carOf(rt: CourseRuntime, id: string): CourseCar {
