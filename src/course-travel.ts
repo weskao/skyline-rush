@@ -1,5 +1,5 @@
 import type { CourseGraph, CoursePoint3 } from './course-graph.ts';
-import { routeLength, sampleRoute } from './course-route-frame.ts';
+import { edgeOf, routeLength, sampleRoute } from './course-route-frame.ts';
 import { advanceRouteProgress, createRouteProgress, type RouteProgress } from './course-progress.ts';
 
 /** Opt-in graph movement in physical metres. The legacy Race simulation is unaffected. */
@@ -33,7 +33,7 @@ export function advanceCourseTravel(
 ): CourseTravel {
   if (state.finished || !Number.isFinite(metres) || metres <= 0 ||
       !Number.isFinite(state.localS) || !Number.isFinite(state.lateral) || !Number.isFinite(state.altitude)) return state;
-  const startEdge = graph.edges.find(edge => edge.id === state.currentEdgeId);
+  const startEdge = edgeOf(graph, state.currentEdgeId);
   if (!startEdge || state.localS < 0 || state.localS >= routeLength(graph, startEdge.id)) return state;
   if (startEdge.mode === 'flight' && !allowFlight) return state;
 
@@ -41,14 +41,14 @@ export function advanceCourseTravel(
   let remaining = metres;
   // Acyclic CourseGraph: at most one transition per edge in a single simulation step.
   for (let traversed = 0; traversed <= graph.edges.length; traversed++) {
-    const edge = graph.edges.find(candidate => candidate.id === current.currentEdgeId)!;
+    const edge = edgeOf(graph, current.currentEdgeId)!;
     const length = routeLength(graph, edge.id);
     const toEnd = length - current.localS;
     if (remaining < toEnd) return { ...current, localS: current.localS + remaining };
 
     const node = graph.nodes.find(candidate => candidate.id === edge.to)!;
     const selected = choices[node.id] ?? graph.groundRoute.find(id => graph.edges.some(e => e.id === id && e.from === node.id));
-    const next = graph.edges.find(candidate => candidate.id === selected);
+    const next = edgeOf(graph, selected);
     if (node.id !== graph.finish && (!next || next.from !== node.id || (next.mode === 'flight' && !allowFlight))) return state;
     const progressed = advanceRouteProgress(graph, current, {
       edgeId: edge.id, fromS: current.localS, toS: length,

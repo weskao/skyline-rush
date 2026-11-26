@@ -10,7 +10,7 @@ export interface CourseRouteFrame {
   readonly width: number;
   readonly curvature: number;
 }
-interface Samples { points: CoursePoint3[]; distances: number[]; length: number }
+interface Samples { points: CoursePoint3[]; distances: number[]; length: number; curvature: Float64Array }
 const cache = new WeakMap<CourseEdge, Samples>();
 const step = 24; // Fixed, deterministic arc-length LUT; no allocations in hot-path sampling.
 const sub = (a: CoursePoint3, b: CoursePoint3): CoursePoint3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
@@ -43,12 +43,26 @@ function samplesFor(edge: CourseEdge): Samples {
       points.push(p); distances.push(distance);
     }
   }
-  data = { points, distances, length: distance };
+  data = { points, distances, length: distance, curvature: new Float64Array(points.length).fill(NaN) }; // curvature memo per segment, filled on first sample
   cache.set(edge, data);
   return data;
 }
+// Edge-id index per immutable graph (first edge wins, like Array.find); replaces per-call scans of graph.edges.
+const edgeIndexes = new WeakMap<CourseGraph, Map<string, CourseEdge>>();
+let lastGraph: CourseGraph | undefined, lastIndex: Map<string, CourseEdge> | undefined; // a race runs on one graph: skip the WeakMap lookup
+export function edgeOf(graph: CourseGraph, edgeId: string | undefined): CourseEdge | undefined {
+  if (graph === lastGraph) return lastIndex!.get(edgeId!);
+  let index = edgeIndexes.get(graph);
+  if (!index) {
+    index = new Map();
+    for (const edge of graph.edges) if (!index.has(edge.id)) index.set(edge.id, edge);
+    edgeIndexes.set(graph, index);
+  }
+  lastGraph = graph; lastIndex = index;
+  return index.get(edgeId!); // an undefined id is simply absent
+}
 const findEdge = (graph: CourseGraph, edgeId: string): CourseEdge => {
-  const edge = graph.edges.find(x => x.id === edgeId);
+  const edge = edgeOf(graph, edgeId);
   if (!edge) throw new RangeError(`Unknown CourseGraph edge: ${edgeId}`);
   return edge;
 };
@@ -106,7 +120,10 @@ export function sampleRoute(graph: CourseGraph, edgeId: string, distance: number
   const right: CoursePoint3 = horizontal > 1e-7
     ? [-forward[2] / horizontal, 0, forward[0] / horizontal] : [1, 0, 0];
   const up = unit(cross(right, forward));
-  const prev = unit(sub(a, before)), next = unit(sub(after, b));
-  const curvature = Math.hypot(...sub(prev, next)) / Math.max(1, data.distances[high] - data.distances[low]);
+  let curvature = data.curvature[low]!; // depends only on the segment, never on t: same value as recomputing it
+  if (Number.isNaN(curvature)) {
+    const prev = unit(sub(a, before)), next = unit(sub(after, b));
+    data.curvature[low] = curvature = Math.hypot(...sub(prev, next)) / Math.max(1, data.distances[high] - data.distances[low]);
+  }
   return { edgeId, localS, point, forward, right, up, width: edge.width, curvature };
 }

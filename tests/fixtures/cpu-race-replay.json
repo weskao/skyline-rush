@@ -1,0 +1,706 @@
+{
+  "alpine|classic": {
+    "digest": "ec5400c6d469f770247ade68fb40acab80e4729c92f157f890295b918d83afe7",
+    "cueDigest": "ba3cd8ab48ff4c9cfdcb1ac900980c3cca7c22982a86d135e7a24ee65d212fa4",
+    "ticks": 7152,
+    "phase": "finished",
+    "elapsed": 119.197999,
+    "result": {
+      "time": 119.19799889161207,
+      "position": 8,
+      "stars": 2,
+      "score": 4309,
+      "success": true
+    },
+    "cues": 226,
+    "player": {
+      "collisions": 17,
+      "falls": 0,
+      "nearMisses": 7,
+      "score": 4309,
+      "distance": 10000
+    },
+    "pickupsTaken": 17,
+    "ringsHit": 10,
+    "rivalFinish": [
+      116.933955,
+      103.434885,
+      114.352383,
+      111.353382,
+      115.034685,
+      111.580951,
+      109.997814
+    ],
+    "rivalDistance": [
+      10001.031,
+      10343.314,
+      10001.346,
+      10073.48,
+      10102.999,
+      10068.33,
+      10098.213
+    ],
+    "standings": null
+  },
+  "aurora|classic": {
+    "digest": "37d557f73769973a33934b37c9ab453c4c6e5b423315c83fc6526f3c79e2ff8c",
+    "cueDigest": "ab38e12ae3e174cbab6b4a305194a50fac1f10c7e0d3fbdf82f06f565025d33d",
+    "ticks": 7348,
+    "phase": "finished",
+    "elapsed": 122.452787,
+    "result": {
+      "time": 122.4527866059937,
+      "position": 8,
+      "stars": 3,
+      "score": 6273,
+      "success": true
+    },
+    "cues": 243,
+    "player": {
+      "collisions": 20,
+      "falls": 0,
+      "nearMisses": 4,
+      "score": 6273,
+      "distance": 10000
+    },
+    "pickupsTaken": 11,
+    "ringsHit": 28,
+    "rivalFinish": [
+      100.996549,
+      110.245034,
+      114.814821,
+      116.592469,
+      116.372135,
+      113.238565,
+      105.03903
+    ],
+    "rivalDistance": [
+      10457.882,
+      10267.824,
+      10241.419,
+      10011.353,
+      10116.143,
+      10124.096,
+      10325.309
+    ],
+    "standings": null
+  },
+  "canyon|classic": {
+    "digest": "1e84dfc20c7005cc38afba09bb522f6780645a5f43496e44b670544721affe4d",
+    "cueDigest": "d1e780165fbbff838a11ffbf0fd9e4fefcfc0b9b9bdcd6b994fcfa07056eb0dc",
+    "ticks": 7490,
+    "phase": "finished",
+    "elapsed": 124.830261,
+    "result": {
+      "time": 124.8302610281522,
+      "position": 8,
+      "stars": 3,
+      "score": 7765,
+      "success": true
+    },
+    "cues": 227,
+    "player": {
+      "collisions": 10,
+      "falls": 2,
+      "nearMisses": 5,
+      "score": 7765,
+      "distance": 10000
+    },
+    "pickupsTaken": 5,
+    "ringsHit": 30,
+    "rivalFinish": [
+      105.838063,
+      112.337174,
+      108.134411,
+      102.984194,
+      98.341857,
+      104.045704,
+      100.382863
+    ],
+    "rivalDistance": [
+      10366.718,
+      10203.515,
+      10303.57,
+      10367.763,
+      10516.021,
+      10362.653,
+      10027.529
+    ],
+    "standings": null
+  },
+  "coastal|classic": {
+    "digest": "fc5bab0615cafba490e097c7e34b415d707fed6e2e0a1f9c5ef08899cec5ef80",
+    "cueDigest": "84f37eae7ae0dad5f6570aa4a6bbbbf5bef11de1c0f0704a5f758b33774b3d68",
+    "ticks": 7037,
+    "phase": "finished",
+    "elapsed": 117.269123,
+    "result": {
+      "time": 117.26912265402838,
+      "position": 8,
+      "stars": 3,
+      "score": 10412,
+      "success": true
+    },
+    "cues": 271,
+    "player": {
+      "collisions": 10,
+      "falls": 0,
+      "nearMisses": 8,
+      "score": 10412,
+      "distance": 10000
+    },
+    "pickupsTaken": 4,
+    "ringsHit": 36,
+    "rivalFinish": [
+      111.235703,
+      115.885072,
+      113.748865,
+      111.526402,
+      109.197227,
+      106.352818,
+      104.261652
+    ],
+    "rivalDistance": [
+      10037.519,
+      10021.94,
+      10025.449,
+      10028.469,
+      10177.014,
+      10162.64,
+      10318.147
+    ],
+    "standings": null
+  },
+  "coast|checkpoint": {
+    "digest": "d694d0b543b0bd5eead35851d537076f42e2b1322370fa18784afc11933b7b1d",
+    "cueDigest": "8b7bd4b7caccfb327b5e8026f70931a23c27627cbc9a80ecf473a156d1cb956d",
+    "ticks": 1681,
+    "phase": "finished",
+    "elapsed": 28.016667,
+    "result": {
+      "time": 28.016666666666357,
+      "position": 1,
+      "stars": 1,
+      "score": 377,
+      "success": false
+    },
+    "cues": 93,
+    "player": {
+      "collisions": 2,
+      "falls": 0,
+      "nearMisses": 0,
+      "score": 377,
+      "distance": 1847.6714
+    },
+    "pickupsTaken": 0,
+    "ringsHit": 0,
+    "rivalFinish": [],
+    "rivalDistance": [],
+    "standings": null
+  },
+  "coast|classic": {
+    "digest": "a496bdcf0b4bc19332d65203fda5d5f0de7776e662d12b0e82a7603e5d325a6b",
+    "cueDigest": "2c73b1a5249984b21fe8b5c4937aab41e964b113f1ac100af563d78cbf8398a3",
+    "ticks": 3715,
+    "phase": "finished",
+    "elapsed": 61.915511,
+    "result": {
+      "time": 61.915511306821905,
+      "position": 2,
+      "stars": 3,
+      "score": 5968,
+      "success": true
+    },
+    "cues": 116,
+    "player": {
+      "collisions": 5,
+      "falls": 0,
+      "nearMisses": 0,
+      "score": 5968,
+      "distance": 5000
+    },
+    "pickupsTaken": 11,
+    "ringsHit": 29,
+    "rivalFinish": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      61.119233
+    ],
+    "rivalDistance": [
+      4777.171,
+      4700.703,
+      4757.006,
+      4838.933,
+      4801.358,
+      4990.101,
+      5001.138
+    ],
+    "standings": null
+  },
+  "coast|elimination": {
+    "digest": "d4220f9eee81cc033ba81c214125615f700456376579153907c48c04cd96f0f0",
+    "cueDigest": "7c0119af70fdfc01b6280cc5a261782dc0a2d337bb7928e5b8311e6a556f4fd5",
+    "ticks": 600,
+    "phase": "finished",
+    "elapsed": 10,
+    "result": {
+      "time": 10.000000000000076,
+      "position": 8,
+      "stars": 1,
+      "score": 54,
+      "success": false
+    },
+    "cues": 16,
+    "player": {
+      "collisions": 0,
+      "falls": 0,
+      "nearMisses": 0,
+      "score": 54,
+      "distance": 258.4508
+    },
+    "pickupsTaken": 0,
+    "ringsHit": 0,
+    "rivalFinish": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "rivalDistance": [
+      665.485,
+      632.619,
+      611.091,
+      615.734,
+      609.079,
+      632.985,
+      668.719
+    ],
+    "standings": null
+  },
+  "cosmic|classic": {
+    "digest": "736090d67e92f808e5bcc3a867096c7c557892ae2b716796637c00ae40932cd4",
+    "cueDigest": "24da8c9c5c9b71b95c496d3c111f5fff61166634b25f1b23835bffc089e52376",
+    "ticks": 7289,
+    "phase": "finished",
+    "elapsed": 121.478096,
+    "result": {
+      "time": 121.47809617861121,
+      "position": 8,
+      "stars": 3,
+      "score": 6390,
+      "success": true
+    },
+    "cues": 220,
+    "player": {
+      "collisions": 12,
+      "falls": 0,
+      "nearMisses": 3,
+      "score": 6390,
+      "distance": 10000
+    },
+    "pickupsTaken": 5,
+    "ringsHit": 23,
+    "rivalFinish": [
+      113.973045,
+      108.929098,
+      114.640942,
+      104.422317,
+      111.374533,
+      112.56078,
+      115.045418
+    ],
+    "rivalDistance": [
+      10190.172,
+      10048.427,
+      10132.183,
+      10219.64,
+      10185.324,
+      10214.542,
+      10000.222
+    ],
+    "standings": null
+  },
+  "dune-tempest|classic": {
+    "digest": "4d20d69444f8c7595e2cf31f6fe423476e9e69b846257de22e14da537fc29404",
+    "cueDigest": "fd3e80d685fbc285c9e16aa46e8505a64f6d0b4c3835f7dc7f0c656c26f996df",
+    "ticks": 9000,
+    "phase": "racing",
+    "elapsed": 150,
+    "result": null,
+    "cues": 304,
+    "player": {
+      "collisions": 15,
+      "falls": 1,
+      "nearMisses": 5,
+      "score": 6416,
+      "distance": 11950.0762
+    },
+    "pickupsTaken": 22,
+    "ringsHit": 23,
+    "rivalFinish": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "rivalDistance": [
+      12418.259,
+      12949.755,
+      12626.349,
+      13202.952,
+      13323.137,
+      13440.415,
+      13098.782
+    ],
+    "standings": [
+      "PULSE",
+      "RIFT",
+      "COMET",
+      "VEGA",
+      "APEX",
+      "ORBIT",
+      "NOVA",
+      "YOU"
+    ]
+  },
+  "dune-tempest|time": {
+    "digest": "a853c56235b59fc52b5bb4c1f947000477b9d937ddaacf2f9bfa52f90050be2b",
+    "cueDigest": "5636b3dd8931f1dd84b21e5160af229ebe69d80385778393f227cc45b37cd69a",
+    "ticks": 9000,
+    "phase": "racing",
+    "elapsed": 150,
+    "result": null,
+    "cues": 395,
+    "player": {
+      "collisions": 16,
+      "falls": 2,
+      "nearMisses": 0,
+      "score": 2584,
+      "distance": 10620.8018
+    },
+    "pickupsTaken": 3,
+    "ringsHit": 4,
+    "rivalFinish": [],
+    "rivalDistance": [],
+    "standings": [
+      "YOU"
+    ]
+  },
+  "dune-tempest|time-seed2": {
+    "digest": "84f16351ea33d7be0bcd6e36fcf5ccfe58c7d4b66517ddfe59e48e198ff96405",
+    "cueDigest": "152c0606b45a06bc3c5f5a08e02eb100db9feb8a95688654fb052da309257f5b",
+    "ticks": 9000,
+    "phase": "racing",
+    "elapsed": 150,
+    "result": null,
+    "cues": 246,
+    "player": {
+      "collisions": 14,
+      "falls": 1,
+      "nearMisses": 0,
+      "score": 4934,
+      "distance": 13193.1291
+    },
+    "pickupsTaken": 10,
+    "ringsHit": 12,
+    "rivalFinish": [],
+    "rivalDistance": [],
+    "standings": [
+      "YOU"
+    ]
+  },
+  "harbor-circuit|circuit": {
+    "digest": "1e9c605398e0f39349cd7bbf653b1b10957eedaf4724468403ccc2b2649e8e5d",
+    "cueDigest": "e8af2dc5eb43d21dcab6e46814b7645b175e3ad2787e2f2d037b971264532555",
+    "ticks": 4325,
+    "phase": "finished",
+    "elapsed": 72.075471,
+    "result": {
+      "time": 72.07547087285232,
+      "position": 8,
+      "stars": 3,
+      "score": 10019,
+      "success": true
+    },
+    "cues": 118,
+    "player": {
+      "collisions": 3,
+      "falls": 0,
+      "nearMisses": 0,
+      "score": 10019,
+      "distance": 6000
+    },
+    "pickupsTaken": 7,
+    "ringsHit": 46,
+    "rivalFinish": [
+      56.481523,
+      58.493673,
+      61.773557,
+      62.007157,
+      59.183269,
+      60.065254,
+      59.739335
+    ],
+    "rivalDistance": [
+      6178.477,
+      6145.122,
+      6000.947,
+      6000.717,
+      6149.731,
+      6140.161,
+      6000.819
+    ],
+    "standings": null
+  },
+  "neon|classic": {
+    "digest": "fa2bbfc0b89262697f013797ab3cad4c88a1d627f746cb8b7700713dce2ebe90",
+    "cueDigest": "01c8c1d31bb0152e7cbbd87c7640908f3c2aea5d2bd8b02c1568b42e87c4a5a2",
+    "ticks": 7576,
+    "phase": "finished",
+    "elapsed": 126.264004,
+    "result": {
+      "time": 126.26400429292113,
+      "position": 4,
+      "stars": 3,
+      "score": 8552,
+      "success": true
+    },
+    "cues": 224,
+    "player": {
+      "collisions": 18,
+      "falls": 0,
+      "nearMisses": 10,
+      "score": 8552,
+      "distance": 10000
+    },
+    "pickupsTaken": 5,
+    "ringsHit": 29,
+    "rivalFinish": [
+      null,
+      124.231533,
+      null,
+      null,
+      null,
+      125.504032,
+      124.913464
+    ],
+    "rivalDistance": [
+      9633.027,
+      10029.677,
+      9568.187,
+      9902.709,
+      9980.364,
+      10001.009,
+      10000.258
+    ],
+    "standings": null
+  },
+  "skyfall-archipelago|classic": {
+    "digest": "30507aa3b798180aebcabbab17015fe88aa7a30597779db6a732ed4ba553427e",
+    "cueDigest": "83080ded199d2b9f2fe1ef1a02bd7325d0887c5e9ae074b40579ea1e21523a20",
+    "ticks": 9000,
+    "phase": "racing",
+    "elapsed": 150,
+    "result": null,
+    "cues": 202,
+    "player": {
+      "collisions": 13,
+      "falls": 2,
+      "nearMisses": 2,
+      "score": 11947,
+      "distance": 12438.1185
+    },
+    "pickupsTaken": 11,
+    "ringsHit": 46,
+    "rivalFinish": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "rivalDistance": [
+      12943.205,
+      12706.079,
+      13145.601,
+      12895.483,
+      13255.562,
+      13022.28,
+      14057.862
+    ],
+    "standings": [
+      "RIFT",
+      "PULSE",
+      "APEX",
+      "COMET",
+      "NOVA",
+      "VEGA",
+      "ORBIT",
+      "YOU"
+    ]
+  },
+  "skyfall-archipelago|time": {
+    "digest": "7470008e70e978869dc7a89e3b99125903abf6c5865f575c46a79826a2f62e34",
+    "cueDigest": "5df8674b8bceb0983ec2223adf4a660290a88d07b0694b5faf4020b44475a397",
+    "ticks": 9000,
+    "phase": "racing",
+    "elapsed": 150,
+    "result": null,
+    "cues": 364,
+    "player": {
+      "collisions": 14,
+      "falls": 1,
+      "nearMisses": 0,
+      "score": 3086,
+      "distance": 11779.6067
+    },
+    "pickupsTaken": 3,
+    "ringsHit": 5,
+    "rivalFinish": [],
+    "rivalDistance": [],
+    "standings": [
+      "YOU"
+    ]
+  },
+  "spiral|classic": {
+    "digest": "750d5f88b99ce210ecdc4315e47696bfcfdd30e52077253a4f64d8d628713fd0",
+    "cueDigest": "5b9802e9f1994e525fb99d3e658e3acb09a2aaf928836966d0d4ed091a85f953",
+    "ticks": 7826,
+    "phase": "finished",
+    "elapsed": 130.42019,
+    "result": {
+      "time": 130.42019000470245,
+      "position": 8,
+      "stars": 3,
+      "score": 10985,
+      "success": true
+    },
+    "cues": 245,
+    "player": {
+      "collisions": 9,
+      "falls": 4,
+      "nearMisses": 7,
+      "score": 10985,
+      "distance": 10000
+    },
+    "pickupsTaken": 25,
+    "ringsHit": 40,
+    "rivalFinish": [
+      94.720785,
+      109.646312,
+      103.790735,
+      99.358393,
+      106.479197,
+      106.351058,
+      106.858818
+    ],
+    "rivalDistance": [
+      10393.235,
+      10000.314,
+      10151.152,
+      10408.91,
+      10076.187,
+      10121,
+      10099.507
+    ],
+    "standings": null
+  },
+  "taipei|classic": {
+    "digest": "d5141d30c1e0f2d6ab8e87ca099f23f3429fcdad6a4861a9c7af3cd427c18529",
+    "cueDigest": "1a6f86b47e492c949047f2e2bf91d9b86cae86a121c765e7a08a0cb58ac7f477",
+    "ticks": 7240,
+    "phase": "finished",
+    "elapsed": 120.658269,
+    "result": {
+      "time": 120.65826895122343,
+      "position": 8,
+      "stars": 3,
+      "score": 5070,
+      "success": true
+    },
+    "cues": 247,
+    "player": {
+      "collisions": 17,
+      "falls": 0,
+      "nearMisses": 6,
+      "score": 5070,
+      "distance": 10000
+    },
+    "pickupsTaken": 5,
+    "ringsHit": 13,
+    "rivalFinish": [
+      115.793591,
+      117.891336,
+      113.621583,
+      115.108501,
+      111.344575,
+      113.318659,
+      108.22276
+    ],
+    "rivalDistance": [
+      10106.794,
+      10000.569,
+      10111.646,
+      10040.173,
+      10116.467,
+      10150.991,
+      10190.055
+    ],
+    "standings": null
+  },
+  "tokyo|classic": {
+    "digest": "31d9e36c83aa9e0f4a2e22e67a27daf0211c0701ae340462d3e7d9a966445c9d",
+    "cueDigest": "6b791a0642703326ec7cc3e816fcd26d364f3f661989966cbbe65f26256d67b3",
+    "ticks": 7222,
+    "phase": "finished",
+    "elapsed": 120.361324,
+    "result": {
+      "time": 120.36132373851841,
+      "position": 6,
+      "stars": 3,
+      "score": 8961,
+      "success": true
+    },
+    "cues": 213,
+    "player": {
+      "collisions": 21,
+      "falls": 0,
+      "nearMisses": 2,
+      "score": 8961,
+      "distance": 10000
+    },
+    "pickupsTaken": 2,
+    "ringsHit": 36,
+    "rivalFinish": [
+      113.700094,
+      null,
+      115.505212,
+      null,
+      119.630059,
+      118.615184,
+      117.366976
+    ],
+    "rivalDistance": [
+      10124.721,
+      9928.906,
+      10000.837,
+      9968.073,
+      10000.257,
+      10051.312,
+      10001.594
+    ],
+    "standings": null
+  }
+}

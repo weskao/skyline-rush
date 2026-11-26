@@ -4,7 +4,7 @@ import { physicalGap } from './circuit-track.ts';
 import { chooseCourseNextEdge } from './course-ai-standings.ts';
 import { routeLength, sampleRoute } from './course-route-frame.ts';
 import { COURSE_RUNTIMES, isCourseRuntime } from './course-runtimes.ts';
-import { chooseBranchByLateral, forkLateral, courseCarGap, courseNoRoadAt, courseRemaining, createCourseRuntime, placeCourseCar,
+import { chooseBranchByLateral, forkLateral, carOf, courseCarsGap, courseNoRoadAt, courseRemaining, createCourseRuntime, placeCourseCar,
   moveFinishedCourseCar, rankCourseRuntime, recoverCourseCar, setCourseContact, stepCourseCar, type CourseHazard, type CourseRuntime, type CourseStepEvent } from './course-race.ts';
 import { RESET_BACKTRACK, startRoadRecovery, type FallingCar, type RecoverySeat } from './road-falls.ts';
 import { knock } from './car-collisions.js';
@@ -181,6 +181,7 @@ function rivalSweepsItems(race: CourseHost, rt: CourseRuntime, id: string, rival
   const { travel } = rt.cars.get(id)!;
   let rowTaken = NaN; // a full-width ring row pays once per car
   for (const ring of [false, true]) for (const item of ring ? race.rings : race.pickups) {
+    if (item.edgeId !== prevEdge && item.edgeId !== travel.currentEdgeId) continue; // another edge: `from` would be NaN, so never swept
     const from = item.edgeId === prevEdge ? prevS : item.edgeId === travel.currentEdgeId ? -1 : NaN; // NaN: another edge
     const to = item.edgeId === travel.currentEdgeId ? travel.localS : Infinity;
     if (!(item.localS! > from && item.localS! <= to) || (ring && (item as { row?: boolean }).row && item.localS === rowTaken)) continue;
@@ -246,10 +247,10 @@ export function courseGapWarning(race: CourseHost): { from: number; need: number
 export function carGap(race: CourseRef & { trackId: string }, a: Car & { finishTime?: number | null }, b: Car & { finishTime?: number | null }): number | null {
   const rt = race.course;
   if (!rt) return physicalGap(race.trackId, a.distance, b.distance);
-  const from = idOf(race, a), to = idOf(race, b);
-  if (travelOf(rt, from).finished && !isParkedRival(a) && !(a === race.player && isParkedRival(b))) return null;
-  if (travelOf(rt, to).finished && !isParkedRival(b) && !(b === race.player && isParkedRival(a))) return null;
-  return courseCarGap(rt, from, to);
+  const start = carOf(rt, idOf(race, a)), end = carOf(rt, idOf(race, b));
+  if (start.travel.finished && !isParkedRival(a) && !(a === race.player && isParkedRival(b))) return null;
+  if (end.travel.finished && !isParkedRival(b) && !(b === race.player && isParkedRival(a))) return null;
+  return courseCarsGap(rt, start, end);
 }
 
 /** H4: how far `to` is ahead of `from` in race progress (remaining metres to FINISH on the graph). */

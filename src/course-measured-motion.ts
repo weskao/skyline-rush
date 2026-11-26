@@ -1,5 +1,5 @@
 import type { CourseGraph, CoursePoint3 } from './course-graph.ts';
-import { routeLength, sampleRoute } from './course-route-frame.ts';
+import { edgeOf, routeLength, sampleRoute } from './course-route-frame.ts';
 import { courseTravelPosition, type CourseTravel } from './course-travel.ts';
 import { advanceSignedGate, type GateHeightBand } from './course-signed-gates.ts';
 
@@ -23,7 +23,7 @@ const norm = (v: CoursePoint3): number => Math.hypot(...v);
 
 /** Opt-in bridge: route progress can only follow a measured physical 3D sweep. */
 export function advanceMeasuredCourseTravel(graph: CourseGraph, state: CourseTravel, motion: MeasuredCourseMotion): CourseTravel {
-  const edge = graph.edges.find(candidate => candidate.id === state.currentEdgeId);
+  const edge = edgeOf(graph, state.currentEdgeId);
   if (!edge || state.finished || motion.edgeId !== edge.id || (edge.mode === 'flight' && !motion.flightAuthorized)) return state;
   const length = routeLength(graph, edge.id);
   if (![motion.fromS, motion.toS, motion.maxStepMetres, state.localS, state.lateral, state.altitude].every(Number.isFinite) ||
@@ -52,7 +52,7 @@ export function advanceMeasuredCourseTravel(graph: CourseGraph, state: CourseTra
     }, motion.gateHeight);
     return crossed === state ? state : { ...state, ...crossed, localS: length };
   }
-  const next = graph.edges.find(candidate => candidate.id === motion.nextEdgeId);
+  const next = edgeOf(graph, motion.nextEdgeId);
   if (!next || next.from !== node?.id || (next.mode === 'flight' && !motion.flightAuthorized)) return state;
   // Odometer overflow is the arc distance on the next edge; the measured pose must sit on its road frame there.
   const localS = motion.toS - length;

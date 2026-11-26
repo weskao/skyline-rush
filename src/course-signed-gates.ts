@@ -1,5 +1,5 @@
 import type { CourseGraph, CoursePoint3 } from './course-graph.ts';
-import { routeLength, sampleRoute } from './course-route-frame.ts';
+import { edgeOf, routeLength, sampleRoute } from './course-route-frame.ts';
 import { advanceRouteProgress, type RouteProgress, type RouteCrossing } from './course-progress.ts';
 
 /** Measured from authoritative vehicle poses on either side of a physical gate. */
@@ -19,7 +19,7 @@ export function advanceSignedGate(
   graph: CourseGraph, state: RouteProgress, sweep: SignedGateSweep,
   height: GateHeightBand = { minHeight: -2, maxHeight: 5 },
 ): RouteProgress {
-  const edge = graph.edges.find(e => e.id === sweep.edgeId);
+  const edge = edgeOf(graph, sweep.edgeId);
   if (state.finished || state.currentEdgeId !== edge?.id || !finite(sweep.fromPosition) || !finite(sweep.toPosition)) return state;
   const length = routeLength(graph, edge.id);
   if (![sweep.fromS, sweep.toS, sweep.maxStepMetres, height.minHeight, height.maxHeight].every(Number.isFinite) ||
