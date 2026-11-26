@@ -99,9 +99,32 @@ average 23–80. Before = pre-change `src/` snapshot, after = `810d4e47`.
 
 ## Wiring needs (files outside this workstream)
 
-- `src/world.js:727-728` builds `{ ...effectsVisual, worldPoint: (s,x,y,origin,item) => … }` and a new closure every
-  frame, and `worldPoint` returns a new array per particle placement. Suggest hoisting the visual object (mutate its
-  fields per frame) and an out-parameter `worldPoint(s, x, y, origin, item, out)`; `effects.js` can accept both.
+- **DONE (Stage A 90a)** — `src/world.js:727-728` built `{ ...effectsVisual, worldPoint: (s,x,y,origin,item) => … }`
+  and closures every frame, and `worldPoint` returned a new array per particle placement.
+  - Now `src/world.js:363-364` hoists `classicEffects` / `framedEffects` (refreshed in place, `:726-728`) and the
+    `graphPoint` / `graphFrame` closures.
+  - The contract is `worldPoint(s, x, y, origin, item, out)`: it may write into `out` and return it, and callers use
+    the return value, so test stubs that return fresh arrays still work.
+  - Writers: `classicPosition` (`src/world.js:73`), `trackLocalPosition` (`src/track-paths.ts:72`) and
+    `courseItemPoint` (`src/course-items.ts:121`).
+  - Callers pass one scratch array each: `src/effects.js:62` (marker, particles, rings, magnet) and
+    `src/pickup-collect-vfx.js:86`.
+  - Observed RED: `node --test tests/world-point-out.test.js` failed 3/3 on the old source (`out` not written:
+    `[0.977…] !== [7,7,7]`; effects never passed an `out`; world.js call still spread `effectsVisual`).
+  - Equivalence: `tests/world-point-out.test.js` (seeded Tokyo, 160 frames) gives identical particle, ring and marker
+    positions every frame through an allocating vs an out-param `worldPoint`.
+  - Measurement, **LOCAL-NODE** (Node 24, no WebGL; `--max-semi-space-size=1024 --expose-gc`, heap bytes allocated
+    by `effects.update` with world.js-style options; seeded, 3 rivals, boost/nitro/landing/magnet script, 600 frames
+    after 120 warm-up; 3 interleaved runs each, host load ~9–15):
+
+    | Track | worldPoint calls/frame | Heap B/frame before | after | Position digest |
+    |---|---|---|---|---|
+    | Tokyo (framed) | 197.3 | 16 209 / 17 959 / 18 031 | 3 308 / 3 063 / 3 066 | `ba00e8b5` = |
+    | Sky Spiral | 214.9 | 23 853 / 27 767 / 24 862 | 10 184 / 10 291 / 11 050 | `87061f7e` = |
+
+    CPU ms/frame (Tokyo 0.12–0.21 → 0.12–0.13, Spiral 0.29–0.44 → 0.29) overlaps across runs on a loaded host:
+    no CPU-time gain is claimed, only fewer allocations (less GC pressure). The remaining allocations are
+    `trackFrame`/`trackPoint` objects inside `trackLocalPosition`, left as-is.
 - Two-range circular span: DONE in Stage A 90c (section below).
 
 ## Stage A 90c — two-range circular live span

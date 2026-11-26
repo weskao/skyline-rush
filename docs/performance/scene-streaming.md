@@ -169,7 +169,16 @@ Home, track swipe and World Tour.
 - None are required. All changes sit behind existing factory APIs.
 - Optional: `world.js` could wrap other parked hosts (`circuitScene`, `courseScene`, `coastScenery`)
   with `skipHiddenMatrixWork` at creation. `courseScene` already disposes when hidden, so it gains
-  nothing; the others were not measured.
+  nothing.
+  - **DONE (Stage A 90a)** for `circuitScene` and `coastScenery`. They are wrapped inside their own factories, like the other
+    scenes: `src/circuit-scene.ts:50` and `src/coast-visuals.ts:28`. world.js is unchanged.
+  - LOCAL-NODE: on any other track the parked hosts recomposed **12 → 0** (Harbor Circuit) and **4 → 0** (Coast
+    procedural rocks, trees and shore pieces) objects per frame. The Coast GLB, greenery, gull and boat meshes that the browser
+    attaches to the same group are skipped too; that browser count was not measured. The CPU gain is far below
+    measurable frame time and is not claimed.
+  - Observed RED: `node --test tests/parked-host-matrix.test.js` reported `12 !== 0` and `4 !== 0` hidden
+    composes. GREEN: 0 hidden composes for 3 frames, and every visible world matrix equals an independent compose
+    after the host moved while parked and is shown again.
 
 ## Device SOP (UNVERIFIED: run manually)
 

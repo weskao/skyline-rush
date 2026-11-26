@@ -68,17 +68,16 @@ export function trackRunoutFrame(trackId: string, distance: number) {
   return { ...end, point: { x: point.x + forward[0] * offset, y: point.y + forward[1] * offset, z: point.z + forward[2] * offset } };
 }
 
-/** Convert game-distance, lane and altitude to camera-relative 3D coordinates. */
-export function trackLocalPosition(trackId: string, distance: number, lateral = 0, altitude = 0, origin = 0, extended = false): Vec3 {
+/** Convert game-distance, lane and altitude to camera-relative 3D coordinates; per-particle callers pass a reused `out`. */
+export function trackLocalPosition(trackId: string, distance: number, lateral = 0, altitude = 0, origin = 0, extended = false, out: Vec3 = [0, 0, 0]): Vec3 {
   const span = trackId === FROSTBITE_ID && frostbiteObjectSpan(distance, lateral, altitude);
   const frame = span ? frostbiteFrame(distance, true) : trackFrame(trackId, distance, extended);
   const { point } = frame;
   const home = trackPoint(trackId, origin, extended);
-  return [
-    point.x - home.x + frame.right[0] * lateral + frame.up[0] * altitude,
-    point.y - home.y + frame.right[1] * lateral + frame.up[1] * altitude,
-    point.z - home.z + frame.right[2] * lateral + frame.up[2] * altitude,
-  ];
+  out[0] = point.x - home.x + frame.right[0] * lateral + frame.up[0] * altitude;
+  out[1] = point.y - home.y + frame.right[1] * lateral + frame.up[1] * altitude;
+  out[2] = point.z - home.z + frame.right[2] * lateral + frame.up[2] * altitude;
+  return out;
 }
 
 // Fit the real lateral and longitudinal route extents to the small HUD map.

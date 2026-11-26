@@ -7,7 +7,7 @@ type Sample = { at: number; ms: number };
 type Metric = { count: number; p50: number; p95: number; p99: number; mean: number };
 type Bucket = { phase: string; track: string; samples: Record<string, Sample[]>; lastFrame: number | null;
   stalls: number; config: Record<string, unknown> | null; mixedConfig: boolean; load: Record<string, number> | null };
-const PASS_NAMES = ['scene', 'bloom', 'lens', 'output'];
+const PASS_NAMES = ['scene', 'bloom', 'lens']; // composer order in world.js; the lens pass also tone-maps and encodes
 const MAX_SAMPLES = 2400;
 export function metricStats(samples: readonly number[]): Metric | null {
   if (!samples.length) return null;

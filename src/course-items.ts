@@ -118,9 +118,10 @@ function world(rt: CourseRuntime, item: CourseItem, x: number, altitude: number)
   return hit;
 }
 /** effects.js `worldPoint` on a graph course: the item on its own edge, relative to the camera origin. */
-export function courseItemPoint(rt: CourseRuntime, item: CourseItem, x: number, altitude: number, origin: CoursePoint3 | number[]): number[] {
+export function courseItemPoint(rt: CourseRuntime, item: CourseItem, x: number, altitude: number, origin: CoursePoint3 | number[], out: number[] = [0, 0, 0]): number[] {
   const { point } = world(rt, item, x, altitude);
-  return [point[0]! - origin[0]!, point[1]! - origin[1]!, point[2]! - origin[2]!];
+  out[0] = point[0]! - origin[0]!; out[1] = point[1]! - origin[1]!; out[2] = point[2]! - origin[2]!;
+  return out;
 }
 /** effects.js `worldFrame` on a graph course: the item's edge frame (gates face along their own road). */
 export const courseItemFrame = (rt: CourseRuntime, item: CourseItem) => sampleRoute(rt.spec.graph, item.edgeId!, item.localS!);

@@ -133,8 +133,9 @@ Per-frame GL work, identical across all six scenarios: full-screen draws -1, MSA
 
 ## Interfaces for integration
 
-- `src/deep-perf.ts:10` `PASS_NAMES` still lists `'output'`; index 3 is never reached now (three passes).
-  The owner of deep-perf may drop it; nothing breaks if it stays.
+- **DONE (Stage A 90a)**: `src/deep-perf.ts:10` `PASS_NAMES` is now `['scene', 'bloom', 'lens']`, matching
+  the composer order. The `'output'` entry (index 3) could not be reached with three passes, so no deep-perf
+  label or report changes. No consumer reads it (`scripts/`, `tests/`), and no test was needed.
 - The lens must remain the last composer pass: it renders to the screen with `needsSwap = false`. A pass added
   after it needs `needsSwap` restored and an OutputPass-equivalent at the end.
 - `lens.material` swaps between two programs per frame; drive the effect through `lens.uniforms` (shared by both).
