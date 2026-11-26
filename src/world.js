@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { photoFov } from './photo-export.ts';
 import { capturePhoto } from './photo-capture.ts';
 import { createRoomEnvironment } from './room-environment.ts';
-import { createWeatherPoints } from './weather-points.ts';
+import { createWeatherPoints, centerWeatherOn } from './weather-points.ts';
 import { createSectionSignMaterials } from './section-sign-materials.ts';
 import { createCoastLook } from './coast-look.ts';
 import { applyTrackLighting, configureBloom, upcomingRaceLighting, upcomingRaceBloom, UPCOMING_BLOOM_THRESHOLD, UPCOMING_HOME_BLOOM } from './upcoming-lighting.ts';
@@ -569,7 +569,6 @@ export function createWorld(canvas, visual = vfxSettings()) {
       if (weather.visible) {
         for (let i = 0; i < 180; i++) weatherPositions[i * 3 + 1] = (i * 17 + time * (raining ? -18 : -3)) % 32;
         weatherGeometry.attributes.position.needsUpdate = true;
-        weather.position.set(visualCar.x, visualCar.altitude + 25, 15);
       }
       if (trackId === CIRCUIT_ID) circuitScene.update(distance); else circuitScene.hide(); if (trackId === FROSTBITE_ID && !endlessActive) frostbiteScene.update(distance); else frostbiteScene.hide(); if (graphCentre) courseScene.update(race, visual.quality, time, reducedMotion); else courseScene.hide(); measuredScenes.update(endlessActive ? '' : trackId, distance, time, reducedMotion);
       if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
@@ -689,6 +688,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
         });
         traffic.forEach((mesh, i) => { mesh.visible = i < race.traffic.length; if (mesh.visible) updateCar(mesh, race.traffic[i], distance, center, time, motionDt, false, {}, poseFor(mesh, race.traffic[i], motion?.previous?.traffic?.[i], alpha)); });
       }
+      if (weather.visible) centerWeatherOn(weather, player);
       trafficFleet.sync();
       ghostPhase.update(car, !preview && race.phase !== 'finished', reducedMotion);
       ghostCar.visible = !preview && !!ghost;
