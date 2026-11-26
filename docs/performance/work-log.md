@@ -33,3 +33,16 @@
   CI now schedules a 32-tick real WebGL smoke for each playable Home/Racing and Coming Soon showcase; existing 180-tick CLI rejects empty/invalid results. Added live Garage/Countdown/Results and Photo/Paused state coverage. No hardware evidence claimed. Exact full-app input replay remains open.
 
 - Added actual-app fixed-tick replay smoke: identical 180-tick input sequence and seed, exact simulation comparison, three sampled chase-camera poses with tolerances, CI-only evidence artifact. Hooks are served only by the Playwright dev module; production main.js unchanged. Full-length race replay and physical measurements remain unverified. Browser execution requires exact-HEAD CI.
+
+- 2026-11-26 close-out. Merged origin/develop (a9fed6f1) into the branch (conflicts only in TODO.md and
+  orientation-layout.md, both sides kept). CI 45679379454 shard 6 `responsive-browser` flight director vs callout
+  (375x667): root cause is a test read race, not a baseline change (the baseline touches no HUD CSS). The callout lasts
+  ~1.2 s of race time; the old test read the rects, then the director opacity, in separate Playwright calls, so a slow
+  runner could see the callout expire and the director return (opacity > 0.05) against the callout's stale rect.
+  RED reproduction: the old structure plus a 1.1 s stall before the opacity read fails locally with the identical
+  message (`callout {"x":12,"y":220,"width":105,"height":46.59375} overlaps director ...`); without the stall it passes.
+  GREEN: trigger and measurement now happen in one `page.evaluate` on the callout's first visible frame. The check is
+  unchanged in strength: removing the `body.airborne:has(#event-callout:not([hidden])) .flight-director` hide rule from
+  `src/style.css` still fails the 375x667 and 320x568 cases. Production code is unchanged.
+- Added a zero-overhead guard (`createDeepPerf` returns null and touches nothing without `?perf=deep`; mutation of the
+  guard turns it RED) and `scripts/thermal-compare.mjs` (Before/After table, refuses unequal settings).
