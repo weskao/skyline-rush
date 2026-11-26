@@ -1,6 +1,13 @@
+# Neon solid rail underpass (2026-11-27)
+
+- [ ] Owner correction: the 690–910 m tunnel is solid on every tier. Inside, the ordinary tunnel ceiling (car roof ≤ 4 m, barrier knock, same as Aurora's tunnel); on top, the 7.2 m roof carries cars (drive, park, take off) with only the normal 12 m flight maximum above; flying into the portal face between them is one barrier hit and puts the car inside (`overNeonRoof` in `src/neon-roof.ts`, `roofHit` in `src/game.js`). Supersedes "upward passage is intentional" below. Inside the tunnel the car is drawn at its true altitude on every tier.
+- [x] RED → GREEN: `tests/neon-underpass-physics.test.js` (solid ceiling vs Aurora, portal wall at 3.5/5/7 m, portal crossing above the roof, 30/60/120 Hz) 11/11; full `pnpm test` 3958/3964, 2 audio-reveal failures that pass 66/66 three times alone (load flake, unrelated); module-size, typecheck, build exit 0.
+- [x] Render bug fixed: the kits hide the fallback roof through `material.visible`, so `world.js` read `tunnelRoofs.visible` (always true) and drew the High car at 4.5 m inside the 7.2 m deck. RED/GREEN `tests/neon-look-browser.spec.js` (*draws a car on the rail roof on top of the roof it shows*, High 7.2 / Low 4.5); suite 14/14. WebGL captures at Low and High: roof, ceiling, portal crossing, portal wall.
+- [ ] Pending: real phones (both orientations), Medium tier capture, `make verify`, exact-HEAD CI.
+
 # Neon rooftop support (2026-11-25)
 
-- [ ] User follow-up: remove artificial flight ceiling in first km and support parking, driving and takeoff on the existing roof. One-way landing at 7.2 m simulation altitude; render-only pose adapts to original procedural 4.5 m and detailed 7.2/9.24 m roof heights; no scenery mesh or assets changed. Upward passage is intentional. Real-device roof contact, edge interpolation, full CI and browser evidence remain unverified.
+- [ ] User follow-up: remove artificial flight ceiling in first km and support parking, driving and takeoff on the existing roof. One-way landing at 7.2 m simulation altitude; render-only pose adapts to original procedural 4.5 m and detailed 7.2/9.24 m roof heights; no scenery mesh or assets changed. Upward passage was intentional (reversed 2026-11-27, above). Real-device roof contact, edge interpolation, full CI and browser evidence remain unverified.
 - [ ] RED isolated previous integrator descends through roof to road; regression now covers landing/parking/fuel/drive/relaunch/exit at 30/60/120 Hz and visual alignment, with existing collision tests retained.
 
 # Neon Downtown flight clearance (2026-11-25)
