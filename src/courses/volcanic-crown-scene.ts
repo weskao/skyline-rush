@@ -188,6 +188,7 @@ export function createVolcanicCrownChunk(
   const shimmer=quality==='low'?null:new THREE.Mesh(
     new THREE.PlaneGeometry(14,8),new THREE.MeshBasicMaterial({
       color:'#ee7c38',transparent:true,opacity:.08,depthWrite:false,side:THREE.DoubleSide,
+      forceSinglePass:true, // a plane never shows both faces at one pixel: the back-then-front passes would repeat each other
     }));
   if(shimmer){
     const f=sampleVolcanicRoute(edgeId,(from+to)/2);

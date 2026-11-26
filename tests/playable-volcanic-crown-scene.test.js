@@ -48,6 +48,16 @@ test('weather detail and real lava lighting respect Low/High and Reduced Motion'
   assert.equal(ash.visible,true);assert.equal(shimmer.visible,true);
   high.dispose();
 });
+test('heat shimmer is a flat plane, so its double-sided material draws once instead of back-then-front',()=>{
+  // A plane never shows both faces at one pixel: the second pass repeats the first's pixels (same image), but costs a
+  // draw and a program re-lookup per shimmer per frame.
+  const {group,dispose}=createVolcanicCrownChunk('ground-5',0,'high');
+  const shimmer=group.getObjectByName('heat-shimmer');
+  assert.equal(shimmer.geometry.type,'PlaneGeometry');
+  assert.equal(shimmer.material.side,THREE.DoubleSide);
+  assert.equal(shimmer.material.forceSinglePass,true);
+  dispose();
+});
 test('flight gap uses a guided world-space arc, not a fictional solid road',()=>{
   const {group,dispose}=createVolcanicCrownChunk('rift-flight',0,'medium');
   assert.ok(group.getObjectByName('aerial-route-guide').isMesh);
