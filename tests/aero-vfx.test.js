@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { Scene, Group, Mesh, BoxGeometry, Vector3 } from 'three';
+import { Scene, Group, Mesh, BoxGeometry, MeshStandardMaterial, Vector3 } from 'three';
 import { createRace } from '../src/game.js';
 import { createAeroVFX, dashSamples } from '../src/aero-vfx.js';
 import { trackPoint } from '../src/track-paths.ts';
@@ -520,4 +520,19 @@ test('zero-alpha wake points and ribbon vertices are clipped before rasterising 
   // Vapor: NormalBlending and a vAlpha<=0 discard; ribbon: AdditiveBlending, alpha shared by a segment's 6 vertices.
   for (const shader of [vapor.material.vertexShader, ribbon.material.vertexShader])
     assert.match(shader, /if\(alpha<=0\.\)\{gl_Position=vec4\(2\.,2\.,2\.,1\.\);(gl_PointSize=0\.;)?return;\}/);
+});
+
+test('the additive dash ribbon draws after the car\'s normal-blended transparent parts, whatever its stale sort sphere', async () => {
+  // three sorts transparent items by renderOrder, then depth of the geometry's bounding sphere, computed once at the
+  // first draw. The ribbon's buffer then holds nothing meaningful (all zeros: the render-space origin, near the car),
+  // so depth alone can draw the glow first and let the car's paint cover the part of the trail in front of it.
+  const { WebGLRenderList } = await import('three/src/renderers/webgl/WebGLRenderLists.js');
+  const { scene } = fixture(), ribbon = scene.getObjectByName('Continuous dash ribbon');
+  const shell = new Mesh(new BoxGeometry(), new MeshStandardMaterial({ transparent: true, opacity: 0.98 }));
+  const list = new WebGLRenderList();
+  list.init();
+  list.push(shell, shell.geometry, shell.material, 0, 0.5, null, {});
+  list.push(ribbon, ribbon.geometry, ribbon.material, 0, 0.9, null, {}); // stale sphere farther from the camera than the car
+  list.sort();
+  assert.deepEqual(list.transparent.map(item => item.object.name || 'car paint'), ['car paint', 'Continuous dash ribbon']);
 });

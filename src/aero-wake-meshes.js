@@ -51,5 +51,7 @@ export function createAeroWakeMeshes(positions, alphas, sizes, segmentCount) {
       }`,
   }));
   ribbon.name = 'Continuous dash ribbon'; ribbon.frustumCulled = false;
+  // After the car's normal-blended transparent parts: its sort sphere is frozen at the first draw, so depth cannot order it.
+  ribbon.renderOrder = 1;
   return { vapor, particleGeo, ribbon, ribbonGeo, ribbonPositions, ribbonAlpha, ribbonKinds };
 }
