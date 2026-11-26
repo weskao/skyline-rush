@@ -11,7 +11,7 @@ import { createRoadRunout } from './road-runout.ts';
 type Quality = 'low' | 'medium' | 'high';
 type Chunk = ReturnType<typeof createDuneTempestVisualChunk>;
 type RaceView = { trackId: string; elapsed?: number; course?: CourseRuntime };
-const CHUNK_METRES = 400, BEHIND_METRES = 120, AHEAD_METRES = 680;
+const CHUNK_METRES = 400, BEHIND_METRES = 120, AHEAD_METRES = 680, HYSTERESIS_METRES = 40;
 
 /** Streams graph-owned geometry into the existing world renderer. No second scene/camera/physics. */
 export function createCourseRaceScene(scene: THREE.Scene) {
@@ -77,18 +77,30 @@ export function createCourseRaceScene(scene: THREE.Scene) {
       if (result === undefined) { result = routeLength(graph, id); lengths.set(id, result); }
       return result;
     };
-    const include = (edgeId: string, from: number, to: number) => {
+    const include = (edgeId: string, from: number, to: number, keepOnly: boolean) => {
       const max = length(edgeId);
       const begin = Math.max(0, Math.floor(Math.max(0, from) / CHUNK_METRES));
       const end = Math.min(Math.ceil(max / CHUNK_METRES) - 1, Math.floor(Math.max(0, to) / CHUNK_METRES));
       for (let index = begin; index <= end; index++) {
         const key = edgeId + ':' + index;
         active.add(key);
-        if (live.has(key)) continue;
+        if (live.has(key) || keepOnly) continue;
         const startS = index * CHUNK_METRES, endS = Math.min(max, startS + CHUNK_METRES);
         const chunk = createDuneTempestVisualChunk(root, edgeId, startS, endS, length,
           (id, s) => sampleRoute(graph, id, s), tier);
         live.set(key, chunk);
+      }
+    };
+    const cover = (edge: typeof graph.edges[number], localS: number, behind: number, ahead: number, keepOnly: boolean) => {
+      const remaining = length(edge.id) - localS;
+      include(edge.id, localS - behind, Math.min(length(edge.id) - 1e-6, localS + ahead), keepOnly);
+      // Just past a node the road behind lies on the previous edge(s); no history is kept, so every
+      // predecessor keeps its tail until the car is clear of it (otherwise it pops out at the node).
+      if (localS < behind) for (const prev of graph.edges) {
+        if (prev.to === edge.from) include(prev.id, length(prev.id) - (behind - localS), length(prev.id) - 1e-6, keepOnly);
+      }
+      if (remaining < ahead) for (const next of graph.edges) {
+        if (next.from === edge.to) include(next.id, 0, Math.min(length(next.id) - 1e-6, ahead - remaining), keepOnly);
       }
     };
     for (const [id, car] of runtime.cars) {
@@ -96,12 +108,11 @@ export function createCourseRaceScene(scene: THREE.Scene) {
       const { currentEdgeId, localS } = car.travel;
       const edge = graph.edges.find(item => item.id === currentEdgeId);
       if (!edge) continue;
-      include(currentEdgeId, localS - BEHIND_METRES, Math.min(length(currentEdgeId) - 1e-6, localS + AHEAD_METRES));
-      const remaining = length(currentEdgeId) - localS;
-      if (remaining < AHEAD_METRES && edge.to === graph.finish) nearFinish = true;
-      if (remaining < AHEAD_METRES) for (const next of graph.edges) {
-        if (next.from === edge.to) include(next.id, 0, Math.min(length(next.id) - 1e-6, AHEAD_METRES - remaining));
-      }
+      cover(edge, localS, BEHIND_METRES, AHEAD_METRES, false);
+      // Hysteresis: a live chunk is released only HYSTERESIS_METRES past the window that created it,
+      // so a car jittering on a chunk boundary (recovery, reverse, wall scrape) cannot rebuild it every frame.
+      cover(edge, localS, BEHIND_METRES + HYSTERESIS_METRES, AHEAD_METRES + HYSTERESIS_METRES, true);
+      if (length(currentEdgeId) - localS < AHEAD_METRES && edge.to === graph.finish) nearFinish = true;
     }
     for (const [key, chunk] of live) if (!active.has(key)) { chunk.dispose(); live.delete(key); }
     // FINISH has no outgoing edge: the road runs on past it for the streaming range (drawing only; rules/road-runout.md).

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { RACE_DRIVER_IDS } from '../src/race-grid.ts';
 import { DUNE_TEMPEST_RACE } from '../src/courses/dune-tempest-race.ts';
-import { routeLength } from '../src/course-route-frame.ts';
+import { routeLength, sampleRoute } from '../src/course-route-frame.ts';
 import { createCourseRaceScene } from '../src/course-race-scene.ts';
 
 const graph = DUNE_TEMPEST_RACE.graph;
@@ -81,4 +81,57 @@ test('classic race never creates CourseGraph scenery', () => {
   const root = scene.getObjectByName('CourseGraph race scenery');
   assert.equal(root.children.length, 0);
   host.dispose();
+});
+
+// Road within 20 m (horizontal) of a route point; chunk vertices live in graph space under the rebased root.
+function roadNear(root, point) {
+  let hit = false;
+  root.traverse(o => {
+    if (hit || o.name !== 'Dune road') return;
+    const a = o.geometry.attributes.position;
+    for (let i = 0; i < a.count && !hit; i++) hit = (a.getX(i) - point[0]) ** 2 + (a.getZ(i) - point[2]) ** 2 < 400;
+  });
+  return hit;
+}
+
+test('crossing a node keeps the road behind the car: no pop-out of the previous edge tail', () => {
+  const [from, to] = [graph.groundRoute[2], graph.groundRoute[3]], fromLength = routeLength(graph, from);
+  const you = { travel: { currentEdgeId: from, localS: fromLength - 20 } };
+  const race = { trackId: 'dune-tempest', elapsed: 1, course: { spec: DUNE_TEMPEST_RACE, cars: new Map([['YOU', you]]) } };
+  const scene = new THREE.Scene(), host = createCourseRaceScene(scene), root = scene.getObjectByName('CourseGraph race scenery');
+  try {
+    host.update(race, 'low');
+    const tail = root.children.filter(chunk => chunk.name === 'Dune chunk ' + from);
+    let disposals = 0;
+    for (const chunk of tail) chunk.traverse(o => o.geometry?.addEventListener('dispose', () => disposals++));
+    you.travel.currentEdgeId = to; you.travel.localS = 10; // just past the node
+    host.update(race, 'low', 1.1);
+    assert.equal(disposals, 0, 'the chunk the car just left was disposed at the node');
+    assert.ok(roadNear(root, sampleRoute(graph, from, fromLength - 90).point), 'no road 100 m behind the car after the node');
+    you.travel.localS = 200; // past the behind window: the previous edge is released
+    host.update(race, 'low', 4);
+    assert.equal(root.children.some(chunk => chunk.name === 'Dune chunk ' + from), false);
+    assert.ok(disposals > 0);
+  } finally { host.dispose(); }
+});
+
+test('a car jittering across a chunk boundary (recovery, reverse, wall scrape) does not churn chunks', () => {
+  const edgeId = graph.groundRoute[5], you = { travel: { currentEdgeId: edgeId, localS: 118 } };
+  assert.ok(routeLength(graph, edgeId) > 1300, 'fixture needs an edge with at least three chunks');
+  const race = { trackId: 'dune-tempest', elapsed: 1, course: { spec: DUNE_TEMPEST_RACE, cars: new Map([['YOU', you]]) } };
+  const scene = new THREE.Scene(), host = createCourseRaceScene(scene), root = scene.getObjectByName('CourseGraph race scenery');
+  try {
+    // 118/122 m straddle the ahead edge (680 m) of chunk 2; 518/522 m straddle the behind edge (120 m)
+    // of chunk 0 and the ahead edge of chunk 3. The first swing may create a chunk, later swings must not.
+    for (const pair of [[118, 122], [518, 522]]) {
+      const seen = new Set();
+      for (let i = 0; i < 20; i++) {
+        you.travel.localS = pair[i % 2];
+        host.update(race, 'low', 1 + i / 60);
+        const fresh = root.children.filter(chunk => !seen.has(chunk));
+        if (i >= 2) assert.equal(fresh.length, 0, `swing ${i} at ${pair}: ${fresh.length} chunk groups rebuilt`);
+        for (const chunk of fresh) seen.add(chunk);
+      }
+    }
+  } finally { host.dispose(); }
 });
