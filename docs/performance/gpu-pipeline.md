@@ -52,7 +52,39 @@ git-ignored `docs/performance/local/gpu10/`.
 | photo | 6.644 | 13.858 | 5.357 | 6.818 | -19.4% | 140 -> 139 |
 
 Garage p95 is worse in B (per-round B p95 7.26 / 9.26 / 10.12) while its mean improved 5.22 -> 4.80 ms; the tail
-is noisy on this host and is reported, not hidden. Drive p95 is flat within noise.
+is noisy on this host and is reported, not hidden. Drive p95 is flat within noise. Re-measured with more runs in
+"Garage p95 re-measure" below: the regression was noise, and Garage p95 improves.
+
+### Garage p95 re-measure (Stage A, 90d)
+
+Question: is the Garage p95 regression above (6.95 -> 9.25 ms) real or noise? Same harness, scenario and settings as
+above (Garage on coast, fixed Garage camera with auto-rotate off, seed 12345, page clock and `Math.random` pinned,
+High, 4x MSAA, 390x844 at DPR 3, canvas 585x1266, LOCAL-CHROME Apple M4, timer queries). 240 frames per run, first 10
+dropped, ABBA order, one fresh page and Vite server per run. B = integration 7cc2cad7 (all Wave 0 and Wave 1 merged).
+
+| A (baseline) | Runs per side | A p50 / p95 / p99 | B p50 / p95 / p99 | Per-run p95 A (min-median-max) | Per-run p95 B | p95 B - A, 95% CI |
+|---|---|---|---|---|---|---|
+| d9c144ba | 8 | 4.71 / 6.05 / 7.40 | 3.85 / 4.94 / 5.69 | 5.41 - 5.72 - 6.96 | 4.40 - 4.71 - 5.50 | -1.09 ms (-1.76 .. -0.58) |
+| 9d3c2e69 | 6 | 4.52 / 5.73 / 6.62 | 3.89 / 5.13 / 5.86 | 4.92 - 5.46 - 5.93 | 4.39 - 4.85 - 5.45 | -0.62 ms (-0.93 .. -0.20) |
+
+GPU ms per frame, pooled. The CI is a bootstrap that resamples whole runs, so between-run variance is included.
+
+Verdict: noise, not a regression. In both sessions B's p95 is lower than A's and the interval excludes zero. The
+earlier B per-run p95 (7.26 / 9.26 / 10.12) lies outside every run measured here, A or B. Signs that the earlier
+tail came from the host and not from the pipeline:
+
+- Tail frames cluster in whole runs, not at frame positions. Frames above the pooled p95 per run: A 8/4/7/14/37/13/2/7,
+  B 4/7/24/37/6/8/1/5. They spread across the 240 frames, with no first-frame or periodic spike. Single 8.3 to 9.2 ms
+  frames occur on both sides (A max 9.18, B max 8.70 and 9.24).
+- No compile or variant switch: 0 programs linked in measured frames on both sides. `useProgram` per frame is
+  identical in every run of a side: p50 27, max 31 in B; 28 and 32 in A, which still has OutputPass. The Garage branch
+  of `world.render` zeroes boost, impact and pressure every frame, so the lens stays on the `LENS_FX 0` variant.
+- Present pacing is unchanged: wall-clock interval p50 16.7 ms, p95 17.4 to 17.5 ms on both sides. CPU submit p95 is
+  1.2 ms in A and 0.9 ms in B.
+
+The first measurement ran 3 rounds while other sessions shared this machine. 3 runs are too few to separate a
+p95 change from between-run variance. No code change was made: there was no cause to fix, so there is no TDD
+cycle. Raw per-frame samples stay outside the repo (local bench output, not committed).
 
 Per-frame GL work, identical across all six scenarios: full-screen draws -1, MSAA resolve blits 3 -> 2,
 `bindFramebuffer` 31 -> 25, clears 16 -> 15. Full-size MSAA HalfFloat render-buffer memory 62.2 -> 31.1 MB
@@ -89,6 +121,7 @@ Per-frame GL work, identical across all six scenarios: full-screen draws -1, MSA
 | 10 | Home showcase raycast, bounds and projection duplication | REJECTED | Tokyo Home, 8 orbit decisions: p50 35.6 ms before vs 33.3 ms with a hoisted matrix/bounds pass (max 44.2 vs 45.3). `updateMatrixWorld` 73,574 -> 5,422 and `traverseVisible` 46,848 -> 976, but the 240 raycasts dominate and the time change is within noise. Reverted; RED was observed and not committed |
 | 11 | powerPreference A/B | REJECTED change; UNVERIFIED on devices | p50 ms drive/home, 2 interleaved passes: low-power 5.30, 4.87 / 4.87, 5.07; default 4.96, 4.74 / 5.10, 4.94; high-performance 4.78, 4.74 / 5.29, 5.53. No difference on a single-GPU M4, so `high-performance` is kept (`src/webgl-renderer.ts:8`) |
 | 12 | Context loss, resize, orientation, Photo Mode, Garage Studio | DONE (automation); devices UNVERIFIED | Variants rebuilt on `webglcontextrestored` (`src/lens-pass.ts:50`, listener removed on dispose at `:57`, unit test `tests/lens-pass.test.js:28`); focused browser specs 57 passed / 1 skipped |
+| 90d | Garage p95 regression (6.95 -> 9.25 ms) | REJECTED as noise; no code change | Re-measured 8 + 6 ABBA runs against d9c144ba and 9d3c2e69: B p95 is 1.09 ms and 0.62 ms lower, with run-resampled 95% CIs below zero ("Garage p95 re-measure" above) |
 
 ## Observed RED before GREEN
 
