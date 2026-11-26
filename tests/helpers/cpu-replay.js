@@ -20,7 +20,8 @@ export function scriptedInput(rng) {
 
 // Cycle-safe canonical serialisation; `spec` (the immutable course description) is skipped, everything mutable is kept.
 export function canonical(value, seen = new WeakSet()) {
-  if (typeof value === 'number') return Object.is(value, -0) ? '-0' : String(value);
+  // 9 significant digits: libm last-bit differences between platforms (Linux CI vs macOS) must not change the digest.
+  if (typeof value === 'number') return Object.is(value, -0) ? '-0' : String(Number(value.toPrecision(9)));
   if (value === undefined) return 'u';
   if (typeof value === 'function') return 'fn';
   if (value === null || typeof value !== 'object') return JSON.stringify(value);

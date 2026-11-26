@@ -9,8 +9,12 @@ gameplay. Nothing here changes balance, physics, AI difficulty, speeds, collisio
 (coast, tokyo, harbor-circuit, dune-tempest, skyfall-archipelago, ...). It folds the FULL race state (player, rivals,
 traffic, rings, pickups, hazards, course runtime, standings, result) into a SHA-256 every 15 ticks and the
 `createRaceAudioEvents` cue stream every tick, and compares against `tests/fixtures/cpu-race-replay.json`.
-The fixture was recorded on the unmodified code (commit `db3e70e2`) and has not been regenerated: it passes unchanged
-after every optimisation commit below. `tests/cpu-route-curvature.test.js` additionally pins every `sampleRoute` frame
+The fixture was first recorded on the unmodified code (commit `db3e70e2`) and passed unchanged after every optimisation commit
+below on macOS and Node 24. Exact-HEAD CI (Linux, Node 22) then showed the full-precision state digest is platform-sensitive in the
+low float bits (final result, score, elapsed and cue stream were identical; only the state digest differed). The digest now
+serialises numbers to 9 significant digits, and the fixture was re-recorded on the pre-optimisation `src/` (an untouched extract of
+`0f0aa70e`) with that serialiser: outcome fields are byte-identical to the earlier recording and only `digest` and `cueDigest` values
+changed. The optimised code reproduces it. `tests/cpu-route-curvature.test.js` additionally pins every `sampleRoute` frame
 field bit for bit over all edges of both graph courses.
 
 Re-record only for an intended behaviour change: `RECORD_REPLAY=1 node --test tests/cpu-race-replay.test.js`.
