@@ -1,10 +1,14 @@
 import * as THREE from 'three';
 import { material, block } from './car-model.js';
+import { mergeStaticMeshes } from './world-tour-batching.ts';
+
+export const BRIDGE_TOWER = 'Bridge tower';
 
 /** The three classic-track suspension-bridge towers; world.js poses each whole group per frame. */
 export function createBridgeTowers(scene: THREE.Scene): THREE.Group[] {
   return Array.from({ length: 3 }, () => {
     const tower = new THREE.Group();
+    tower.name = BRIDGE_TOWER; // browser specs find the towers by name: the cable is no longer a separate tube
     const steel = material('#233e55', 0.65, 0.4);
     const trim = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.2, 1, 1.4) });
     for (const side of [-1, 1]) {
@@ -20,6 +24,7 @@ export function createBridgeTowers(scene: THREE.Scene): THREE.Group[] {
     }
     block(tower, steel, 0, 43, 0, 34, 1.7, 2.5);
     block(tower, trim, 0, 42.1, 1.3, 32, 0.08, 0.08);
+    mergeStaticMeshes(tower); // 55 steel + 3 trim parts -> 2 draws; only the whole group moves
     scene.add(tower);
     return tower;
   });
