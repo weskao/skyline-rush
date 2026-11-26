@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 
 test('garage scene compiles its shared cosmetic materials before the first visible Studio frame', () => {
   const source = readFileSync(new URL('../src/world.js', import.meta.url), 'utf8');
-  assert.match(source, /warmupShaders\(renderer, garageStage\.scene, camera, composer\.renderTarget1\)/);
+  assert.match(source, /warmupShaders\(renderer, garageStage\.scene, camera, composer\.readBuffer\)/);
   assert.match(source, /garageWarmupPending/);
 });
 

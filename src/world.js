@@ -12,7 +12,6 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { createLensPass } from './lens-pass.ts';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { roadRibbon, putInstance as put } from './geometry.ts';
 import { classicRoadRoute, legacyClassicRoad } from './classic-road-routes.ts';
 import { createClassicRoadRender } from './classic-road-render.ts';
@@ -101,8 +100,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
   highPass.fragmentShader = highPass.fragmentShader.replace(texel, `${texel} if ( any( isnan( texel ) ) || any( isinf( texel ) ) ) texel = vec4( 0.0 );`);
   composer.addPass(bloom);
   const lens = createLensPass();
-  composer.addPass(lens);
-  composer.addPass(new OutputPass());
+  composer.addPass(lens); // also tone-maps and encodes: see lens-pass.ts
   const deepPerf = createDeepPerf(location.search, renderer, composer, () => visual.quality);
   const environment = createRoomEnvironment(renderer);
   scene.environment = environment.texture;
@@ -471,7 +469,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
       const modelPending = garageModel.frame(visual.quality === 'low' ? 'low' : 'high', race.phase, garageHomePreview || !!garageCamera, garageCamera ? garageStage?.modelHost ?? null : null, race.phase === 'ready' ? upcomingStage.modelHost : null, homeModelHost, race.mode === 'free' && (!initialized || lastRace !== race));
       const preview = race.phase === 'ready', recovery = recoveryView.update(race.phase, race.player.recovery);
       updateFoldableProjection(camera, garageCamera || photoView ? null : currentFoldableLayout(), preview, preview && !garageCamera && !garageHomePreview && !upcomingStage.scene && !framedRoad(race.trackId) && !(visual.enabled && visual.airflow));
-      if (garageCamera && garageStage && preview) { renderPass.scene = garageStage.scene; garageStage.update(camera, garageCamera, idleTime, motionPreference.matches || visual.comfortable); lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0; configureBloom(bloom, visual.quality, .01, 1.1); if (garageWarmupPending) { garageWarmupPending = false; warmupShaders(renderer, garageStage.scene, camera, composer.renderTarget1); } return drawFrame(race, dt, snapshot, null); } // r186 bloom is stronger in the Studio's bright environment.
+      if (garageCamera && garageStage && preview) { renderPass.scene = garageStage.scene; garageStage.update(camera, garageCamera, idleTime, motionPreference.matches || visual.comfortable); lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0; configureBloom(bloom, visual.quality, .01, 1.1); if (garageWarmupPending) { garageWarmupPending = false; warmupShaders(renderer, garageStage.scene, camera, composer.readBuffer); } return drawFrame(race, dt, snapshot, null); } // r186 bloom is stronger in the Studio's bright environment.
       if (preview && upcomingStage.scene) {
         if (modelPending && !garageHomePreview) return frames.wait(snapshot);
         renderPass.scene = upcomingStage.scene;
@@ -828,7 +826,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
       const boostGlow = sprintActive ? sprintBloomBoost(sprintFrame, visual.bloom, feedback.ignition) : 0;
       const bloomStrength = lighting ? upcomingRaceBloom(boostGlow) : TOUR_IDS.has(trackId) ? .085 : coastLook.bloomStrength(trackId === 'coast' ? COAST_LIGHTING.bloom : .42) + boostGlow;
       configureBloom(bloom, visual.quality, bloomStrength, lighting ? UPCOMING_BLOOM_THRESHOLD : coastLook.bloomThreshold(1.1));
-      if (warmupPending) { warmupPending = false; warmupShaders(renderer, scene, camera, composer.renderTarget1); }
+      if (warmupPending) { warmupPending = false; warmupShaders(renderer, scene, camera, composer.readBuffer); }
       if (!drawFrame(race, dt, snapshot, garageHomePreview ? null : race.trackId)) return false;
       if (photoCapture) {
         const request = photoCapture;
