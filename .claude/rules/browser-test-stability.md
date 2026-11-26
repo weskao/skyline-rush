@@ -35,6 +35,12 @@ and the duplicate import failed all 16 browser shards. Enforced by `tests/browse
   Wait for the camera to come to rest first: `pausedRace()` in `tests/helpers/traffic-browser.js`
   asserts it.
 
+- **A timed HUD element is measured in one browser task.** Callouts expire after ~1.2 s of race time, so rects and
+  opacities read through separate Playwright calls can mix a live element with a stale one. Trap (2026-11-26, CI
+  `45679379454`, `responsive-browser` flight director vs callout at 375x667): the director had already returned when its
+  opacity was read, reporting an overlap with the callout's old rect. Trigger and measure inside one `page.evaluate`
+  on the first frame the element shows; a 1.1 s stall between the reads reproduces the CI error text locally.
+
 ## Poll anything a UI action changes asynchronously
 
 - `click` / `check` / `selectOption` / `press` resolve once the events are dispatched. They do

@@ -28,6 +28,20 @@ test.describe('single-thumb actions', () => {
   });
 });
 
+// The browser's real 2.5s no-reading fallback must not race the Playwright transport.
+// Record the actual waiting state and feed a simulated reading from the page itself.
+const armTiltReading = (page, gamma) => page.evaluate(gamma => {
+  const status = document.querySelector('#tilt-status');
+  window.tiltWaitingObserved = false;
+  const observer = new MutationObserver(() => {
+    if (!status.textContent.includes('Waiting for tilt readings')) return;
+    observer.disconnect();
+    window.tiltWaitingObserved = true;
+    if (gamma !== null) window.dispatchEvent(new DeviceOrientationEvent('deviceorientation', { gamma, beta: 20 }));
+  });
+  observer.observe(status, { childList: true, characterData: true, subtree: true });
+}, gamma);
+
 test.describe('tilt', () => {
   test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
   test('permission is requested only by selection; denied permission keeps Slide available', async ({ page }) => {
@@ -44,14 +58,28 @@ test.describe('tilt', () => {
     expect(await page.evaluate(() => window.permissionRequests)).toBe(1);
   });
 
+  test('granted tilt without sensor readings falls back to Slide', async ({ page }) => {
+    await page.addInitScript(() => { DeviceOrientationEvent.requestPermission = async () => 'granted'; });
+    await open(page);
+    await toggleSettingsSection(page, 'driving');
+    await armTiltReading(page, null);
+    await page.locator('[data-controls="mode"][value="tilt"]').click();
+    await expect.poll(() => page.evaluate(() => window.tiltWaitingObserved)).toBe(true);
+    await expect(page.locator('[data-controls="mode"][value="slide"]')).toBeChecked();
+    await expect(page.locator('#tilt-enable')).toBeHidden();
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls')).mode)).toBe('slide');
+  });
+
   test('granted tilt calibrates and steers the real car; reopening calibration and resetting remain usable', async ({ page }) => {
     await page.addInitScript(() => { DeviceOrientationEvent.requestPermission = async () => 'granted'; });
     await open(page);
     await toggleSettingsSection(page, 'driving');
-    await page.locator('[data-controls="mode"][value="tilt"]').check();
-    await expect(page.locator('#tilt-status')).toContainText('Waiting for tilt readings');
-    await page.evaluate(() => window.dispatchEvent(new DeviceOrientationEvent('deviceorientation', { gamma: 5, beta: 20 })));
+    await armTiltReading(page, 5);
+    const tilt = page.locator('[data-controls="mode"][value="tilt"]');
+    await tilt.click();
     await expect(page.locator('#tilt-status')).toContainText('ready');
+    await expect(tilt).toBeChecked();
+    expect(await page.evaluate(() => window.tiltWaitingObserved)).toBe(true);
     await toggleSettingsSection(page, 'driving');
     await page.locator('#start-button').click();
     await expect(page.locator('#race-status')).toHaveText('RACING');
@@ -63,10 +91,11 @@ test.describe('tilt', () => {
     await page.evaluate(() => clearInterval(window.tiltInterval));
     await page.locator('#pause-button').click();
     await toggleSettingsSection(page, 'driving');
+    await armTiltReading(page, 20);
     await page.locator('#tilt-enable').click();
-    await expect(page.locator('#tilt-status')).toContainText('Waiting for tilt readings');
-    await page.evaluate(() => window.dispatchEvent(new DeviceOrientationEvent('deviceorientation', { gamma: 20, beta: 20 })));
     await expect(page.locator('#tilt-status')).toContainText('ready');
+    await expect(tilt).toBeChecked();
+    expect(await page.evaluate(() => window.tiltWaitingObserved)).toBe(true);
     await page.locator('#controls-reset').click();
     await expect(page.locator('[data-controls="mode"][value="slide"]')).toBeChecked();
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls')).mode)).toBe('slide');

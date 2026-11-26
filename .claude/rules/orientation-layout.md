@@ -108,6 +108,9 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
   `.home-intro-topbar` and `.lobby-race-heading` when the compact resource strip is shown; do not reduce the
   topbar's bottom margin below 6 px. On ultra-short landscape, compact the card minimum height instead, keeping its
   grid content, 44px target and pinned Garage clearance. Guard 345×206, 568×320, 667×375, 743×340, 756×265 and 852×393 in `tests/lobby-polish-browser.spec.js`.
+  At 568×320 the version pill narrows the left rail; place the chooser action below the title/map grid instead of
+  reserving a large right column that wraps the title vertically. Keep 4px clearance above Garage and test the
+  action label against the title bounds in `tests/responsive-browser.spec.js`.
 
 - **Home displays the track at its original brightness.** Keep the viewport-wide shade out of the ready phase,
   including the concept-image fallback. Any contrast treatment belongs to the controls that need it.
