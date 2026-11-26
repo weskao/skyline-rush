@@ -13,9 +13,15 @@ function canBatch(mesh: THREE.Mesh): boolean {
     !(mesh instanceof THREE.InstancedMesh && !!mesh.instanceColor) &&
     !(mesh.morphTargetInfluences?.length);
 }
-const appearanceKey = (mesh: THREE.Mesh): string =>
-  [mesh.geometry.uuid, (mesh.material as THREE.Material).uuid,
+const appearanceKey = (mesh: THREE.Mesh, material = mesh.material as THREE.Material): string =>
+  [mesh.geometry.uuid, material.uuid,
     mesh.castShadow, mesh.receiveShadow, mesh.layers.mask, mesh.frustumCulled].join('|');
+// A colour-only variant (kit material with a white `tintBase` twin) pools by its base, so meshes
+// differing only in colour share one draw. Pulsing colours and mutated sides keep their material.
+function tintBase(material: THREE.Material): THREE.Material | null {
+  const base = material.userData.tintBase as THREE.Material | undefined;
+  return base && !material.userData.pulse && material.side === base.side ? base : null;
+}
 function preserveRenderState(batch: THREE.Mesh, source: THREE.Mesh): void {
   batch.castShadow = source.castShadow;
   batch.receiveShadow = source.receiveShadow;
@@ -98,7 +104,8 @@ export function poolStaticChunks(
           !object.visible || object.userData.ownGeometry) return;
       const mesh = object as THREE.Mesh;
       if (!canBatch(mesh)) return;
-      const key = bucket + '|' + appearanceKey(mesh);
+      const material = mesh.material as THREE.Material;
+      const key = bucket + '|' + appearanceKey(mesh, tintBase(material) ?? material);
       const list = groups.get(key);
       if (list) list.push(mesh);
       else groups.set(key, [mesh]);
@@ -109,14 +116,18 @@ export function poolStaticChunks(
   const sources: THREE.Mesh[] = [];
   let drawsSaved = 0;
   const instance = new THREE.Matrix4(), combined = new THREE.Matrix4(), local = new THREE.Matrix4();
-  for (const meshes of groups.values()) {
+  for (const [key, meshes] of groups) {
     if (meshes.length < 2) continue; // A lone source gains nothing.
     const total = meshes.reduce((n, mesh) =>
       n + (mesh instanceof THREE.InstancedMesh ? mesh.count : 1), 0);
     if (!total) continue;
-    const first = meshes[0];
-    const batch = new THREE.InstancedMesh(first.geometry, first.material, total);
+    const first = meshes[0], firstMaterial = first.material as THREE.Material;
+    // One colour keeps its own material (no extra program); several share the white base.
+    const tinted = meshes.some(mesh => mesh.material !== firstMaterial);
+    const batch = new THREE.InstancedMesh(first.geometry,
+      tinted ? tintBase(firstMaterial)! : firstMaterial, total);
     batch.name = 'scenery shared GPU batch';
+    batch.userData.bucket = Number(key.slice(0, key.indexOf('|')));
     preserveRenderState(batch,first);
     let at = 0;
     for (const mesh of meshes) {
@@ -125,6 +136,7 @@ export function poolStaticChunks(
       for (let i = 0; i < count; i++) {
         if (mesh instanceof THREE.InstancedMesh) mesh.getMatrixAt(i, instance);
         else instance.identity();
+        if (tinted) batch.setColorAt(at, (mesh.material as THREE.MeshBasicMaterial).color);
         batch.setMatrixAt(at++, combined.multiplyMatrices(local, instance));
       }
       mesh.visible = false;

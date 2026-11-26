@@ -223,7 +223,7 @@ export function createWorldTourScene(scene){
     const sample=new THREE.Group();sample.name='shader rack '+id;sample.visible=false;
     for(const kind of [...SCENERY_KINDS[id],...DETAIL_KINDS[id]])for(let i=0;i<3;i++)sample.add(kit.build(id,kind));
     const earth=kit.terrain(id,0);if(earth)sample.add(earth);
-    sample.add(tunnelKit.buildChunk(id,0,['tunnel','tunnel','tunnel','boost-tunnel'].map(type=>({type,from:0,to:SCENERY_CHUNK_METRES}))));
+    sample.add(tunnelKit.buildChunk(id,0,['tunnel','tunnel','tunnel','boost-tunnel'].map(type=>({type,from:0,to:SCENERY_CHUNK_METRES}))),...kit.tintSamples());
     batchStaticChunk(sample);
     for(const kind of [...SCENERY_KINDS[id],...DETAIL_KINDS[id]])sample.add(kit.build(id,kind)); // plain variant, as in a chunk with under three copies
     return sample;

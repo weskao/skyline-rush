@@ -119,13 +119,22 @@ const GEO = {
 };
 export function createSceneryKit() {
   const materials = new Map(), tempMatrix = new THREE.Matrix4();
+  const make = (hex, glow) => glow ? new THREE.MeshBasicMaterial({color:hex,toneMapped:true})
+    : new THREE.MeshStandardMaterial({color:hex,roughness:.89,metalness:.035,flatShading:true});
+  // White twins: pooled colour variants draw as one InstancedMesh with instanceColor (white x colour = colour).
+  const tintBases = [make('#ffffff', false), make('#ffffff', true)];
   function material(hex, glow = false) {
     const key = hex + (glow ? '-edge' : '');
-    if (!materials.has(key)) materials.set(key, glow
-      ? new THREE.MeshBasicMaterial({color:hex,toneMapped:true})
-      : new THREE.MeshStandardMaterial({color:hex,roughness:.89,metalness:.035,flatShading:true}));
+    if (!materials.has(key)) {
+      const mat = make(hex, glow); mat.userData.tintBase = tintBases[glow ? 1 : 0]; materials.set(key, mat);
+    }
     return materials.get(key);
   }
+  // Hidden warmup samples of both tinted programs (shaderRack).
+  const tintSamples = () => tintBases.map(base => {
+    const sample = new THREE.InstancedMesh(GEO.box, base, 1); sample.setColorAt(0, base.color);
+    sample.userData.batchCount = 1; return sample; // batchCount: releaseChunk frees its buffers
+  });
   const add=(g,geo,color,x,y,z,w,h,d,glow=false)=>{
     const mesh=new THREE.Mesh(GEO[geo],material(color,glow));
     mesh.position.set(x,y,z);mesh.scale.set(w,h,d);g.add(mesh);return mesh;
@@ -330,5 +339,5 @@ export function createSceneryKit() {
     }
     return root;
   }
-  return { build,place,terrain,material,dispose() {for(const mat of materials.values())mat.dispose();materials.clear();} };
+  return { build,place,terrain,material,tintSamples,dispose() {for(const mat of [...materials.values(),...tintBases])mat.dispose();materials.clear();} };
 }
