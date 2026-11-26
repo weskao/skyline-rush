@@ -81,6 +81,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
   const ringPool = createMarkerPool('Race rings', ringGeometry, ringMaterials, RING_POOL_CAPACITY);
   const pickupMarkers = createPickupMarkers(128, { renderer, envMap: pickupEnvironment, distant: true }), pickupPool = pickupMarkers.pool;
   const gates = ringPool.group, marker = new THREE.Object3D(), gateFrames = new WeakMap(), rivalCues = createRivalCues();
+  const pickupViewport = new THREE.Vector2();
   scene.add(gates, ...pickupMarkers.objects);
   const collectVfx = createPickupCollectVfx(scene, player, camera), roadNormal = new THREE.Vector3();
   // ITEM-12: a light column over each ring that grants a held item, one per ring slot; same program as the plain rings.
@@ -141,7 +142,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
       dt = Math.max(0, dt);
       flowTime += dt;
       // Loaded pickup models replace the stand-ins only between races: their shaders compile before GO, never mid-race.
-      const rewarm = pickupMarkers.frame(flowTime, reducedMotion, race.phase !== 'racing');
+      const rewarm = pickupMarkers.frame(flowTime, reducedMotion, race.phase !== 'racing', camera, renderer?.getSize?.(pickupViewport)?.y ?? 0, scene.fog?.color);
       const car = race.player;
       const distance = options.roadDistance ?? (preview ? 340 : car.distance);
       classicRoute = options.classicRoute;

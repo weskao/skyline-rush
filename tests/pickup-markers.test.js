@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { drawnMarkers } from '../src/marker-pool.js';
 import { animatePickup, pickupPulse, PICKUP_SIZES } from '../src/pickup-art.js';
 import { createPickupMarkers } from '../src/pickup-markers.js';
+import { pickupVisibilityCaps } from '../src/pickup-visibility.js';
 import { PICKUP_GLOW, PICKUP_TIERS, plainGeometry } from '../src/pickup-models.ts';
 
 const tiers = ['cell', 'can', 'tank', 'overcharge'];
@@ -107,4 +108,114 @@ test('plainGeometry turns a quantized, node-scaled mesh into plain local vertice
   assert.ok(position.array instanceof Float32Array && !position.normalized);
   assert.deepEqual([...position.array].map(v => +v.toFixed(3)), [0, 1, 0, 2, 1, 0, 0, -1, 1]);
   assert.equal(geometry.getAttribute('position').array.constructor, Int16Array, 'the cached source mesh is untouched');
+});
+
+test('all four race pickups and halos grow at distance without moving the item or changing LOD scale', () => {
+  const markers = createPickupMarkers(4, { distant: true });
+  const camera = new THREE.PerspectiveCamera(58, 844 / 390, .1, 3000);
+  const aura = markers.objects[1];
+  try {
+    for (const tier of tiers) {
+      const item = Object.freeze({ tier, distance: 150, altitude: 0 });
+      const draw = depth => {
+        markers.frame(0, true, true, camera, 390);
+        const marker = new THREE.Object3D();
+        marker.position.set(1.5, .85, -depth);
+        markers.place(marker, item, 0, true, camera.quaternion);
+        markers.end();
+        const halo = new THREE.Matrix4();
+        aura.getMatrixAt(0, halo);
+        assert.equal(marker.position.x, 1.5);
+        assert.equal(marker.position.z, -depth);
+        return { scale: marker.scale.x, y: marker.position.y, halo: halo.getMaxScaleOnAxis() };
+      };
+      const near = draw(10), far = draw(150);
+      assert.equal(near.scale, PICKUP_SIZES[tier]);
+      assert.ok(far.scale > near.scale && far.scale <= near.scale * pickupVisibilityCaps(390).model);
+      assert.ok(far.y >= near.y && far.halo > near.halo);
+      assert.ok(Math.abs(draw(149.99).scale - draw(150.01).scale) < .001);
+      assert.equal(markers.key(tier, 150), tier);
+      assert.equal(markers.key(tier, 151), tier + '-distant');
+    }
+  } finally { markers.dispose(); }
+});
+
+test('distant pickup bounds match close bounds before and after authored model swap', async () => {
+  const models = loadedModels();
+  // A non-identical authored asset tests real geometry rather than just matching marker.scale.
+  for (const tier of tiers) models.geometries[tier].scale(1.7, 1.3, .8).translate(.05, -.2, .1);
+  const markers = createPickupMarkers(4, { distant: true, models: Promise.resolve(models) });
+  const check = () => {
+    for (const tier of tiers) {
+      const close = markers.pool.group.getObjectByName(tier).geometry;
+      const far = markers.pool.group.getObjectByName(tier + '-distant').geometry;
+      close.computeBoundingBox(); far.computeBoundingBox();
+      assert.ok(close.boundingBox.min.distanceTo(far.boundingBox.min) < 1e-5, tier + ' lower bounds');
+      assert.ok(close.boundingBox.max.distanceTo(far.boundingBox.max) < 1e-5, tier + ' upper bounds');
+    }
+  };
+  try {
+    check();
+    await markers.ready;
+    assert.equal(markers.frame(0, true, true), true);
+    check();
+  } finally {
+    markers.dispose();
+    for (const tier of tiers) {
+      models.geometries[tier].dispose();
+      models.materials[tier].dispose();
+    }
+  }
+});
+
+// One placement at `depth` straight ahead of `camera`; returns its scale, halo scale and halo colour.
+function placeAhead(markers, camera, height, tier, depth, atmosphere) {
+  markers.frame(0, true, true, camera, height, atmosphere);
+  const marker = new THREE.Object3D();
+  marker.position.set(0, .85, -depth);
+  markers.place(marker, Object.freeze({ tier, distance: 150, altitude: 0 }), 0, true, camera?.quaternion);
+  markers.end();
+  const aura = markers.objects[1], color = new THREE.Color(), halo = new THREE.Matrix4();
+  aura.getMatrixAt(0, halo);
+  aura.getColorAt(0, color);
+  return { scale: marker.scale.x, halo: halo.getMaxScaleOnAxis(), color };
+}
+
+test('a short landscape phone compensates distant pickups more than desktop', () => {
+  const markers = createPickupMarkers(4, { distant: true });
+  const desktop = new THREE.PerspectiveCamera(57, 1440 / 900, .1, 3000), phone = new THREE.PerspectiveCamera(57, 852 / 393, .1, 3000);
+  try {
+    for (const tier of tiers) {
+      // Far enough that every tier is past its knee on both viewports.
+      const wide = placeAhead(markers, desktop, 900, tier, 900), short = placeAhead(markers, phone, 393, tier, 900);
+      assert.ok(wide.scale > PICKUP_SIZES[tier] * 1.65, tier + ' reaches past the old cap on desktop');
+      assert.ok(short.scale > wide.scale && short.halo > wide.halo, tier + ' grows more on the short viewport');
+    }
+  } finally { markers.dispose(); }
+});
+
+test('portrait eases large pickups back mid-range and restores them before collection', () => {
+  const markers = createPickupMarkers(4, { distant: true });
+  const portrait = new THREE.PerspectiveCamera(61, 393 / 852, .1, 3000), landscape = new THREE.PerspectiveCamera(57, 852 / 393, .1, 3000);
+  try {
+    for (const tier of ['tank', 'overcharge']) {
+      assert.ok(placeAhead(markers, portrait, 852, tier, 25).scale < PICKUP_SIZES[tier] * .9);
+      assert.equal(placeAhead(markers, portrait, 852, tier, 10).scale, PICKUP_SIZES[tier]);
+      assert.equal(placeAhead(markers, landscape, 393, tier, 25).scale, PICKUP_SIZES[tier]);
+    }
+    assert.equal(placeAhead(markers, portrait, 852, 'cell', 25).scale, PICKUP_SIZES.cell);
+  } finally { markers.dispose(); }
+});
+
+test('race halos brighten under a dark atmosphere; the guide keeps its studio level', () => {
+  const markers = createPickupMarkers(4, { distant: true });
+  const camera = new THREE.PerspectiveCamera(57, 1440 / 900, .1, 3000);
+  const luminance = c => c.r + c.g + c.b;
+  try {
+    const day = placeAhead(markers, camera, 900, 'cell', 20, new THREE.Color(.82, .88, .95));
+    const night = placeAhead(markers, camera, 900, 'cell', 20, new THREE.Color(.03, .07, .13));
+    const guide = placeAhead(markers, undefined, 0, 'cell', 20, new THREE.Color(.03, .07, .13));
+    assert.ok(luminance(night.color) > luminance(day.color) * 1.25);
+    assert.equal(luminance(guide.color), luminance(placeAhead(markers, undefined, 0, 'cell', 20).color));
+  } finally { markers.dispose(); }
 });
