@@ -80,7 +80,7 @@ Reading the numbers honestly:
 | 1 CPU-profile sim, AI, collision, route sampling, standings, items | DONE | `--cpu-prof` over `scripts/cpu-audio-bench.mjs` (4 tracks, 3000 ticks, local-node). Top self time after this branch: `avoidObstacles` `src/car-collisions.js:59` 14%, rival loop `src/course-race-step.ts:144` 9.5%, `stepRaceWorld` `src/race-rivals.js:40` 9%, `courseCarsGap` `src/course-race.ts:217` 6%, `sampleRoute` `src/course-route-frame.ts:104` 5%; GC 1.7%, `race-audio-events.ts:60` 1.3% |
 | 2 Keep fixed 60 Hz | DONE | `stepRace` `src/game.js:241` untouched; the replay steps 1/60 s ticks |
 | 3 Cache invariants, drop duplicate route/gap/state work per step | DONE | edge-id index `src/course-route-frame.ts:53`; curvature memo `:123`; single `carOf` lookup and `courseCarsGap` `src/course-race.ts:217` used by `carGap` `src/course-race-step.ts:250`; cheap height test before `carGap` `src/car-collisions.js:50`; off-edge item sweeps skipped `src/course-race-step.ts:184` |
-| 4 Cut hot-path temporary allocations and GC | PARTIAL, remainder DEFERRED | Edge scans, repeated `cars.get` and curvature recomputation removed (scavenge columns above). Not done: the `race-audio-events.ts` cue array and the rival closures in `stepCourseCars`. Measured reason: `race-audio-events.ts:60` is 1.3% self time and the whole GC share 1.7% of the profile, so neither is a bottleneck; the rival closure body is the AI step itself, and rewriting it would risk the byte-identical guard for no measurable gain |
+| 4 Cut hot-path temporary allocations and GC | PARTIAL, remainder DEFERRED; scene/pose/item edge scans DONE in Stage A 90b (see "Edge lookup in scene modules") | Edge scans, repeated `cars.get` and curvature recomputation removed (scavenge columns above). Not done: the `race-audio-events.ts` cue array and the rival closures in `stepCourseCars`. Measured reason: `race-audio-events.ts:60` is 1.3% self time and the whole GC share 1.7% of the profile, so neither is a bottleneck; the rival closure body is the AI step itself, and rewriting it would risk the byte-identical guard for no measurable gain |
 | 5 Redundant full scans; spatial index only if measured | REJECTED | The redundant scans found (edge lookup, item sweep, `carGap`) were fixed. `avoidObstacles` is the largest remaining cost but is a per-rival scan, not a full-crowd N x N pass; no profile justifies an index |
 | 6 Keep all rival AI, collision, speed, catch-up, ranking; never stop off-screen cars | DONE | No AI or ranking logic changed; every car still steps each tick; replay fixture byte-identical for every `RACE_TRACKS` entry plus the extra cases in `tests/cpu-race-replay.test.js` |
 | 7 Review `sound.update()` and the Web Audio graph | DONE | `src/audio.js:387` writes engine params only while SFX or music is on; graph and node creation unchanged (0.4 to 0.8 nodes per tick, all one-shots) |
@@ -114,6 +114,33 @@ Optional integration notes:
 - `edgeOf(graph, id)` (`src/course-route-frame.ts`) is the shared edge-id lookup; scene modules that still do
   `graph.edges.find(e => e.id === id)` per frame (`course-items.ts`, `course-render-pose.ts`, `course-race-scene.ts`,
   `stormline-megacity-race-scene.ts`, `volcanic-crown-race-scene.ts`) can switch to it. They belong to other workstreams and were not touched.
+
+### Edge lookup in scene modules (Stage A 90b)
+
+- Safety: `edgeOf` is keyed by graph object identity (WeakMap, plus a one-entry last-graph shortcut) and first edge wins, like
+  `Array.find`. `CourseGraph.edges` is `readonly`, and no `src/` code mutates `edges` after build; tests that mutate build a
+  fresh graph object (new identity) before validation. The index is never invalidated, so a graph mutated in place after its
+  first `edgeOf` call would be stale. None exists today.
+- Inventory: `grep -rn "edges.find" src` found 33 sites. Switched (5, all per-frame or per-event on the live graph):
+  `course-items.ts` (`nodeOffset`, `groundOffset` alternate branch, `projectCourseItems` reach), `course-render-pose.ts`
+  (`graphLookAhead`, every frame), `course-race-scene.ts` (per car per frame; the Wave 1 hysteresis and predecessor-tail logic
+  is untouched). Not switched, by reason: `stormline-megacity-race-scene.ts:55` and `volcanic-crown-race-scene.ts:83` run once
+  per scene build (no per-frame cost); `src/courses/*` (22 sites) are authoring/validation helpers or edge-crossing adapters owned
+  by the course data modules; `upcoming-scenes/frostbite-landmarks.ts` (2) are build-time; `course-progress.ts:21` and `course-race-step.ts:168` are one-off or use a different predicate.
+- Tests: `tests/cpu-edge-lookup.test.js` (edge equality incl. duplicate ids, missing id and `undefined`; zero `graph.edges.find`
+  calls over 50 `groundOffset`/`graphLookAhead` calls and 20 scene updates). RED observed before the change: 301 and 160 scans.
+- Measurement (`node --experimental-strip-types scripts/edge-lookup-bench.mjs`; Apple M4, Node 24.19, CPU only, dune-tempest
+  graph with 14 edges, 3 runs each, us per call):
+
+  | Call | Before | After |
+  |---|---|---|
+  | `createCourseRaceScene.update`, 8 cars | 9.11 / 9.18 / 9.25 | 8.58 / 8.64 / 8.70 |
+  | `graphLookAhead` 900 m | 0.20 to 0.22 | 0.19 to 0.21 |
+  | `groundOffset`, alternate branch | 0.22 to 0.28 | 0.22 to 0.23 |
+
+  Result: DONE. Only the scene update shows a repeatable gain (about 6%, 0.5 us per frame, negligible against a 16.7 ms
+  frame); the other two are inside the noise. They stay switched because the semantics are identical and the scan grows with
+  edge count, but no speedup is claimed for them. Browser FPS, GPU and device thermals are UNVERIFIED (CPU microbench only).
 
 ## Manual iOS SOP (physical device only; UNVERIFIED here)
 

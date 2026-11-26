@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { routeLength, sampleRoute } from './course-route-frame.ts';
+import { edgeOf, routeLength, sampleRoute } from './course-route-frame.ts';
 import { TRAFFIC_PREFIX, type CourseRuntime } from './course-race.ts';
 import { DUNE_TEMPEST_ID } from './courses/dune-tempest-race.ts';
 import { SKYFALL_ARCHIPELAGO_ID } from './courses/skyfall-archipelago-race.ts';
@@ -106,7 +106,7 @@ export function createCourseRaceScene(scene: THREE.Scene) {
     for (const [id, car] of runtime.cars) {
       if (id.startsWith(TRAFFIC_PREFIX)) continue; // traffic stays near the player: its scenery streams anyway
       const { currentEdgeId, localS } = car.travel;
-      const edge = graph.edges.find(item => item.id === currentEdgeId);
+      const edge = edgeOf(graph, currentEdgeId);
       if (!edge) continue;
       cover(edge, localS, BEHIND_METRES, AHEAD_METRES, false);
       // Hysteresis: a live chunk is released only HYSTERESIS_METRES past the window that created it,

@@ -74,3 +74,49 @@ test('rival item sweeps never read items on edges the rival did not cross', () =
   stepRace(race, { up: true }, 1 / 60);
   assert.equal(reads.n, 0);
 });
+
+// Wave 1 / 90b: the per-frame scene/pose/item lookups use the shared edge index, never `graph.edges.find`.
+import * as THREE from 'three';
+import { RACE_DRIVER_IDS } from '../src/race-grid.ts';
+import { edgeOf } from '../src/course-route-frame.ts';
+import { groundOffset, projectCourseItems } from '../src/course-items.ts';
+import { graphLookAhead } from '../src/course-render-pose.ts';
+import { createCourseRaceScene } from '../src/course-race-scene.ts';
+
+function findSpy(graph) {
+  const edges = [...graph.edges], spy = { finds: 0 };
+  edges.find = (...args) => { spy.finds++; return Array.prototype.find.apply(edges, args); };
+  return { graph: { ...graph, edges }, spy };
+}
+
+test('edgeOf returns the same edge as Array.find, first match wins, missing id is undefined', () => {
+  const graph = { ...DUNE_TEMPEST_RACE.graph, edges: [...DUNE_TEMPEST_RACE.graph.edges, { ...DUNE_TEMPEST_RACE.graph.edges[0], from: 'dup' }] };
+  for (const id of [...graph.edges.map(e => e.id), 'missing', undefined]) {
+    assert.equal(edgeOf(graph, id), graph.edges.find(e => e.id === id), String(id));
+  }
+});
+
+test('groundOffset on an alternate branch and graphLookAhead never scan graph.edges', () => {
+  const { graph, spy } = findSpy(DUNE_TEMPEST_RACE.graph);
+  const alt = DUNE_TEMPEST_RACE.graph.edges.find(e => !graph.groundRoute.includes(e.id));
+  assert.ok(alt, 'fixture must have an alternate branch');
+  const expected = groundOffset(DUNE_TEMPEST_RACE.graph, alt.id, 10);
+  for (let i = 0; i < 50; i++) assert.equal(groundOffset(graph, alt.id, 10), expected);
+  assert.throws(() => groundOffset(graph, 'missing', 1), /Unknown CourseGraph edge/);
+  assert.equal(spy.finds, 0);
+  const rt = createCourseRuntime({ ...DUNE_TEMPEST_RACE, graph }, [{ id: 'YOU', distance: 0, x: 0 }]);
+  spy.finds = 0; // runtime construction is one-off
+  for (let i = 0; i < 50; i++) graphLookAhead(rt, 0, 900);
+  assert.equal(spy.finds, 0);
+});
+
+test('course scene streaming resolves each car edge through the index', () => {
+  const { graph, spy } = findSpy(DUNE_TEMPEST_RACE.graph);
+  const ids = [graph.groundRoute[0], graph.groundRoute[3], graph.groundRoute[7]];
+  const cars = new Map(RACE_DRIVER_IDS.map((id, i) => [id, { travel: { currentEdgeId: ids[i % 3], localS: 50 + i * 9 } }]));
+  const host = createCourseRaceScene(new THREE.Scene());
+  host.update({ trackId: 'dune-tempest', elapsed: 1, course: { spec: { ...DUNE_TEMPEST_RACE, graph }, cars } }, 'low');
+  spy.finds = 0;
+  for (let i = 0; i < 20; i++) host.update({ trackId: 'dune-tempest', elapsed: 1 + i, course: { spec: { ...DUNE_TEMPEST_RACE, graph }, cars } }, 'low');
+  assert.equal(spy.finds, 0);
+});
