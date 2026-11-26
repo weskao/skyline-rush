@@ -340,12 +340,10 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
           ribbonFrom.copy(s.b); ribbonSide.copy(s.right);
         });
       }
-      let liveFirst = segments.length, liveLast = -1;
-      for (let i = ribbonSpan.first, last = ribbonSpan.last; i <= last; i++) { // outside the span: dead, alpha 0 on the GPU
+      for (let i = ribbonSpan.first, last = ribbonSpan.last; i <= last; i = ribbonSpan.next(i)) { // outside the span: dead, alpha 0 on the GPU
         const s = segments[i]; s.life = s.roll && !rollEnabled ? 0 : Math.max(0, s.life - dt);
         if (s.life === 0) { ribbonAlpha.fill(0, i * 6, i * 6 + 6); continue; }
-        if (i < liveFirst) liveFirst = i;
-        liveLast = i;
+        ribbonSpan.live(i);
         for (let j = 0; j < 6; j++) {
           const end = j === 2 || j === 4 || j === 5, side = j === 1 || j === 3 || j === 4 ? 1 : -1;
           corner.copy(end ? s.b : s.a).addScaledVector(end ? s.right : s.left, side);
@@ -354,15 +352,13 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
           ribbonAlpha[i * 6 + j] = enabled && s.life > 0 ? s.life / s.maxLife * (s.roll ? settings.airflowDensity * settings.airflowOpacity * .3 : calm ? 0.04 : 0.12) : 0;
         }
       }
-      ribbonSpan.commit(liveFirst, liveLast);
+      ribbonSpan.commit();
       if (ribbonKindDirty) ribbonGeo.attributes.rollWake.needsUpdate = true;
-      liveFirst = MAX_PARTICLES; liveLast = -1;
-      for (let i = wakeSpan.first, last = wakeSpan.last; i <= last; i++) {
+      for (let i = wakeSpan.first, last = wakeSpan.last; i <= last; i = wakeSpan.next(i)) {
         const p = particles[i]; p.life = p.roll && !rollEnabled ? 0 : Math.max(0, p.life - dt);
         alphas[i] = 0;
         if (p.life === 0) continue;
-        if (i < liveFirst) liveFirst = i;
-        liveLast = i;
+        wakeSpan.live(i);
         if (!p.roll) {
           p.pos.addScaledVector(p.velocity, dt); p.velocity.multiplyScalar(Math.exp(-dt * 2));
           if (p.pos.y < 0.09) { p.pos.y = 0.09; p.velocity.y = Math.abs(p.velocity.y) * 0.1; p.velocity.x *= 1 + dt; }
@@ -372,7 +368,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
         sizes[i] = p.roll ? p.size : p.size + age * 2;
         alphas[i] = p.opacity * Math.min(1, age * 25) * (p.life / p.maxLife) ** 1.5;
       }
-      wakeSpan.commit(liveFirst, liveLast);
+      wakeSpan.commit();
       for (let i = 0; i < ghosts.length; i++) {
         const g = ghosts[i]; g.life = Math.max(0, g.life - dt);
         g.mesh.visible = enabled && !calm && g.life > 0 && i < settings.afterimages;
