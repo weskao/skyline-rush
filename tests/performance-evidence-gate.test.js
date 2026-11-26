@@ -68,3 +68,17 @@ test('triangle budget excludes the drawn cars but still catches scenery growth',
     assert.match(scenery.stdout,/tokyo: \d+ scenery triangles exceeds pre-pool budget/);
   } finally {rmSync(dir,{recursive:true,force:true});}
 });
+
+// Thermal specs share the render-performance artifact (render-performance-thermal-*.json) but carry no viewport;
+// CI 45823435737 crashed on them. They are not ten-track coverage records.
+test('thermal harness records in the artifact do not break the coverage gate',()=>{
+  const dir=mkdtempSync(join(tmpdir(),'skyline-perf-thermal-'));
+  try {
+    runs.forEach(x=>emit(dir,x));
+    writeFileSync(join(dir,'render-performance-thermal-race-coast.json'),
+      JSON.stringify({source:'ci-software-webgl',sha:null,harness:'fixed-step-scene-probe',phase:'race',id:'coast'}));
+    const result=verify(dir);
+    assert.equal(result.status,0,result.stderr+result.stdout);
+    assert.match(result.stdout,/Recorded 35\/35 mandatory/);
+  } finally {rmSync(dir,{recursive:true,force:true});}
+});

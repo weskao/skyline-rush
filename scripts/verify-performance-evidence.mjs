@@ -13,7 +13,8 @@ const walk = folder => readdirSync(folder, { withFileTypes: true }).flatMap(entr
     : entry.name.startsWith('render-performance-') && entry.name.endsWith('.json') ? [path] : [];
 });
 const files = walk(root);
-const records = files.map(path => JSON.parse(readFileSync(path, 'utf8')));
+// Thermal harness records (render-performance-thermal-*) share the artifact but are not ten-track coverage evidence.
+const records = files.map(path => JSON.parse(readFileSync(path, 'utf8'))).filter(record => !record.harness);
 const classics = ['coast', 'neon', 'canyon', 'aurora', 'spiral'];
 const worldTour = ['tokyo', 'alpine', 'taipei', 'coastal', 'cosmic'];
 const expected = [...classics.flatMap(track => [
