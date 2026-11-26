@@ -83,11 +83,11 @@ export function createPickupCollectVfx(scene, player, camera) {
   let bodySlot = null;
   const inverse = new THREE.Matrix4(), roadRotation = new THREE.Quaternion();
   const contactScale = new THREE.Vector3();
-  const target = new THREE.Vector3(), flight = new THREE.Vector3();
+  const target = new THREE.Vector3(), flight = new THREE.Vector3(), point = [0, 0, 0]; // worldPoint `out`
   // Where the race draws the item model before it is absorbed (drawAbsorbing), in world space.
   const itemPoint = (event, { distance = 0, center = 0, roadCenter = () => 0, worldPoint }, out) => {
     const y = (event.altitude ?? 0) + .85;
-    return worldPoint ? out.fromArray(worldPoint(event.distance, event.x, y, distance, event))
+    return worldPoint ? out.fromArray(worldPoint(event.distance, event.x, y, distance, event, point))
       : out.set(roadCenter(event.distance) + event.x - center, y, distance - event.distance);
   };
   const right = new THREE.Vector3(), up = new THREE.Vector3(), back = new THREE.Vector3(), basis = new THREE.Matrix4();
@@ -201,7 +201,7 @@ export function createPickupCollectVfx(scene, player, camera) {
     group.scale.setScalar(1);
     const at = follow ? car : event, altitude = at.altitude ?? 0;
     const baseY = follow ? altitude + .3 : altitude + .85 + (altitude < .5 ? PICKUP_GROUND_LIFT[tier] : 0);
-    if (worldPoint) group.position.fromArray(worldPoint(at.distance, at.x, baseY, distance, follow ? undefined : event));
+    if (worldPoint) group.position.fromArray(worldPoint(at.distance, at.x, baseY, distance, follow ? undefined : event, point));
     else group.position.set(roadCenter(at.distance) + at.x - center, baseY, -(at.distance - distance));
     group.quaternion.identity();
   }
@@ -209,7 +209,7 @@ export function createPickupCollectVfx(scene, player, camera) {
   function placeContact(slot, { distance = 0, center = 0, roadCenter = () => 0, worldPoint, worldFrame }) {
     const { event, contact, group } = slot;
     const altitude = event.altitude ?? 0, height = altitude < .5 ? altitude + .08 : altitude + .85;
-    if (worldPoint) contact.position.fromArray(worldPoint(event.distance, event.x, height, distance, event));
+    if (worldPoint) contact.position.fromArray(worldPoint(event.distance, event.x, height, distance, event, point));
     else contact.position.set(roadCenter(event.distance) + event.x - center, height, distance - event.distance);
     const road = worldFrame?.(event.distance, event);
     roadRotation.identity();

@@ -59,7 +59,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
   const emissions = new Float64Array(RACE_DRIVER_IDS.length), strengths = new Float64Array(RACE_DRIVER_IDS.length);
   const nozzles = new Uint8Array(RACE_DRIVER_IDS.length);
   const nozzlePosition = new THREE.Vector3(), nozzleVelocity = new THREE.Vector3();
-  const gateBasis = new THREE.Matrix4(), gateRight = new THREE.Vector3(), gateUp = new THREE.Vector3(), gateBack = new THREE.Vector3();
+  const gateBasis = new THREE.Matrix4(), gateRight = new THREE.Vector3(), gateUp = new THREE.Vector3(), gateBack = new THREE.Vector3(), point = [0, 0, 0]; // worldPoint `out`, read before the next call
   const ringGeometry = new THREE.TorusGeometry(1, 0.012, 6, 64);
   const rainbow = new Float32Array(ringGeometry.attributes.position.count * 3), tint = new THREE.Color();
   for (let i = 0; i < ringGeometry.attributes.position.count; i++) {
@@ -161,7 +161,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
           if (collected || item.downUntil > race.elapsed || item.distance <= distance || item.distance > distance + 900) continue; // gone until it respawns
           const mesh = marker;
           if (options.worldPoint) mesh.position.fromArray(options.worldPoint(item.distance, item.x,
-            item.altitude + (source === 0 ? 0.85 : 0), distance, item));
+            item.altitude + (source === 0 ? 0.85 : 0), distance, item, point));
           else mesh.position.set(roadCenter(item.distance) + item.x - center,
             item.altitude + (source === 0 ? 0.85 : 0), -(item.distance - distance));
           if (source === 1 && options.worldFrame) {
@@ -326,7 +326,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
         }
         const offset = i * 3;
         if (options.worldPoint && !classicRoute) {
-          positions.set(options.worldPoint(p.distance,p.x-roadCenter(p.distance),p.y,distance),offset);
+          positions.set(options.worldPoint(p.distance,p.x-roadCenter(p.distance),p.y,distance,undefined,point),offset);
         } else {
           positions[offset] = p.x - center; positions[offset + 1] = p.y; positions[offset + 2] = originZ - p.distance;
         }
@@ -343,7 +343,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
         const age = event ? race.elapsed - event.time : 10;
         ring.visible = age >= 0 && age < 0.7 && !preview;
         if (ring.visible) {
-          if (options.worldPoint) ring.position.fromArray(options.worldPoint(event.distance,event.x,.05,distance));
+          if (options.worldPoint) ring.position.fromArray(options.worldPoint(event.distance,event.x,.05,distance,undefined,point));
           else ring.position.set(roadCenter(event.distance) + event.x - center, 0.05, -(event.distance - distance));
           ring.scale.setScalar(1 + age * (reducedMotion ? 3 : 14));
           ring.material.opacity = (1 - age / 0.7) * 0.55;
@@ -353,7 +353,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
       const magnet = car.effects?.magnet ?? 0;
       magnetRing.visible = magnet > 0 && !preview;
       if (magnetRing.visible) {
-        if (options.worldPoint) magnetRing.position.fromArray(options.worldPoint(car.distance, car.x, car.altitude + .05, distance));
+        if (options.worldPoint) magnetRing.position.fromArray(options.worldPoint(car.distance, car.x, car.altitude + .05, distance, undefined, point));
         else magnetRing.position.set(roadCenter(car.distance) + car.x - center, car.altitude + .05, 0);
         // Fades over the final second; a gentle pulse unless motion is reduced.
         magnetRing.material.opacity = Math.min(1, magnet) * (reducedMotion ? .3 : .3 + Math.sin(flowTime * 5) * .08);

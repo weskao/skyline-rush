@@ -70,13 +70,13 @@ export function createWorld(canvas, visual = vfxSettings()) {
   // Scoped continuation: finite career/Ghost path API still clamps at the finish.
   let endlessActive=false, curvedClassic = false, classicRoute = legacyClassicRoad;
   const roadCenter = d => classicRoute.point(d)[0], roadHeading = d => classicRoute.heading(d);
-  const classicPosition = (d, x, y, origin) => {
+  const classicPosition = (d, x, y, origin, _item, out = [0, 0, 0]) => { // also the effects worldPoint: `out` is reused per particle
     const [px, pz] = classicRoute.point(d, x), [ox, oz] = classicRoute.point(origin);
-    return [px - ox, y + (classicRoute.elevation?.(d) ?? 0) - (classicRoute.elevation?.(origin) ?? 0), pz - oz];
+    out[0] = px - ox; out[1] = y + (classicRoute.elevation?.(d) ?? 0) - (classicRoute.elevation?.(origin) ?? 0); out[2] = pz - oz; return out;
   };
   const skyPosition=(d,x=0,y=0,o=0)=>finiteSkyPosition(d,x,y,o,endlessActive),skyFrame=d=>finiteSkyFrame(d,endlessActive),
     trackPoint=(id,d)=>finitePoint(id,d,endlessActive),trackFrame=(id,d,span=false)=>finiteFrame(id,d,endlessActive,span),
-    trackLocalPosition=(id,d,x=0,y=0,o=0)=>finitePosition(id,d,x,y,o,endlessActive);
+    trackLocalPosition=(id,d,x=0,y=0,o=0,out=undefined)=>finitePosition(id,d,x,y,o,endlessActive,out);
   const renderer = createRenderer(canvas);
   renderer.info.autoReset=false; // Combine scene and composer submissions per frame for QA.
   renderer.setPixelRatio(renderPixelRatioForQuality(visual.quality, devicePixelRatio, 1));
@@ -360,6 +360,8 @@ export function createWorld(canvas, visual = vfxSettings()) {
   let cameraMode = 0, cameraSwing = 0;
   const recoveryView = createRoadRecoveryView(canvas);
   let initialized = false, lastRace = null, trackId, carBank = 0, spanLift = new THREE.Vector3(), nextLift = new THREE.Vector3(); const courseOriginPoint = [0, 0, 0];
+  const graphPoint = (s, x, y, origin, item, out) => lastRace.course && item ? courseItemPoint(lastRace.course, item, x, y, courseOriginPoint, out) : trackLocalPosition(trackId, s, x, y, origin, out), graphFrame = (s, item) => courseItemFrame(lastRace.course, item);
+  const classicEffects = { worldPoint: classicPosition, worldFrame: effectFrame }, framedEffects = { worldPoint: graphPoint }; // effects options, refreshed in place each frame
   const classicRoadRender = createClassicRoadRender({ road, laneLines, curbs, edgeLines, railLights, tunnelRoofs, tunnelWalls, shortcutDeck, surfaceMarks }, segments, put, SHORTCUT_TOLERANCE);
   let photoView = null, photoCapture = null, garageCamera = null, garageHomePreview = false, garagePose = null, garageLighting = 'bright';
   const syncGarageLighting = () => { lens.uniforms.gain.value = garageCamera || garagePose ? GARAGE_LIGHTING[garageLighting] : 1; };
@@ -720,10 +722,10 @@ export function createWorld(canvas, visual = vfxSettings()) {
         finish.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(...frame.right), new THREE.Vector3(...frame.up), new THREE.Vector3(...frame.forward).negate()));
       } else { finish.position.fromArray(classicPosition(race.length, 0, 0, distance)); finish.rotation.set(0, curvedClassic ? -roadHeading(race.length) : 0, 0); }
       finish.visible = graphFinish ? graphFinish.separation < 1400 : trackId === CIRCUIT_ID || (!race.endless && race.length - distance < 1400);
-      const effectsVisual = garageHomePreview && !aero.group.visible ? garageHiddenVisual : visual;
-      if (effects.update(race, motionDt, center, preview, reducedMotion, flightVehicles,
-        curvedClassic ? { ...effectsVisual, classicRoute, roadDistance: distance, worldPoint: classicPosition, worldFrame: effectFrame } :
-        framedRoad(trackId, endlessActive) || trackId === 'spiral' ? { ...effectsVisual, worldPoint: (s,x,y,origin,item) => race.course && item ? courseItemPoint(race.course,item,x,y,courseOriginPoint) : trackLocalPosition(trackId,s,x,y,origin), worldFrame: race.course ? (s,item) => courseItemFrame(race.course,item) : trackId === CIRCUIT_ID || trackId === 'spiral' ? effectFrame : undefined } : effectsVisual, origin)) warmupPending = true; // loaded pickup models compile before GO
+      const effectsVisual = garageHomePreview && !aero.group.visible ? garageHiddenVisual : visual, framedEffect = framedRoad(trackId, endlessActive) || trackId === 'spiral';
+      if (curvedClassic) { Object.assign(classicEffects, effectsVisual); classicEffects.classicRoute = classicRoute; classicEffects.roadDistance = distance; }
+      else if (framedEffect) { Object.assign(framedEffects, effectsVisual); framedEffects.worldFrame = race.course ? graphFrame : trackId === CIRCUIT_ID || trackId === 'spiral' ? effectFrame : undefined; }
+      if (effects.update(race, motionDt, center, preview, reducedMotion, flightVehicles, curvedClassic ? classicEffects : framedEffect ? framedEffects : effectsVisual, origin)) warmupPending = true; // loaded pickup models compile before GO
       Object.assign(sprintInput, {
         phase: race.phase, nitro: car.nitroTime > 0, chain: car.nitroTime > 0 ? car.nitroBurst : 0, boost: !!(car.boosting || car.miniBoost > 0),
         speed: visualCar.speed, dt: motionDt, enabled: visual.enabled, quality: visual.quality, reducedMotion, ultra: visual.ultra,
