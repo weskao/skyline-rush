@@ -1,6 +1,7 @@
 # Startup Enter dock viewport regression (2026-11-27)
 
 - [x] Isolated Chromium mobile geometry RED/GREEN: the landscape footer's percentage-based bottom inset was reused as padding, where it resolved against width and collapsed the flexible grid row. At 844x390 the dock's top moved from 140px to 290px with the fix; the footer gap became 8px. Portrait 390x844 and desktop 1440x900 positions were unchanged. All eight isolated viewport checks passed after the fix.
+- [x] Cross-device isolated Chromium geometry check: 22 viewport sizes, 156 comparisons of the pre-fix and fixed CSS layout rules, including loading/ready, footer present/absent, emulated nonzero safe-area inputs and both fold axes. Title, tagline and footer bounds were unchanged in all comparisons; the action bounds were unchanged except the intended short-landscape correction. Added real-game dock coordinate checks for tablet portrait/landscape, desktop and both fold axes; no further runtime CSS change. The harness reconstructs the layout, not the full game, and simulates iOS insets rather than running WebKit.
 - [ ] Run the real-game regression in `tests/startup-browser.spec.js`, full unit/typecheck/build/module-size and exact-HEAD quality-gate; confirm the reported intermittent portrait behavior on a real phone. The isolated reproduction demonstrates the short-landscape CSS defect and rotation recovery, not a reproduction of an exclusively portrait device bug. Full checkout/dependencies unavailable in this session.
 
 # CI 45577036521 Tilt follow-up (2026-11-25)
