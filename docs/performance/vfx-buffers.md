@@ -95,16 +95,65 @@ average 23–80. Before = pre-change `src/` snapshot, after = `810d4e47`.
 | 9 | Garage equipment shares resources across cars | DONE (existing) | One AeroVFX per scene (`src/garage-stage.ts:61`, `src/upcoming-showcase.ts:122`); `setSkins` only rewrites uniforms/flags on existing materials (`src/aero-vfx.js:169`); guarded by `tests/garage-skin-renderer.test.js` ("toggling skins reuses GPU resources") and `tests/garage-skin-stage.test.js`. |
 | 10 | EMP, Freeze, collision, flight, exhaust, airflow, Nitro afterimage, speed lines, pickup rings, special items | DONE | Bench scenarios A plus `tests/vfx-instanced-uploads.test.js` (EMP on a rival, player Freeze, 3 rivals); existing `tests/emp-debuff-fx`, `freeze-debuff-fx`, `nitro-*`, `pickup-collect-vfx`, `garage-*`, `aero-*`, `mini-boost-*` suites pass. |
 | 11 | Launch flare frequency, speed, start, play count exactly as-is | DONE (untouched) | `src/garage-launch-flare*.js` not modified; 1.4 s × 2 countdown waves (`src/garage-launch-flare.js:123-124`), 1.1 s direct start (`src/aero-vfx.js:263`); guarded by `tests/garage-launch-flare-3d.test.js:86`, `:138`, `:164`. |
-| 12 | No accumulation across FPS, pause, restart, Garage switching | DONE | `markRange` bounds pending ranges to one per attribute even when not rendered (tests assert `updateRanges.length ≤ 1` over skipped frames); reset clears spans and uploads zero alpha (`src/effects-particle-pool.js`, `src/aero-vfx.js:153-154`); Garage stage disposes its aero geometry/materials (`src/garage-stage.ts:185`). Physical-device soak: UNVERIFIED (SOP below). |
+| 12 | No accumulation across FPS, pause, restart, Garage switching | DONE | `markRange` bounds pending ranges per attribute even when not rendered (one in Wave 1, ≤ 2 since the Stage A two-range span; tests assert the bound over skipped frames); reset clears spans and uploads zero alpha (`src/effects-particle-pool.js`, `src/aero-vfx.js:153-154`); Garage stage disposes its aero geometry/materials (`src/garage-stage.ts:185`). Physical-device soak: UNVERIFIED (SOP below). |
 
 ## Wiring needs (files outside this workstream)
 
 - `src/world.js:727-728` builds `{ ...effectsVisual, worldPoint: (s,x,y,origin,item) => … }` and a new closure every
   frame, and `worldPoint` returns a new array per particle placement. Suggest hoisting the visual object (mutate its
   fields per frame) and an out-parameter `worldPoint(s, x, y, origin, item, out)`; `effects.js` can accept both.
-- Optional follow-up (owned, not done): the race-pool span becomes conservative (the whole ring) once the emission
-  cursor wraps, which is why multi-car-flight and pickups-impacts still upload 23–27 KB/frame. A two-range circular span
-  would cut this further; it needs its own equivalence test.
+- Two-range circular span: DONE in Stage A 90c (section below).
+
+## Stage A 90c — two-range circular live span
+
+| Item | Status | Where |
+|---|---|---|
+| Once the emission cursor wraps, the span is `[first,last]` minus its widest dead hole, so a wrapped ring uploads `[0,wrapEnd)` + `[start,end)` (one `addUpdateRange` each per attribute) instead of the whole ring. Callers iterate `i = span.next(i)` (skips the hole), report `span.live(i)`, then `span.commit()` | DONE | `src/effects-particle-upload.js:27`; race pool `src/effects.js:293`, `:338`; ribbon `src/aero-vfx.js:343`, `:355`; wake `:357`, `:371` |
+| `markRange` keeps ≤ 2 pending ranges per attribute (widens an overlapping/adjacent one, else the nearer one) so skipped renders stay bounded | DONE | `src/effects-particle-upload.js:5` |
+| Holes narrower than `capacity/8` slots are rewritten instead (an extra `bufferSubData` per attribute is not worth a few bytes) | DONE | `src/effects-particle-upload.js:29` |
+| Draw range stays one contiguous `[first live, last live]` (one draw call, slot order = draw order); dead slots in it stay alpha 0 and are vertex-clipped | unchanged | — |
+
+three r186 does **not** merge the two ranges: `WebGLAttributes.updateBuffer` sorts and merges only overlapping or
+adjacent (`start <= prevEnd + 1`) ranges, then issues one `bufferSubData` per remaining range
+(`node_modules/three/src/renderers/webgl/WebGLAttributes.js`). So the bytes saved are real.
+
+Equivalence: `tests/helpers/gpu-upload-shadow.js` now runs three's own `WebGLAttributes` against a recording fake GL
+(every `bufferSubData` copied into a shadow buffer) instead of a re-implementation of its rule; the bench uses the
+same helper and also counts `bufferSubData` calls. `tests/effects-particle-upload.test.js`: a hand-built wrapped ring
+uploads exactly its 6 live slots in 2 ranges per attribute; a seeded 600-frame ring run (bursts + trickle, skipped
+renders) keeps every drawn slot on the GPU equal to the CPU state (= a full upload) and GPU-drawn ⇔ CPU alpha > 0 on
+every frame, and wrapped frames upload < 75 % of the ring.
+
+Observed RED: `node --test tests/effects-particle-upload.test.js` → `TypeError: span.next is not a function` /
+`span.live is not a function`; the same wrapped-ring scenario on the old linear span uploaded 256 B instead of 96 B.
+
+### Before / after — environment `node-cpu-no-webgl` (LOCAL-NODE)
+
+`node scripts/vfx-buffer-bench.mjs --frames=600 --runs=1`, before = `7cc2cad7` source with the new real-three
+upload helper (bytes and digests identical to table A), after = this change. Bytes and digests are deterministic.
+
+| Scenario | Upload B/frame | bufferSubData calls/frame | Digest |
+|---|---|---|---|
+| driving | 4494 → 4494 | 8.8 → 8.8 | 811c9dc5 = |
+| boost | 16316 → 14286 (−12 %) | 14.1 → 15.1 | bf907674 = |
+| nitro | 16369 → 14472 (−12 %) | 20.3 → 21.2 | 7d929039 = |
+| drift-chain | 9627 → 7686 (−20 %) | 17.7 → 18.2 | a132057d = |
+| multi-car-flight | 26772 → 26772 | 14.6 → 14.6 | 89c44c1e = |
+| pickups-impacts | 23815 → 20208 (−15 %) | 14.8 → 18.3 | 47cb20f2 = |
+| garage-preview | 14117 → 11321 (−20 %) | 20.0 → 21.2 | ea4579f8 = |
+| launch-countdown | 4187 → 4187 | 8.2 → 8.2 | 811c9dc5 = |
+| idle-after-burst | 5000 → 5000 | 9.1 → 9.1 | e330ef77 = |
+
+- multi-car-flight is unchanged because its race pool never wraps: a probe of the pool alpha every 60 frames showed
+  480 live slots packed in `[0, 479]` with no interior gap, so its ~23 KB is live data, not a wrapped ring (the Wave 1
+  note attributing it to wrapping was wrong for this scenario).
+- Call-count trade-off, environment `headless-chromium-playwright` on a loaded shared host: 6 race-pool attributes,
+  400 frames × 7 runs (median), `gl.finish()` per frame, whole ring (6 calls, 47 616 B) vs wrapped two arcs (12 calls,
+  23 616 B). SwiftShader: 0.0030 / 0.0030 / 0.0030 ms whole vs 0.0055 / 0.0030 / 0.0038 ms split; ANGLE Metal
+  (Apple M4): 0.0070 / 0.0035 / 0.0040 ms whole vs 0.0035 / 0.0030 / 0.0028 ms split (one more pair, whole value lost
+  to output truncation, gave split 0.0033 SwiftShader / 0.0060 Metal). All at timer resolution (a few
+  µs): no measurable CPU submit cost either way, so the upload-byte reduction is the claimed win. GPU time, iPhone/Mac
+  power and thermals: UNVERIFIED (SOP above).
 
 ## Not measured / UNVERIFIED
 
