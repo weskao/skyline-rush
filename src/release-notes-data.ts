@@ -1,4 +1,4 @@
-import type { ReleaseEntry } from './release-notes.ts';
+import type { ReleaseClip, ReleaseEntry } from './release-notes.ts';
 import { GARAGE_CARS_COPY } from './locales/garage-cars.ts';
 import { NEWER_ARCHIVED_RELEASE_NOTES } from './release-notes-archive-newer.ts';
 import { ARCHIVED_RELEASE_NOTES } from './release-notes-archive.ts';
@@ -10,69 +10,77 @@ import { RECENT_ARCHIVED_RELEASE_NOTES } from './release-notes-archive-recent.ts
 // stops a release whose version has no entry. The coming release is written as `version: UPCOMING`, never a number:
 // it shows as upcoming until the release commit bumps package.json, which names it (resolveUpcoming in release-notes.ts).
 export const UPCOMING = 'upcoming';
+
+const localizedMedia = (slug: string, extension: string, variant?: string) => {
+  const stem = `whats-new/${slug}/${slug}${variant ? `.${variant}` : ''}`;
+  return { en: `${stem}.en.${extension}`, 'zh-TW': `${stem}.zh-TW.${extension}` };
+};
+const clip = (slug: string, variant: 'desktop' | 'mobile'): ReleaseClip => ({
+  src: localizedMedia(slug, 'mp4', variant), poster: localizedMedia(slug, 'jpg', variant),
+});
+const video = (slug: string) => ({ desktop: clip(slug, 'desktop'), mobile: clip(slug, 'mobile') });
+
 export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
   {
-    version: UPCOMING, date: '2026-11-24', image: null,
-    // MEDIA PENDING (release Phase N): hero tokyo-hyperdrive, recorded from the final locked game.
+    version: UPCOMING, date: '2026-11-26', image: null,
+    video: video('tokyo-hyperdrive'),
     highlights: [
       {
-        // MEDIA PENDING (release Phase N): Hero video: tokyo-hyperdrive; public/whats-new/tokyo-hyperdrive/.
         id: 'tokyo-hyperdrive', kind: 'new', image: null,
         title: { en: 'Two powered roads in Tokyo Afterdark', 'zh-TW': '東京夜行雙充能路段' },
         description: { en: 'Drive through two glowing energy corridors to recharge while racing. Watch the charge indicator and time your next BOOST or FLY.', 'zh-TW': '駛過兩段發光的充能道路即可在行駛中補充電量，留意充能提示，掌握下一次 BOOST 或 FLY 的時機。' }
       },
       {
-        // MEDIA PENDING (release Phase N): Video: track-downloads; public/whats-new/track-downloads/.
-        id: 'track-downloads', kind: 'new', image: null,
+        id: 'track-downloads', kind: 'new', video: video('track-downloads'),
         title: { en: 'Download and update tracks at your pace', 'zh-TW': '賽道下載與更新更自由' },
         description: { en: 'Get individual tracks or choose Download All to install up to ten at once. Follow the combined progress and cancel the batch when needed.', 'zh-TW': '可逐一下載或更新賽道，也可一次下載全部，最多同時處理十條；隨時查看整體進度，並可取消整批下載。' }
       },
       {
-        // MEDIA PENDING (release Phase N): Video: home-mode-preview; public/whats-new/home-mode-preview/.
-        id: 'home-mode-preview', kind: 'new', image: null,
+        id: 'home-mode-preview', kind: 'new', video: video('home-mode-preview'),
         title: { en: 'Preview each race mode before you start', 'zh-TW': '開跑前預覽各種賽事模式' },
         description: { en: 'See a distinct preview and quick rules for each mode. Browse tracks by swiping, and see whether a course is ready to race or still a preview.', 'zh-TW': '每種賽事模式都有專屬預覽與簡明玩法；滑動即可瀏覽賽道，並分辨可開跑與僅供預覽的賽道。' }
       },
       {
-        // MEDIA PENDING (release Phase N): Video: tutorial-coach; public/whats-new/tutorial-coach/.
-        id: 'tutorial-coach', kind: 'improvement', image: null,
+        id: 'tutorial-coach', kind: 'improvement', video: video('tutorial-coach'),
         title: { en: 'A clearer driving coach', 'zh-TW': '駕駛教學全面改版' },
         description: { en: 'The compact coach sits above the road, leaving your controls clear. Lessons follow your AUTO setting and pause until you are ready to resume.', 'zh-TW': '精簡教學提示位於車道上方，不遮擋操作；課程配合 AUTO 狀態引導，暫停後可依提示繼續。' }
       },
       {
-        // MEDIA PENDING (release Phase N): Still: touch-auto-nitro; public/whats-new/touch-auto-nitro/.
-        id: 'touch-auto-nitro', kind: 'improvement', image: null,
+        id: 'touch-auto-nitro', kind: 'improvement', image: localizedMedia('touch-auto-nitro', 'webp'),
+        responsiveImages: { landscape: localizedMedia('touch-auto-nitro', 'webp', 'landscape') },
         title: { en: 'More room for NITRO with AUTO', 'zh-TW': 'AUTO 開啟時 NITRO 更好按' },
         description: { en: 'On touch screens, AUTO hides the accelerator and expands NITRO into the freed space. Turn AUTO off to get your accelerator back.', 'zh-TW': '觸控裝置開啟 AUTO 時會收起油門，讓 NITRO 按鈕加寬；關閉 AUTO 即可恢復油門。' }
       },
       {
-        // MEDIA PENDING (release Phase N): Video: corner-driving; public/whats-new/corner-driving/.
-        id: 'corner-driving', kind: 'improvement', image: null,
+        id: 'corner-driving', kind: 'improvement', video: video('corner-driving'),
         title: { en: 'Feel the pull of every corner', 'zh-TW': '每個彎道都更有駕駛感' },
-        description: { en: 'Corners push your car outward, so steering matters more. AUTO softens outward forces near the rail without steering the car for you.', 'zh-TW': '過彎時車身會自然向外偏移，需要主動掌握方向；AUTO 會減弱護欄附近的外推力，但不代替你轉向。' }
+        description: { en: 'Your car carries its heading into bends, so steer into the turn to hold your line. If you reach the rail, AUTO helps bring you back toward the middle.', 'zh-TW': '車頭會帶著原本的方向入彎，朝彎內轉向就能守住路線。碰到護欄時，AUTO 會協助把車帶回路中央。' }
       },
       {
-        // MEDIA PENDING (release Phase N): Still: race-notice-lane; public/whats-new/race-notice-lane/.
-        id: 'race-notice-lane', kind: 'improvement', image: null,
+        id: 'launch-flare', kind: 'improvement', video: video('launch-flare'),
+        title: { en: 'Launch flares light up the countdown', 'zh-TW': '起跑閃焰點亮倒數' },
+        description: { en: 'Equip a launch flare to see two waves of light around your car during the countdown. Both fade before GO.', 'zh-TW': '裝備起跑閃焰後，倒數時車身周圍會亮起兩波特效，並在起跑前淡出。' }
+      },
+      {
+        id: 'race-notice-lane', kind: 'improvement', image: localizedMedia('race-notice-lane', 'webp'),
+        responsiveImages: { portrait: localizedMedia('race-notice-lane', 'webp', 'portrait') },
         title: { en: 'Race alerts stay out of your way', 'zh-TW': '賽中提示更清楚不擋操作' },
-        description: { en: 'Halfway, Freeze and EMP notices sit higher on the race screen, keeping the road and controls clearer. Your race readings stay visible at the start.', 'zh-TW': '半程、冰凍與 EMP 提示移至畫面較上方，減少遮擋道路及操作區；起跑倒數時也能看見賽事資訊。' }
+        description: { en: 'Halfway, Freeze and EMP alerts sit higher to keep the road and controls clear. Speed and flight gauges stay visible through the countdown and GO.', 'zh-TW': '半程、冰凍與 EMP 提示移到較上方，留出道路和操作空間。倒數到起跑時，速度和飛行儀表都看得見。' }
       },
       {
-        // MEDIA PENDING (release Phase N): Still: showcase-camera; public/whats-new/showcase-camera/.
-        id: 'showcase-camera', kind: 'improvement', image: null,
+        id: 'showcase-camera', kind: 'improvement', image: localizedMedia('showcase-camera', 'webp'),
         title: { en: 'Consistent camera controls in the Garage', 'zh-TW': '首頁與車庫鏡頭操作更一致' },
         description: { en: 'Use the same compact camera arrows on Home and in the Garage. Switch views easily and keep more room for the car.', 'zh-TW': '首頁與車庫使用一致的精簡鏡頭切換按鈕，輕鬆切換視角，也保留更多空間欣賞愛車。' }
       },
       {
-        // MEDIA PENDING (release Phase N): Still: whats-new-entry; public/whats-new/whats-new-entry/.
-        id: 'whats-new-entry', kind: 'improvement', image: null,
+        id: 'whats-new-entry', kind: 'improvement', image: localizedMedia('whats-new-entry', 'webp'),
         title: { en: 'Find What\'s New more easily', 'zh-TW': '新版公告更容易找到' },
-        description: { en: 'Open What\'s New from the welcome screen or Home. A small dot marks unread releases without taking up extra space.', 'zh-TW': '從歡迎畫面或首頁即可開啟新版本公告，未讀版本以小圓點提示，不額外占用版面。' }
+        description: { en: 'Open What\'s New from the welcome screen or Home. Each unread version keeps its dot until you open that version.', 'zh-TW': '從歡迎畫面或首頁即可開啟新版本公告。每個版本各有未讀圓點，點開該版本後才會消失。' }
       },
       {
         id: 'race-restart', kind: 'fix', image: null,
         title: { en: 'Smoother race starts and restarts', 'zh-TW': '開始與重新比賽更順暢' },
-        description: { en: 'The selected track stays visible while loading, and restarting refreshes the route for your next race. Open Driving Controls again after finishing.', 'zh-TW': '載入時保留所選賽道的畫面，重新比賽時會更新路線；完賽後也能再次開啟駕駛操作設定。' }
+        description: { en: 'The selected track stays visible while loading, and the route updates for your next race. After finishing, reopen Driving Controls or return to Home.', 'zh-TW': '載入時會保留所選賽道的畫面，開始下一場時會更新路線。完賽後可再次開啟駕駛操作設定，也可直接回首頁。' }
       }
     ]
   },
