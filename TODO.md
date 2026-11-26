@@ -1,3 +1,8 @@
+# Startup Enter dock viewport regression (2026-11-27)
+
+- [x] Isolated Chromium mobile geometry RED/GREEN: the landscape footer's percentage-based bottom inset was reused as padding, where it resolved against width and collapsed the flexible grid row. At 844x390 the dock's top moved from 140px to 290px with the fix; the footer gap became 8px. Portrait 390x844 and desktop 1440x900 positions were unchanged. All eight isolated viewport checks passed after the fix.
+- [ ] Run the real-game regression in `tests/startup-browser.spec.js`, full unit/typecheck/build/module-size and exact-HEAD quality-gate; confirm the reported intermittent portrait behavior on a real phone. The isolated reproduction demonstrates the short-landscape CSS defect and rotation recovery, not a reproduction of an exclusively portrait device bug. Full checkout/dependencies unavailable in this session.
+
 # CI 45577036521 Tilt follow-up (2026-11-25)
 
 - [x] Original browser shard 7 failed twice at Tilt radio check; the denied-permission sibling passed. The existing 2.5s no-reading fallback can race the cross-process test driver. Isolated Chromium DOM reconstruction with delayed driver reproduced unchecked Tilt; observing waiting and feeding a simulated reading in-page kept Tilt checked after the same delay. This is a plausible timing root cause, not proof of the exact remote failure mechanism.

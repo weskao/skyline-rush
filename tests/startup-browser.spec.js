@@ -93,6 +93,32 @@ for (const [width, height, locale, caption, enterLabel] of [
   });
 }
 
+test.describe('mobile startup dock', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  test('keeps Enter near the bottom through browser height changes and rotation', async ({ page }) => {
+    await page.goto('/');
+    const launch = page.locator('#startup-enter');
+    const version = page.locator('#startup #whats-new-open');
+    await expect(launch).toBeVisible();
+    await expect(version).toBeVisible();
+    const initial = await launch.boundingBox();
+    for (const [width, height] of [[390, 844], [390, 700], [844, 390], [743, 340], [320, 568], [390, 844]]) {
+      await page.setViewportSize({ width, height });
+      const [button, footer] = await Promise.all([launch.boundingBox(), version.boundingBox()]);
+      const gap = footer.y - button.y - button.height;
+      expect(button.y, `Enter stays in the lower half at ${width}x${height}`).toBeGreaterThanOrEqual(height / 2);
+      expect(gap, `Enter clears the footer at ${width}x${height}`).toBeGreaterThanOrEqual(7);
+      expect(gap, `Enter remains near the footer at ${width}x${height}`).toBeLessThanOrEqual(60);
+      expect(button.height).toBeGreaterThanOrEqual(44);
+    }
+    const restored = await launch.boundingBox();
+    expect(Math.abs(restored.y - initial.y)).toBeLessThanOrEqual(1);
+    await launch.click();
+    await expect(page.locator('#startup')).toBeHidden();
+  });
+});
+
 // One spot and one look for the What's new chip on every device: shown while the game still loads, identical on Home.
 const VERTICAL_FOLD = [{ left: 0, top: 0, width: 438, height: 700 }, { left: 462, top: 0, width: 438, height: 700 }];
 const HORIZONTAL_FOLD = [{ left: 0, top: 0, width: 900, height: 338 }, { left: 0, top: 362, width: 900, height: 338 }];
