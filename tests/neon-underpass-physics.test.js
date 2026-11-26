@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRace, stepRace, ROAD_LIMIT } from '../src/game.js';
+import { createRace, stepRace, ROAD_LIMIT, TUNNEL_CEILING, CAR_HEIGHT } from '../src/game.js';
 import { hazardPose } from '../src/hazard-race.ts';
 import { neonRoofVisualAltitude, NEON_ROOF_HEIGHT } from '../src/neon-roof.ts';
 
@@ -27,19 +27,68 @@ function compareWithOpenRoad(setup, inputs, dt) {
   return tunnel;
 }
 
-test('Neon underpass preserves thrust, gravity, fuel, steering and landing across 30/60/120 Hz', () => {
+// Below the ceiling the tunnel changes nothing; thrust into the ceiling is covered by the solid-roof test.
+test('Neon underpass preserves gravity, steering and landing below its ceiling across 30/60/120 Hz', () => {
   for (const hz of [30, 60, 120]) {
     const dt = 1 / hz;
-    const inputs = [
-      ...Array.from({ length: hz }, () => ({ fly: true, throttle: true, steer: -.2 })),
-      ...Array.from({ length: 3 * hz }, () => ({ steer: -.2 })),
-    ];
+    const inputs = Array.from({ length: 3 * hz }, () => ({ steer: -.2 }));
     const race = compareWithOpenRoad(r => {
-      Object.assign(r.player, { distance: 700, altitude: 1, verticalSpeed: 0, fuel: 10 });
+      Object.assign(r.player, { distance: 700, altitude: 2.5, verticalSpeed: 0 });
     }, inputs, dt);
     assert.equal(race.player.altitude, 0, 'normal descent ends on the road');
     assert.ok(race.player.landing, 'normal touchdown event');
-    assert.ok(race.player.fuelOuts > 0, 'thrust still consumes and exhausts fuel');
+  }
+});
+
+const INSIDE_TOP = TUNNEL_CEILING - CAR_HEIGHT;
+
+// The opening tunnel is solid from inside exactly like every other tunnel: same clamp, same barrier knock.
+test('Neon underpass roof is solid from inside, matching an ordinary tunnel, at 30/60/120 Hz', () => {
+  for (const hz of [30, 60, 120]) {
+    const dt = 1 / hz, neon = fresh(), aurora = createRace('aurora', { mode: 'custom', rivals: 0, traffic: 'off', items: false });
+    aurora.phase = 'racing';
+    Object.assign(aurora, { rings: [], pickups: [], traffic: [], rivals: [], hazards: [], props: [] });
+    Object.assign(neon, { hazards: [], props: [] });
+    Object.assign(neon.player, { distance: 740, x: 0, altitude: 1, speed: 20, fuel: 100 });
+    Object.assign(aurora.player, { distance: 4100, x: 0, altitude: 1, speed: 20, fuel: 100 }); // Aurora's 4060–4440 m tunnel
+    for (let i = 0; i < 2 * hz; i++) {
+      for (const race of [neon, aurora]) stepRace(race, { fly: true, throttle: true }, dt);
+      assert.ok(neon.player.altitude <= INSIDE_TOP, `car roof under the tunnel ceiling at ${hz} Hz`);
+      assert.equal(neon.player.altitude, aurora.player.altitude, `same ceiling response at ${hz} Hz`);
+    }
+    assert.equal(neon.player.impact?.kind, 'barrier');
+    assert.equal(neon.player.collisions, aurora.player.collisions);
+    assert.ok(neon.player.fuel < 100, 'thrust still consumes fuel');
+  }
+});
+
+// Between the tunnel ceiling and the roof the portal is a wall: a frontal hit, then the car is inside.
+test('flying into the Neon portal face below the roof is a wall hit at 30/60/120 Hz', () => {
+  for (const hz of [30, 60, 120]) for (const altitude of [3.5, 5, 7]) {
+    const dt = 1 / hz, race = fresh();
+    Object.assign(race, { hazards: [], props: [] });
+    Object.assign(race.player, { distance: 686, altitude, verticalSpeed: 0, speed: 50 });
+    while (race.player.distance < 696) stepRace(race, {}, dt);
+    assert.equal(race.player.collisions, 1, `one hit at ${altitude} m, ${hz} Hz`);
+    assert.equal(race.player.impact?.kind, 'barrier');
+    assert.ok(race.player.altitude <= INSIDE_TOP, `inside the tunnel at ${altitude} m, ${hz} Hz`);
+    assert.ok(race.player.speed < 50, 'the hit costs speed');
+  }
+});
+
+// Over the portal the roof carries the car; above it the ordinary 12 m maximum is the only limit.
+test('crossing the Neon portal above the roof lands on it and FLY still reaches 12 m', () => {
+  for (const hz of [30, 60, 120]) {
+    const dt = 1 / hz, race = fresh();
+    Object.assign(race, { hazards: [], props: [] });
+    Object.assign(race.player, { distance: 686, altitude: 7.6, verticalSpeed: -1, speed: 40, fuel: 100 });
+    for (let i = 0; i < hz; i++) stepRace(race, {}, dt);
+    assert.ok(race.player.distance > 690 && race.player.distance < 910);
+    assert.equal(race.player.altitude, NEON_ROOF_HEIGHT, `on the roof at ${hz} Hz`);
+    for (let i = 0; i < 2 * hz; i++) stepRace(race, { fly: true }, dt);
+    assert.ok(race.player.distance < 910);
+    assert.equal(race.player.altitude, 12, `full flight envelope over the tunnel at ${hz} Hz`);
+    assert.equal(race.player.collisions, 0);
   }
 });
 
@@ -53,7 +102,7 @@ test('Neon underpass retains the existing rail collision and lateral road limit'
 });
 
 test('Neon underpass retains same-height vehicle contact and clearance above traffic', () => {
-  for (const altitude of [0, 6]) {
+  for (const altitude of [0, 2.5]) { // 2.5 m: over the traffic box, under the solid ceiling
     const race = compareWithOpenRoad(r => {
       Object.assign(r.player, { altitude });
       r.traffic = [{ x: 0, homeX: 0, distance: 803, speed: 20, cruise: 20, altitude: 0, color: 0 }];
@@ -107,12 +156,20 @@ test('Neon roof supports a stopped car, driving, taking off and driving off the 
   }
 });
 
-test('Neon underpass can still ascend through the opening roof and fly to 12 m', () => {
+// Owner, 2026-11-27: the roof is solid from below too; FLY inside no longer passes through it.
+test('Neon underpass no longer lets a car ascend through the roof from inside', () => {
   const race = fresh();
+  Object.assign(race, { hazards: [], props: [] });
   Object.assign(race.player, { distance: 740, altitude: 2, speed: 20, fuel: 100 });
   for (let i = 0; i < 120; i++) stepRace(race, { fly: true, throttle: true }, 1 / 60);
-  assert.equal(race.player.altitude, 12);
-  assert.equal(race.player.collisions, 0);
+  assert.ok(race.player.altitude <= INSIDE_TOP);
+  assert.equal(race.player.impact?.kind, 'barrier');
+});
+
+test('a car inside the tunnel is drawn at its true altitude on fallback and detailed surfaces', () => {
+  for (const fallback of [true, false]) for (const distance of [690, 700, 800, 905]) for (const altitude of [0, 1.5, INSIDE_TOP]) {
+    assert.equal(neonRoofVisualAltitude(distance, altitude, fallback), altitude, `${distance} m, ${altitude} m, fallback ${fallback}`);
+  }
 });
 
 

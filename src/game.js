@@ -1,5 +1,5 @@
 import { advanceCountdown } from './frame-pacing.ts';
-import { stepPlayerDrift } from './player-drift.ts'; import { onNeonRoof, supportNeonRoof } from './neon-roof.ts';
+import { stepPlayerDrift } from './player-drift.ts'; import { onNeonRoof, overNeonRoof, supportNeonRoof } from './neon-roof.ts';
 export { startRace } from './frame-pacing.ts';
 import { assistSteer, meetRail, roadDrift } from './corner-force.ts';
 import { prepareEndless, streamEndless } from './endless-highway.ts';
@@ -363,7 +363,7 @@ export function stepRace(race, input, dt) {
     car.verticalSpeed = Math.max(car.verticalSpeed, launchImpulse(car.speed));
   }
   car.altitude = clamp(car.altitude + car.verticalSpeed * dt, 0, 12);
-  const roofHit = car.section === 'tunnel' && !(race.trackId === 'neon' && section.to <= 1000) && car.altitude + CAR_HEIGHT > TUNNEL_CEILING; // opening roof permits ascent and supports descent
+  const roofHit = car.section === 'tunnel' && !overNeonRoof(race.trackId, car, previousAltitude) && car.altitude + CAR_HEIGHT > TUNNEL_CEILING; // also Neon's portal face; its roof carries cars above
   if (roofHit) {
     car.altitude = TUNNEL_CEILING - CAR_HEIGHT;
     car.verticalSpeed = Math.min(0, car.verticalSpeed);
