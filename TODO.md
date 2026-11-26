@@ -4,6 +4,11 @@
 - [x] Isolated Node reproduction of the disposal ownership and delayed START boundary: 2 failures before, 2 passes after (synthetic fixtures, not full WebGL). Add actual Three.js ownership/order regression tests and keep all existing pose assertions.
 - [ ] Verify exact-HEAD full regression, including thermal home/spiral and racing/spiral, Crimson GT/Roadster grid, module-size, unit, typecheck, build and quality-gate. Local full checkout blocked by GitHub DNS and missing pnpm/Three.js dependencies; physical-device evidence remains separate.
 
+# CI 45577036521 Tilt follow-up (2026-11-25)
+
+- [x] Original browser shard 7 failed twice at Tilt radio check; the denied-permission sibling passed. The existing 2.5s no-reading fallback can race the cross-process test driver. Isolated Chromium DOM reconstruction with delayed driver reproduced unchecked Tilt; observing waiting and feeding a simulated reading in-page kept Tilt checked after the same delay. This is a plausible timing root cause, not proof of the exact remote failure mechanism.
+- [ ] Verify real-game CI for granted, denied, no-reading fallback, steering, recenter and reset. Browser fixture now observes the actual waiting state in-page and supplies the reading without transport timing; runtime fallback and flight-bank assertions are unchanged. Full checkout and real-device checks remain unavailable.
+
 # CI wallet spacing follow-up (2026-11-25)
 
 - [x] Exact-HEAD CI RED: 345x206 wallet-to-track gap was 2px, expected at least 6px; the <=330px override caused the regression.

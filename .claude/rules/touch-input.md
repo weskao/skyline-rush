@@ -76,3 +76,7 @@ Custom-select comboboxes are exempt: `src/custom-select.ts` closes its list on b
 Dropdowns are hidden while racing; every return to racing (start, restart, resume) goes through `focusRace()`
 (`src/race-navigation-ui.ts`), which blurs whatever the pause screen left focused. Guard:
 `tests/hud-focus-browser.spec.js`.
+
+## Tilt browser tests and motion readings
+
+The granted Tilt mode falls back to Slide after 2.5 seconds without a reading. A Playwright command round trip must not determine when a simulated sensor first produces data. Observe the actual waiting state and supply the reading within the page; assert checked state, ready state, steering and recenter/reset separately. Preserve a dedicated no-reading fallback case and the denied-permission case. Do not extend the production timeout to make CI pass.
