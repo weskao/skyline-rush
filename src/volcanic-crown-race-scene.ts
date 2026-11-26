@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { skipHiddenMatrixWork } from './scene-matrix-culling.ts';
 import { VOLCANIC_ID, VOLCANIC_TRACK, volcanicFrame } from './courses/volcanic-crown-race.ts';
 import { VOLCANIC_CROWN_RUNTIME as runtime, PLAYABLE_COURSE_GRAPH as graph } from './courses/volcanic-crown-runtime-adapter.ts';
 import { VOLCANIC_CHUNK_METERS, createVolcanicCrownChunk } from './courses/volcanic-crown-scene.ts';
@@ -118,7 +119,8 @@ export function createVolcanicCrownRaceScene(scene: THREE.Scene) {
     object.updateMatrix(); pylons.setMatrixAt(i, object.matrix);
   });
   pylons.name = 'shortcut-pylons'; group.add(pylons);
-  scene.add(group);
+  for (const chunk of chunks) skipHiddenMatrixWork(chunk.group); // culled chunks + parked scene: no hidden matrix work
+  scene.add(skipHiddenMatrixWork(group));
 
   return {
     group,

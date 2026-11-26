@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { skipHiddenMatrixWork } from './scene-matrix-culling.ts';
 import { MONSOON_TRACK, monsoonFrame } from './courses/monsoon-ruins-race.ts';
 import { MONSOON_RUINS_COURSE, MONSOON_RUNOUT, sampleMonsoonRoute } from './courses/monsoon-ruins.ts';
 import { createMonsoonRuinsChunk } from './courses/monsoon-ruins-scene.ts';
@@ -78,7 +79,8 @@ export function createMonsoonRuinsRaceScene(scene: THREE.Scene) {
     marker.updateMatrix(); pylons.setMatrixAt(i, marker.matrix);
   });
   pylons.name = 'shortcut-pylons'; group.add(pylons);
-  scene.add(group);
+  for (const chunk of chunks) skipHiddenMatrixWork(chunk.group); // culled chunks + parked scene: no hidden matrix work
+  scene.add(skipHiddenMatrixWork(group));
   return {
     group,
     update(distance: number, time = 0, reducedMotion = false): void {
