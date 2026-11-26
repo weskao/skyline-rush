@@ -81,7 +81,9 @@ body { --version-bottom: max(4px, env(safe-area-inset-bottom, 0px)); }
 #startup-release-entry { position: fixed; bottom: var(--version-bottom); left: 50%; translate: -50% 0; }
 .startup:is([data-stage='failed'], :has(#startup-enter:disabled)) #startup-release-entry { display: none; }
 .startup:has(#startup-release-entry > :not([hidden])) .startup-layout {
-  padding-bottom: max(var(--pad-y), calc(var(--version-bottom) + 52px));
+  /* Match the footer's height-relative inset: percentage padding would resolve against the viewport width. */
+  bottom: max(var(--pad-y), calc(var(--version-bottom) + 52px));
+  padding-bottom: 0;
 }
 .startup-progress, .startup-action {
   box-sizing: border-box;

@@ -93,11 +93,42 @@ for (const [width, height, locale, caption, enterLabel] of [
   });
 }
 
+test.describe('mobile startup dock', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  test('keeps Enter near the bottom through browser height changes and rotation', async ({ page }) => {
+    await page.goto('/');
+    const launch = page.locator('#startup-enter');
+    const version = page.locator('#startup #whats-new-open');
+    await expect(launch).toBeVisible();
+    await expect(version).toBeVisible();
+    const initial = await launch.boundingBox();
+    for (const [width, height] of [[390, 844], [390, 700], [844, 390], [743, 340], [320, 568], [390, 844]]) {
+      await page.setViewportSize({ width, height });
+      const [button, footer] = await Promise.all([launch.boundingBox(), version.boundingBox()]);
+      const gap = footer.y - button.y - button.height;
+      expect(button.y, `Enter stays in the lower half at ${width}x${height}`).toBeGreaterThanOrEqual(height / 2);
+      expect(gap, `Enter clears the footer at ${width}x${height}`).toBeGreaterThanOrEqual(7);
+      expect(gap, `Enter remains near the footer at ${width}x${height}`).toBeLessThanOrEqual(60);
+      expect(button.height).toBeGreaterThanOrEqual(44);
+    }
+    const restored = await launch.boundingBox();
+    expect(Math.abs(restored.y - initial.y)).toBeLessThanOrEqual(1);
+    await launch.click();
+    await expect(page.locator('#startup')).toBeHidden();
+  });
+});
+
 // One spot and one look for the What's new chip on every device: shown while the game still loads, identical on Home.
 const VERTICAL_FOLD = [{ left: 0, top: 0, width: 438, height: 700 }, { left: 462, top: 0, width: 438, height: 700 }];
 const HORIZONTAL_FOLD = [{ left: 0, top: 0, width: 900, height: 338 }, { left: 0, top: 362, width: 900, height: 338 }];
-for (const [width, height, segments, name] of [
-  [390, 844], [844, 390], [1440, 900], [900, 700, VERTICAL_FOLD, 'vertical fold'], [900, 700, HORIZONTAL_FOLD, 'horizontal fold'],
+// Preserve the established dock coordinates outside the short-landscape fix, including both hinge layouts.
+for (const [width, height, dockLeft, dockBottom, dockWidth, segments, name] of [
+  [390, 844, 31, 76, 328], [844, 390, 42, 56, 248],
+  [768, 1024, 220, 90, 328], [1024, 768, 348, 69, 328],
+  [1440, 900, 86, 81, 328], [1920, 1080, 112, 97, 328],
+  [900, 700, 32, 63, 328, VERTICAL_FOLD, 'vertical fold'],
+  [900, 700, 54, 56, 328, HORIZONTAL_FOLD, 'horizontal fold'],
 ]) {
   test(`What's new chip keeps one spot and look from loading to Home at ${name ?? `${width}x${height}`}`, async ({ page }) => {
     await page.setViewportSize({ width, height });
@@ -122,12 +153,22 @@ for (const [width, height, segments, name] of [
     };
     const loading = startup.locator('#whats-new-open');
     await expect(loading, 'chip shows while the game is still loading').toBeVisible();
+    const assertDock = async action => {
+      await expect(action).toBeVisible();
+      const box = await action.boundingBox();
+      expect(Math.abs(box.x - dockLeft), 'dock retains its horizontal anchor').toBeLessThanOrEqual(1);
+      expect(Math.abs(box.width - dockWidth), 'dock retains its width').toBeLessThanOrEqual(1);
+      expect(Math.abs(height - box.y - box.height - dockBottom), 'dock retains its bottom inset').toBeLessThanOrEqual(1);
+      expect(box.height, 'action retains its touch target').toBeGreaterThanOrEqual(44);
+    };
+    await assertDock(startup.locator('#startup-progress'));
     const atStartup = await loading.evaluate(look);
     const [x, y, w, h] = atStartup.box;
     expect(Math.abs(x + w / 2 - width / 2), 'centered in the viewport').toBeLessThanOrEqual(1);
     expect(Math.abs(height - 4 - (y + h)), 'at the bottom edge').toBeLessThanOrEqual(1);
     await page.evaluate(() => window.releaseStartupFrames());
     await expect(enter(page)).toBeEnabled();
+    await assertDock(enter(page));
     await enter(page).click();
     await expect(startup).toBeHidden();
     const home = page.locator('.bottomline #whats-new-open');
