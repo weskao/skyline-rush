@@ -1,3 +1,12 @@
+# Perf-thermal Wave 3: unmet program targets (2026-11-27)
+
+Baseline A = `d9c144ba`, candidate measured from `feature/perf-thermal-90-integration`. Definitions and method are fixed in `scripts/final-report/build-report.mjs` and `docs/performance/final-report.md`. Every change must keep the visual-fidelity gate (max channel delta 1 or less against the integration head, particle differences proven RNG-only), 4x MSAA, 5-mip bloom, DPR, materials, particle counts and 60 Hz physics.
+
+- [ ] 30 GPU frame time -30% (now -15%). Five racing scenes `gpuFrameMs.p50`; A 6.40 / 6.59 / 6.16 / 5.97 / 6.18 ms (coast / neon / taipei / tokyo / volcanic-crown), goal at or below 4.48 / 4.61 / 4.31 / 4.18 / 4.33 ms. Bloom and lens passes are the remaining cost; only pixel-equivalent changes (pass folding, removed copies/clears, equivalent tap reduction).
+- [ ] 31 Draw calls -40% on the six heaviest non-showcase scenes (now -1.6%). A 623 / 471 / 471 / 412 / 404 / 399 (racing taipei / racing tokyo / home taipei / racing alpine / racing coastal / racing aurora), goal at or below 374 / 283 / 283 / 247 / 242 / 239. Instancing and color-only material merging with identical shading; shadow and post-pass draws count.
+- [ ] 32 CPU render submission -25% (now 0%, within noise). Five racing scenes `cpuRenderSubmissionMs.p50`; A 3.2 / 3.5 / 5.2 / 5.5 / 4.5 ms, goal at or below 2.4 / 2.6 / 3.9 / 4.1 / 3.4 ms. Deterministic per-frame work counters plus interleaved rounds, because host load makes single timings unreliable.
+- [ ] 39 Integrate 30/31/32 into `feature/perf-thermal-90-integration`, re-run the final-report matrix A vs new head and the visual-fidelity gate, update `docs/performance/final-report.md`, exact-HEAD full-regression CI.
+
 # Startup Enter dock viewport regression (2026-11-27)
 
 - [x] Isolated Chromium mobile geometry RED/GREEN: the landscape footer's percentage-based bottom inset was reused as padding, where it resolved against width and collapsed the flexible grid row. At 844x390 the dock's top moved from 140px to 290px with the fix; the footer gap became 8px. Portrait 390x844 and desktop 1440x900 positions were unchanged. All eight isolated viewport checks passed after the fix.
