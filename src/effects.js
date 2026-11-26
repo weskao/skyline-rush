@@ -291,7 +291,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
         }
       }
       let liveFirst = COUNT, liveLast = -1;
-      for (let i = pool.first, last = pool.last; i <= last; i++) { // slots outside the span are dead and already uploaded as alpha 0
+      for (let i = pool.span.first, last = pool.span.last; i <= last; i++) { // slots outside the span are dead and already uploaded as alpha 0
         const p = particles[i];
         p.life = Math.max(0, p.life - dt);
         if (p.life === 0) { alphas[i] = 0; continue; }
@@ -337,7 +337,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
         const fadeIn = p.kind === 0 ? 1 : Math.min(1, age / 0.06);
         alphas[i] = Math.pow(p.life / p.maxLife, 1.4) * fadeIn * p.opacity;
       }
-      pool.commit(liveFirst, liveLast);
+      pool.span.commit(liveFirst, liveLast);
       rings.forEach(ring => {
         const event = ring.userData.event;
         const age = event ? race.elapsed - event.time : 10;

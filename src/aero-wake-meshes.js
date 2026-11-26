@@ -11,7 +11,8 @@ export function createAeroWakeMeshes(positions, alphas, sizes, segmentCount) {
     uniforms: { skinTint: { value: new THREE.Vector3(1, 1, 1) }, thrusterTint: { value: new THREE.Vector3(1, 1, 1) },
       sparkShare: { value: 0 }, nitroMix: { value: 0 } },
     vertexShader: `attribute float alpha,size,sparkSeed;uniform float sparkShare;varying float vAlpha,vSpark;
-      void main(){vAlpha=alpha;vSpark=sparkSeed<sparkShare?1.:0.;vec4 p=modelViewMatrix*vec4(position,1.);
+      void main(){if(alpha<=0.){gl_Position=vec4(2.,2.,2.,1.);gl_PointSize=0.;return;} // dead: drew nothing (discard)
+        vAlpha=alpha;vSpark=sparkSeed<sparkShare?1.:0.;vec4 p=modelViewMatrix*vec4(position,1.);
         gl_PointSize=clamp(size*240./max(1.,-p.z)*mix(1.,.44,vSpark),0.,80.);gl_Position=projectionMatrix*p;}`,
     fragmentShader: `varying float vAlpha,vSpark;uniform float nitroMix;uniform vec3 skinTint,thrusterTint;
       void main(){vec2 p=gl_PointCoord*2.-1.;vec3 color=vec3(.8,.9,.98)*skinTint;
@@ -33,7 +34,7 @@ export function createAeroWakeMeshes(positions, alphas, sizes, segmentCount) {
   const ribbon = new THREE.Mesh(ribbonGeo, new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
     uniforms: { skinTint: { value: new THREE.Vector3(1, 1, 1) }, skinPattern: { value: 0 }, time: { value: 0 } },
-    vertexShader: 'attribute float alpha,rollWake;varying float vAlpha,vRoll;varying vec2 vUv;void main(){vAlpha=alpha;vRoll=rollWake;vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+    vertexShader: 'attribute float alpha,rollWake;varying float vAlpha,vRoll;varying vec2 vUv;void main(){if(alpha<=0.){gl_Position=vec4(2.,2.,2.,1.);return;}vAlpha=alpha;vRoll=rollWake;vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
     fragmentShader: `varying float vAlpha,vRoll;varying vec2 vUv;uniform vec3 skinTint;uniform float skinPattern,time;
       void main(){
         float u=clamp(vUv.x,0.,1.);

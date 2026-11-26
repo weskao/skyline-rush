@@ -6,6 +6,7 @@ import { createRace } from '../src/game.js';
 import { createAeroVFX, dashSamples } from '../src/aero-vfx.js';
 import { trackPoint } from '../src/track-paths.ts';
 import { vfxSettings } from '../src/vfx-settings.ts';
+import { gpuUploadShadow, assertGpuMatchesCpu } from './helpers/gpu-upload-shadow.js';
 
 function fixture() {
   const scene = new Scene(), vehicle = new Group();
@@ -487,4 +488,36 @@ test('NITRO chain lifts sprint flames, speed lines and FOV per charge, eases bac
 test('world feeds the player NITRO chain into the sprint VFX', () => {
   const world = readFileSync(new URL('../src/world.js', import.meta.url), 'utf8');
   assert.match(world, /chain: car\.nitroTime > 0 \? car\.nitroBurst : 0/);
+});
+
+test('the vapor wake and dash ribbon upload only live primitives, the ribbon draws only those, matching the GPU copy every frame', () => {
+  const { scene, race, options, update, vapor } = fixture();
+  const ribbon = scene.getObjectByName('Continuous dash ribbon'), gpu = gpuUploadShadow();
+  const layers = [vapor.geometry, ribbon.geometry], attributes = layers.flatMap(g => Object.values(g.attributes));
+  const check = label => layers.forEach((g, i) => assertGpuMatchesCpu(assert, g, gpu, `${label} layer ${i}`));
+  gpu.sync(attributes);
+  for (let frame = 0; frame < 30; frame++) {
+    race.player.distance += 4;
+    if (frame === 15) options.quality = 'low'; // the wake shrinks to a quarter mid-flight
+    update(0.016, 0, race.player.distance);
+    if (frame >= 5 && frame < 10) continue; // not rendered for a few frames
+    assert.ok(attributes.every(a => a.updateRanges.length <= 1), 'pending ranges stay bounded');
+    gpu.sync(attributes);
+    check(`frame ${frame}`);
+  }
+  assert.ok(vapor.geometry.attributes.alpha.array.some(a => a > 0) && ribbon.geometry.attributes.alpha.array.some(a => a > 0));
+  race.player.boosting = false;
+  for (let frame = 0; frame < 120; frame++) { update(0.016, 0, race.player.distance); gpu.sync(attributes); }
+  update(0.016, 0, race.player.distance);
+  assert.equal(gpu.sync(attributes), 0, 'an expired wake and ribbon upload nothing');
+  assert.equal(ribbon.geometry.drawRange.count, 0, 'the ribbon draws nothing');
+  check('expired'); // the wake keeps its quality budget as draw range, every point of it alpha 0 (clipped) on the GPU
+});
+
+test('zero-alpha wake points and ribbon vertices are clipped before rasterising (no pixel change when drawn)', () => {
+  const { scene, vapor } = fixture();
+  const ribbon = scene.getObjectByName('Continuous dash ribbon');
+  // Vapor: NormalBlending and a vAlpha<=0 discard; ribbon: AdditiveBlending, alpha shared by a segment's 6 vertices.
+  for (const shader of [vapor.material.vertexShader, ribbon.material.vertexShader])
+    assert.match(shader, /if\(alpha<=0\.\)\{gl_Position=vec4\(2\.,2\.,2\.,1\.\);(gl_PointSize=0\.;)?return;\}/);
 });
