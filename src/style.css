@@ -2792,3 +2792,5 @@ body[data-tutorial] .tutorial-slot > :is(.tutorial-cue, .tutorial-pass) { positi
 }
 /* GO does not hide the instruments; event-callout placement must reserve their space. */
 body[data-phase="racing"]:has(#countdown[data-step="GO"]:not([hidden])) .flight-telemetry { visibility: visible; }
+/* Faded-out speed streaks stop their 18 infinite wind-rush loops (data-idle set by flight-fx-hud.ts after the .4s fade, cleared on the next boost). */
+.speed-streaks[data-idle] > i { animation-play-state: paused; }

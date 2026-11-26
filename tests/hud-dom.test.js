@@ -54,3 +54,16 @@ test('an idle HUD node never asks for its animations: getAnimations() forces a s
   const hud = readFileSync(new URL('../src/race-hud.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(hud, /eventCallout\.getAnimations\(\)/, 'the callout cancels through the gate');
 });
+
+test('an unchanged HUD attribute is not rewritten: a same-value setAttribute still queues a mutation record', async () => {
+  const { setAttributeIfChanged } = await import('../src/hud-dom.ts');
+  const attributes = new Map();
+  let writes = 0;
+  const node = { getAttribute: name => attributes.get(name) ?? null, setAttribute: (name, value) => { writes++; attributes.set(name, value); } };
+  setAttributeIfChanged(node, 'aria-pressed', 'false');
+  setAttributeIfChanged(node, 'aria-pressed', 'false');
+  assert.equal(writes, 1);
+  setAttributeIfChanged(node, 'aria-pressed', 'true');
+  assert.equal(writes, 2);
+  assert.equal(attributes.get('aria-pressed'), 'true');
+});

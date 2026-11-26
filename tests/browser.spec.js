@@ -174,7 +174,7 @@ test('starting with a VFX control focused hands the keyboard back to driving', a
   await page.keyboard.down('w');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(20);
   await page.keyboard.down('d');
-  await expect.poll(async () => parseFloat(await page.evaluate(() => document.body.style.getPropertyValue('--flight-bank')))).toBeLessThan(-2);
+  await expect.poll(async () => parseFloat(await page.evaluate(() => document.querySelector('.flight-director').style.getPropertyValue('--flight-bank')))).toBeLessThan(-2);
 });
 
 for (const [name, viewport] of [['desktop', { width: 1440, height: 900 }], ['mobile', { width: 390, height: 844 }]]) test(`${name} settings keeps its controls in one dialog`, async ({ page }) => {
@@ -865,7 +865,7 @@ const centerOf = async (locator, fy = 0.5) => {
   const box = await locator.boundingBox();
   return { x: box.x + box.width / 2, y: box.y + box.height * fy };
 };
-const bank = page => page.evaluate(() => parseFloat(document.body.style.getPropertyValue('--flight-bank')));
+const bank = page => page.evaluate(() => parseFloat(document.querySelector('.flight-director').style.getPropertyValue('--flight-bank')));
 const speedOf = async page => Number(await page.locator('#speed').textContent());
 const startTouchRace = async page => {
   await page.goto('/');
