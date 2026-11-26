@@ -169,6 +169,7 @@ export function createRivalStatusTint(capacity: number) {
       }
       fx.end();
       mesh.visible = shown;
+      if (!shown) return; // hidden: nothing to upload; every slot is rewritten each frame, the next shown one uploads all
       mesh.instanceMatrix.needsUpdate = true;
       mesh.instanceColor!.needsUpdate = true;
       status.needsUpdate = true;
