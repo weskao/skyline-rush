@@ -1,5 +1,5 @@
 import { advanceCountdown } from './frame-pacing.ts';
-import { stepPlayerDrift } from './player-drift.ts'; import { onNeonRoof, overNeonRoof, supportNeonRoof } from './neon-roof.ts';
+import { stepPlayerDrift } from './player-drift.ts'; import { blockNeonPortal, onNeonRoof, overNeonRoof, supportNeonRoof } from './neon-roof.ts';
 export { startRace } from './frame-pacing.ts';
 import { assistSteer, meetRail, roadDrift } from './corner-force.ts';
 import { prepareEndless, streamEndless } from './endless-highway.ts';
@@ -371,7 +371,7 @@ export function stepRace(race, input, dt) {
   }
   if (car.altitude > 0 && !onNeonRoof(race.trackId, car)) car.drift = null; // taking off loses the drift build-up
   const previousDistance = car.distance, previousContacts = car.collisions + car.falls;
-  car.distance += car.speed * dt; const roofLanded = supportNeonRoof(race.trackId, car, previousAltitude);
+  car.distance += car.speed * dt; const portalHit = blockNeonPortal(race.trackId, car, previousDistance), roofLanded = supportNeonRoof(race.trackId, car, previousAltitude);
   const skyGap = race.trackId === 'spiral' && skyJumpGap(car.distance, !!race.endless);
   const gapNow = race.course ? stepCoursePlayer(race, dt, contact) :
     skyGap || (race.trackId !== 'spiral' && race.sections.find(s => s.type === 'gap' && car.distance >= s.from && car.distance < s.to));
@@ -405,7 +405,7 @@ export function stepRace(race, input, dt) {
 
   stepRaceWorld(race, dt);
   if (car.recovery) return finishRecoveryFrame(race, dt);
-  resolvePlayerContacts(race, previousDistance, previousX, lateralPosition, roofHit, section, nitro);
+  resolvePlayerContacts(race, previousDistance, previousX, lateralPosition, roofHit || portalHit, section, nitro);
   for (const traffic of race.traffic) {
     const gap = traffic.distance - traffic.speed * dt - previousDistance;
     const clearance = Math.abs(traffic.x - car.x);

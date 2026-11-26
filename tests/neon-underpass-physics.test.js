@@ -62,9 +62,9 @@ test('Neon underpass roof is solid from inside, matching an ordinary tunnel, at 
   }
 });
 
-// Between the tunnel ceiling and the roof the portal is a wall: a frontal hit, then the car is inside.
-test('flying into the Neon portal face below the roof is a wall hit at 30/60/120 Hz', () => {
-  for (const hz of [30, 60, 120]) for (const altitude of [3.5, 5, 7]) {
+// Between the tunnel ceiling and the rail bridge's railing (10.6 m) the portal is a wall: a frontal hit, then the car is inside.
+test('flying into the Neon portal face below its railing is a wall hit at 30/60/120 Hz', () => {
+  for (const hz of [30, 60, 120]) for (const altitude of [3.5, 5, 7, 8, 10]) {
     const dt = 1 / hz, race = fresh();
     Object.assign(race, { hazards: [], props: [] });
     Object.assign(race.player, { distance: 686, altitude, verticalSpeed: 0, speed: 50 });
@@ -76,17 +76,17 @@ test('flying into the Neon portal face below the roof is a wall hit at 30/60/120
   }
 });
 
-// Over the portal the roof carries the car; above it the ordinary 12 m maximum is the only limit.
-test('crossing the Neon portal above the roof lands on it and FLY still reaches 12 m', () => {
+// Over the portal's railing the car lands on the roof; above it the ordinary 12 m maximum is the only limit.
+test('clearing the Neon portal railing lands on the roof and FLY still reaches 12 m', () => {
   for (const hz of [30, 60, 120]) {
     const dt = 1 / hz, race = fresh();
     Object.assign(race, { hazards: [], props: [] });
-    Object.assign(race.player, { distance: 686, altitude: 7.6, verticalSpeed: -1, speed: 40, fuel: 100 });
-    for (let i = 0; i < hz; i++) stepRace(race, {}, dt);
+    Object.assign(race.player, { distance: 686, altitude: 12, verticalSpeed: 0, speed: 40, fuel: 100 });
+    for (let i = 0; i < 2 * hz; i++) stepRace(race, {}, dt);
     assert.ok(race.player.distance > 690 && race.player.distance < 910);
     assert.equal(race.player.altitude, NEON_ROOF_HEIGHT, `on the roof at ${hz} Hz`);
     for (let i = 0; i < 2 * hz; i++) stepRace(race, { fly: true }, dt);
-    assert.ok(race.player.distance < 910);
+    assert.ok(race.player.distance < 894);
     assert.equal(race.player.altitude, 12, `full flight envelope over the tunnel at ${hz} Hz`);
     assert.equal(race.player.collisions, 0);
   }
@@ -128,7 +128,7 @@ test('the real Neon roadworks barrier at 980 m still blocks ground cars but perm
 });
 
 // The original roof must support a car without FLY, without an altitude clamp from below.
-test('Neon roof supports a stopped car, driving, taking off and driving off the edge', () => {
+test('Neon roof supports a stopped car, driving and taking off', () => {
   for (const hz of [30, 60, 120]) {
     const dt = 1 / hz, race = fresh();
     Object.assign(race.player, { distance: 760, altitude: 10, verticalSpeed: -3, speed: 0, fuel: 30 });
@@ -147,12 +147,47 @@ test('Neon roof supports a stopped car, driving, taking off and driving off the 
     Object.assign(race.player, { speed: 40, fuel: 100 });
     stepRace(race, { fly: true }, dt);
     assert.ok(race.player.altitude > 7.2, 'takeoff from roof');
-    Object.assign(race.player, { distance: 909.9, altitude: 7.2, verticalSpeed: 0, speed: 40 });
-    stepRace(race, { throttle: true }, dt);
-    stepRace(race, { throttle: true }, dt);
-    assert.ok(race.player.distance > 910);
-    assert.ok(race.player.altitude < 7.2, 'gravity after leaving roof');
     assert.equal(race.player.collisions, 0);
+  }
+});
+
+// The exit rail bridge (girder face 894.2 m, railing top 10.6 m) closes the roof: driving into it is a
+// frontal hit that stops the car at the face, never a lift over it. FLY over the railing is the way out.
+const EXIT_FACE = 894.2, RAILING_TOP = 10.6, PORTAL_DECK = 9.24;
+test('driving the Neon roof into the exit rail bridge stops at its face without lifting the car', () => {
+  for (const hz of [30, 60, 120]) {
+    const dt = 1 / hz, race = fresh();
+    Object.assign(race, { hazards: [], props: [] });
+    Object.assign(race.player, { distance: 880, altitude: NEON_ROOF_HEIGHT, verticalSpeed: 0, speed: 40, fuel: 100 });
+    for (let i = 0; i < 2 * hz; i++) {
+      stepRace(race, { throttle: true }, dt);
+      assert.ok(race.player.distance < EXIT_FACE, `held at the face at ${hz} Hz`);
+      assert.equal(race.player.altitude, NEON_ROOF_HEIGHT, `stays on the roof at ${hz} Hz`);
+    }
+    assert.equal(race.player.collisions, 1, 'one hit; resting against the face is not another');
+    assert.equal(race.player.impact?.kind, 'barrier');
+    assert.ok(race.player.speed <= 18, 'no speed builds up against the wall');
+    race.player.fuel = 100;
+    for (let i = 0; i < 2 * hz && race.player.distance < EXIT_FACE; i++) {
+      stepRace(race, { fly: true, throttle: true }, dt);
+      if (race.player.distance >= EXIT_FACE) assert.ok(race.player.altitude >= RAILING_TOP, 'crosses only above the railing');
+    }
+    assert.ok(race.player.distance >= EXIT_FACE, `FLY clears the bridge at ${hz} Hz`);
+    assert.equal(race.player.collisions, 1);
+  }
+});
+
+test('the Neon rail bridge deck carries a car that lands on it, and its railing holds it in', () => {
+  for (const hz of [30, 60, 120]) {
+    const dt = 1 / hz, race = fresh();
+    Object.assign(race, { hazards: [], props: [] });
+    Object.assign(race.player, { distance: 896, altitude: 10, verticalSpeed: -2, speed: 3 });
+    for (let i = 0; i < hz; i++) stepRace(race, {}, dt);
+    assert.equal(race.player.altitude, PORTAL_DECK, `on the bridge deck at ${hz} Hz`);
+    for (let i = 0; i < 4 * hz; i++) stepRace(race, { throttle: true }, dt);
+    assert.ok(race.player.distance < 910, 'railing at the far edge');
+    assert.equal(race.player.altitude, PORTAL_DECK);
+    assert.equal(race.player.collisions, 1);
   }
 });
 
@@ -173,10 +208,13 @@ test('a car inside the tunnel is drawn at its true altitude on fallback and deta
 });
 
 
+// The detailed meshes match physics (roof 7.2 m, bridge deck 9.24 m), so the car is never drawn lifted over a portal.
 test('roof contact renders on original fallback and detailed surfaces without changing flight maximum', () => {
   assert.equal(neonRoofVisualAltitude(800, NEON_ROOF_HEIGHT, true), 4.5);
   assert.equal(neonRoofVisualAltitude(800, NEON_ROOF_HEIGHT, false), 7.2);
-  assert.equal(neonRoofVisualAltitude(698, NEON_ROOF_HEIGHT, false), 9.24);
+  for (const distance of [692, 698, 893, 900, 906]) for (const altitude of [NEON_ROOF_HEIGHT, PORTAL_DECK, 10]) {
+    assert.equal(neonRoofVisualAltitude(distance, altitude, false), altitude, `detailed at ${distance} m, ${altitude} m`);
+  }
   for (const fallback of [true, false]) for (const distance of [690, 800, 909, 920]) {
     assert.equal(neonRoofVisualAltitude(distance, 0, fallback), 0);
     assert.equal(neonRoofVisualAltitude(distance, 12, fallback), 12);

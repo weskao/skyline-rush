@@ -260,3 +260,24 @@ for (const [quality, drawnRoof] of [['high', 7.2], ['low', 4.5]]) test(`Neon ${q
   });
   expect(drawn).toEqual({ altitude: 7.2, y: drawnRoof });
 });
+
+// The exit rail bridge (girder face 894.2 m) closes the roof. Driving into it was drawn as a climb onto the
+// bridge while physics drove on (2026-11-27); now it is a hit that holds the car, drawn where it is, on every tier.
+for (const [quality, drawnRoof] of [['high', 7.2], ['low', 4.5]]) test(`Neon ${quality} stops a roof car at the exit rail bridge`, async ({ gameplayPage: page }) => {
+  test.setTimeout(ciTimeout(150000));
+  await neon(page, quality);
+  if (quality === 'high') await expect.poll(() => kits(page), { timeout: ciTimeout(60000) }).toBe('attached attached');
+  await page.locator('#start-button').click();
+  await racing(page);
+  const held = await page.evaluate(async () => {
+    const { race } = window.gameplay;
+    Object.assign(race, { traffic: [], rivals: race.rivals.map(r => Object.assign(r, { distance: 3000 })) });
+    Object.assign(race.player, { distance: 884, x: 0, altitude: 7.2, verticalSpeed: 0, speed: 30, cooldown: 0 });
+    const collisions = race.player.collisions, end = race.elapsed + 1;
+    while (race.elapsed < end) await new Promise(requestAnimationFrame);
+    const { distance, altitude } = race.player;
+    return { held: distance < 894.2, altitude, hits: race.player.collisions - collisions, y: +window.gameScene.player.position.y.toFixed(2) };
+  });
+  await page.screenshot({ path: test.info().outputPath(`neon-roof-end-${quality}.png`) });
+  expect(held).toEqual({ held: true, altitude: 7.2, hits: 1, y: drawnRoof });
+});
