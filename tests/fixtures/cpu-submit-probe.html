@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>CPU render submission probe</title>
+<style>html,body{margin:0;background:#081428}canvas{display:block;width:100vw;height:100vh}</style></head>
+<body>
+<canvas id="world" aria-label="CPU render submission probe"></canvas>
+<script type="module">
+  // Same fixed-step racing loop as thermal-baseline.html, plus (a) deterministic per-frame work counters
+  // (?counters=1) and (b) profiler gates (window.__profile) so a CPU profile covers only measured frames.
+  import * as THREE from 'three';
+  import { createWorld } from '../../src/world.js';
+  import { createRace } from '../../src/race-factory.ts';
+  import { startRace, stepRace, setLayoutSeed } from '../../src/game.js';
+  import { CIRCUIT_ID } from '../../src/circuit-track.ts';
+  import { vfxSettings } from '../../src/vfx-settings.ts';
+  import { createPresentation } from '../../src/presentation.ts';
+  import { untilDrawn } from './showcase-probe-draw.js';
+  const STEP = 1 / 60, SEED = 12345, INPUT = Object.freeze({ throttle: true, boost: true, steer: 0 });
+  const next = () => new Promise(requestAnimationFrame);
+  const query = new URLSearchParams(location.search);
+  const counts = Object.create(null), seen = {}; let counting = false;
+  const bump = (name, n = 1) => { if (counting) counts[name] = (counts[name] ?? 0) + n; };
+  if (query.get('counters') === '1') {
+    const wrap = (target, name, after, before) => {
+      const original = target[name];
+      target[name] = function (...args) { before?.call(this, args); const result = original.apply(this, args); after?.call(this, args); return result; };
+    };
+    // Object graph: every updateMatrixWorld visit, the ones that recompose matrixWorld, and local matrix recomposes.
+    const original = THREE.Object3D.prototype.updateMatrixWorld;
+    THREE.Object3D.prototype.updateMatrixWorld = function (force) {
+      bump('matrixWorldVisits');
+      if (this.matrixWorldNeedsUpdate || force || this.matrixAutoUpdate) bump('matrixWorldRecomputeCandidates');
+      return original.call(this, force);
+    };
+    wrap(THREE.Object3D.prototype, 'updateMatrix', () => bump('matrixLocalRecomputes'));
+    // Renderer traversal: projectObject tests layers on every visible object it enters.
+    wrap(THREE.Layers.prototype, 'test', () => bump('objectsTraversed'));
+    wrap(THREE.Frustum.prototype, 'intersectsObject', () => bump('frustumObjectTests'));
+    wrap(THREE.Frustum.prototype, 'intersectsSprite', () => bump('frustumObjectTests'));
+    // Materials: needsUpdate assignments (each forces a program re-lookup).
+    const descriptor = Object.getOwnPropertyDescriptor(THREE.Material.prototype, 'needsUpdate');
+    Object.defineProperty(THREE.Material.prototype, 'needsUpdate', { ...descriptor, set(value) { if (value === true) { bump('materialNeedsUpdate'); if (counting) bump('needsUpdateFrom.' + new Error().stack.split('\n').slice(2, 5).map(l => l.trim().replace(/^at /, '').replace(/\(?https?:\/\/[^/]+\//, '(').replace(/\?[^:]*/, '')).join(' < ')); } descriptor.set.call(this, value); } });
+    // Program lookups: Three calls customProgramCacheKey() once per getParameters(), i.e. once per material program lookup.
+    let current = null; // the object being drawn: Material.onBeforeRender runs just before its program lookup
+    wrap(THREE.Material.prototype, 'customProgramCacheKey', function () {
+      if (counting && current) bump(`lookupObj.${current.type}:${current.name || '?'}<${current.parent?.name || current.parent?.type} rs=${current.receiveShadow} inst=${!!current.isInstancedMesh} env=${!!this.envMap} lights=${this.lights} fog=${this.fog}`);
+      bump('programLookups'); bump('lookup.' + this.type + ':' + (this.name || '?'));
+      if (counting) bump('lookupFrom.' + new Error().stack.split('\n').slice(2).map(l => l.trim().replace(/^at /, '').split(' ')[0]).filter(n => /render|Pass|shadow|warm|world/i.test(n)).slice(0, 4).join('<'));
+    });
+    // Two-pass candidates: transparent + DoubleSide + !forceSinglePass draws twice with needsUpdate between the passes.
+    wrap(THREE.Material.prototype, 'onBeforeRender', function (args) {
+      current = args[4];
+      if (this.transparent === true && this.side === THREE.DoubleSide && this.forceSinglePass === false) {
+        bump('twoPassDraws'); bump(`twoPass.${this.type}:${this.name || '?'} op=${this.opacity} dw=${this.depthWrite} tr=${this.transmission ?? '-'} map=${!!this.map} amap=${!!this.alphaMap} atest=${this.alphaTest} blend=${this.blending} a2c=${this.alphaToCoverage}`);
+      }
+    });
+    // Render-list sort comparator calls.
+    const sort = Array.prototype.sort;
+    Array.prototype.sort = function (compare) {
+      if (!counting || typeof compare !== 'function') return sort.call(this, compare);
+      return sort.call(this, (a, b) => { bump('sortComparisons'); return compare(a, b); });
+    };
+    wrap(THREE.WebGLRenderer.prototype, 'render', function (args) { if (args[0].isScene) seen.scene = args[0]; seen.renderer = this; });
+    // Every WebGL2 call by name; uniform uploads and program switches are derived from it.
+    for (const name of Object.getOwnPropertyNames(WebGL2RenderingContext.prototype)) {
+      const fn = Object.getOwnPropertyDescriptor(WebGL2RenderingContext.prototype, name).value; // getters (canvas, drawingBufferWidth) throw on the prototype
+      if (typeof fn !== 'function' || name === 'constructor') continue;
+      WebGL2RenderingContext.prototype[name] = function (...args) { bump('gl.' + name); return fn.apply(this, args); };
+    }
+  }
+  window.cpuProbeRun = async ({ id, frames = 300 }) => {
+    const canvas = document.getElementById('world');
+    const world = createWorld(canvas, vfxSettings({ quality: 'high', preset: 'cinematic' }));
+    try {
+      setLayoutSeed(() => SEED);
+      const race = createRace(id, id === CIRCUIT_ID ? { mode: 'circuit', laps: 3 } : null);
+      const presentation = createPresentation();
+      world.preloadTrackAssets(id);
+      await untilDrawn(() => world.render(race, STEP, 2, {}));
+      startRace(race);
+      await untilDrawn(() => world.render(race, STEP, 0, {}));
+      while (race.phase === 'countdown') stepRace(race, {}, STEP);
+      for (let i = 0; i < 60; i++) { await next(); stepRace(race, INPUT, STEP); world.render(race, STEP, 0, INPUT, presentation.update(race, STEP)); }
+      const submissions = [], perFrame = [];
+      await window.__profile?.('start');
+      let previous = await next();
+      for (let i = 0; i < frames; i++) {
+        await next();
+        stepRace(race, INPUT, STEP);
+        const state = presentation.update(race, STEP);
+        for (const key in counts) delete counts[key];
+        counting = true;
+        const begin = performance.now();
+        world.render(race, STEP, 0, INPUT, state);
+        submissions.push(performance.now() - begin);
+        counting = false;
+        if (query.get('counters') === '1') perFrame.push({ ...counts });
+      }
+      await window.__profile?.('stop');
+      let objects = 0, hidden = 0, matrixAuto = 0, beforeRender = 0;
+      seen.scene?.traverse?.(o => { objects++; if (!o.visible) hidden++; if (o.matrixAutoUpdate) matrixAuto++; if (Object.prototype.hasOwnProperty.call(o, 'onBeforeRender')) beforeRender++; });
+      return { id, frames, submissions, perFrame, scene: { objects, hidden, matrixAuto, beforeRender }, info: { calls: seen.renderer?.info?.render?.calls } };
+    } finally { world.dispose(); }
+  };
+  window.cpuProbeReady = true;
+</script>
+</body>
+</html>
