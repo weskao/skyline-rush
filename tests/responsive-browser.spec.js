@@ -68,6 +68,13 @@ for (const [width, height, hasTouch] of START_LAYOUT_SIZES) {
         const [card, garage, start] = await Promise.all(['#lobby-tracks-toggle', '#garage-button', '#start-button']
           .map(selector => intro.locator(selector).first().boundingBox()));
         expect(card.y + card.height, 'pinned row covers the track cards').toBeLessThanOrEqual(garage.y);
+        if (width === 568 && height === 320) {
+          const [copy, action] = await Promise.all(['.lobby-track-copy', '#lobby-tracks-toggle > span']
+            .map(selector => intro.locator(selector).boundingBox()));
+          expect(copy.y + copy.height, 'short landscape track text clears the action label').toBeLessThanOrEqual(action.y);
+          expect(garage.y - (card.y + card.height), 'short landscape keeps real clearance above Garage').toBeGreaterThanOrEqual(4);
+          expect(card.height, 'the whole track card remains a touch target').toBeGreaterThanOrEqual(44);
+        }
         expect(Math.abs(garage.y + garage.height - (start.y + start.height)), 'pinned row bottom matches Start').toBeLessThanOrEqual(2);
       }
       for (const selector of ['#start-button', '.history-button', '.flight-tip']) {
@@ -481,13 +488,20 @@ for (const [width, height] of [[390, 844], [375, 667], [320, 568], [844, 390]]) 
     await page.keyboard.down('Space');
     await expect(page.locator('body')).toHaveClass(/airborne/);
     await expect(page.locator('.flight-director')).toHaveCSS('opacity', '0.8');
-    await page.evaluate(() => { const car = window.gameplay.race.player; car.nearMisses++; car.nearMiss = { time: window.gameplay.race.elapsed, combo: 4, charge: 37 }; });
-    await expect(page.locator('#event-callout')).toBeVisible();
-    // No settle wait: the overlap must be gone from the callout's first frame, not after a fade (CI's i18n check caught one mid-fade).
-    const [director, callout] = await Promise.all(['.flight-director', '#event-callout'].map(selector => page.locator(selector).boundingBox()));
-    // Callouts last ~1.4s; on a portrait phone the director may step aside (fade out) for one instead of moving.
-    const directorShown = await page.locator('.flight-director').evaluate(el => Number(getComputedStyle(el).opacity) > 0.05);
+    // Trigger and measure inside one browser task: the callout lives ~1.2 s of race time, so separate Playwright reads
+    // on a slow runner can see it expire and the director return, a stale-rect overlap that is no product bug (CI 45679379454).
+    const { director, callout, directorShown } = await page.evaluate(() => new Promise(resolve => {
+      const car = window.gameplay.race.player; car.nearMisses++; car.nearMiss = { time: window.gameplay.race.elapsed, combo: 4, charge: 37 };
+      const read = () => {
+        const el = document.querySelector('#event-callout'), dir = document.querySelector('.flight-director');
+        // No settle wait: the overlap must be gone from the callout's first frame, not after a fade (CI's i18n check caught one mid-fade).
+        if (el.hidden) return requestAnimationFrame(read);
+        resolve({ director: dir.getBoundingClientRect().toJSON(), callout: el.getBoundingClientRect().toJSON(), directorShown: Number(getComputedStyle(dir).opacity) > 0.05 });
+      };
+      requestAnimationFrame(read);
+    }));
     await page.keyboard.up('Space');
+    // Callouts last ~1.4s; on a portrait phone the director may step aside (fade out) for one instead of moving.
     expect(!directorShown || callout.y + callout.height <= director.y + 0.5 || director.y + director.height <= callout.y + 0.5 ||
       callout.x + callout.width <= director.x + 0.5 || director.x + director.width <= callout.x + 0.5,
     `callout ${JSON.stringify(callout)} overlaps director ${JSON.stringify(director)}`).toBe(true);

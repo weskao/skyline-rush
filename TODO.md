@@ -1,7 +1,56 @@
+# CI 45665976529 follow-up (2026-11-26)
+
+- [x] Original CI RED: Sky Spiral home/racing threw during disposal of an attached kit group; Crimson GT grid comparison timed out after the click-time countdown hold expired. Quality gate failed downstream.
+- [x] Isolated Node reproduction of the disposal ownership and delayed START boundary: 2 failures before, 2 passes after (synthetic fixtures, not full WebGL). Add actual Three.js ownership/order regression tests and keep all existing pose assertions.
+- [ ] Verify exact-HEAD full regression, including thermal home/spiral and racing/spiral, Crimson GT/Roadster grid, module-size, unit, typecheck, build and quality-gate. Local full checkout blocked by GitHub DNS and missing pnpm/Three.js dependencies; physical-device evidence remains separate.
+
+# CI 45577036521 Tilt follow-up (2026-11-25)
+
+- [x] Original browser shard 7 failed twice at Tilt radio check; the denied-permission sibling passed. The existing 2.5s no-reading fallback can race the cross-process test driver. Isolated Chromium DOM reconstruction with delayed driver reproduced unchecked Tilt; observing waiting and feeding a simulated reading in-page kept Tilt checked after the same delay. This is a plausible timing root cause, not proof of the exact remote failure mechanism.
+- [ ] Verify real-game CI for granted, denied, no-reading fallback, steering, recenter and reset. Browser fixture now observes the actual waiting state in-page and supplies the reading without transport timing; runtime fallback and flight-bank assertions are unchanged. Full checkout and real-device checks remain unavailable.
+
+# CI wallet spacing follow-up (2026-11-25)
+
+- [x] Exact-HEAD CI RED: 345x206 wallet-to-track gap was 2px, expected at least 6px; the <=330px override caused the regression.
+- [x] Isolated Chromium geometry RED/GREEN: 345x206 and 756x265 gap 2px -> 6px; compact card min-height 55px -> 49px; card bottom moves 2px upward with the same fixture. Wider ultra-short fixture also retains 6px and moves card bottom 2px upward. Not a full-game capture.
+- [ ] Verify full game layout at 345x206, 568x320, 756x265 and other existing sizes, pinned Garage clearance, focused browser suite and exact-HEAD full CI. Local checkout/dependencies unavailable.
+
+# CI 45538479486 follow-up (2026-11-25)
+
+- [ ] Verify module-size extraction and showcase occlusion guard; original unit gate reported world.js 937/936 lines.
+- [ ] Verify tutorial landscape media scope and 320x568 HUD clearance, 320x740 countdown/fuel clearance, 568x320 lobby pinned row clearance, portrait and landscape, with unchanged browser guards.
+- [ ] Verify measured-route pose assertions in Frostbite and Stormline desktop/phone, including forks, finishes and shader count; avoid assuming a CourseGraph runtime or zero lateral motion.
+- [ ] Investigate Crimson GT drift-trail GLB timeout (passed on retry); distinguish fetch/decode/resource contention before changing timeout policy.
+- [ ] Run focused tests, pnpm test, typecheck, build, make verify, actual device/WebGL evidence, and exact-HEAD quality-gate. Connector environment lacks repository checkout and pnpm; no local full-suite or browser GREEN claimed.
+
+# CI 45480093600 follow-up batch 2 (2026-11-25)
+
+- [x] Isolated RED/GREEN: independent BOOST/NITRO phases (200 samples, max ratio 0.9008 before and 0.7622 after); prefetch-cached road failure (old active callback not called, new callback called once in isolated invocation). Full existing browser guards retained.
+- [ ] Verify exact HEAD CI for tutorial shared slot/paused layout, short landscape action row, GO telemetry, keyboard modal focus, first-start modal readiness, tutorial DOM order, Neon fallback and orbit visibility/sampling. Stormline graph test now compares the rendered horizontal pose against the actual graph-frame lateral/altitude rather than assuming steering stays within 3m of center after corner handling changed.
+- [ ] Full-suite local commands and real-device/WebGL visual verification unavailable in connector environment; GitHub Actions must confirm all fixes and any remaining failures.
+
+# CI 45480093600 follow-up (2026-11-25)
+
+- [x] Isolated tutorial cue/pass entrance transform regression: Chromium RED reproduced a negative coach-to-prompt gap (-8.7px at entry); opacity-only entrance maintained a 10px gap across six sampled times for both cue and pass (GREEN in isolated reproduction). Existing real-game frame-by-frame overlap guard remains intact.
+- [ ] Full regression verification for the new commit: module-size, unit, typecheck, build, real-game browser suites, device screenshots and exact-HEAD quality-gate. Connector environment cannot clone the repository or install dependencies (GitHub DNS unavailable); isolated browser evidence is not full-suite GREEN.
+- [ ] Remaining failures from run 45480093600: tutorial steady-state telemetry/coach and paused layout, main UI contract, first-visit navigation, keyboard mode setup, Neon fallback, Home pinned-row and label geometry, GO telemetry, Taipei/coastal camera occlusion, Stormline outlet pose, flaky rival BOOST flame ratio. Re-evaluate tutorial overlap guards after the animation fix. Do not weaken checks or mark these complete without evidence.
+
+# Full car-heading physics (deferred, large; 2026-11-25)
+
+- [ ] Real-car / kart-style handling: steering turns the car's nose (yaw), so after a lane change on a straight the player must counter-steer to straighten up. Today the simulation is road-relative: the car always faces along the road centreline, steering moves it sideways and corners push it outward.
+- [ ] Scope if taken: steering feel (`src/game.js` `stepRace`); keyboard and touch input; AUTO / lane assist; tutorial driving lessons (`docs/tutorial-driving.md`); rival AI and traffic; drift; fork lane choice (`forkLateral`); test bots (`scripts/pickup-economy.mjs`); corner-force and drift tests; the legacy race replay fixture (`tests/fixtures/legacy-race-replay.json`); saved Ghost data.
+- [ ] Blocked on an owner decision: it conflicts with `.claude/rules/vehicle-road-stability.md` ("Keep the arcade driving feel; do not replace it with a new physics engine."). Change that rule first.
+- [ ] Smaller step chosen instead (2026-11-25): build heading offset only in corners. When the player does not steer in a bend, the nose keeps its line and runs into the outer rail.
+
 # CI 45403054733 regression follow-up (2026-11-25)
 
 - [ ] Verify updated startup unread-tab, historical release media and launch-flare browser contracts against exact-HEAD CI. RED: startup selected-tab badge missing, Freeze/EMP and enlarged picture locators timed out, old static countdown pool assertion failed on both attempts. These assertions assumed the superseded behavior; checks now select the media-owning tab, assert per-tab read state and record actual animated countdown GLB frames. Local Playwright/build unavailable in connector environment; GREEN not yet observed.
 - [ ] Resolve remaining CI failures: coastal/Taipei showcase occlusion, tutorial cue/pass and telemetry/paused layout, tutorial DOM contract and first-visit return, race GO notice telemetry, Home short-landscape rail/labels, Neon fallback status. Confirm full quality-gate and real-device visuals; do not mark complete before evidence.
+
+# Home wordmark interaction (2026-11-25)
+
+- [x] Superseded: the wordmark no longer reloads; `197386b0` makes it a same-document `#intro` link, so the non-interactive variant was dropped.
+- [ ] Complete regression gates, visual evidence and exact-commit CI. `make verify` blocked by missing pnpm 11.28.13 executable.
 
 # Announcement unread indicators (2026-11-24)
 

@@ -35,6 +35,12 @@ and the duplicate import failed all 16 browser shards. Enforced by `tests/browse
   Wait for the camera to come to rest first: `pausedRace()` in `tests/helpers/traffic-browser.js`
   asserts it.
 
+- **A timed HUD element is measured in one browser task.** Callouts expire after ~1.2 s of race time, so rects and
+  opacities read through separate Playwright calls can mix a live element with a stale one. Trap (2026-11-26, CI
+  `45679379454`, `responsive-browser` flight director vs callout at 375x667): the director had already returned when its
+  opacity was read, reporting an overlap with the callout's old rect. Trigger and measure inside one `page.evaluate`
+  on the first frame the element shows; a 1.1 s stall between the reads reproduces the CI error text locally.
+
 ## Poll anything a UI action changes asynchronously
 
 - `click` / `check` / `selectOption` / `press` resolve once the events are dispatched. They do
@@ -342,3 +348,7 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
 
 - Upcoming is the first release tab and can have no media; historical clip and picture-viewer specs must select the release that owns the media before testing it. A read tab clears its own dot immediately; compare styling on a still-unread tab and clear every unread version before asserting the aggregate Home dot is gone (CI 45403054733).
 - Arm a page-side frame recorder before Start for launch-flare assertions: countdown waves are transient, animated, and end before GO, not a static pool followed by a GO glow. Keep the GLB attachment, visibility and GPU program-count checks (CI 45403054733).
+
+- Measured-route tracks (Stormline, Frostbite, Monsoon, Volcanic) do not have a CourseGraph runtime. For their rendered player position, use the authored road frame and the rendered/interpolated lateral pose rather than `race.course.cars` or an arbitrary distance from the centreline; keep the strict horizontal error assertion in the measured-race pose helper.
+
+- A stationary-grid test must arm its countdown at the real START boundary, after asynchronous pack preflight. A click-time RAF watcher with a wall-clock expiry can stop before the countdown starts on CPU-only CI (run 45665976529). Retain the actual START click, phase assertion and pose comparisons; use the existing test-only capture hook, never change production countdown timing.

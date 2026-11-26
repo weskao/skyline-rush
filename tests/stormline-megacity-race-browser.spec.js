@@ -4,6 +4,7 @@ import { expect } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { ciTimeout } from './helpers/ci.js';
+import { measuredRacePoseError } from './helpers/measured-race-pose.js';
 
 // Real WebGL Stormline Megacity RACE on the `make dev-unlocked` module alias (release builds keep the card Coming Soon).
 // Set STORMLINE_CAPTURE_DIR to keep the evidence frames.
@@ -45,9 +46,7 @@ for (const [name, viewport, hasTouch] of [
     for (const [stop, distance] of STOPS) {
       await page.evaluate(d => { Object.assign(window.gameplay.race.player, { distance: d, x: 0, altitude: 0, speed: 60 }); }, distance);
       await page.waitForTimeout(700);
-      // The player is drawn on the CourseGraph road frame (camera-relative origin at the car).
-      const pose = await page.evaluate(() => window.gameScene.player.position.toArray());
-      expect(Math.hypot(pose[0], pose[2]), `${stop} player near origin`).toBeLessThan(3);
+      expect(await measuredRacePoseError(page), `${stop} player follows the measured road's lateral and altitude frame`).toBeLessThan(0.75);
       await capture(page, `${name}-${stop}`);
     }
     // Every fork (skyway cut, tunnel cut, rooftop flight) is a shortcut corridor over its safe edge: a car inside it
@@ -56,7 +55,7 @@ for (const [name, viewport, hasTouch] of [
     expect(shortcuts.length).toBe(3);
     await page.keyboard.down('Space');
     for (const [i, s] of shortcuts.entries()) {
-      await page.evaluate(c => Object.assign(window.gameplay.race.player, { distance: (c.from + c.to) / 2, x: c.x, altitude: c.altitude, verticalSpeed: 0, speed: 60, fuel: 100 }), s);
+      await page.evaluate(c => Object.assign(window.gameplay.race.player, { distance: (c.from + c.to) / 2, x: c.x, heading: 0, altitude: c.altitude, verticalSpeed: 0, speed: 60, fuel: 100 }), s);
       await page.waitForTimeout(500);
       const lift = await page.evaluate(() => { const p = window.gameplay.race.player;
         return [window.gameScene.player.position.y, document.body.dataset.phase, JSON.stringify({ d: p.distance, x: p.x, alt: p.altitude, fuel: p.fuel, falls: p.falls })]; });

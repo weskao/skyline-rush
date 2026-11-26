@@ -169,7 +169,7 @@ test.describe('short-landscape Home wallet spacing', () => {
   test('keeps a visible gap between the resource row and selected track card', async ({ page }, info) => {
     await page.goto('/');
     await page.evaluate(() => document.fonts.ready);
-    for (const [width, height] of [[345, 206], [667, 375], [743, 340], [852, 393]]) {
+    for (const [width, height] of [[345, 206], [568, 320], [667, 375], [743, 340], [756, 265], [852, 393]]) {
       await test.step(`${width}x${height}`, async () => {
         await page.setViewportSize({ width, height });
         await expect(page.locator('#intro .home-resource-strip')).toBeVisible();

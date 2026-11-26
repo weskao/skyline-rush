@@ -35,3 +35,19 @@ export function createWorldFrameReadiness(canvas: HTMLCanvasElement) {
     racePending: (race: DrawableRace): boolean => gridRace !== race || loading,
   };
 }
+
+/** A draw owns counter reset, optional live instrumentation and presentation readiness. */
+export function createWorldFrameDraw(
+  renderer: Pick<import('three').WebGLRenderer, 'info' | 'getContext'>,
+  composer: Pick<import('three/addons/postprocessing/EffectComposer.js').EffectComposer, 'render'>,
+  frames: Pick<ReturnType<typeof createWorldFrameReadiness>, 'wait' | 'presented'>,
+  deepPerf: { draw(dt: number): void } | null,
+) {
+  return (race: DrawableRace, dt: number, snapshot = false, showcaseId: string | null = race.trackId): boolean => {
+    renderer.info.reset(); // Exclude shader warmup draws and previous frames from the counters.
+    if (deepPerf && !snapshot) deepPerf.draw(dt); else composer.render(dt);
+    if (renderer.getContext().isContextLost()) return frames.wait(snapshot);
+    if (!snapshot) frames.presented(race, showcaseId);
+    return true;
+  };
+}

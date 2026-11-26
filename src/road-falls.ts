@@ -34,7 +34,7 @@ export interface FallingCar {
   distance: number; x: number; altitude: number; verticalSpeed: number; speed: number; cooldown: number; combo: number;
   drift: unknown; driftHold?: unknown; trick: unknown; poweredFlightTime: number; flightBoosted: boolean; falls: number;
   fall: { from: number; distance: number; time: number } | null; span?: boolean; recovery?: RoadRecovery;
-  steering?: number; steerSign?: number; flick?: unknown; thrusting?: boolean; boosting?: boolean; braking?: boolean;
+  steering?: number; heading?: number; steerSign?: number; flick?: unknown; thrusting?: boolean; boosting?: boolean; braking?: boolean;
   cleanDistance?: number; flyBuffer?: number; nitroTime?: number; miniBoost?: number;
 }
 
@@ -59,7 +59,7 @@ export function startRoadRecovery(car: FallingCar, seat: RecoverySeat, from: num
   car.speed = 0;
   car.combo = car.cleanDistance = 0;
   car.drift = car.driftHold = car.trick = car.flick = null;
-  car.poweredFlightTime = car.steerSign = car.steering = car.flyBuffer = 0;
+  car.poweredFlightTime = car.steerSign = car.steering = car.heading = car.flyBuffer = 0;
   car.flightBoosted = car.thrusting = car.boosting = car.braking = false;
   car.nitroTime = car.miniBoost = 0;
 }

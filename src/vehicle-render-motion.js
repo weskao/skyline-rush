@@ -29,8 +29,9 @@ export function interpolateMotion(car, previous, alpha, out = {}) {
 }
 
 // Drift's visual 25-degree yaw is presentation only; scoring and steering remain exact-step.
-export function smoothDriftYaw(yaw, drift, dt) {
-  const target = drift ? -drift.dir * Math.PI * 25 / 180 : 0;
+// `heading` is the corner's nose angle (positive toward +x), drawn the same way as a drift's yaw.
+export function smoothDriftYaw(yaw, drift, dt, heading = 0) {
+  const target = (drift ? -drift.dir * Math.PI * 25 / 180 : 0) - heading;
   return yaw + (target - yaw) * (1 - Math.exp(-12 * Math.max(0, dt)));
 }
 

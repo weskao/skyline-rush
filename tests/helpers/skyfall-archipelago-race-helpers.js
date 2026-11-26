@@ -25,7 +25,9 @@ export function botRace(hz, path, { pilot = true, trace = null } = {}) {
   const towardAir = Object.fromEntries(INCOMING.map((id, i) => [id, AIRS.includes(path[i])]));
   for (let i = 0; race.phase === 'racing' && i < hz * 400; i++) {
     const edge = you.travel.currentEdgeId, air = AIRS.includes(edge), p = race.player;
+    // Pinned with its nose on the road, so a bend moves the bot under a millimetre a step at any frame rate.
     p.x = lane[edge] ?? 0;
+    p.heading = 0;
     const gapEnd = air ? spec().noRoad[edge][0][1] : 0;
     const fly = pilot && air && you.travel.localS < gapEnd && p.verticalSpeed < Math.min(7, 3 * (2.5 - p.altitude));
     stepRace(race, { throttle: true, boost: !(air || towardAir[edge]), fly }, dt);

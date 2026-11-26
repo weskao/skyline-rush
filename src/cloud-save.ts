@@ -19,7 +19,7 @@ const mergeDeviceProgress = mergeProgress as unknown as (local: object, cloud: u
 const mergeDeviceBests = mergeModeBests as unknown as (local: object, cloud: unknown) => PermanentBests;
 const auth = getAuth(app);
 const db = getFirestore(app);
-if (import.meta.env.DEV && location.hostname === '127.0.0.1'
+if (import.meta.env.DEV && ['127.0.0.1', 'localhost'].includes(location.hostname)
   && (import.meta.env.VITE_FIREBASE_EMULATOR || new URLSearchParams(location.search).has('firebase-emulator'))) {
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
   connectFirestoreEmulator(db, '127.0.0.1', 8080);

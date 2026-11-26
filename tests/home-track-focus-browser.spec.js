@@ -9,9 +9,11 @@ const raceThenLeave = async (page, id, exit) => {
   await page.locator('#start-button').click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.locator('.brand').click();
-  await (exit === 'home' ? Promise.all([page.waitForEvent('load'), page.locator('#leave-home').click()]) : page.locator('#leave-end').click());
+  const origin = await page.evaluate(() => performance.timeOrigin);
+  await page.locator(exit === 'home' ? '#leave-home' : '#leave-end').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
   await expect(page.locator(`[data-track="${id}"]`)).toHaveAttribute('aria-pressed', 'true');
+  expect(await page.evaluate(() => performance.timeOrigin)).toBe(origin);
 };
 
 test.beforeEach(async ({ page }) => {

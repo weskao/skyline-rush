@@ -513,6 +513,7 @@ try {
     const rawDelta = (now - previousTime) / 1000; previousTime = now;
     const dt = Math.max(0, Math.min(rawDelta, 0.05));
     if (motionRace !== race) { motionRace = race; accumulator = 0; captureRaceMotion(race, previousMotion); }
+    world.deepPerf?.start(now, rawDelta, race.phase, race.phase === 'ready' ? raceSelect.currentTrackId() : race.trackId);
     const countingDown = race.phase === 'countdown';
     const due = drainSteps(accumulator, countingDown ? 0 : dt); accumulator = due.accumulator;
     // Count elapsed seconds after the track scene has attached and warmed on a rendered frame.
@@ -535,6 +536,7 @@ try {
       }
       if (!race.modifier && (['classic', 'time', 'custom', 'circuit'].includes(race.mode))) recordGhost(trace, race);
     }
+    world.deepPerf?.simulationDone();
     const calm = calmMotion();
     // Watched per frame, not via a change listener: Chrome can drop that event when .matches is read every frame.
     if (calm && !wasCalm) vfx.stopMotionIfCalm(); wasCalm = calm;
@@ -556,7 +558,7 @@ try {
         cancelAnimationFrame(animationId); // The opaque startup screen only needs the first lobby frame.
         startup.ready(() => { controls.clear(); sound.cue('ui'); finishStartupReleaseNotes(); animationId = requestAnimationFrame(frame); });
       }
-      if (drawn) fps.completeRender(performance.now() - renderStarted);
+      if (drawn) { fps.completeRender(performance.now() - renderStarted); world.deepPerf?.submission(performance.now() - renderStarted); }
     }
     sound.update(race, presentationState.halfwayStarted, countingDown && world.raceFramePending(race));
     hudElapsed += dt; if (hudElapsed >= 0.075 || previousPhase !== race.phase) {
@@ -564,6 +566,7 @@ try {
       hudElapsed = 0;
     }
     perfOverlay?.record(now, rawDelta, race.phase === 'racing', drawn);
+    world.deepPerf?.finish(drawn, fps.targetFps, fps.renderScale);
   }
   animationId = requestAnimationFrame(frame);
 } catch (error) {

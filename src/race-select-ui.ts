@@ -19,7 +19,7 @@ import { setupEventLabUI } from './event-lab-ui.ts';
 import type { GhostRun } from './ghost.ts';
 import { racePresentationFor, racePresentationView, updateRaceSetup } from './race-presentation-ui.ts';
 import type { VisualPreset } from './race-session.ts';
-import { backHomeHref, bootHomeTrack, lastHomeTrack, rememberLastHomeTrack, restoreHomeTrack, withoutRacedQuery } from './last-home-track.ts';
+import { bootHomeTrack, lastHomeTrack, rememberLastHomeTrack, restoreHomeTrack, withoutRacedQuery } from './last-home-track.ts';
 
 // The simulation race comes from plain-JS game.js; this screen reads its selection fields only.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -349,10 +349,6 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     for (const entry of entries) (entry.target as HTMLElement).dataset.visible = String(entry.isIntersecting);
   }, { root: $('.track-select') });
   document.querySelectorAll('.track-preview').forEach(preview => previewObserver.observe(preview));
-  const leaveHome = $<HTMLAnchorElement>('#leave-home');
-  const pointHomeAtRace = (): void => { leaveHome.href = backHomeHref(getRace().trackId); };
-  $('#leave-screen').addEventListener('toggle', pointHomeAtRace);
-  leaveHome.addEventListener('click', pointHomeAtRace);
 
   return {
     recreate: eventLab.recreate,

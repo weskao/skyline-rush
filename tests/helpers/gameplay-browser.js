@@ -5,16 +5,19 @@ import { fileURLToPath } from 'node:url';
 import { CARS } from '../../src/car-catalog.ts';
 
 // Inspect the real scene and seed distant scenarios without shipping test hooks in the app.
-export async function captureHooks(page) {
+export async function captureHooks(page, mainEdits = []) {
   await markStartupSeen(page);
   for (const [file, anchor, replacement] of [
     ['main.js', 'let race = createRace();', 'let race = createRace(); window.gameplay = { get race() { return race; } };'],
     ['world.js', 'scene.add(player);', 'scene.add(player); window.gameScene = { scene, player, renderer, camera, composer, get rivals() { return rivals; } };'],
   ]) await page.route(url => url.pathname === `/src/${file}`, async route => {
     const response = await route.fetch();
-    const source = await response.text();
-    if (!source.includes(anchor)) throw new Error(`Missing capture anchor in ${file}`);
-    await route.fulfill({ response, body: source.replace(anchor, replacement) });
+    let source = await response.text();
+    for (const [from, to] of [[anchor, replacement], ...(file === 'main.js' ? mainEdits : [])]) {
+      if (source.split(from).length !== 2) throw new Error(`Missing or repeated capture anchor in ${file}: ${from}`);
+      source = source.replace(from, to);
+    }
+    await route.fulfill({ response, body: source });
   });
 }
 
@@ -80,11 +83,17 @@ export const landed = page => page.evaluate(async () => {
  * (`timeoutMs` in src/asset-model-loader.ts) and see `fallback:timeout`. Serve the dev module with a wider deadline;
  * the shipped value is untouched, and the timeout/fallback paths have their own tests. Gameplay (Vite dev) server only.
  */
-export const widenModelDeadline = page => page.route(url => url.pathname === '/src/asset-model-loader.ts', async route => {
+export const widenModelDeadline = (page, includeDecode = false) => page.route(url => url.pathname === '/src/asset-model-loader.ts', async route => {
   const response = await route.fetch();
   const source = await response.text();
   const deadline = /\btimeoutMs\s*=\s*(?:15000|15e3)\b/;
   if (!deadline.test(source)) throw new Error('src/asset-model-loader.ts no longer holds the normal model download deadline');
-  await route.fulfill({ response, body: source.replace(deadline, 'timeoutMs = 90000') });
+  let body = source.replace(deadline, 'timeoutMs = 90000');
+  if (includeDecode) {
+    const decodeDeadline = /\bdecodeTimeoutMs\s*=\s*(?:30000|3e4)\b/;
+    if (!decodeDeadline.test(body)) throw new Error('Model decode deadline changed');
+    body = body.replace(decodeDeadline, 'decodeTimeoutMs = 90000');
+  }
+  await route.fulfill({ response, body });
 });
 export const modelInstances = async page => JSON.parse((await page.locator('#world').getAttribute('data-garage-model-instances')) ?? '{}');

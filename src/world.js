@@ -23,12 +23,13 @@ import { raceCameraView, rigBack, rigLook, rigHeight, rigFov, rigShake, rigKick,
 import { observeRenderSize, renderPixelRatioForQuality, renderSamples } from './render-resolution.ts';
 import { warmupShaders } from './shader-warmup.ts';
 import { createRenderer } from './webgl-renderer.ts';
-import { createWorldFrameReadiness } from './world-frame-readiness.ts';
+import { createWorldFrameReadiness, createWorldFrameDraw } from './world-frame-readiness.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
 import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.ts';
 import { createGarageStage, GARAGE_LIGHTING } from './garage-stage.ts';
 import { applyCarReflections, createCarEnvironment, outdoorCarRoughness } from './car-reflections.ts';
+import { createDeepPerf } from './deep-perf.ts';
 import { createCarBounds } from './car-bounds.ts'; import { drawnTriangles } from './perf.ts';
 import { currentFoldableLayout, updateFoldableProjection } from './foldable-viewport.ts';
 import { createUpcomingShowcase } from './upcoming-showcase.ts';
@@ -43,7 +44,7 @@ import { createTrafficFleet } from './traffic-fleet.ts';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
 import { createWorldCoastAssets } from './coast-assets.ts';
 import { nearestLandmark } from './landmark-bounds.ts';
-import { chooseShowcaseFraming } from './showcase-framing.ts';
+import { chooseShowcaseFraming, visibleShowcaseMeshes, isOpaqueShowcaseMesh } from './showcase-framing.ts';
 import { createContactShadow } from './contact-shadow.ts';
 import { isRaining, racePreset } from './board-effects.ts';
 import { createClassicTrackScenery } from './classic-track-scenery.ts';
@@ -102,6 +103,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
   const lens = createLensPass();
   composer.addPass(lens);
   composer.addPass(new OutputPass());
+  const deepPerf = createDeepPerf(location.search, renderer, composer, () => visual.quality);
   const environment = createRoomEnvironment(renderer);
   scene.environment = environment.texture;
   scene.environmentIntensity = 0.42; let garageStage = null, garagePaint = null, garagePreviewSkins = {};
@@ -293,6 +295,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
     probe.updateMatrixWorld(true);
     showcaseOccluders.updateMatrixWorld(true);
     player.updateMatrixWorld(true);
+    const visibleMeshes = visibleShowcaseMeshes(showcaseOccluders);
     let clear=0;
     for(const local of carSightPoints) {
       sightTarget.copy(local).applyMatrix4(player.matrixWorld);
@@ -305,14 +308,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
       if(length<.5)continue;
       showcaseRay.set(eye,sightDirection.multiplyScalar(1/length));
       showcaseRay.far=length-.4;
-      const obscured=showcaseRay.intersectObject(showcaseOccluders,true).some(hit=>{
-        if(!hit.object.isMesh)return false;
-        const materials=[].concat(hit.object.material||[]);
-        // Transparent ghost particles and non-depth-writing water should not
-        // count as opaque obstacles; multi-material facades still must count.
-        return materials.some(material=>material &&
-          material.depthWrite!==false && !(material.transparent && material.opacity<.65));
-      });
+      const obscured = showcaseRay.intersectObjects(visibleMeshes, false).some(hit => isOpaqueShowcaseMesh(hit.object));
       if(!obscured)clear++;
     }
     return clear/carSightPoints.length;
@@ -326,11 +322,14 @@ export function createWorld(canvas, visual = vfxSettings()) {
     if(visual.view!=='drive') right.crossVectors(forward.copy(player.position).sub(desiredCamera).setY(0).normalize(),camera.up);
     const offset=([side,up,back])=>right.clone().multiplyScalar(side).addScaledVector(forward,-back).add(new THREE.Vector3(0,up,0));
     // One decision per mode; orbit judges each move around its whole circle and re-aims it as it turns.
-    const key=[trackId,visual.view,visual.airflow,visual.quality,camera.aspect<.8].join(':');
+    const key=[trackId,visual.view,visual.airflow,visual.quality,camera.aspect.toFixed(3),garageHomePreview,garagePose?.mode].join(':');
     if(key!==clearanceKey) {
       clearanceKey=key;
       clearancePlan=[0,0,0];
-      const turns=visual.view==='orbit'?orbitTurns:[0];
+      // Include road-relative bearings every 15° (and their midpoints) instead of eight samples tied to boot time.
+      const delta=desiredCamera.clone().sub(player.position);
+      const bearing=Math.atan2(delta.dot(new THREE.Vector3(...frame.right)),-delta.dot(new THREE.Vector3(...frame.forward)));
+      const turns=visual.view==='orbit'?Array.from({length:48},(_,i)=>i*Math.PI/24-bearing):[0];
       const share=eye=>Math.min(...turns.map(a=>showroomClearShare(spin(eye,a),spin(lookTarget,a))));
       let best=share(desiredCamera);
       // Try a small dolly-back first: for a high landmark aim (Tokyo/Alpine),
@@ -372,13 +371,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
   canvas.addEventListener('webglcontextrestored', restoreWarmup);
   const sizing = observeRenderSize(canvas, renderer, composer, camera, visual.quality);
   const frames = createWorldFrameReadiness(canvas);
-  function drawFrame(race, dt, snapshot, showcaseId = race.trackId) {
-    renderer.info.reset(); // Exclude shader warmup draws and previous frames from the counters.
-    composer.render(dt);
-    if (renderer.getContext().isContextLost()) return frames.wait(snapshot);
-    if (!snapshot) frames.presented(race, showcaseId);
-    return true;
-  }
+  const drawFrame = createWorldFrameDraw(renderer, composer, frames, deepPerf);
   function updateCar(mesh, car, distance, center, time, dt, isPlayer = false, input = {}, pose = car) {
     const graphView = lastRace?.course && isCourseRuntime(trackId) ? graphCarVisual(lastRace.course, isPlayer ? 'YOU' : car.id, courseOriginPoint) : null;
     const relative = graphView ? graphView.separation : physicalGap(trackId, distance, pose.distance);
@@ -399,7 +392,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
       // Compose every visual offset in local car axes, retaining the actual road pitch/bank.
       // Reading/writing Euler rotation after setting the track quaternion used to
       // overwrite its banking and snap near 90-degree spiral headings.
-      const driftYaw = mesh.userData.driftYaw = smoothDriftYaw(mesh.userData.driftYaw ?? 0, car.drift, dt);
+      const driftYaw = mesh.userData.driftYaw = smoothDriftYaw(mesh.userData.driftYaw ?? 0, car.drift, dt, car.heading);
       const bank = isPlayer ? -(pose.steering || 0) * (pose.altitude > 0.8 ? 0.12 : 0.045) : 0;
       const trick = !(motionPreference.matches || visual.comfortable) && car.trick;
       const trickRoll = trick ? trick.dir * Math.PI * 2 * THREE.MathUtils.smoothstep(trick.time, 0, TRICK_ROLL_TIME) : 0;
@@ -407,7 +400,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
       orientCarOnRoad(mesh, frame, bank + trickRoll, pitch + squat, driftYaw).translateY(squatLift); mesh.userData.altitude += squatLift; // NITRO/BOOST squat on the rear tyres; the shadow stays on the road
     } else {
       mesh.position.set(roadCenter(pose.distance) - center + pose.x, pose.altitude || 0, -relative);
-      const driftYaw = mesh.userData.driftYaw = smoothDriftYaw(mesh.userData.driftYaw ?? 0, car.drift, dt);
+      const driftYaw = mesh.userData.driftYaw = smoothDriftYaw(mesh.userData.driftYaw ?? 0, car.drift, dt, car.heading);
       mesh.rotation.y = -roadHeading(pose.distance) + driftYaw;
       const bank = isPlayer ? -(pose.steering || 0) * (pose.altitude > 0.8 ? 0.12 : 0.045) : 0;
       const trick = !(motionPreference.matches || visual.comfortable) && car.trick;
@@ -433,6 +426,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
     });
   }
   return {
+    deepPerf,
     resize: sizing.resize, invalidateFrame() { frames.invalidate(); }, preloadTrackAssets(id) { coastAssets.prefetch(id, visual.quality, visual.ultra); void coastLook.preload(id, 'track', visual.quality); }, setUpcomingTrack(id) { return upcomingStage.setTrack(id); }, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture, carEnvironment); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; syncGarageLighting(); }, setCosmeticSkins(ids) { aero.setSkins(ids); effects.setDriftTrail(ids?.['drift-trail']); effects.setNitroTrail(ids); upcomingStage.setAirflowSkin(ids?.airflow); }, setGaragePose(pose) { garagePose = pose; syncGarageLighting(); }, setGarageLighting(level) { garageLighting = level; syncGarageLighting(); },
     setGarageSkinPreview(ids, home = false, visible = true) {
       garagePreviewSkins = ids;
@@ -912,7 +906,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
     dispose() {
       sizing.dispose(); coastLook.dispose(); garageModel?.dispose(); upcomingStage.dispose(); garageStage?.dispose(); stopLocaleSigns(); // the GLB leaves the cars before their materials are disposed
       canvas.removeEventListener('webglcontextrestored', restoreWarmup);
-      circuitScene.dispose(); frostbiteScene.dispose(); courseScene.dispose(); measuredScenes.dispose(); skyScene.dispose(); worldTourScene.dispose(); coastAssets.dispose(); coastScenery.dispose(); classicScenery.dispose();
+      coastAssets.dispose(); circuitScene.dispose(); frostbiteScene.dispose(); courseScene.dispose(); measuredScenes.dispose(); skyScene.dispose(); worldTourScene.dispose(); coastScenery.dispose(); classicScenery.dispose();
       effects.dispose(); fleet.dispose();
       scene.traverse(object => {
         if (object.geometry) object.geometry.dispose();
@@ -923,6 +917,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
       signTextures.forEach(texture => texture.dispose());
       Object.values(signs).forEach(mat => mat.dispose());
       disposeContactShadow();
+      deepPerf?.dispose();
       composer.passes.forEach(pass => pass.dispose());
       composer.dispose();
       renderer.dispose();

@@ -47,6 +47,16 @@ for (const [name, viewport, hasTouch] of [
     await expect(page.locator('#error-message')).toBeHidden();
   });
 
+  test('finished race brand returns to the lobby without reloading', async ({ gameplayPage: page }) => {
+    await finishRace(page, { rivalsFirst: true });
+    const origin = await page.evaluate(() => performance.timeOrigin);
+    await page.locator('.brand').click();
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
+    await expect(page.locator('#intro')).toBeVisible();
+    await expect(page.locator('#race-overlay')).toBeHidden();
+    expect(await page.evaluate(() => performance.timeOrigin)).toBe(origin);
+  });
+
   test('Driving Controls stays enabled and clickable on finished results', async ({ gameplayPage: page }) => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));

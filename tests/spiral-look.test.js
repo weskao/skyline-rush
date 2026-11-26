@@ -211,3 +211,31 @@ test('world.js hands the Sky Spiral course to the asset host without growing', (
   const host = readFileSync(new URL('../src/coast-assets.ts', import.meta.url), 'utf8');
   assert.match(host, /createSpiralLook\(\{ parts: targets\.spiral, dome: sky\.dome, home: targets\.sky, scene: targets\.scene, clock: targets\.sea\.material\.uniforms\.time! \}\)/);
 });
+
+test('Sky Spiral disposes its own tower resources without freeing attached kit resources', () => {
+  const { scene, course, parts } = rig();
+  const owned = parts.landmark.children.map(mesh => mesh.geometry);
+  const materials = parts.replaced;
+  let geometriesFreed = 0, materialsFreed = 0, borrowedFreed = 0;
+  for (const geometry of owned) geometry.addEventListener('dispose', () => geometriesFreed++);
+  for (const material of materials) material.addEventListener('dispose', () => materialsFreed++);
+  const kit = new Object3D(), borrowed = new Mesh();
+  borrowed.geometry.addEventListener('dispose', () => borrowedFreed++);
+  kit.add(borrowed); parts.landmark.add(kit);
+  course.dispose();
+  assert.equal(geometriesFreed, owned.length);
+  assert.equal(materialsFreed, materials.length);
+  assert.equal(borrowedFreed, 0, 'GLB geometry belongs to the asset cache');
+  assert.equal(parts.group.parent, null);
+  assert.ok(!scene.children.includes(parts.group));
+  borrowed.geometry.dispose(); borrowed.material.dispose();
+});
+
+test('world detaches borrowed track assets before disposing their scene hosts', () => {
+  const world = readFileSync(new URL('../src/world.js', import.meta.url), 'utf8');
+  const assets = world.indexOf('coastAssets.dispose()');
+  assert.ok(assets >= 0);
+  for (const host of ['skyScene', 'coastScenery', 'classicScenery']) {
+    assert.ok(world.indexOf(host + '.dispose()') > assets, host);
+  }
+});

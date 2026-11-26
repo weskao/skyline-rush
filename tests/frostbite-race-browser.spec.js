@@ -5,6 +5,7 @@ import { expect } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { ciTimeout } from './helpers/ci.js';
+import { measuredRacePoseError } from './helpers/measured-race-pose.js';
 
 // Real WebGL Frostbite Canyon RACE on the `make dev-unlocked` module alias (release builds keep the card Coming Soon).
 // Set FROSTBITE_CAPTURE_DIR to keep the evidence frames.
@@ -45,9 +46,7 @@ for (const [name, viewport, hasTouch] of [
     for (const [stop, distance] of STOPS) {
       await page.evaluate(d => { Object.assign(window.gameplay.race.player, { distance: d, x: 0, speed: 60 }); }, distance);
       await page.waitForTimeout(700);
-      // The player is drawn on the road frame (camera-relative origin at the car), not left at a classic centreline.
-      const pose = await page.evaluate(() => window.gameScene.player.position.toArray());
-      expect(Math.hypot(pose[0], pose[2]), `${stop} player near origin`).toBeLessThan(3);
+      expect(await measuredRacePoseError(page), `${stop} player follows the measured road's lateral and altitude frame`).toBeLessThan(0.75);
       await capture(page, `${name}-${stop}`);
     }
     // Rift span: a car flying the corridor is drawn on the graph's ice bridge high over the lower canyon; sinking

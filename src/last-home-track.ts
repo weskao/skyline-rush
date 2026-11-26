@@ -14,11 +14,7 @@ export function lastHomeTrack(): string | null {
 
 const RACED_PARAM = 'raced';
 
-/** Back to home loads a new document. The raced course rides on that one navigation. */
-export function backHomeHref(trackId: string): string {
-  return `./?${RACED_PARAM}=${encodeURIComponent(trackId)}`;
-}
-
+/** Accept legacy one-shot raced-course URLs; in-game navigation stays in the current document. */
 export function bootHomeTrack(search: string, remembered: string | null, canPlay: (id: string) => boolean): string | null {
   const raced = new URLSearchParams(search).get(RACED_PARAM);
   return raced && canPlay(raced) ? raced : remembered;

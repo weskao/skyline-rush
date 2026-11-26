@@ -9,7 +9,10 @@ type AppRace = Omit<BareRace, 'props' | 'checkpoint'> & {
 };
 
 // Every race in the app places its rings and pickups anew (tests and tools keep the repeatable track seed).
-setLayoutSeed(() => (Math.random() * 2 ** 32) >>> 0);
+const benchmarkParams = typeof location === 'undefined' ? null : new URLSearchParams(location.search);
+const benchmarkSeed = benchmarkParams?.get('perf') === 'deep' ? benchmarkParams.get('seed') : null;
+setLayoutSeed(() => benchmarkSeed !== null && /^\d+$/.test(benchmarkSeed) && Number(benchmarkSeed) <= 0xffffffff
+  ? Number(benchmarkSeed) : (Math.random() * 2 ** 32) >>> 0);
 
 // World Tour scenery that reaches into the road is solid in the simulation too.
 export function createRace(...args: Parameters<typeof createBareRace>): AppRace {

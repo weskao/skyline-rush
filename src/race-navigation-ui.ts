@@ -28,8 +28,10 @@ export function setupRaceNavigation(deps: {
   } as const;
   leaveScreen.addEventListener('keydown', event => event.stopPropagation());
   const openLeave = (event: Event): void => {
-    if (!['racing', 'countdown', 'paused'].includes(deps.phase()) || document.querySelector('dialog[open]')) return;
     event.preventDefault();
+    if (document.querySelector('dialog[open]')) return;
+    if (deps.phase() === 'finished') { deps.chooseTrack(); return; }
+    if (!['racing', 'countdown', 'paused'].includes(deps.phase())) return;
     if (deps.phase() !== 'paused') deps.pause();
     const practicing = deps.isPracticing();
     for (const [id, keys] of Object.entries(labels)) {
@@ -44,6 +46,7 @@ export function setupRaceNavigation(deps: {
     leaveScreen.showModal();
   };
   document.querySelector('.brand')!.addEventListener('click', openLeave);
+  document.querySelector('.intro-wordmark')!.addEventListener('click', openLeave);
   document.querySelector('#pause-leave')!.addEventListener('click', openLeave);
   document.querySelector('#leave-close')!.addEventListener('click', () => leaveScreen.close());
   document.querySelector('#leave-keep')!.addEventListener('click', () => {
@@ -56,7 +59,6 @@ export function setupRaceNavigation(deps: {
   }
   endRace.addEventListener('click', returnToSelection);
   document.querySelector('#leave-home')!.addEventListener('click', event => {
-    if (!deps.isPracticing()) return;
     event.preventDefault();
     returnToSelection();
   });

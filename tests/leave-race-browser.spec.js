@@ -31,9 +31,11 @@ test('End race returns to track select without reloading', async ({ gameplayPage
   expect(await page.evaluate(() => window.sameDocument)).toBe(true);
 });
 
-test('Back to home reloads to the intro', async ({ gameplayPage: page }) => {
+test('Back to home returns to the lobby without reloading', async ({ gameplayPage: page }) => {
   await page.evaluate(() => { window.sameDocument = true; });
-  await Promise.all([page.waitForEvent('load'), page.locator('#leave-home').click()]);
+  await page.locator('#leave-home').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
-  expect(await page.evaluate(() => window.sameDocument)).toBeUndefined();
+  await expect(page.locator('#intro')).toBeVisible();
+  await expect(page.locator('#leave-screen')).toBeHidden();
+  expect(await page.evaluate(() => window.sameDocument)).toBe(true);
 });

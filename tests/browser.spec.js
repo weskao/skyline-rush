@@ -78,12 +78,15 @@ const measureAudio = (retainCueLevel = false) => {
 };
 const audioSwitch = (page, name) => page.getByRole('switch', { name });
 
-test('start screen wordmark reloads the page', async ({ page }) => {
+test('lobby wordmark keeps the current page and selection', async ({ page }) => {
   await page.goto('/');
   await dismissMusicPrompt(page);
-  await page.evaluate(() => { window.__stale = true; });
-  await Promise.all([page.waitForEvent('load'), page.locator('#intro .intro-wordmark').click()]);
-  expect(await page.evaluate(() => window.__stale)).toBeUndefined(); // settled: the load event above already fired
+  const selected = await page.locator('#intro').getAttribute('data-lobby-track');
+  const origin = await page.evaluate(() => performance.timeOrigin);
+  await page.locator('#intro .intro-wordmark').click();
+  await expect(page.locator('#intro')).toBeVisible();
+  await expect(page.locator('#intro')).toHaveAttribute('data-lobby-track', selected);
+  expect(await page.evaluate(() => performance.timeOrigin)).toBe(origin);
 });
 
 test('start screen leads with the game name and one dominant start action', async ({ page }) => {

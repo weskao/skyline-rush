@@ -288,3 +288,5 @@ must use the same authored graph as race movement after a route edit.
   input. Give up the input lock on timeout, retain the card, and allow only the current target's
   late frame to replace it. Cancel stale input and callbacks when the selection or screen changes.
   Guards: `tests/track-swipe-ui.test.js` and `tests/track-swipe-browser.spec.js`.
+
+- During teardown, detach borrowed detailed scenery and road assets before disposing their procedural scene hosts. Snapshot owned meshes before external kits attach; do not dispose cache-owned GLB geometry by walking a mutable parent group (Sky Spiral thermal home/racing, CI 45665976529).

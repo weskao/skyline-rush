@@ -1,7 +1,7 @@
 import { advanceCountdown } from './frame-pacing.ts';
 import { stepPlayerDrift } from './player-drift.ts';
 export { startRace } from './frame-pacing.ts';
-import { roadDrift } from './corner-force.ts';
+import { assistSteer, meetRail, roadDrift } from './corner-force.ts';
 import { prepareEndless, streamEndless } from './endless-highway.ts';
 import { earnsAirChain } from './air-chain.ts';
 import { createRings, pickupRun, spreadDistances, ITEMS_PER_CAR, RING_RADIUS, RING_FUEL, RING_NITRO, SLIPSTREAM_BOOST, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX } from './ring-layout.ts';
@@ -171,7 +171,7 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
       impact: null, landing: null, steering: 0, railContactSide: 0, boosting: false, braking: false,
       nearMiss: null, nearMisses: 0, combo: 0, scrape: null, scrapeCooldown: 0, flyBuffer: 0,
       poweredFlightTime: 0, flightBoosted: false,
-      section: null, inShortcut: false, falls: 0, fall: null, span: false, cornerDrift: 0, cornerX: 0,
+      section: null, inShortcut: false, falls: 0, fall: null, span: false, cornerDrift: 0, cornerX: 0, heading: 0,
       gapFallStreak: /** @type {import('./gap-recovery-seat.ts').GapFallStreak | null} */ (null),
       nitro: 0, nitroTime: 0, nitroHeld: false, nitroUses: 0, nitroBurst: 0, nitroChain: 0, longestCombo: 0,
       slipstream: { time: 0, active: false, paid: false },
@@ -323,11 +323,11 @@ export function stepRace(race, input, dt) {
   for (const name of MYSTERY_EFFECTS) car.effects[name] = Math.max(0, car.effects[name] - dt);
   // Linear ramp: full deflection takes STEER_RAMP seconds (longer on ice), like an analog stick.
   const ramp = STEER_RAMP * (car.section === 'ice' ? ICE_RAMP_FACTOR : 1);
-  car.steering += clamp(steer - car.steering, -dt / ramp, dt / ramp);
+  car.steering += clamp(assistSteer(car, steer, input.laneAssist === true) - car.steering, -dt / ramp, dt / ramp);
   let lateralPosition = car.x + car.steering * Math.min(9, car.speed * 0.22) * (drifting ? DRIFT_LATERAL : 1) * dt;
-  lateralPosition += roadDrift(race, car, section, drifting, input.laneAssist === true, dt);
+  lateralPosition += roadDrift(race, car, section, drifting, dt);
   const previousX = car.x;
-  car.x = clamp(lateralPosition, -ROAD_LIMIT, ROAD_LIMIT);
+  car.x = meetRail(car, lateralPosition, input.laneAssist === true);
   // Re-arm sustained rail contact only after the car pulls clear.
   if (Math.abs(car.x) < ROAD_LIMIT - 1.2) car.railContactSide = 0;
   car.cooldown = Math.max(0, car.cooldown - dt);

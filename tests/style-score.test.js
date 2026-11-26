@@ -42,7 +42,8 @@ test('airtime pays per second only while moving; pause cannot farm points', () =
 
 test('clean driving pays every 500 metres; contacts and gap falls reset progress', () => {
   const clean = raceAtSpeed();
-  for (let i = 0; i < 600; i++) stepRace(clean, { throttle: true }, 1 / 60);
+  // Held in its lane: a released car now runs nose-first into the rail at the first bend (owner, 2026-11-25).
+  for (let i = 0; i < 600; i++) { Object.assign(clean.player, { x: 0, heading: 0 }); stepRace(clean, { throttle: true }, 1 / 60); }
   assert.equal(clean.player.score, 100);
   const crash = raceAtSpeed();
   crash.player.cleanDistance = 499;
