@@ -1,7 +1,7 @@
 # Performance comparison
 
 - Before SHA / After SHA:
-- Evidence source: software-webgl-ci / physical-gpu / cpu-only / estimate / unverified
+- Evidence source (one class per row; see README "Evidence classes"): software-webgl-ci / local-chromium / physical-gpu / estimate / unverified
 - Device class, OS/browser version, backend verification method (no serial/account):
 - Track / phase / mode / seed / input trace / route / car / camera:
 - Graphics tier / device DPR / render DPR / render resolution / MSAA / render scale:
