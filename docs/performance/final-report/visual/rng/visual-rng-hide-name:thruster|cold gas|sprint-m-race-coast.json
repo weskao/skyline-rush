@@ -1,0 +1,140 @@
+{
+  "environment": "LOCAL-CHROME",
+  "harness": "scripts/final-report/visual-rng.html",
+  "base": "A",
+  "candidate": "C",
+  "rng": "per-call-site mulberry32 streams, restarted at GO",
+  "hide": [
+    "name:thruster|cold gas|sprint"
+  ],
+  "scenes": [
+    {
+      "id": "m-race-coast-high",
+      "track": "coast",
+      "phase": "racing",
+      "hide": [
+        "name:thruster|cold gas|sprint"
+      ],
+      "canvas": [
+        585,
+        1266
+      ],
+      "distance": [
+        69.39933333333342,
+        69.39933333333342
+      ],
+      "AvsC": {
+        "comparable": true,
+        "maxDelta": 75,
+        "over1": 7560,
+        "over8": 3902,
+        "psnr": 41.87497610351153,
+        "box": [
+          233,
+          515,
+          348,
+          564
+        ]
+      },
+      "CvsC": {
+        "comparable": true,
+        "maxDelta": 0,
+        "over1": 0,
+        "over8": 0,
+        "psnr": null,
+        "box": null
+      },
+      "censusDraws": [
+        1724,
+        1724
+      ],
+      "censusDiff": {},
+      "census": {
+        "Object.update@/src/effects.js": 1344,
+        "burst@/src/effects-particle-burst.js": 380
+      },
+      "lens": [
+        {
+          "pressure": 0.17074377739586727,
+          "boost": 0.043053061224489944,
+          "impact": 0,
+          "nozzle": [
+            0.4980583120525093,
+            0.4448370457608793
+          ],
+          "time": 1.9999999999999978
+        },
+        {
+          "pressure": 0.17074377739586727,
+          "boost": 0.043053061224489944,
+          "impact": 0,
+          "nozzle": [
+            0.4980583120525093,
+            0.4448370457608793
+          ],
+          "time": 1.9999999999999978,
+          "lensFx": 1
+        }
+      ],
+      "hidden": [
+        [
+          "Group:Roadster recessed thruster",
+          "Group:Roadster recessed thruster",
+          "Group:Roadster recessed thruster",
+          "Group:Roadster recessed thruster",
+          "Mesh:Cold gas nozzle 1",
+          "Mesh:Cold gas nozzle 2",
+          "Mesh:Cold gas nozzle 3",
+          "Mesh:Cold gas nozzle 4",
+          "Mesh:Sprint nozzle flare",
+          "Mesh:Sprint road glow",
+          "Mesh:Thruster glow 1",
+          "Mesh:Thruster glow 2",
+          "Mesh:Thruster glow 3",
+          "Mesh:Thruster glow 4",
+          "Object3D:thruster_01",
+          "Mesh:thruster_01_nozzle roadster_nozzle",
+          "Object3D:thruster_02",
+          "Mesh:thruster_02_nozzle roadster_nozzle",
+          "Object3D:thruster_03",
+          "Mesh:thruster_03_nozzle roadster_nozzle",
+          "Object3D:thruster_04",
+          "Mesh:thruster_04_nozzle roadster_nozzle",
+          "Group:Roadster recessed thruster",
+          "Group:Roadster recessed thruster",
+          "Group:Roadster recessed thruster",
+          "Group:Roadster recessed thruster"
+        ],
+        [
+          "Group:Roadster recessed thruster",
+          "Group:Roadster recessed thruster",
+          "Group:Roadster recessed thruster",
+          "Group:Roadster recessed thruster",
+          "Mesh:Cold gas nozzle 1",
+          "Mesh:Cold gas nozzle 2",
+          "Mesh:Cold gas nozzle 3",
+          "Mesh:Cold gas nozzle 4",
+          "Mesh:Sprint nozzle flare",
+          "Mesh:Sprint road glow",
+          "Mesh:Thruster glow 1",
+          "Mesh:Thruster glow 2",
+          "Mesh:Thruster glow 3",
+          "Mesh:Thruster glow 4",
+          "Object3D:thruster_01",
+          "Mesh:thruster_01_nozzle roadster_nozzle",
+          "Object3D:thruster_02",
+          "Mesh:thruster_02_nozzle roadster_nozzle",
+          "Object3D:thruster_03",
+          "Mesh:thruster_03_nozzle roadster_nozzle",
+          "Object3D:thruster_04",
+          "Mesh:thruster_04_nozzle roadster_nozzle",
+          "Group:Roadster recessed thruster",
+          "Group:Roadster recessed thruster",
+          "Group:Roadster recessed thruster",
+          "Group:Roadster recessed thruster"
+        ]
+      ],
+      "errors": []
+    }
+  ]
+}
