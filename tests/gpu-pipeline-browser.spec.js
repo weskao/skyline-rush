@@ -51,9 +51,11 @@ test('post-processing writes one full-size MSAA target and matches the old Lens 
   const state = await page.evaluate(() => {
     const { composer, renderer } = window.gameScene;
     return { passes: composer.passes.length, sceneSamples: composer.readBuffer.samples,
-      spareTarget: !!renderer.properties.get(composer.writeBuffer).__webglFramebuffer };
+      spareTarget: !!renderer.properties.get(composer.writeBuffer).__webglFramebuffer,
+      canvasDepth: renderer.getContext().getContextAttributes().depth };
   });
-  expect(state).toEqual({ passes: 3, sceneSamples: 4, spareTarget: false });
+  // Stage B audit: only the lens quad draws to the canvas, so it carries no depth buffer (docs/performance/stage-b-audit.md).
+  expect(state).toEqual({ passes: 3, sceneSamples: 4, spareTarget: false, canvasDepth: false });
   const compiled = await page.evaluate(() => {
     const { composer, renderer } = window.gameScene, lens = composer.passes.at(-1), before = renderer.info.programs.length;
     for (const boost of [1, 0, 1, 0]) { lens.uniforms.boost.value = boost; composer.render(0); }

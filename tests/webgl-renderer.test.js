@@ -17,3 +17,12 @@ test('the race renderer is made through the shared factory, not a bare WebGLRend
   assert.doesNotMatch(world, /new THREE\.WebGLRenderer\(/);
   assert.match(source('webgl-renderer.ts'), /renderer\.debug\.checkShaderErrors = checksShaderErrors\(import\.meta\.env\)/);
 });
+
+test('the race canvas has no depth buffer: only the lens quad draws to it, every scene pass has its own target', () => {
+  assert.match(source('webgl-renderer.ts'), /new WebGLRenderer\(\{[^}]*\bdepth: false\b[^}]*\}\)/);
+  const world = source('world.js');
+  // The lens is the last pass and is never disabled, so RenderPass (which would draw the scene to screen) never renders to null.
+  assert.match(world, /composer\.addPass\(lens\);/);
+  assert.doesNotMatch(world, /\b(renderPass|bloom|lens)\.enabled\s*=/);
+  assert.doesNotMatch(world, /composer\.addPass\([^)]*\);[\s\S]*composer\.addPass\(lens\)[\s\S]*composer\.addPass\(/);
+});

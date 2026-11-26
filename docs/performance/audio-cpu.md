@@ -103,6 +103,10 @@ Reading the numbers honestly:
 
 ## Game-loop wiring (not done here: `main.js` and `world.js` are out of scope)
 
+**Stage B 90e status: DONE.** The integrated loop calls `sound.update` once per rAF callback (`src/main.js:565`) and
+throttles nothing, so no cue can be missed. The `edgeOf` switch is DONE (Stage A 90b, below). Item 4's remainder stays
+DEFERRED with its measured reason (`stage-b-audit.md` items 7–8).
+
 Nothing is required for correctness: `sound.update()` keeps its signature and every behaviour is internal to `audio.js`.
 Optional integration notes:
 
