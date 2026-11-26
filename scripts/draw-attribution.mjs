@@ -5,7 +5,7 @@ import { createServer } from 'vite';
 
 const json = process.argv.includes('--json');
 const wanted = process.argv.slice(2).filter(a => !a.startsWith('--')).map(a => a.split(':'));
-const server = await createServer({ server: { host: '127.0.0.1', port: 0 } });
+const server = await createServer({ server: { host: '127.0.0.1', port: Number(process.env.PLAYWRIGHT_PORT) || 5311, strictPort: true } });
 let browser;
 const tally = (rows, key) => Object.entries(rows.reduce((m, r) => (m[key(r)] = (m[key(r)] ?? 0) + 1, m), {}))
   .sort((a, b) => b[1] - a[1]);
