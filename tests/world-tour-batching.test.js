@@ -26,13 +26,36 @@ test('identical static meshes are instanced without moving any original vertex o
  const batch=group.children.find(child=>child.isInstancedMesh);
  assert.equal(batch.count,16);
  assert.equal(batch.geometry,stem);
- assert.equal(batch.material,mat);
+ assert.notEqual(batch.material,mat,'the batch draws with its own copy: see the twin test below');
+ assert.equal(batch.material.type,mat.type);
+ assert.ok(batch.material.color.equals(mat.color)&&batch.material.roughness===mat.roughness);
  const temp=new THREE.Matrix4();
  for(let i=0;i<16;i++){
    batch.getMatrixAt(i,temp);
    assert.ok(temp.elements.every((x,k)=>Math.abs(x-expected[i].elements[k])<1e-6),String(i));
  }
  assert.ok(group.children.some(x=>x.userData.batched));
+});
+test('an instanced batch never shares a material with a plain mesh, except one that is animated per frame',()=>{
+ // three keeps one instancing flag per material: a plain mesh and a batch on the same material make each other
+ // re-look-up the program on every frame (taipei racing: 34 lookups per frame).
+ const geometry=new THREE.BoxGeometry(1,1,1),shared=new THREE.MeshStandardMaterial({color:'#637877'});
+ const pulse=new THREE.MeshStandardMaterial({color:'#ff00aa'});pulse.userData.pulse='beacon';
+ const group=new THREE.Group(),lone=new THREE.Mesh(new THREE.SphereGeometry(1),shared);
+ group.add(lone);
+ const pulseGeometry=new THREE.BoxGeometry(2,2,2);
+ // one geometry per material, so each material forms its own batch
+ for(const [material,shape] of [[shared,geometry],[pulse,pulseGeometry]])for(let i=0;i<4;i++){const mesh=new THREE.Mesh(shape,material);mesh.position.set(i*3,0,0);group.add(mesh);}
+ group.updateMatrixWorld(true);
+ assert.equal(batchStaticChunk(group,3).drawBatches,2);
+ const batches=group.children.filter(o=>o.isInstancedMesh);
+ const sharedBatch=batches.find(b=>b.geometry===geometry),pulseBatch=batches.find(b=>b!==sharedBatch);
+ assert.equal(lone.material,shared,'the plain mesh keeps the authored material');
+ assert.notEqual(sharedBatch.material,shared,'the batch has its own copy');
+ assert.equal(pulseBatch.material,pulse,'a material written every frame stays shared so every copy follows it');
+ let twinDisposed=0;sharedBatch.material.addEventListener('dispose',()=>twinDisposed++);
+ shared.dispose();
+ assert.equal(twinDisposed,1,'disposing the authored material releases its copy, so a track change leaves no GPU program behind');
 });
 test('unique road and terrain meshes are left untouched',()=>{
  const chunk=new THREE.Group();
