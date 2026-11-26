@@ -125,6 +125,8 @@ average 23–80. Before = pre-change `src/` snapshot, after = `810d4e47`.
     CPU ms/frame (Tokyo 0.12–0.21 → 0.12–0.13, Spiral 0.29–0.44 → 0.29) overlaps across runs on a loaded host:
     no CPU-time gain is claimed, only fewer allocations (less GC pressure). The remaining allocations are
     `trackFrame`/`trackPoint` objects inside `trackLocalPosition`, left as-is.
+  - **DEFERRED (Stage B 90e)** — the `trackFrame`/`trackPoint` objects and the `dashSamples` closures (item 8) stay as-is:
+    no measurable cost on the integrated head (`stage-b-audit.md` item 8).
 - Two-range circular span: DONE in Stage A 90c (section below).
 
 ## Stage A 90c — two-range circular live span
