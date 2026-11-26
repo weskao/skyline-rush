@@ -73,7 +73,9 @@ export function createDeepPerf(search: string, renderer: WebGLRenderer, composer
     }
     return snapshot;
   }
-  return {
+  const api = {
+    /** Frame-pacing load feed: the sampled GPU frame time, when the timer query is available. */
+    onGpuFrame: null as ((ms: number) => void) | null,
     start(now: number, rawDelta: number, racePhase: string, track: string) {
       at = now;
       const phase = deepPerfPhase(racePhase, !!garage?.open, !!photo?.open);
@@ -93,7 +95,7 @@ export function createDeepPerf(search: string, renderer: WebGLRenderer, composer
       const current = bucket, time = at;
       const draw = () => composer.render(dt);
       if (!eligible || !current || ++frameNumber % 15 !== 0) { draw(); return; }
-      if (frameNumber % 30 === 0) gpu.measure(ms => sample(current, 'gpuFrameMs', time, ms), draw);
+      if (frameNumber % 30 === 0) gpu.measure(ms => { sample(current, 'gpuFrameMs', time, ms); api.onGpuFrame?.(ms); }, draw);
       else {
         timePasses = true;
         try { draw(); } finally { timePasses = false; }
@@ -122,4 +124,5 @@ export function createDeepPerf(search: string, renderer: WebGLRenderer, composer
       canvas.removeEventListener('webglcontextrestored', restored);
     },
   };
+  return api;
 }
