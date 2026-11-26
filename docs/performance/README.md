@@ -58,6 +58,47 @@ opening-segment check, not a full-length race replay or production frame-pacing 
 segments and full-race comparisons remain separate acceptance evidence. Capture input trace and camera route.
 Run existing CPU/scene scripts separately, retain their provenance. Test desktop, portrait and landscape.
 
+## Wave 1 shared interfaces (Before/After contract)
+
+Wave 1 branches never edit `src/deep-perf.ts`, `src/gpu-timer.ts` or the thermal scripts; they call them.
+Every number carries its environment label (see Evidence classes) and its before/after SHAs.
+
+| Need | Call | Output |
+| --- | --- | --- |
+| Live app numbers | open the build with `?perf=deep&seed=12345`; read `JSON.parse(document.getElementById('perf-overlay').dataset.deep)` | schema v1: `reports["<phase>/<track>"].metrics.{frameIntervalMs,cpuSimulationMs,cpuRenderSubmissionMs,gpuFrameMs,scene,bloom,lens,output}` each `{count,p50,p95,p99,mean}`, `.load`, `.config`, `.mixedConfig`, `.stalls`, `gpuStatus` |
+| Instrument a new code path | inside `world.js` code use `world.deepPerf?.` (null in production). Outside it `createDeepPerf(location.search, renderer, composer, () => quality)` returns `null` unless `?perf=deep` | no allocation, listener or timer query when null |
+| Time a GPU section | `createGpuTimer(gl).measure(cb, draw)`; `poll()` once per frame; `status` is `available`, `unsupported`, `disjoint` or `context-lost` | async `EXT_disjoint_timer_query_webgl2`; never a sync readback; unavailable is not 0 |
+| Fixed-step scene matrix | `node scripts/thermal-baseline.mjs [track-id ...]` with `THERMAL_FRAMES`, `THERMAL_VIEWPORT`, `THERMAL_DPR` | `docs/performance/local/<sha>-<w>x<h>-<time>.json` (ignored, local only) |
+| Validate a record | `validateThermalRecord` in `scripts/thermal-report.mjs` | throws on empty draws, stationary driving, missing CPU evidence, mixed config |
+| Before/After table | `node scripts/thermal-compare.mjs <before.json> <after.json>` | Markdown rows (p50/p95, draw calls, triangles); refuses runs whose frames, viewport, DPR, harness or source differ; skips scenarios with unequal render config |
+| CPU-only simulation | `node --experimental-strip-types --expose-gc scripts/course-race-bench.mjs` | separate provenance; not GPU or frame time |
+| Real app build/CPU throttle | `node scripts/perf.mjs desktop --base <ref>` | alternating-round frame times from the `?perf` strip |
+
+Procedure for one Wave 1 change:
+
+1. In the Wave 1 worktree run the baseline probe at the matrix and settings of the committed baseline
+   (`docs/performance/baseline/`: 390x844, DPR 3, 180 ticks, seed 12345, High) on the merge-base commit, then on the change.
+   Run each side at least 3 times alternating (A B A B A B) on an otherwise idle machine and compare medians of the runs.
+2. `node scripts/thermal-compare.mjs <before.json> <after.json>`; paste the rows into a copy of the
+   [report template](report-template.md) and fill the Evidence source line.
+3. A change is adopted only with a measured benefit and an unchanged selected graphics fidelity. No benefit or
+   unproven visual equivalence: record it as rejected, with the reason, in `docs/performance/<topic>.md`.
+4. Wave 1 owns its own `docs/performance/<topic>.md`; wiring needed in a file another branch owns is written there for integration.
+
+### Evidence classes
+
+Every row and every report names exactly one class. Anything unclassified is `unverified`.
+
+| Class | Meaning | May claim |
+| --- | --- | --- |
+| `software-webgl-ci` | SwiftShader/CPU WebGL on the CI runner | counts and relative CPU work; never real GPU time |
+| `local-chromium` | Chromium via Playwright on the author machine; GPU backend unverified unless `chrome://gpu` or `WEBGL_debug_renderer_info` was checked and recorded | relative comparison on this machine only |
+| `physical-gpu` | operator-verified real GPU/device | frame and GPU time for that device class |
+| `estimate` | derived, not measured; label the formula | nothing about hardware improvement |
+| `unverified` | not run or not measurable here (iPhone temperature, power, thermal state, fan noise) | nothing; keep the manual SOP |
+
+Draw calls and triangles are renderer counters, not bytes or GPU time. CPU submission is not GPU time.
+
 ## Physical device soak
 
 Use make phone or make phone-diag; open the branch build on iPhone 16 Pro Safari/Chrome and
@@ -65,7 +106,11 @@ Mac mini M4 Chrome. Verify commit, high quality, selected car, fixed FPS, render
 Keep ambient conditions, brightness, power/charging, case, battery mode, browser and background
 apps consistent; allow devices to cool to comparable starting conditions. Do not record identifiers.
 Run real continuous driving on priority tracks, repeat races as needed, and record transitions.
-At 0/5/15/30 min export deep snapshots (or inspect legacy strip), visual capture and subjective warmth/fan observation.
+Run one continuous session per duration (5, 15 and 30 min; the 30 min run is the soak, the shorter ones can be
+checkpoints of it). Before each: same commit, High, fixed 60 FPS, cold start, same track and car. At 0/5/15/30 min
+export deep snapshots (or inspect legacy strip; the 20 s window is not the whole soak), visual capture and
+subjective warmth/fan observation (a written note, never a number). Repeat once with `?perf` absent (diagnostics off)
+to see whether the diagnostics themselves change warmth. A skipped duration is written `unverified`, not 0.
 Record actual FPS, frame/CPU/GPU p50/p95/p99, GPU coverage, stalls, draw/triangle/resource counts and
 any visible regressions. Repeat without instrumentation. Stop if OS warns or device becomes
 uncomfortably hot; no requirement to continue an unsafe run. iPhone web APIs do not provide
