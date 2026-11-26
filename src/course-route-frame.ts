@@ -49,13 +49,16 @@ function samplesFor(edge: CourseEdge): Samples {
 }
 // Edge-id index per immutable graph (first edge wins, like Array.find); replaces per-call scans of graph.edges.
 const edgeIndexes = new WeakMap<CourseGraph, Map<string, CourseEdge>>();
+let lastGraph: CourseGraph | undefined, lastIndex: Map<string, CourseEdge> | undefined; // a race runs on one graph: skip the WeakMap lookup
 export function edgeOf(graph: CourseGraph, edgeId: string | undefined): CourseEdge | undefined {
+  if (graph === lastGraph) return lastIndex!.get(edgeId!);
   let index = edgeIndexes.get(graph);
   if (!index) {
     index = new Map();
     for (const edge of graph.edges) if (!index.has(edge.id)) index.set(edge.id, edge);
     edgeIndexes.set(graph, index);
   }
+  lastGraph = graph; lastIndex = index;
   return index.get(edgeId!); // an undefined id is simply absent
 }
 const findEdge = (graph: CourseGraph, edgeId: string): CourseEdge => {

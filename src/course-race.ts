@@ -27,7 +27,7 @@ function edgeById(graph: CourseGraph, id: string): CourseEdge {
   if (edge) return edge;
   throw new RangeError(`Unknown CourseGraph edge: ${id}`);
 }
-function carOf(rt: CourseRuntime, id: string): CourseCar {
+export function carOf(rt: CourseRuntime, id: string): CourseCar {
   const car = rt.cars.get(id);
   if (!car) throw new Error(`Unknown course car: ${id}`);
   return car;
@@ -211,7 +211,11 @@ export function courseNoRoadAt(rt: CourseRuntime, id: string): boolean {
 
 /** Signed metres from `from` to `to` along the path; null when they are not on the same or adjacent edges. */
 export function courseCarGap(rt: CourseRuntime, from: string, to: string): number | null {
-  const start = carOf(rt, from), end = carOf(rt, to), graph = rt.spec.graph;
+  return courseCarsGap(rt, carOf(rt, from), carOf(rt, to));
+}
+/** courseCarGap for callers that already hold both cars (the AI and bump loops look each car up once). */
+export function courseCarsGap(rt: CourseRuntime, start: CourseCar, end: CourseCar): number | null {
+  const graph = rt.spec.graph;
   const a = start.travel, b = end.travel;
   const sa = a.localS + start.runout, sb = b.localS + end.runout;
   if (a.currentEdgeId === b.currentEdgeId) return sb - sa;

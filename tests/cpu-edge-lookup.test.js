@@ -42,3 +42,35 @@ test('courseCarGap does not scan the edge list per call', () => {
   for (let i = 0; i < 200; i++) courseCarGap(rt, 'YOU', 'B');
   assert.equal(reads.n, afterFirst);
 });
+
+// carGap is the O(cars^2) inner call of AI avoidance and bumping: one Map lookup per car, not two.
+import { createRace, startRace, stepRace } from '../src/game.js';
+import { carGap } from '../src/course-race-step.ts';
+
+function dune() {
+  const race = createRace('dune-tempest'); startRace(race);
+  while (race.phase === 'countdown') stepRace(race, {}, 1 / 60);
+  for (let i = 0; i < 10; i++) stepRace(race, { up: true }, 1 / 60);
+  return race;
+}
+test('carGap looks each car up once', () => {
+  const race = dune(), cars = race.course.cars, get = cars.get.bind(cars);
+  let gets = 0; cars.get = id => { gets++; return get(id); };
+  const before = gets;
+  carGap(race, race.player, race.rivals[0]);
+  assert.equal(gets - before, 2);
+});
+
+test('rival item sweeps never read items on edges the rival did not cross', () => {
+  const race = dune(), reads = { n: 0 };
+  const onCars = new Set([...race.course.cars.values()].map(car => car.travel.currentEdgeId));
+  let far = 0;
+  for (const item of [...race.rings, ...race.pickups]) {
+    if (onCars.has(item.edgeId)) continue;
+    far++;
+    const localS = item.localS; Object.defineProperty(item, 'localS', { get() { reads.n++; return localS; }, configurable: true });
+  }
+  assert.ok(far > 20, 'fixture must have items off every car edge');
+  stepRace(race, { up: true }, 1 / 60);
+  assert.equal(reads.n, 0);
+});
