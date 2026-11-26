@@ -1,6 +1,6 @@
 import type { CourseRuntime } from './course-race.ts';
 import { chooseBranchByLateral, forkLateral } from './course-race.ts';
-import { routeLength, sampleRoute } from './course-route-frame.ts';
+import { edgeOf, routeLength, sampleRoute } from './course-route-frame.ts';
 import type { CoursePoint3 } from './course-graph.ts';
 
 export function graphOrigin(rt: CourseRuntime): CoursePoint3 {
@@ -29,7 +29,7 @@ export function graphLookAhead(rt: CourseRuntime, lateral: number, ahead: number
   for (let i = 0; i <= graph.edges.length; i++) {
     const length = routeLength(graph, edgeId);
     if (s + remaining <= length) return sampleRoute(graph, edgeId, s + remaining);
-    const edge = graph.edges.find(item => item.id === edgeId);
+    const edge = edgeOf(graph, edgeId);
     const next = edge && chooseBranchByLateral(graph, edgeId, forkLateral(lateral, carried), 2.5);
     if (!next) return sampleRoute(graph, edgeId, length);
     remaining -= Math.max(0, length - s);
