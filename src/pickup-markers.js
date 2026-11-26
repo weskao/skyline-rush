@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { createMarkerPool } from './marker-pool.js';
 import { animatePickup, createPickupGeometries, createPickupMaterials, pulsePickupMaterial } from './pickup-art.js';
 import { createPickupAura, PICKUP_HALO_SCALE } from './pickup-aura.js';
-import { pickupVisibilityScale, pickupTargetPixels } from './pickup-visibility.js';
+import { pickupHaloLevel, pickupNearScale, pickupVisibilityCaps, pickupVisibilityScale, pickupTargetPixels } from './pickup-visibility.js';
 import { acquirePickupModels } from './pickup-models.ts';
 
 const UNTURNED = new THREE.Quaternion();
@@ -48,7 +48,7 @@ export function createPickupMarkers(capacity, { renderer, envMap = null, models 
   const pool = createMarkerPool('Nitro pickups', poolShapes, poolMaterials, capacity), aura = createPickupAura(capacity);
   const disposeStandIn = () => { for (const tier in shapes) { shapes[tier].dispose(); materials[tier].dispose(); } };
   const viewPosition = new THREE.Vector3(), viewForward = new THREE.Vector3(), offset = new THREE.Vector3();
-  let projection = 0, targetPixels = 24;
+  let projection = 0, targetPixels = 24, caps = pickupVisibilityCaps(0), aspect = 1, haloLevel = 1;
   let loading = !!models;
   const ready = Promise.resolve(models).then(result => {
     if (disposed) result?.release(); else pending = result ?? null; // null: load failed, the stand-in stays
@@ -57,14 +57,17 @@ export function createPickupMarkers(capacity, { renderer, envMap = null, models 
     get loading() { return loading; },
     pool, objects: [pool.group, aura.mesh], ready,
     /** Once per frame before placing. True on the frame the loaded models replace the stand-in: re-warm shaders. */
-    frame(time, reducedMotion, swapAllowed, camera = undefined, viewportHeight = 0) {
+    frame(time, reducedMotion, swapAllowed, camera = undefined, viewportHeight = 0, atmosphere = undefined) {
       // Cache once per frame. The guide has no perspective correction; all race qualities share it.
-      projection = 0;
+      projection = 0; haloLevel = 1;
       if (distant && camera?.isPerspectiveCamera && viewportHeight > 0) {
         camera.getWorldPosition(viewPosition);
         camera.getWorldDirection(viewForward);
         projection = viewportHeight * Math.abs(camera.projectionMatrix.elements[5]) * .5;
         targetPixels = pickupTargetPixels(camera.aspect, viewportHeight);
+        caps = pickupVisibilityCaps(viewportHeight);
+        aspect = camera.aspect;
+        if (atmosphere) haloLevel = pickupHaloLevel(atmosphere.r, atmosphere.g, atmosphere.b);
       }
       const swap = pending && swapAllowed;
       if (swap) {
@@ -92,14 +95,14 @@ export function createPickupMarkers(capacity, { renderer, envMap = null, models 
         if (!geometry.boundingBox) geometry.computeBoundingBox();
         const bounds = geometry.boundingBox, base = marker.scale.x;
         const size = (bounds.max.y - bounds.min.y) * base;
-        const scale = pickupVisibilityScale(depth, projection, size, targetPixels, 1.65);
+        const scale = pickupVisibilityScale(depth, projection, size, targetPixels, caps.model) * pickupNearScale(depth, aspect, item.tier);
         if (Number.isFinite(item.altitude) && item.altitude < .5)
           marker.position.y += Math.max(0, -bounds.min.y) * base * (scale - 1);
         marker.scale.multiplyScalar(scale);
         haloVisibility = Math.max(scale, pickupVisibilityScale(depth, projection,
-          base * PICKUP_HALO_SCALE, targetPixels * 1.8, 2.5));
+          base * PICKUP_HALO_SCALE, targetPixels * 1.8, caps.halo));
       }
-      aura.add(item.tier, marker.position, facing, time, reducedMotion, haloVisibility);
+      aura.add(item.tier, marker.position, facing, time, reducedMotion, haloVisibility, haloLevel);
     },
     key(tier, distanceAhead) {
       return distant && distanceAhead > DISTANT_PICKUP_METRES ? distantKey(tier) : tier;

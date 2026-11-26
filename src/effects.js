@@ -142,7 +142,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
       dt = Math.max(0, dt);
       flowTime += dt;
       // Loaded pickup models replace the stand-ins only between races: their shaders compile before GO, never mid-race.
-      const rewarm = pickupMarkers.frame(flowTime, reducedMotion, race.phase !== 'racing', camera, renderer?.getSize?.(pickupViewport)?.y ?? 0);
+      const rewarm = pickupMarkers.frame(flowTime, reducedMotion, race.phase !== 'racing', camera, renderer?.getSize?.(pickupViewport)?.y ?? 0, scene.fog?.color);
       const car = race.player;
       const distance = options.roadDistance ?? (preview ? 340 : car.distance);
       classicRoute = options.classicRoute;

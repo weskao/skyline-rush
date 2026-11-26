@@ -34,7 +34,14 @@ Collision volumes, rewards, placement, respawn timers and balance are unchanged.
 The race applies additional projection-aware visibility to every quality (Low, Medium, High, Ultra).
 The guide and collection transfer retain the enlarged base size. The race uses logical CSS viewport
 height and camera projection, never DPR or render quality. Partial perspective compensation starts
-at a smooth knee (at least 30 m), capped at 1.65× for models and 2.5× for the existing halo.
+at a smooth knee (at least 30 m), capped at 1.9× for models and 2.8× for the existing halo
+(`pickupVisibilityCaps`). Short viewports raise both caps by `720 / CSS height`, at most 1.45×
+(2.75× / 4.06× at 393 px): a phone in landscape loses most of its height to the HUD. On a 393 px
+landscape phone a cell at 150 m went from about 8 to 12 CSS px.
+In portrait only, tank and overcharge ease to 85% between about 15 and 50 m so they do not cover
+the car, and are back at full size by collection depth (`pickupNearScale`). The halo brightens up
+to 1.6× under a dark fog colour (`pickupHaloLevel`, read from `scene.fog.color` once per frame),
+where the body blends into the asphalt; the guide keeps its studio level.
 At fixed projection, the projected size increases monotonically as depth decreases; a distance-based
 fade of an already amplified scale is not safe. Targets are
 24 CSS px (28 on short landscape viewports), not a guarantee beyond the cap. Ground pickups lift

@@ -25,7 +25,7 @@ export function createPickupAura(capacity) {
     mesh,
     begin() { used = 0; },
     /** One halo at a pickup's animated position, facing the camera and breathing with its emissive pulse. */
-    add(tier, position, facing, time, reducedMotion, visibility = 1) {
+    add(tier, position, facing, time, reducedMotion, visibility = 1, level = 1) {
       if (used >= capacity) return;
       const pulse = pickupPulse(tier, time, reducedMotion);
       scratch.position.copy(position);
@@ -33,7 +33,7 @@ export function createPickupAura(capacity) {
       scratch.scale.setScalar((PICKUP_SIZES[tier] ?? PICKUP_SIZES.cell) * PICKUP_HALO_SCALE * visibility * (.9 + .1 * pulse));
       scratch.updateMatrix();
       mesh.setMatrixAt(used, scratch.matrix);
-      mesh.setColorAt(used++, tint.set(PICKUP_ACCENTS[tier] ?? 0xffffff).multiplyScalar(HALO_LEVEL * pulse));
+      mesh.setColorAt(used++, tint.set(PICKUP_ACCENTS[tier] ?? 0xffffff).multiplyScalar(HALO_LEVEL * level * pulse));
     },
     end() {
       mesh.visible = used > 0;
