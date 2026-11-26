@@ -1,0 +1,21 @@
+{
+  "environment": "LOCAL-CHROME",
+  "harness": "scripts/final-report/visual-rng.html",
+  "base": "B",
+  "candidate": "C",
+  "rng": "per-call-site mulberry32 streams, restarted at GO",
+  "hide": [
+    "lensfx"
+  ],
+  "scenes": [
+    {
+      "id": "m-race-taipei-high",
+      "track": "taipei",
+      "phase": "racing",
+      "hide": [
+        "lensfx"
+      ],
+      "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation."
+    }
+  ]
+}

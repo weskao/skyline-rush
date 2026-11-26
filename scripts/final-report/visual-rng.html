@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Visual RNG isolation probe</title>
+<style>html,body{margin:0;background:#081428}canvas{display:block;width:100vw;height:100vh}</style></head>
+<body>
+<canvas id="world" aria-label="Visual RNG isolation probe"></canvas>
+<script>
+  // Same fixed clocks as visual-fidelity.html. Math.random is replaced by per-call-site streams: each calling function
+  // (name + module path, no line numbers) owns a mulberry32 stream seeded from its key, and every stream restarts at
+  // GO. A draw made elsewhere (three's generateUUID for an object only one build creates) cannot shift a particle
+  // system's stream. `census` counts draws per site while racing: equal counts mean both builds asked for the same
+  // numbers in the same places.
+  let fake = 0;
+  const realRaf = window.requestAnimationFrame.bind(window);
+  window.requestAnimationFrame = cb => realRaf(() => { fake += 1000 / 60; cb(fake); });
+  performance.now = () => fake; Date.now = () => 1.7e12 + fake;
+  const mulberry = state => () => { state.s |= 0; state.s = state.s + 0x6D2B79F5 | 0; let t = Math.imul(state.s ^ state.s >>> 15, 1 | state.s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  let sites = new Map(), census = null;
+  const siteKey = () => {
+    const limit = Error.stackTraceLimit; Error.stackTraceLimit = 3;
+    const line = new Error().stack.split('\n')[3] ?? ''; Error.stackTraceLimit = limit;
+    const m = /at (?:(\S+) \()?(?:https?:\/\/[^/]+)?([^?:)]+)/.exec(line);
+    return m ? `${m[1] ?? '<anonymous>'}@${m[2]}` : line.trim();
+  };
+  Math.random = () => {
+    const key = siteKey();
+    if (census) census[key] = (census[key] ?? 0) + 1;
+    let draw = sites.get(key);
+    if (!draw) { let h = 12345; for (const c of key) h = Math.imul(h ^ c.charCodeAt(0), 16777619); sites.set(key, draw = mulberry({ s: h })); }
+    return draw();
+  };
+  window.reseed = () => { sites = new Map(); };
+  window.rngCensus = on => { const c = census; census = on ? {} : null; return c; };
+</script>
+<script type="module">
+  import { createWorld } from '../../src/world.js';
+  import { createRace } from '../../src/race-factory.ts';
+  import { startRace, stepRace, setLayoutSeed } from '../../src/game.js';
+  import { CIRCUIT_ID } from '../../src/circuit-track.ts';
+  import { vfxSettings } from '../../src/vfx-settings.ts';
+  import { createPresentation } from '../../src/presentation.ts';
+  import { Scene, Material, Object3D, AdditiveBlending, DynamicDrawUsage } from 'three';
+  let hideNext = null, hidden = null, lens = null, ribbon = null, order = null, watched = null;
+  // Transparent draw order in the captured frame (objects that keep the prototype's onBeforeRender hook).
+  Object3D.prototype.onBeforeRender = function (r, s, c, g, material) {
+    if (hideNext && material?.transparent) (order ??= []).push(`${this.name || this.type}${material.blending === AdditiveBlending ? '+' : ''}`);
+  };
+  // The final lens pass (heat shimmer at the nozzle, boost blur, impact): record its uniforms at the captured draw, and
+  // with hide=lensfx draw it with those effects off. Its material is the only one with both `nozzle` and `pressure`.
+  Material.prototype.onBeforeRender = function () {
+    const u = this.uniforms;
+    if (!hideNext || !u?.nozzle || !u.pressure) return;
+    lens = { pressure: u.pressure.value, boost: u.boost.value, impact: u.impact.value, nozzle: u.nozzle.value.toArray(), time: u.time.value, lensFx: this.defines?.LENS_FX };
+    if (hideNext.includes('lensfx')) u.pressure.value = u.boost.value = u.impact.value = 0;
+  };
+  // Hide inside the draw itself (world.render sets visibility every frame): WebGLRenderer.render calls
+  // scene.onBeforeRender before it walks the scene graph.
+  // fullupload: re-send every dynamic attribute whole and draw the ribbon unclipped, as the pre-span code did.
+  Scene.prototype.onBeforeRender = function () {
+    if (!hideNext) return;
+    hidden = [...(hidden ?? []), ...hideParts(this, hideNext)];
+    this.traverse(o => {
+      if (o.name === 'Continuous dash ribbon') ribbon = ribbonState(o.geometry);
+      if (hideNext.some(h => h.startsWith('watch:') && new RegExp(h.slice(6), 'i').test(o.name)) && o.visible) // state of watched objects
+        (watched ??= []).push({ name: o.name, parent: o.parent?.id, world: o.matrixWorld.elements.map(v => +v.toFixed(4)), opacity: o.material?.opacity, color: o.material?.color?.toArray() });
+      if (o.name === 'Continuous dash ribbon' && hideNext.includes('ribbon-order-0')) o.renderOrder = 0; // the unfixed sort
+      if (!hideNext.includes('fullupload') || !o.geometry?.attributes) return;
+      for (const a of Object.values(o.geometry.attributes)) if (a.usage === DynamicDrawUsage) { a.clearUpdateRanges(); a.needsUpdate = true; }
+      if (o.name === 'Continuous dash ribbon') o.geometry.setDrawRange(0, Infinity);
+    });
+  };
+  function ribbonState(g) { // CPU-side ribbon state at the captured draw
+    const alpha = g.attributes.alpha.array, pos = g.attributes.position.array;
+    let live = 0, alphaSum = 0, posSum = 0;
+    for (let s = 0; s < alpha.length / 6; s++) if (alpha[s * 6] > 0) { live++; for (let j = 0; j < 6; j++) { alphaSum += alpha[s * 6 + j]; for (let k = 0; k < 3; k++) posSum += Math.abs(pos[(s * 6 + j) * 3 + k]); } }
+    return { drawRange: [g.drawRange.start, g.drawRange.count], sphere: g.boundingSphere && [...g.boundingSphere.center.toArray(), g.boundingSphere.radius], live, alphaSum, posSum,
+      pendingRanges: [g.attributes.position.updateRanges.map(r => [r.start, r.count]), g.attributes.alpha.updateRanges.map(r => [r.start, r.count])] };
+  }
+  const STEP = 1 / 60, SEED = 12345, INPUT = Object.freeze({ throttle: true, boost: true, steer: 0 });
+  const next = () => new Promise(requestAnimationFrame);
+  function readCanvas(gl) { // Same task as the draw, so the drawing buffer is still intact.
+    const w = gl.drawingBufferWidth, h = gl.drawingBufferHeight, px = new Uint8Array(w * h * 4);
+    gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    let bin = ''; for (let i = 0; i < px.length; i += 0x8000) bin += String.fromCharCode.apply(null, px.subarray(i, i + 0x8000));
+    return { w, h, data: btoa(bin) };
+  }
+  // hide: parts drawn without them in the captured frame, to attribute a residual difference: 'particles' (THREE.Points),
+  // 'sprites', 'additive' or 'transparent' materials, 'name:<regex>' on object + material name,
+  // 'only:<regex>' everything drawn except matching names, 'opaque', 'a+b' both, 'lensfx', 'fullupload' and 'ribbon-order-0' (see above); 'watch:<regex>' records matching objects' world matrix and material.
+  window.visualRun = async ({ track, phase, quality = 'high', settle = 90, frames = 30, hide = [] }) => {
+    const canvas = document.getElementById('world');
+    const world = createWorld(canvas, vfxSettings({ quality, preset: 'cinematic' })); window.reseed();
+    const gl = canvas.getContext('webgl2');
+    let image = null; hidden = null; hideNext = null; lens = null; ribbon = null; order = null; watched = null;
+    try {
+      setLayoutSeed(() => SEED);
+      const options = phase === 'photo' ? { mode: 'free' } : track === CIRCUIT_ID ? { mode: 'circuit', laps: 3 } : null;
+      const race = createRace(track, options);
+      race.rivalVisualSeed = SEED;
+      const presentation = createPresentation();
+      world.preloadTrackAssets(track);
+      for (let i = 0; i < 1200 && !world.render(race, STEP, 2, {}); i++) await next();
+      for (let i = 0; i < 150; i++) { await next(); world.render(race, STEP, 2, {}); } // models and scenery settle
+      window.reseed(); // pre-race render count follows asset timing; every stream starts at GO
+      window.rngCensus(true);
+      startRace(race);
+      world.render(race, STEP, 0, {});
+      while (race.phase === 'countdown') stepRace(race, {}, STEP);
+      for (let i = 0; i < settle; i++) { await next(); stepRace(race, INPUT, STEP); world.render(race, STEP, 0, INPUT, presentation.update(race, STEP)); }
+      if (phase === 'photo') { race.phase = 'paused'; world.setPhotoView({ angle: 35, fov: 48, sky: 'original' }); }
+      const census = window.rngCensus(false);
+      for (let i = 0; i < frames; i++) {
+        await next();
+        if (phase === 'racing') stepRace(race, INPUT, STEP);
+        if (i === frames - 1) hideNext = hide;
+        world.render(race, STEP, 0, INPUT, presentation.update(race, STEP));
+        if (i === frames - 1) image = readCanvas(gl);
+      }
+      hideNext = null;
+      return { image, census, hidden, lens, ribbon, order, watched, distance: race.player.distance, elapsed: race.elapsed, phase: race.phase };
+    } finally { world.dispose(); }
+  };
+  function hideParts(root, hide) {
+    const hidden = [];
+    root.traverse(o => {
+      const material = Array.isArray(o.material) ? o.material[0] : o.material;
+      const label = `${o.name} ${material?.name ?? ''}`;
+      const match = hide.some(all => all.split('+').every(h => h === 'particles' ? o.isPoints : h === 'sprites' ? o.isSprite
+        : h === 'additive' ? material?.blending === AdditiveBlending : h === 'transparent' ? !!material?.transparent
+        : h.startsWith('name:') ? new RegExp(h.slice(5), 'i').test(label)
+        : h === 'opaque' ? !!material && !material.transparent
+        : h.startsWith('only:') ? !!material && !new RegExp(h.slice(5), 'i').test(label) : false));
+      if (match && o.visible) { o.visible = false; hidden.push(`${o.type}:${label.trim() || '?'}`); }
+    });
+    return hidden;
+  }
+  window.visualReady = true;
+</script>
+</body></html>
