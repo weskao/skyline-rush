@@ -2,14 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createFramePacer, parseFpsPreference } from '../src/frame-pacing.ts';
 
-function simulate(pacer, refreshHz, seconds, costMs = 2, startAt = 0) {
+// gpuMs: the GPU timer sample for each drawn frame (frames are delivered on every vsync here).
+// cpuMs replays the old CPU submission feed, which must not drive Auto.
+function simulate(pacer, refreshHz, seconds, gpuMs = 2, startAt = 0, cpuMs = null) {
   const frames = Math.round(refreshHz * seconds);
   let rendered = 0;
   for (let i = 1; i <= frames; i++) {
     const now = startAt + i * 1000 / refreshHz;
     if (pacer.tick(now, { racing: true })) {
       rendered++;
-      pacer.completeRender(costMs);
+      pacer.observeGpu(gpuMs);
+      if (cpuMs !== null) pacer.completeRender?.(cpuMs);
     }
   }
   return { rendered, endAt: startAt + frames * 1000 / refreshHz };
@@ -44,23 +47,23 @@ test('manual high-rate preference keeps its selection but caps to an observed 60
   }
 });
 
-test('Auto can step up to 90 and 120 only after sustained low-cost racing on high-refresh callbacks', () => {
+test('Auto holds a stable 60 on high-refresh callbacks; 90 and 120 are manual choices only', () => {
   const pacer = createFramePacer('auto');
-  const first = simulate(pacer, 120, 18, 2);
-  assert.equal(pacer.targetFps, 90);
-  simulate(pacer, 120, 18, 2, first.endAt);
-  assert.equal(pacer.targetFps, 120);
+  const first = simulate(pacer, 120, 36, 2, 0, 2);
+  assert.equal(pacer.targetFps, 60);
+  const { rendered } = simulate(pacer, 120, 4, 2, first.endAt, 2);
+  assert.ok(Math.abs(rendered - 240) <= 4, `expected 240 renders at Auto on 120Hz, got ${rendered}`);
   const regular = createFramePacer('auto');
   simulate(regular, 60, 45, 2);
   assert.equal(regular.targetFps, 60);
 });
 
-test('Auto high-rate steps down under sustained load, preserving manual selection on the same device', () => {
+test('Auto steps down under sustained GPU load, preserving a manual 120 selection on the same device', () => {
   const pacer = createFramePacer('auto');
   let state = simulate(pacer, 120, 36, 2);
-  assert.equal(pacer.targetFps, 120);
-  state = simulate(pacer, 120, 18, 13, state.endAt);
-  assert.ok(pacer.targetFps <= 90, `auto should lower 120 under load; got ${pacer.targetFps}`);
+  assert.equal(pacer.targetFps, 60);
+  state = simulate(pacer, 120, 26, 15.5, state.endAt); // two full stressed windows
+  assert.ok(pacer.targetFps < 60, `auto should lower 60 under load; got ${pacer.targetFps}`);
   pacer.setPreference('120');
   state = simulate(pacer, 120, 25, 20, state.endAt);
   assert.equal(pacer.preference, '120');
@@ -82,7 +85,7 @@ test('high-refresh pacing recovers after tab suspension and remains independent 
       // Fixed-step game logic executes on every callback regardless of drawing.
       elapsed += 1 / 60;
       ghost += 42 / 60;
-      if (p.tick(i * 1000 / 120, { racing: true })) { renders++; p.completeRender(2); }
+      if (p.tick(i * 1000 / 120, { racing: true })) renders++;
     }
     return { elapsed, ghost, renders };
   };

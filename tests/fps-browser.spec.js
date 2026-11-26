@@ -39,3 +39,23 @@ test('FPS selector remembers manual 30/60/90/120 independently of graphics quali
   await expect(page.locator('#target-fps')).toHaveValue('120');
   await expect(page.locator('[data-vfx="quality"]')).toHaveValue(/^(low|medium|high)$/);
 });
+
+test('adaptive resolution is a separate opt-in, off by default, persisted and bilingual; FPS choice is kept', async ({page}) => {
+  await page.addInitScript(() => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('skyline-rush-target-fps-v1', '90'); } });
+  await page.goto('/');
+  await toggleSettingsSection(page, 'display');
+  const adaptive = page.locator('#adaptive-resolution');
+  await expect(adaptive).not.toBeChecked();
+  await expect(page.locator('#target-fps')).toHaveValue('90', { timeout: 10_000 });
+  await adaptive.check({ force: true });
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('skyline-rush-adaptive-resolution-v1'))).toBe('1');
+  await page.reload();
+  await expect(page.locator('#adaptive-resolution')).toBeChecked();
+  await expect(page.locator('#target-fps')).toHaveValue('90');
+  await selectLocale(page, 'zh-TW');
+  await expect(page.locator('[data-i18n="vfx.adaptiveResolution"]')).toHaveText('自適應解析度');
+  await expect(page.locator('[data-i18n="vfx.adaptiveResolution.note"]')).toContainText('預設關閉');
+  await toggleSettingsSection(page, 'display');
+  await page.locator('#adaptive-resolution').uncheck({ force: true });
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('skyline-rush-adaptive-resolution-v1'))).toBe('0');
+});

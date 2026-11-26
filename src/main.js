@@ -505,7 +505,7 @@ try {
   previewPaint(equippedPaint);
   let previousTime = performance.now(), accumulator = 0, hudElapsed = 0, wasCalm = calmMotion();
   const perfOverlay = createPerfOverlay(location.search, () => world.inspectRenderLoad(), !!import.meta.env.VITE_DIAG);
-  const fps = setupFpsUI(scale => world.setRenderScale(scale));
+  const fps = setupFpsUI(scale => world.setRenderScale(scale), world.deepPerf);
   let motionRace = null; const previousMotion = {}, renderMotion = { previous: previousMotion, alpha: 1 };
   function frame(now) {
     // Requested first: a frame that throws still reports its error, but never freezes the game for good.
@@ -558,7 +558,7 @@ try {
         cancelAnimationFrame(animationId); // The opaque startup screen only needs the first lobby frame.
         startup.ready(() => { controls.clear(); sound.cue('ui'); finishStartupReleaseNotes(); animationId = requestAnimationFrame(frame); });
       }
-      if (drawn) { fps.completeRender(performance.now() - renderStarted); world.deepPerf?.submission(performance.now() - renderStarted); }
+      if (drawn) world.deepPerf?.submission(performance.now() - renderStarted); // diagnostic only: CPU submission is not load
     }
     sound.update(race, presentationState.halfwayStarted, countingDown && world.raceFramePending(race));
     hudElapsed += dt; if (hudElapsed >= 0.075 || previousPhase !== race.phase) {
