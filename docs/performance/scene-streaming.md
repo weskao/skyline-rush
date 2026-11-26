@@ -134,6 +134,12 @@ Home, track swipe and World Tour.
     9 tracks × restart.
   - A mutation check confirmed it can fail: removing the merged-landmark dispose gives undisposed
     resources of 3032, 3049, 3066 and 3083 per cycle.
+- `item-feedback` shield flash (CI 45871870230, both attempts: 4 → 89 programs). This is a test timing race, not a
+  product change: the spec is the same on develop, and the race waits on the grid for its assets anyway.
+  - Guard RED: `browser-timeouts` "a shader-count baseline taken after START waits for the race to run" listed
+    `item-feedback-browser.spec.js:31` and `:66`.
+  - Behaviour RED (LOCAL-CHROME, car GLB held 4 s): a baseline read at `EMPTY` was 0 in `countdown`, then 88. With
+    the fix, the baseline read at `racing` was 89, and still 89 after the shield flash.
 
 ## p03 item status
 

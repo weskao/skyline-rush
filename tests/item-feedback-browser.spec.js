@@ -1,6 +1,7 @@
 import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test } from './helpers/gameplay-browser.js';
 import { reloadWithBlockedStorage } from './helpers/test.js';
+import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 
 // ITEM-12 feedback and 12B acceptance (misses, blocked storage, touch layout) in the real game.
@@ -11,6 +12,8 @@ const startWithItems = async (page, { blockedStorage = false } = {}) => {
   await page.locator('#start-button').click();
   if (blockedStorage) await page.locator('#guide-start-race').click();
   await expect(page.locator('#item-status')).toContainText('EMPTY');
+  // The grid compiles the loaded car, scenery and pickups before GO: shader-count baselines start once it runs.
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15_000) });
 };
 const programs = page => page.evaluate(() => window.gameScene.renderer.info.programs.length);
 
