@@ -13,7 +13,7 @@ const start = async page => {
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
 };
-const bank = page => page.evaluate(() => parseFloat(document.body.style.getPropertyValue('--flight-bank')));
+const bank = page => page.evaluate(() => parseFloat(document.querySelector('.flight-director').style.getPropertyValue('--flight-bank')));
 
 test('desktop remaps swap conflicts, reject reserved keys, persist and drive AIR DASH live', async ({ page }) => {
   await open(page);

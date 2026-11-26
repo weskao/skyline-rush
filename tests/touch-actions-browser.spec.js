@@ -87,7 +87,7 @@ test.describe('tilt', () => {
       window.dispatchEvent(new DeviceOrientationEvent('deviceorientation', { gamma: 5, beta: 20 }));
       window.tiltInterval = setInterval(() => window.dispatchEvent(new DeviceOrientationEvent('deviceorientation', { gamma: 20, beta: 20 })), 50);
     });
-    await expect.poll(() => page.evaluate(() => parseFloat(document.body.style.getPropertyValue('--flight-bank')))).toBeLessThan(-2);
+    await expect.poll(() => page.evaluate(() => parseFloat(document.querySelector('.flight-director').style.getPropertyValue('--flight-bank')))).toBeLessThan(-2);
     await page.evaluate(() => clearInterval(window.tiltInterval));
     await page.locator('#pause-button').click();
     await toggleSettingsSection(page, 'driving');

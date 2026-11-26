@@ -8,6 +8,11 @@ export function setHiddenIfChanged(node: Pick<HTMLElement, 'hidden'>, hidden: bo
   if (node.hidden !== hidden) node.hidden = hidden;
 }
 
+/** A same-value setAttribute still queues a mutation record (and wakes observers); only write on change. */
+export function setAttributeIfChanged(node: Pick<Element, 'getAttribute' | 'setAttribute'>, name: string, value: string): void {
+  if (node.getAttribute(name) !== value) node.setAttribute(name, value);
+}
+
 /** getAnimations() forces a style flush; an idle node skips it until it has started an animation again. */
 export function createAnimationGate(node: Pick<Element, 'animate' | 'getAnimations'>) {
   let live = false;
