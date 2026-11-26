@@ -65,6 +65,7 @@ export function createRivalStatusFx(capacity: number) {
     end() {
       for (const kind of KINDS) effects[kind].end();
       waves.visible = anyWaves;
+      if (!anyWaves) return; // hidden: nothing to upload; every wave is rewritten each frame, the next shown one uploads all
       waves.instanceMatrix.needsUpdate = true;
       waves.instanceColor!.needsUpdate = true;
     },

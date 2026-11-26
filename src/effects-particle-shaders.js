@@ -4,7 +4,8 @@ export const PARTICLE_VERTEX = `attribute vec3 color; attribute float size; attr
       attribute float kind; attribute vec3 velocity;
       varying vec3 vColor; varying float vAlpha; varying float vKind; varying vec2 vDirection;
       uniform float pixelRatio;
-      void main(){ vColor=color; vAlpha=alpha; vKind=kind;
+      void main(){ if(alpha<=0.){gl_Position=vec4(2.,2.,2.,1.);gl_PointSize=0.;return;} // dead slot: outside the clip volume
+        vColor=color; vAlpha=alpha; vKind=kind;
         vec4 p=modelViewMatrix*vec4(position,1.);
         vec4 clip=projectionMatrix*p;
         vec4 tip=projectionMatrix*(p+modelViewMatrix*vec4(velocity*.03,0.));

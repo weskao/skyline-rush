@@ -7,6 +7,7 @@ import { TRICK_ROLL_TIME } from './game.js';
 import { plumeLook, thrusterGlow } from './board-effects.ts';
 import { createThrusterGlow } from './thruster-glow.ts';
 import { createAeroWakeMeshes } from './aero-wake-meshes.js';
+import { createLiveSpan } from './effects-particle-upload.js';
 import { createSprintPlume, SHOWROOM, showroomPulse } from './sprint-plume.ts';
 import { sprintTier } from './sprint-tier.ts';
 import { SKIN_MOTION, airflowFrame, measureAirflowProfile, streamGeometry } from './airflow-geometry.ts';
@@ -106,6 +107,9 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
   const segments = Array.from({ length: 64 }, () => ({ life: 0, roll: false, a: new THREE.Vector3(), b: new THREE.Vector3(), left: new THREE.Vector3(), right: new THREE.Vector3() }));
   const { vapor, particleGeo, ribbon, ribbonGeo, ribbonPositions, ribbonAlpha, ribbonKinds } =
     createAeroWakeMeshes(positions, alphas, sizes, segments.length);
+  // The wake's draw range stays its quality budget (dead points are clipped in its vertex shader); uploads use the span.
+  const wakeSpan = createLiveSpan(MAX_PARTICLES, ['position', 'alpha', 'size'].map(name => particleGeo.attributes[name]));
+  const ribbonSpan = createLiveSpan(segments.length, [ribbonGeo.attributes.position, ribbonGeo.attributes.alpha], { geometry: ribbonGeo, vertices: 6 });
   // Keep world-space drawables under one visibility gate, separate from the car-local rig.
   const worldEffects = new THREE.Group();
   scene.add(worldEffects);
@@ -132,7 +136,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
     sample.lerpVectors(previous, current, t);
     sampleRotation.slerpQuaternions(previousRotation, vehicle.quaternion, t);
     for (const port of REAR_PORTS) {
-      const p = particles[cursor]; cursor = (cursor + 1) % particleGeo.drawRange.count;
+      const p = particles[cursor]; wakeSpan.add(cursor); cursor = (cursor + 1) % particleGeo.drawRange.count;
       p.pos.fromArray(port.position).add(rear.position).applyQuaternion(sampleRotation).add(sample);
       p.roll = rollStrength * .7 > strength;
       // shortcut: still-air frozen-convection markers; use a validated flow solver for pressure or swirl predictions.
@@ -146,8 +150,8 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
     }
   }
   function reset() {
-    particles.forEach(p => { p.life = 0; }); alphas.fill(0); particleGeo.attributes.alpha.needsUpdate = true;
-    segments.forEach(s => { s.life = 0; }); ribbonAlpha.fill(0); ribbonGeo.attributes.alpha.needsUpdate = true;
+    particles.forEach(p => { p.life = 0; }); alphas.fill(0); wakeSpan.clear(particleGeo.attributes.alpha);
+    segments.forEach(s => { s.life = 0; }); ribbonAlpha.fill(0); ribbonSpan.clear(ribbonGeo.attributes.alpha);
     ghosts.forEach(g => { g.life = 0; g.mesh.visible = false; });
     glow.update(0);
     plume.reset(); flow.visible = pressure.visible = shock.visible = false;
@@ -221,7 +225,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       if (calm) quality = Math.min(quality, 0.5);
       const detail = enabled && !calm && settings.quality === 'high' ? settings.ultra ? 1 : .55 : 0;
       const wakeCount = Math.round(MAX_PARTICLES * quality);
-      if (particleGeo.drawRange.count !== wakeCount) {
+      if (particleGeo.drawRange.count !== wakeCount) { // slots beyond a shrunk pool die; the span loop uploads their alpha 0
         for (let i = wakeCount; i < MAX_PARTICLES; i++) particles[i].life = 0;
         particleGeo.setDrawRange(0, wakeCount); cursor %= wakeCount;
       }
@@ -323,7 +327,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
         ribbonFrom.copy(trailAnchor).applyQuaternion(sampleRotation).add(sample);
         ribbonSide.set(trailHalfWidth, 0, 0).applyQuaternion(sampleRotation);
         dashSamples(previous, current, 0.8 / quality, 16, t => {
-          const slot = segmentCursor, s = segments[slot]; segmentCursor = (slot + 1) % segments.length;
+          const slot = segmentCursor, s = segments[slot]; ribbonSpan.add(slot); segmentCursor = (slot + 1) % segments.length;
           s.roll = !boost && !showcaseRibbon;
           const kind = s.roll ? 1 : 0;
           if (ribbonKinds[slot * 6] !== kind) { ribbonKinds.fill(kind, slot * 6, slot * 6 + 6); ribbonKindDirty = true; }
@@ -336,8 +340,12 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
           ribbonFrom.copy(s.b); ribbonSide.copy(s.right);
         });
       }
-      for (let i = 0; i < segments.length; i++) {
+      let liveFirst = segments.length, liveLast = -1;
+      for (let i = ribbonSpan.first, last = ribbonSpan.last; i <= last; i++) { // outside the span: dead, alpha 0 on the GPU
         const s = segments[i]; s.life = s.roll && !rollEnabled ? 0 : Math.max(0, s.life - dt);
+        if (s.life === 0) { ribbonAlpha.fill(0, i * 6, i * 6 + 6); continue; }
+        if (i < liveFirst) liveFirst = i;
+        liveLast = i;
         for (let j = 0; j < 6; j++) {
           const end = j === 2 || j === 4 || j === 5, side = j === 1 || j === 3 || j === 4 ? 1 : -1;
           corner.copy(end ? s.b : s.a).addScaledVector(end ? s.right : s.left, side);
@@ -346,12 +354,15 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
           ribbonAlpha[i * 6 + j] = enabled && s.life > 0 ? s.life / s.maxLife * (s.roll ? settings.airflowDensity * settings.airflowOpacity * .3 : calm ? 0.04 : 0.12) : 0;
         }
       }
-      ribbonGeo.attributes.position.needsUpdate = ribbonGeo.attributes.alpha.needsUpdate = true;
+      ribbonSpan.commit(liveFirst, liveLast);
       if (ribbonKindDirty) ribbonGeo.attributes.rollWake.needsUpdate = true;
-      for (let i = 0; i < wakeCount; i++) {
+      liveFirst = MAX_PARTICLES; liveLast = -1;
+      for (let i = wakeSpan.first, last = wakeSpan.last; i <= last; i++) {
         const p = particles[i]; p.life = p.roll && !rollEnabled ? 0 : Math.max(0, p.life - dt);
         alphas[i] = 0;
         if (p.life === 0) continue;
+        if (i < liveFirst) liveFirst = i;
+        liveLast = i;
         if (!p.roll) {
           p.pos.addScaledVector(p.velocity, dt); p.velocity.multiplyScalar(Math.exp(-dt * 2));
           if (p.pos.y < 0.09) { p.pos.y = 0.09; p.velocity.y = Math.abs(p.velocity.y) * 0.1; p.velocity.x *= 1 + dt; }
@@ -361,7 +372,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
         sizes[i] = p.roll ? p.size : p.size + age * 2;
         alphas[i] = p.opacity * Math.min(1, age * 25) * (p.life / p.maxLife) ** 1.5;
       }
-      particleGeo.attributes.position.needsUpdate = particleGeo.attributes.alpha.needsUpdate = particleGeo.attributes.size.needsUpdate = true;
+      wakeSpan.commit(liveFirst, liveLast);
       for (let i = 0; i < ghosts.length; i++) {
         const g = ghosts[i]; g.life = Math.max(0, g.life - dt);
         g.mesh.visible = enabled && !calm && g.life > 0 && i < settings.afterimages;
