@@ -124,6 +124,9 @@ Verify with `git check-ignore -v docs/performance/local/example.json`; never for
 
 ## Acceptance / current status
 
+Program result (A d9c144ba vs B develop vs C integration, LOCAL-CHROME, visual gate, device SOP):
+[final-report.md](final-report.md).
+
 No physical GPU or temperature measured for this branch at authoring. Existing historical numbers
 in src/performance-evidence.ts are software WebGL counters, not current measurements.
 Use [report template](report-template.md). Keep full regression gate unchanged.

@@ -1,0 +1,313 @@
+{
+  "environment": "LOCAL-CHROME",
+  "harness": "scripts/final-report/visual-fidelity.html",
+  "base": "B",
+  "candidate": "C",
+  "composite": "base | candidate | |difference| x8",
+  "scenes": [
+    {
+      "id": "m-race-coast-high",
+      "track": "coast",
+      "phase": "racing",
+      "viewport": "390x844@3",
+      "canvas": [
+        585,
+        1266
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        69.39933333333342,
+        69.39933333333342
+      ],
+      "simPhase": [
+        "racing",
+        "racing"
+      ],
+      "BvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 65,
+        "changed": 55602,
+        "over1": 7150,
+        "over8": 3408,
+        "over8Pct": 0.4601612184550573,
+        "mae": 0.13598025051421575,
+        "psnr": 43.49795310019918
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "m-race-coast-high.webp"
+    },
+    {
+      "id": "m-race-tokyo-high",
+      "track": "tokyo",
+      "phase": "racing",
+      "viewport": "390x844@3",
+      "canvas": [
+        585,
+        1266
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        85.76183333333346,
+        85.76183333333346
+      ],
+      "simPhase": [
+        "racing",
+        "racing"
+      ],
+      "BvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 225,
+        "changed": 53083,
+        "over1": 15707,
+        "over8": 9634,
+        "over8Pct": 1.3008195946584573,
+        "mae": 0.4945463874373827,
+        "psnr": 32.5262108826302
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "m-race-tokyo-high.webp"
+    },
+    {
+      "id": "m-race-taipei-high",
+      "track": "taipei",
+      "phase": "racing",
+      "viewport": "390x844@3",
+      "canvas": [
+        585,
+        1266
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        85.76183333333346,
+        85.76183333333346
+      ],
+      "simPhase": [
+        "racing",
+        "racing"
+      ],
+      "BvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 229,
+        "changed": 76949,
+        "over1": 27166,
+        "over8": 16152,
+        "over8Pct": 2.1809049297200955,
+        "mae": 0.6916748806164288,
+        "psnr": 32.60773427144068
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "m-race-taipei-high.webp"
+    },
+    {
+      "id": "m-race-neon-ultra",
+      "track": "neon",
+      "phase": "racing",
+      "quality": "ultra",
+      "viewport": "390x844@3",
+      "canvas": [
+        585,
+        1266
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        69.39933333333342,
+        69.39933333333342
+      ],
+      "simPhase": [
+        "racing",
+        "racing"
+      ],
+      "BvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 83,
+        "changed": 44163,
+        "over1": 8190,
+        "over8": 4233,
+        "over8Pct": 0.5715558796127517,
+        "mae": 0.1804868059212451,
+        "psnr": 40.94073513616205
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "m-race-neon-ultra.webp"
+    },
+    {
+      "id": "m-race-volcanic-crown-ultra",
+      "track": "volcanic-crown",
+      "phase": "racing",
+      "quality": "ultra",
+      "viewport": "390x844@3",
+      "canvas": [
+        585,
+        1266
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        85.76183333333346,
+        85.76183333333346
+      ],
+      "simPhase": [
+        "racing",
+        "racing"
+      ],
+      "BvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 75,
+        "changed": 52390,
+        "over1": 7865,
+        "over8": 4095,
+        "over8Pct": 0.5529225908372828,
+        "mae": 0.1600536494691313,
+        "psnr": 42.3223513382207
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "m-race-volcanic-crown-ultra.webp"
+    },
+    {
+      "id": "d-race-tokyo-high",
+      "track": "tokyo",
+      "phase": "racing",
+      "viewport": "1440x900@1",
+      "canvas": [
+        1440,
+        900
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        85.76183333333346,
+        85.76183333333346
+      ],
+      "simPhase": [
+        "racing",
+        "racing"
+      ],
+      "BvsC": {
+        "comparable": true,
+        "pixels": 1296000,
+        "maxDelta": 229,
+        "changed": 101779,
+        "over1": 40618,
+        "over8": 25276,
+        "over8Pct": 1.9503086419753086,
+        "mae": 0.7688950617283951,
+        "psnr": 30.689165155439145
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 1296000,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "d-race-tokyo-high.webp"
+    },
+    {
+      "id": "d-race-volcanic-crown-ultra",
+      "track": "volcanic-crown",
+      "phase": "racing",
+      "quality": "ultra",
+      "viewport": "1440x900@1",
+      "canvas": [
+        1440,
+        900
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        85.76183333333346,
+        85.76183333333346
+      ],
+      "simPhase": [
+        "racing",
+        "racing"
+      ],
+      "BvsC": {
+        "comparable": true,
+        "pixels": 1296000,
+        "maxDelta": 68,
+        "changed": 80708,
+        "over1": 14109,
+        "over8": 5923,
+        "over8Pct": 0.4570216049382716,
+        "mae": 0.1543317901234568,
+        "psnr": 42.14581050243773
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 1296000,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "d-race-volcanic-crown-ultra.webp"
+    }
+  ]
+}
