@@ -46,7 +46,7 @@ test('adaptive resolution is a separate opt-in, off by default, persisted and bi
   await toggleSettingsSection(page, 'display');
   const adaptive = page.locator('#adaptive-resolution');
   await expect(adaptive).not.toBeChecked();
-  await expect(page.locator('#target-fps')).toHaveValue('90', { timeout: 10_000 });
+  await expect(page.locator('#target-fps')).toHaveValue('90', { timeout: ciTimeout(10_000) });
   await adaptive.check({ force: true });
   await expect.poll(() => page.evaluate(() => localStorage.getItem('skyline-rush-adaptive-resolution-v1'))).toBe('1');
   await page.reload();
