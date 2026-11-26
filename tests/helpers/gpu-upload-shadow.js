@@ -1,25 +1,31 @@
-// What the GPU holds after each render, per three r186 WebGLAttributes.update: a bumped version uploads the pending
-// update ranges, or the whole array when there are none, then clears the ranges. The first sight is the allocation.
+import { WebGLAttributes } from 'three/src/renderers/webgl/WebGLAttributes.js';
+
+// What the GPU holds after each render: three's own WebGLAttributes.update (version check, in-place range sort/merge,
+// one bufferSubData per merged range or the whole array when there are none) runs against a recording fake GL that
+// copies every upload into a shadow buffer. The first sight is the allocation (bufferData) and is not counted.
 export function gpuUploadShadow() {
-  const versions = new Map(), shadows = new Map();
+  let bound = null, bytes = 0, calls = 0;
+  const gl = {
+    ARRAY_BUFFER: 34962, FLOAT: 5126, HALF_FLOAT: 5131, UNSIGNED_SHORT: 5123, SHORT: 5122, UNSIGNED_INT: 5125, INT: 5124,
+    BYTE: 5120, UNSIGNED_BYTE: 5121,
+    createBuffer: () => ({ data: null }),
+    bindBuffer(_, buffer) { bound = buffer; },
+    bufferData(_, array) { bound.data = array.slice(); },
+    bufferSubData(_, byteOffset, source, offset = 0, length = source.length - offset) {
+      bound.data.set(source.subarray(offset, offset + length), byteOffset / source.BYTES_PER_ELEMENT);
+      bytes += length * source.BYTES_PER_ELEMENT; calls++;
+    },
+  };
+  const attributes = new WebGLAttributes(gl);
   return {
     // Returns the bytes this "render" would upload for these attributes (InstancedBufferAttributes included).
-    sync(attributes) {
-      let bytes = 0;
-      for (const a of attributes) {
-        if (versions.get(a) === a.version) continue;
-        const shadow = shadows.get(a);
-        versions.set(a, a.version);
-        if (!shadow) { shadows.set(a, a.array.slice()); a.clearUpdateRanges(); continue; }
-        if (a.updateRanges.length === 0) { bytes += a.array.byteLength; shadow.set(a.array); }
-        else for (const { start, count } of a.updateRanges) {
-          bytes += count * a.array.BYTES_PER_ELEMENT; shadow.set(a.array.subarray(start, start + count), start);
-        }
-        a.clearUpdateRanges();
-      }
-      return bytes;
+    sync(list) {
+      const before = bytes;
+      for (const a of list) attributes.update(a, gl.ARRAY_BUFFER);
+      return bytes - before;
     },
-    read: a => shadows.get(a) ?? a.array,
+    get calls() { return calls; }, // bufferSubData calls so far
+    read: a => attributes.get(a)?.buffer.data ?? a.array,
   };
 }
 
