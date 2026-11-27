@@ -222,7 +222,11 @@ Rejected (pixel equivalence could not be shown):
 - **Pooling a source that would draw alone**: its vertices are then computed through the scenery layer matrix
   instead of its own model matrix; the ulp-level depth change flips near-coplanar seams.
 - **Player car single pass** (one draw per material across body parts): not pixel-equivalent.
-- **Rival wheel instancing**: lives on the per-frame update path owned by item 32.
+- **Rival wheel instancing** (each rival's 4 tyres and 4 rims as two `InstancedMesh` draws sharing the car's own
+  materials; `5b723eb7`, reverted): -19.6% median, not -40%. Visual gate 13/20: 7 scenes with 1–3 wheel-edge pixels
+  over 8 (max delta 53, PSNR ≥ 76.7 dB). The GPU composes `modelViewMatrix · instanceMatrix` in float32 where the
+  original draw uses one CPU-composed matrix, so silhouette and depth-edge pixels move by an ulp; no GPU per-instance
+  transform is bit-exact. The owner rejected the deviation (2026-11-27).
 
 ## Device SOP (UNVERIFIED: run manually)
 

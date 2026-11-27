@@ -97,7 +97,10 @@ What the numbers say, honestly:
 - **Draw calls -40% on complex scenes: not met.** The median of the six heaviest scenes is -13%. The static-mesh
   merge of workstream 11 ([scene-streaming.md](scene-streaming.md)) cut the landmark-heavy tracks: Taipei racing 623
   to 477 (-23%), Taipei home 471 to 344 (-27%), Tokyo home 305 to 247 (-19%). Wave 3 item 31 merged each bridge
-  tower's 55 steel and 3 trim parts into 2 draws: Aurora racing 399 to 285 (-29%). Alpine and Coastal racing are
+  tower's 55 steel and 3 trim parts into 2 draws: Aurora racing 399 to 285 (-29%). Item 31 on its own branch measured
+  -13.1% (median of the six scenes); this re-run of the integration head gives -13.4%, the same within round spread.
+  Rival wheel instancing reached -19.6% but moved wheel-edge pixels on 7 of 20 gate scenes (max delta 53); the owner
+  rejected it and it is not in the integration head. Alpine and Coastal racing are
   dominated by distinct materials, transparent, animated or render-ordered meshes, which `canBatch` must exclude to
   keep the picture identical, so they changed by 1-3 draws. A colour-only tint pool reached -33% but flipped
   depth-tied seams and was rejected (scene-streaming.md "Wave 3 item 31").
