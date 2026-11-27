@@ -32,10 +32,18 @@ function installAudio(t) {
     close() { return Promise.resolve(); }
   };
   t.after(() => { delete globalThis.AudioContext; });
+  // currentTime never moves here, so >500 ms of real wall time (a loaded runner) reads as a stalled clock and drops cues.
+  if (!performance.now.mock) t.mock.method(performance, 'now', () => 0);
   const sound = createSound();
   t.after(() => sound.dispose());
   return { nodes, sound };
 }
+
+test('the mock audio clock never reads as stalled on a slow runner: wall time is frozen with it unless the test drives it', t => {
+  installAudio(t);
+  assert.ok(performance.now.mock, 'installAudio pins performance.now while the mock currentTime stays put');
+  assert.equal(performance.now(), performance.now());
+});
 
 test('opening audio asks iOS for media playback so the silent switch does not mute it', t => {
   const session = { type: 'auto' };
@@ -805,8 +813,6 @@ test('the halfway chime is a short rising stinger, so it ducks the mix only brie
 test('acquisition motifs are distinct, fit the reveal and use the existing SFX mute', async t => {
   const { ACQUISITION_KIND } = await import('../src/acquisition-reveal.ts');
   const { ACQUISITION_SOUNDS } = await import('../src/feedback-sounds.ts');
-  // The mock renders no audio. Keep wall time fixed while scheduling cues at the same audio time.
-  t.mock.method(performance, 'now', () => 0);
   const { nodes, sound } = installAudio(t);
   assert.deepEqual(Object.keys(ACQUISITION_SOUNDS).sort(), Object.values(ACQUISITION_KIND).sort());
   sound.setEnabled(true);

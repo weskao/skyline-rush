@@ -46,6 +46,12 @@ separate causes, each now removed in `src/audio.js` / `src/audio-ui.ts`:
 - The prelude only queues the shared intro (song `intro` or no race yet). A song change calls
   `cutMusic()` (stops notes queued after now, resets `nextStep`) so the race song starts at once and
   never overlaps the prelude. Muting cuts the bus to 0 and drops queued notes immediately.
+- **A unit-test mock `AudioContext` freezes wall time with its clock.** Its `currentTime` never moves, so
+  500 ms of real time (`CLOCK_STALL_MS`, `src/audio-context-health.ts`) reads as a stalled clock and every
+  later cue is dropped. Trap (2026-11-28, pre-push): synthesizing the car-hero buffer took 521 ms under the
+  full suite and `equip-confirmed` played nothing. `installAudio` (`tests/audio.test.js`) pins
+  `performance.now` unless the test already mocks it; a new mock harness does the same. Guard: *the mock
+  audio clock never reads as stalled on a slow runner*.
 - Music-note tests count only notes that were not cancelled (`stopped !== undefined` in the mock):
   `cutMusic()` stops queued notes without a time.
 - **Playwright counts as a user gesture.** `page.evaluate`, locator assertions and `locator.click()`'s

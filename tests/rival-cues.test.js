@@ -61,6 +61,7 @@ test('R9: race audio plays the rival cues; the synth plays them quieter than the
     resume() { return Promise.resolve(); } suspend() { return Promise.resolve(); } close() { return Promise.resolve(); }
   };
   t.after(() => { delete globalThis.AudioContext; });
+  t.mock.method(performance, 'now', () => 0); // the frozen mock clock must not read as stalled on a loaded runner
   const sound = createSound();
   t.after(() => sound.dispose());
   sound.setEnabled(true);
