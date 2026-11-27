@@ -190,6 +190,40 @@ export function setRivalQuality(car, quality) {
     wheel.children[0].geometry = high ? detailedTire : lowTire;
     wheel.children[1].geometry = low ? lowRim : rim;
   }
+  car.userData.wheelDraws?.forEach((draw, k) => { draw.geometry = wheels[0].children[k].geometry; draw.boundingSphere = null; });
+}
+
+// Each rival's four tyres and four rims draw as two instanced meshes (48 -> 12 draws for six rivals). They keep the
+// car's own materials, so three's opaque sort (by material.id) is unchanged. The wheel meshes stay in the graph as
+// the pose and the measured shape (hull, airflow profile) but sit on no layer, so no camera draws them.
+// Call after every rival exists: a rival's Object3D id is its flame flicker phase (rival-drive-vfx.ts).
+export function instanceRivalWheels(car) {
+  const { wheels } = car.userData;
+  car.userData.wheelDraws = [0, 1].map(k => {
+    const source = wheels[0].children[k];
+    const draw = new THREE.InstancedMesh(source.geometry, source.material, wheels.length);
+    draw.name = k ? 'Rival rims' : 'Rival tyres';
+    draw.userData.drawProxy = true; // shape measurements read the wheel meshes, not this
+    for (const wheel of wheels) wheel.children[k].layers.disableAll();
+    car.add(draw);
+    return draw;
+  });
+  syncRivalWheels(car);
+}
+
+const local = new THREE.Matrix4();
+/** Copies the posed wheels (steer, fold-out, rim spin) into the instances; world.js calls it after posing them. */
+export function syncRivalWheels(car) {
+  const { wheels, wheelDraws } = car.userData;
+  wheels.forEach((wheel, i) => {
+    wheel.updateMatrix();
+    wheelDraws.forEach((draw, k) => {
+      const part = wheel.children[k];
+      part.updateMatrix();
+      draw.setMatrixAt(i, local.multiplyMatrices(wheel.matrix, part.matrix));
+    });
+  });
+  for (const draw of wheelDraws) draw.instanceMatrix.needsUpdate = true;
 }
 
 export function disposeRivalLods(car) {
@@ -199,4 +233,5 @@ export function disposeRivalLods(car) {
     lowGraphics, highGraphics, lowTire, detailedTire, lowRim, rim]);
   car.traverse(part => geometries.delete(part.geometry));
   for (const geometry of geometries) geometry.dispose();
+  car.userData.wheelDraws?.forEach(draw => draw.dispose());
 }

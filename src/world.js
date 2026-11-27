@@ -61,7 +61,7 @@ import { createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
 import { createRampPool, drawRamps } from './ramp-view.ts'; import { createHazardRenderer } from './hazard-render.ts';
 import { createWorldGarageModel } from './garage-model.ts';
-import { createGhostPhase } from './grace-fade.ts'; import { createRivalFleet } from './rival-fleet.js';
+import { createGhostPhase } from './grace-fade.ts'; import { createRivalFleet } from './rival-fleet.js'; import { syncRivalWheels } from './rival-car-kit.js';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
 const box = new THREE.BoxGeometry(1, 1, 1);
@@ -405,7 +405,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
       wheel.rotation.y = wheel.position.z < 0 ? -(pose.steering || 0) * 0.3 : 0;
       if (wheel.children[2]) wheel.children[2].rotation.x -= pose.speed * dt / 0.44;
       else if (mesh.userData.rivalDetail) wheel.children[1].rotateY(pose.speed * dt / 0.44);
-    });
+    }); if (mesh.userData.wheelDraws) syncRivalWheels(mesh);
   }
   return {
     deepPerf,
