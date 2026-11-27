@@ -45,8 +45,8 @@ runtime asset paths, then run:
 ```sh
 python3 -m pip install Pillow
 python3 scripts/package-garage-authored-gifs.py --sheets <approved-sprite-sheet-directory> --apply
-npm test
-npm run build
+pnpm test
+pnpm run build
 make verify
 ```
 
@@ -67,7 +67,7 @@ fails if any of them regains a dark matte rim. Always verify and review all outp
 3. Verify pixel bounds, identical canvas sizes, transparency, global palette, frame count, durations, loop and file size; compare 6 evenly spaced frames and first/last for smoothness, identity, physical part movement and no clipping. **Tests cannot substitute for human visual review.**
 4. In `public/feature-assets/garage-animated/manifest.json`, preserve each existing `name`, `category`, `source`, `file`, `width`, `height`; update actual `size`, `frames`, `fps=20`, and set `profile` to `gpt-authored` **only after** its authentic frames have been generated and checked. No false `gpt-authored` entries.
 5. When *all* 25 replacement GIFs pass, remove obsolete `scripts/generate-garage-gifs.py`, `tests/test_garage_gif_motion.py` and `.github/workflows/garage-animated-gifs.yml` together to prevent GitHub Actions rewriting manually authored assets. In `tests/garage-animated-artwork.test.js`, only retire the legacy test that reads the deleted script; preserve and strengthen all remaining behavior/artwork tests. Until then **keep old files and generator**. This is an explicit transition exception, not permission to weaken CI.
-6. Run `npm test`, `npm run build`, `make verify`, image contract checks, real desktop/mobile Gallery screenshot reviews and exact-HEAD GitHub Actions. Record successes and blockers separately in `TODO.md` with source SHA, 6-frame contact sheets and per-GIF file size/frame counts.
+6. Run `pnpm test`, `pnpm run build`, `make verify`, image contract checks, real desktop/mobile Gallery screenshot reviews and exact-HEAD GitHub Actions. Record successes and blockers separately in `TODO.md` with source SHA, 6-frame contact sheets and per-GIF file size/frame counts.
 7. Commit/push only to the designated working feature branch. Never merge, open a PR, deploy, force-push or alter source reference art without explicit authorization.
 
 ## Reusable item brief template

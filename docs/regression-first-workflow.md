@@ -3,8 +3,8 @@
 **Scope:** All future gameplay, track, physics, rendering, UI, controls and race-flow changes.
 This is the working procedure referenced by `CLAUDE.md` and `AGENTS.md`. Apply the
 more specific rules in `.claude/rules/` as well. Keep the change on the current
-feature branch; **do not create a PR, merge into main, tag or deploy without an
-explicit user request**.
+feature branch; **do not create a PR, merge into `develop` or `main`, tag or deploy
+without an explicit user request**.
 
 ## 1. Identify the real failure (before editing)
 
@@ -12,7 +12,7 @@ explicit user request**.
   world renderer → UI event handling. Search all callers and sibling tracks before
   adding an exception. Prefer a single shared root-cause fix over track-specific
   offsets, cosmetic smoothing, z-index escalation without hit testing or retries.
-- Check the branch against current `origin/main` before implementation and again
+- Check the branch against current `origin/develop` before implementation and again
   before a requested merge. Integrate upstream changes and resolve conflicts without
   dropping either side's completed features.
 - Record the user-visible repro, expected behavior, affected tracks/devices and a
@@ -79,14 +79,14 @@ state the specific blocker and leave the acceptance item unchecked.
 - Push to the feature branch; inspect **the workflow for its current HEAD SHA**.
   CI runs unit, browser shards, cloud-save and the dedicated World Tour long-run
   suite. Any failed, cancelled, skipped-required or still-running job is not green.
-- Confirm no behind commits from `main`, resolve any conflicts, and repeat the
+- Confirm no behind commits from `develop`, resolve any conflicts, and repeat the
   entire gate on the resulting merge commit. A past SHA's green CI is not evidence
   for a new SHA.
 - Provide a summary: root cause, changed shared code, tracks checked, RED/GREEN
   evidence, build and CI URL/SHA, real-game images, and remaining uncertainty.
 - **Only when all required automated checks and manual evidence pass** may the
-  work be marked merge-ready. Merge to `main` **only upon the user's explicit
-  authorization**. Do not bypass red gates to tag or deploy.
+  work be marked merge-ready. Merge into `develop` (and `develop` into `main`) **only
+  upon the user's explicit authorization**. Do not bypass red gates to tag or deploy.
 
 ## Practical distinction
 

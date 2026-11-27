@@ -1,5 +1,5 @@
 import { advanceCountdown } from './frame-pacing.ts';
-import { stepPlayerDrift } from './player-drift.ts';
+import { stepPlayerDrift } from './player-drift.ts'; import { blockNeonPortal, onNeonRoof, overNeonRoof, supportNeonRoof } from './neon-roof.ts';
 export { startRace } from './frame-pacing.ts';
 import { assistSteer, meetRail, roadDrift } from './corner-force.ts';
 import { prepareEndless, streamEndless } from './endless-highway.ts';
@@ -263,7 +263,7 @@ export function stepRace(race, input, dt) {
   const previousScore = car.score;
   if (race.config.activeItems || race.config.bonusGates) tickItemCooldown(car, dt);
   const section = race.sections.find(s => car.distance >= s.from && car.distance < s.to);
-  car.section = section?.type ?? null;
+  car.section = section?.type ?? null; const grounded = car.altitude === 0 || onNeonRoof(race.trackId, car);
   car.inShortcut = car.section === 'shortcut' && Math.abs(car.x - section.x) < SHORTCUT_HALF_WIDTH &&
     Math.abs(car.altitude - section.altitude) < SHORTCUT_TOLERANCE;
   const brake = input.brake === true;
@@ -273,7 +273,7 @@ export function stepRace(race, input, dt) {
   const steerSign = Math.sign(steer);
   if (car.trick) car.trick.done = (car.trick.time += dt) >= TRICK_ROLL_TIME;
   if (steerSign !== 0 && steerSign !== car.steerSign) { // a fresh press
-    if (car.altitude > 0 && !car.trick && car.flick?.dir === -steerSign && race.elapsed - car.flick.time <= TRICK_FLICK_WINDOW) {
+    if (!grounded && !car.trick && car.flick?.dir === -steerSign && race.elapsed - car.flick.time <= TRICK_FLICK_WINDOW) {
       car.trick = { dir: steerSign, time: 0, done: false };
     }
     car.flick = { dir: steerSign, time: race.elapsed };
@@ -297,7 +297,7 @@ export function stepRace(race, input, dt) {
       Math.abs((other.altitude || 0) - car.altitude) < SLIPSTREAM_ALTITUDE;
   };
   if (stepSlipstream(slip, race.traffic.some(drafts) || race.rivals.some(drafts), dt)) addNitro(car, SLIPSTREAM_NITRO);
-  const driftNitro = stepPlayerDrift(car, brake, steer, dt, race.elapsed);
+  const driftNitro = stepPlayerDrift(car, brake, steer, dt, race.elapsed, grounded);
   if (driftNitro > 0) addNitro(car, driftNitro);
   // A one-time, on-road tunnel reward. Track it by the authored section start,
   // not a frame counter: pausing, braking or standing inside cannot farm charge.
@@ -348,7 +348,7 @@ export function stepRace(race, input, dt) {
     car.verticalSpeed = Math.min(7, car.verticalSpeed + 19 * dt);
     car.fuel = Math.max(0, car.fuel - (car.inShortcut ? 0 : FLY_DRAIN) * dt); // the corridor carries the car
     if (car.fuel === 0) { car.exhausted = true; car.fuelOuts++; } // thrusting needs !exhausted, so this counts each run-out once
-  } else if (car.altitude > 0) {
+  } else if (!grounded) {
     car.verticalSpeed -= (fly ? 11 : 7) * (car.section === 'low-gravity' ? 0.4 : 1) * dt; // releasing FLY glides; themed low gravity floats
     if (!fly && !boost) car.fuel = Math.min(100, car.fuel + GLIDE_FUEL_REGEN * dt);
   } else if (!flyInput && !boost) {
@@ -363,15 +363,15 @@ export function stepRace(race, input, dt) {
     car.verticalSpeed = Math.max(car.verticalSpeed, launchImpulse(car.speed));
   }
   car.altitude = clamp(car.altitude + car.verticalSpeed * dt, 0, 12);
-  const roofHit = car.section === 'tunnel' && car.altitude + CAR_HEIGHT > TUNNEL_CEILING;
+  const roofHit = car.section === 'tunnel' && !overNeonRoof(race.trackId, car, previousAltitude) && car.altitude + CAR_HEIGHT > TUNNEL_CEILING; // also Neon's portal face; its roof carries cars above
   if (roofHit) {
     car.altitude = TUNNEL_CEILING - CAR_HEIGHT;
     car.verticalSpeed = Math.min(0, car.verticalSpeed);
     car.trick = null;
   }
-  if (car.altitude > 0) car.drift = null; // taking off loses the drift build-up
+  if (car.altitude > 0 && !onNeonRoof(race.trackId, car)) car.drift = null; // taking off loses the drift build-up
   const previousDistance = car.distance, previousContacts = car.collisions + car.falls;
-  car.distance += car.speed * dt;
+  car.distance += car.speed * dt; const portalHit = blockNeonPortal(race.trackId, car, previousDistance), roofLanded = supportNeonRoof(race.trackId, car, previousAltitude);
   const skyGap = race.trackId === 'spiral' && skyJumpGap(car.distance, !!race.endless);
   const gapNow = race.course ? stepCoursePlayer(race, dt, contact) :
     skyGap || (race.trackId !== 'spiral' && race.sections.find(s => s.type === 'gap' && car.distance >= s.from && car.distance < s.to));
@@ -385,7 +385,7 @@ export function stepRace(race, input, dt) {
     if (car.recovery) car.recovery.assisted = plan.assisted;
   }
   if (!car.recovery) {
-    if (previousAltitude > 0 && car.altitude === 0) {
+    if (!grounded && (car.altitude === 0 || roofLanded)) {
       const chain = earnsAirChain(car, DRIFT_MIN_SPEED) && race.modifier !== 'no-flight';
       car.landing = { speed: Math.abs(car.verticalSpeed), time: race.elapsed, distance: previousDistance, x: car.x, chain };
       if (chain) grantMiniBoost(car, 1.2, race.elapsed);
@@ -398,14 +398,14 @@ export function stepRace(race, input, dt) {
       }
       car.trick = null;
     }
-    if (car.altitude === 0 || car.altitude === 12) car.verticalSpeed = 0;
+    if (car.altitude === 0 || car.altitude === 12 || roofLanded) car.verticalSpeed = 0;
     stepSpan(car, section, race.elapsed, GAP_SLOWDOWN);
     if (!car.recovery) stepDeck(car, section, previousAltitude, CAR_HEIGHT);
   }
 
   stepRaceWorld(race, dt);
   if (car.recovery) return finishRecoveryFrame(race, dt);
-  resolvePlayerContacts(race, previousDistance, previousX, lateralPosition, roofHit, section, nitro);
+  resolvePlayerContacts(race, previousDistance, previousX, lateralPosition, roofHit || portalHit, section, nitro);
   for (const traffic of race.traffic) {
     const gap = traffic.distance - traffic.speed * dt - previousDistance;
     const clearance = Math.abs(traffic.x - car.x);
@@ -436,7 +436,7 @@ export function stepRace(race, input, dt) {
     car.score += Math.floor(car.cleanDistance / 500) * 100;
     car.cleanDistance %= 500;
   }
-  if (car.altitude > 0 && car.speed >= 18) car.score += dt * 10;
+  if (car.altitude > 0 && !onNeonRoof(race.trackId, car) && car.speed >= 18) car.score += dt * 10;
   if (race.checkpoint) {
     car.score += stepCheckpointRush(race.checkpoint, previousDistance, car, dt);
   }

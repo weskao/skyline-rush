@@ -2,6 +2,7 @@
 // AUTO still steers a car back off a rail it touched.
 import { CROSSWIND_SPEED, ROAD_LIMIT } from './game.js'; // read only inside functions, so an import cycle cannot hit the TDZ
 import { legacyClassicRoad } from './classic-road-routes.ts';
+import { onNeonRoof } from './neon-roof.ts';
 import type { CourseGraph } from './course-graph.ts';
 import type { CourseRuntime } from './course-race.ts';
 import { routeLength, sampleRoute } from './course-route-frame.ts';
@@ -74,7 +75,7 @@ const knocked = (race: ForceRace, car: ForceCar): boolean => car.cooldown > 0 &&
 /** The car's corner push in m/s right now, without crosswind: test bots read it to lean into a bend. */
 export function cornerRate(race: ForceRace, car: ForceCar): number {
   if (car.speed <= PUSH_FROM || knocked(race, car) || car.span || car.inShortcut || race.endless?.practice) return 0;
-  return groundRate(race, car) * (car.altitude >= .1 ? AIR_SHARE : 1);
+  return groundRate(race, car) * (car.altitude >= .1 && !onNeonRoof(race.trackId, car) ? AIR_SHARE : 1);
 }
 
 function groundRate(race: ForceRace, car: ForceCar): number {

@@ -542,8 +542,9 @@ test('every track can be finished', () => {
 });
 
 test('flying into a tunnel roof is barrier contact; driving or flying outside is safe', () => {
-  const tunnel = sectionOf('neon', 'tunnel');
-  const high = racingOn('neon');
+  const tunnel = sectionOf('aurora', 'tunnel');
+  const high = racingOn('aurora');
+  Object.assign(high, { rivals: [], props: [], hazards: [] });
   Object.assign(high.player, { distance: tunnel.from + 10, speed: 50, altitude: 6 });
   stepRace(high, {}, 1 / 60);
   assert.equal(high.player.collisions, 1);
@@ -551,12 +552,14 @@ test('flying into a tunnel roof is barrier contact; driving or flying outside is
   assert.ok(high.player.altitude < TUNNEL_CEILING);
   assert.ok(high.player.speed < 50 * 0.8);
 
-  const low = racingOn('neon');
+  const low = racingOn('aurora');
+  Object.assign(low, { rivals: [], props: [], hazards: [] });
   Object.assign(low.player, { distance: tunnel.from + 10, speed: 50, altitude: 1 });
   stepRace(low, {}, 1 / 60);
   assert.equal(low.player.collisions, 0);
 
-  const outside = racingOn('neon');
+  const outside = racingOn('aurora');
+  Object.assign(outside, { rivals: [], props: [], hazards: [] });
   Object.assign(outside.player, { distance: tunnel.from - 100, speed: 50, altitude: 6 });
   stepRace(outside, {}, 1 / 60);
   assert.equal(outside.player.collisions, 0);
@@ -1420,8 +1423,9 @@ test('air trick: vehicle contact, a tunnel roof hit and a gap fall cancel the ro
   assert.equal(crash.player.collisions, 1);
   assert.equal(crash.player.trick, null);
 
-  const tunnel = sectionOf('neon', 'tunnel');
-  const roof = airborne(6, 'neon');
+  const tunnel = sectionOf('aurora', 'tunnel');
+  const roof = airborne(6, 'aurora');
+  Object.assign(roof, { props: [], hazards: [] });
   roof.player.distance = tunnel.from - 100;
   flick(roof);
   assert.ok(roof.player.trick);
@@ -1830,4 +1834,34 @@ test('a rival with no room to avoid a Tokyo train crashes into it like the playe
   assert.ok(rival.speed < 70 * 0.5, 'the crash costs speed');
   assert.ok(rival.x <= train.left - 1.1, 'pushed out to the open road');
   assert.equal(rival.cooldown, 1.5);
+});
+
+test('Neon permits the full ordinary flight envelope through the first kilometre', () => {
+  for (const dt of [1 / 30, 1 / 60, 1 / 120]) for (const distance of [150, 330, 689, 690, 700, 800, 909, 910, 950]) {
+    const race = airborne(12, 'neon');
+    Object.assign(race, { props: [], hazards: [] });
+    Object.assign(race.player, { distance, x: 0, speed: 50, altitude: 12, verticalSpeed: 0 });
+    stepRace(race, { fly: true }, dt);
+    assert.equal(race.player.altitude, 12, `flight at ${distance} m, dt=${dt}`);
+    assert.equal(race.player.collisions, 0, `contact at ${distance} m, dt=${dt}`);
+  }
+});
+
+test('Neon still collides with solid scenery in the underpass', () => {
+  const race = airborne(0, 'neon');
+  Object.assign(race, { hazards: [], props: [{ from: 799, to: 801, left: 2, right: 5, bottom: 0, top: 3 }] });
+  Object.assign(race.player, { distance: 798, x: 3.5, speed: 50 });
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.player.impact?.kind, 'barrier');
+  assert.equal(race.player.collisions, 1);
+});
+
+
+test('Neon retains ordinary roof collision for a tunnel outside the first kilometre', () => {
+  const race = airborne(6, 'neon');
+  Object.assign(race, { props: [], hazards: [], traffic: [], sections: [...race.sections, { from: 1200, to: 1400, type: 'tunnel' }].sort((a, b) => a.from - b.from) });
+  Object.assign(race.player, { distance: 1250, x: 0, speed: 50 });
+  stepRace(race, { fly: true }, 1 / 60);
+  assert.ok(race.player.altitude < TUNNEL_CEILING);
+  assert.equal(race.player.impact?.kind, 'barrier');
 });

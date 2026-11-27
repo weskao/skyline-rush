@@ -12,7 +12,7 @@ paths:
 # Home-screen layout gate
 
 A home-screen change (`src/App.vue`, `src/main.js`, `src/style.css`, `src/locales/`, `index.html`)
-→ `npm run test:layout` before pushing; the `.githooks/pre-push` hook runs it on such pushes and
+→ `pnpm run test:layout` before pushing; the `.githooks/pre-push` hook runs it on such pushes and
 blocks a red result (never bypass it with `SKIP_LAYOUT_GATE=1` to get a fix out — CI on `main`
 gates every release).
 

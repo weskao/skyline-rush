@@ -28,7 +28,7 @@ Mechanism (keep every link intact):
 - The unlocked config selects the full local Garage catalog, the in-memory selection store
   and the Store equip button through Vite. Standard and production builds resolve the normal
   package imports, even when the public trial is enabled.
-- `npm run build` runs `scripts/assert-production-locked.mjs` against `dist/`.
+- `pnpm run build` runs `scripts/assert-production-locked.mjs` against `dist/`.
 
 Forbidden replacements: runtime `if (dev)`, URL/query params, `import.meta.env` flags, console
 commands, any shipped toggle, exposing the unlocked config via a public preview build.

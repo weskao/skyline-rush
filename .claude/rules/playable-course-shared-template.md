@@ -231,7 +231,7 @@ reuse or transpose another course's loop.
   `tests/track-swipe-browser.spec.js`, `tests/garage-home-pose-browser.spec.js`,
   `tests/garage-studio-browser.spec.js`, `tests/airflow-wake-browser.spec.js`.
 - Follow test-first RED → minimal GREEN → refactor; run focused tests,
-  `npm test`, `npm run build`, `make verify`, then check the latest
+  `pnpm test`, `pnpm run build`, `make verify`, then check the latest
   **exact-HEAD FULL CI** (Unit/Typecheck/Build, Cloud-save, every
   Browser/World Tour shard, quality-gate). Inspect real desktop/mobile
   WebGL screenshots for car/road contact, cockpit silhouette, takeoff/

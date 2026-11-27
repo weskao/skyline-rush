@@ -241,3 +241,43 @@ test('Neon High uses its rain-night lighting with the legacy URL', async ({ page
   await expect(page.locator('#world')).toHaveAttribute('aria-label', /Neon Downtown/);
   await expect.poll(() => skyStatus(page), { timeout: ciTimeout(40000) }).toEqual({ sky: 'nightRain:4096', env: 0.55, dome: true });
 });
+
+// The kits hide the procedural roof through its material, not the mesh: the car on the 7.2 m roof was drawn at the
+// fallback 4.5 m, inside the High rail deck (2026-11-27). Physics is 7.2 m on every tier; the drawn car meets the drawn roof.
+for (const [quality, drawnRoof] of [['high', 7.2], ['low', 4.5]]) test(`Neon ${quality} draws a car on the rail roof on top of the roof it shows`, async ({ gameplayPage: page }) => {
+  test.setTimeout(ciTimeout(150000));
+  await neon(page, quality);
+  if (quality === 'high') await expect.poll(() => kits(page), { timeout: ciTimeout(60000) }).toBe('attached attached');
+  await page.locator('#start-button').click();
+  await racing(page);
+  const drawn = await page.evaluate(async () => {
+    const { race } = window.gameplay;
+    Object.assign(race, { traffic: [], rivals: race.rivals.map(r => Object.assign(r, { distance: 3000 })) });
+    Object.assign(race.player, { distance: 800, x: 0, altitude: 7.2, verticalSpeed: 0, speed: 20, cooldown: 0 });
+    const end = race.elapsed + .3;
+    while (race.elapsed < end) await new Promise(requestAnimationFrame);
+    return { altitude: race.player.altitude, y: +window.gameScene.player.position.y.toFixed(2) };
+  });
+  expect(drawn).toEqual({ altitude: 7.2, y: drawnRoof });
+});
+
+// The exit rail bridge (girder face 894.2 m) closes the roof. Driving into it was drawn as a climb onto the
+// bridge while physics drove on (2026-11-27); now it is a hit that holds the car, drawn where it is, on every tier.
+for (const [quality, drawnRoof] of [['high', 7.2], ['low', 4.5]]) test(`Neon ${quality} stops a roof car at the exit rail bridge`, async ({ gameplayPage: page }) => {
+  test.setTimeout(ciTimeout(150000));
+  await neon(page, quality);
+  if (quality === 'high') await expect.poll(() => kits(page), { timeout: ciTimeout(60000) }).toBe('attached attached');
+  await page.locator('#start-button').click();
+  await racing(page);
+  const held = await page.evaluate(async () => {
+    const { race } = window.gameplay;
+    Object.assign(race, { traffic: [], rivals: race.rivals.map(r => Object.assign(r, { distance: 3000 })) });
+    Object.assign(race.player, { distance: 884, x: 0, altitude: 7.2, verticalSpeed: 0, speed: 30, cooldown: 0 });
+    const collisions = race.player.collisions, end = race.elapsed + 1;
+    while (race.elapsed < end) await new Promise(requestAnimationFrame);
+    const { distance, altitude } = race.player;
+    return { held: distance < 894.2, altitude, hits: race.player.collisions - collisions, y: +window.gameScene.player.position.y.toFixed(2) };
+  });
+  await page.screenshot({ path: test.info().outputPath(`neon-roof-end-${quality}.png`) });
+  expect(held).toEqual({ held: true, altitude: 7.2, hits: 1, y: drawnRoof });
+});

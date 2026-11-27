@@ -26,8 +26,8 @@ interface DriftPlayer {
 }
 
 /** Step the drift and return newly earned NITRO. Only releasing the input pays the mini boost. */
-export function stepPlayerDrift(car: DriftPlayer, brake: boolean, steer: number, dt: number, elapsed: number): number {
-  const canDrift = brake && car.altitude === 0 && car.speed >= DRIFT_MIN_SPEED;
+export function stepPlayerDrift(car: DriftPlayer, brake: boolean, steer: number, dt: number, elapsed: number, grounded = car.altitude === 0): number {
+  const canDrift = brake && grounded && car.speed >= DRIFT_MIN_SPEED;
   const dir = Math.sign(steer);
   if (canDrift && dir !== 0 && car.railContactSide !== dir && (!car.driftHold || car.drift)) {
     car.driftHold ??= { reward: null, brakeBlend: 0 };
