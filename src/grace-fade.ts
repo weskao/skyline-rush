@@ -13,17 +13,6 @@ export function graceOpacity(car: PhaseCar, calm: boolean): number {
   return THREE.MathUtils.lerp(1, OPACITY, THREE.MathUtils.smoothstep(edge, 0, EDGE_TIME));
 }
 
-/**
- * Fading cars keep `transparent` on from creation (blending compiles at warmup). three draws a transparent DoubleSide
- * material twice per frame with a program re-lookup between the passes; at full opacity that is wasted work. The flag
- * is read at render time only, so flipping it never recompiles.
- */
-export function drawOnceWhenSolid(material: THREE.Material): void {
-  // A map or alphaMap can make alpha vary per pixel, so only plain materials qualify.
-  const textured = 'map' in material && !!material.map || 'alphaMap' in material && !!material.alphaMap;
-  material.forceSinglePass = material.opacity >= 1 && !textured;
-}
-
 /** Capture only the car's own materials, before VFX are attached. GLBs follow the body opacity via garage-model-rig. */
 export function createGraceFade(car: THREE.Object3D): (opacity: number) => void {
   const parts = new Map<THREE.Material, number>();
@@ -31,14 +20,14 @@ export function createGraceFade(car: THREE.Object3D): (opacity: number) => void 
     for (const m of [(object as THREE.Mesh).material ?? []].flat()) {
       // Compile blending at scene warmup so an item cannot cause a black frame mid-race.
       if (!m.transparent) { m.transparent = true; m.needsUpdate = true; }
-      if (!(m instanceof THREE.ShaderMaterial) && object.name !== 'Rear LED core') { parts.set(m, m.opacity); drawOnceWhenSolid(m); }
+      if (!(m instanceof THREE.ShaderMaterial) && object.name !== 'Rear LED core') parts.set(m, m.opacity);
     }
   });
   let last = 1;
   return opacity => {
     if (opacity === last) return;
     last = opacity;
-    for (const [m, base] of parts) { m.opacity = base * opacity; drawOnceWhenSolid(m); }
+    for (const [m, base] of parts) m.opacity = base * opacity;
   };
 }
 
