@@ -125,6 +125,11 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   for every asset that joins before GO (`warmupPending`, `src/world.js`). `#item-status` reads EMPTY earlier, so
   item-feedback read 4 programs, then 89, and failed "no shader compiled…" on desktop (develop CI 45885340403).
   Enforced by `tests/browser-timeouts.test.js` (*program-count baseline is read once the race is RACING*).
+- **A car parked during RACING keeps driving while AUTO is on.** AUTO (`src/assist-ui.ts`) starts on and throttles
+  every RACING step, so `speed: 0` lasts one frame. Once item-feedback waited for RACING, its car parked 120 m before a
+  ring rolled into it (or to the Free Drive finish) during the beam wait: 57 of 64 local repeats passed. A spec that
+  parks the car and then waits turns AUTO off before GO (`F2`, then `#assist-button` `aria-pressed="false"`), or
+  re-pins the car every frame. Guard: *item-feedback turns AUTO off before GO* in `tests/browser-timeouts.test.js`.
 - **Rival `i` is `window.gameScene.rivals[i]`, never the i-th scene child.** `createRivalFleet`
   (`src/rival-fleet.js`) keeps one pooled car per chassis in scene order and deals each race a shuffled
   lineup, so `scene.children.filter(o => o.userData.driveCue)[1]` was another rival's car and the NITRO

@@ -6,6 +6,9 @@ import { expect } from '@playwright/test';
 
 // ITEM-12 feedback and 12B acceptance (misses, blocked storage, touch layout) in the real game.
 const startWithItems = async (page, { blockedStorage = false } = {}) => {
+  // AUTO (on by default) throttles from GO: a car parked for the beams rolled into the ring or to the Free Drive finish.
+  await page.keyboard.press('F2');
+  await expect(page.locator('#assist-button')).toHaveAttribute('aria-pressed', 'false');
   await clickLobbyOption(page, 'button[data-race-mode="free"]');
   await page.locator('#race-mode-rules > summary').click();
   await page.locator('[data-race-rule="itemRules"]').evaluate(node => { node.value = 'active'; node.dispatchEvent(new Event('change', { bubbles: true })); });
@@ -35,6 +38,7 @@ for (const [name, viewport, hasTouch] of [
     await page.waitForFunction(() => window.gameScene.scene.getObjectByName('Item beams').children.some(beam => beam.visible));
     await page.screenshot({ path: `test-results/item-feedback-beam-${name}.png` });
     expect(await programs(page), 'no shader compiled for the beams mid-race').toBe(before);
+    expect(await page.evaluate(() => [window.gameplay.race.player.speed, window.gameplay.race.player.heldItem]), 'the parked car stayed parked').toEqual([0, null]);
     // Miss: pass the ring well outside its radius, toward the road centre: rings use every lane, and an outer-lane
     // ring's far side is past ROAD_LIMIT, which would clamp the car back into the ring.
     await page.evaluate(() => {

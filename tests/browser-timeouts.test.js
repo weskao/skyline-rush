@@ -532,6 +532,17 @@ test('a mid-race program-count baseline is read once the race is RACING', () => 
   assert.deepEqual(offenders, [], 'Wait for data-phase="racing" before the program baseline (.claude/rules/browser-test-stability.md)');
 });
 
+// AUTO is on by default and throttles every RACING step, so once item-feedback waited for RACING (above) its car parked
+// 120 m before a ring drove into it, or to the Free Drive finish, during the beam wait: 57 of 64 local repeats passed.
+test('item-feedback turns AUTO off before GO, so its parked car stays parked', () => {
+  const source = readFileSync(new URL('item-feedback-browser.spec.js', import.meta.url), 'utf8');
+  const helper = /const startWithItems = async[\s\S]*?\n};/.exec(source)?.[0] ?? '';
+  const off = helper.indexOf("keyboard.press('F2')"), go = helper.indexOf("'#start-button'");
+  assert.ok(go > 0, 'startWithItems clicks #start-button');
+  assert.ok(off >= 0 && off < go && helper.includes("toHaveAttribute('aria-pressed', 'false')"),
+    'Turn AUTO off (F2, aria-pressed=false) before #start-button (.claude/rules/browser-test-stability.md)');
+});
+
 // A held model response on the gameplay (Vite dev) server must not race the loader's 15 s deadline on a slow runner.
 test('a gameplay-server spec that holds a model GLB widens the loader deadline (widenModelDeadline)', () => {
   const offenders = FILES.filter(file => file.endsWith('browser.spec.js')).flatMap(file => {
