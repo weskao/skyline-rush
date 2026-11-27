@@ -15,7 +15,7 @@ const inDir = resolve(process.argv[2] ?? ''), outDir = resolve(process.argv[3] ?
 if (!process.argv[2]) throw Error('Usage: build-report.mjs <in-dir> [out-dir]');
 const LABELS = ['A', 'B', 'C'];
 const BUILDS = { A: { sha: 'd9c144ba39546378cdae32f76ae305fee1f9305f', name: 'base d9c144ba' },
-  B: { sha: '32b82da7', name: 'origin/develop 32b82da7' }, C: { sha: '1fcfa98a', name: 'integration 1fcfa98a' } };
+  B: { sha: '32b82da7', name: 'origin/develop 32b82da7' }, C: { sha: '8e5f4cf6', name: 'integration 8e5f4cf6' } };
 const read = path => JSON.parse(readFileSync(path, 'utf8'));
 const runFiles = (dir, prefix = '') => existsSync(dir) ? readdirSync(dir).filter(f => f.startsWith(prefix) && /-r\d+\.json$/.test(f)).sort() : [];
 

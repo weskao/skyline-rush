@@ -27,12 +27,12 @@
         "comparable": true,
         "pixels": 740610,
         "maxDelta": 1,
-        "changed": 48236,
+        "changed": 81079,
         "over1": 0,
         "over8": 0,
         "over8Pct": 0,
-        "mae": 0.022235274525953832,
-        "psnr": 64.66037865069426
+        "mae": 0.038103725307516774,
+        "psnr": 62.32112923213098
       },
       "CvsC": {
         "comparable": true,
@@ -113,12 +113,12 @@
         "comparable": true,
         "pixels": 740610,
         "maxDelta": 1,
-        "changed": 23894,
+        "changed": 46763,
         "over1": 0,
         "over8": 0,
         "over8Pct": 0,
-        "mae": 0.010967085690624396,
-        "psnr": 67.72989124052545
+        "mae": 0.021730285395372282,
+        "psnr": 64.7601493068998
       },
       "CvsC": {
         "comparable": true,
@@ -156,12 +156,12 @@
         "comparable": true,
         "pixels": 740610,
         "maxDelta": 1,
-        "changed": 50698,
+        "changed": 68592,
         "over1": 0,
         "over8": 0,
         "over8Pct": 0,
-        "mae": 0.023423934324408258,
-        "psnr": 64.43420519154702
+        "mae": 0.031971392950855826,
+        "psnr": 63.08318802553945
       },
       "CvsC": {
         "comparable": true,
@@ -199,12 +199,12 @@
         "comparable": true,
         "pixels": 740610,
         "maxDelta": 1,
-        "changed": 28077,
+        "changed": 43025,
         "over1": 0,
         "over8": 0,
         "over8Pct": 0,
-        "mae": 0.012892075451317157,
-        "psnr": 67.0275752229671
+        "mae": 0.019943470022458963,
+        "psnr": 65.13279636155376
       },
       "CvsC": {
         "comparable": true,
@@ -243,12 +243,12 @@
         "comparable": true,
         "pixels": 740610,
         "maxDelta": 1,
-        "changed": 28079,
+        "changed": 43028,
         "over1": 0,
         "over8": 0,
         "over8Pct": 0,
-        "mae": 0.0128929756101952,
-        "psnr": 67.02727199763488
+        "mae": 0.019945270340215048,
+        "psnr": 65.13240433710747
       },
       "CvsC": {
         "comparable": true,
@@ -285,13 +285,13 @@
       "AvsC": {
         "comparable": true,
         "pixels": 740610,
-        "maxDelta": 65,
-        "changed": 55602,
-        "over1": 7150,
-        "over8": 3408,
-        "over8Pct": 0.4601612184550573,
-        "mae": 0.13598025051421575,
-        "psnr": 43.49795310019918
+        "maxDelta": 1,
+        "changed": 95675,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0.04521903115899956,
+        "psnr": 61.57759107741538
       },
       "CvsC": {
         "comparable": true,
@@ -329,12 +329,12 @@
         "comparable": true,
         "pixels": 740610,
         "maxDelta": 225,
-        "changed": 74533,
-        "over1": 22274,
-        "over8": 11300,
-        "over8Pct": 1.5257692982811466,
-        "mae": 0.5434376167393545,
-        "psnr": 32.45390004748046
+        "changed": 83315,
+        "over1": 14637,
+        "over8": 7412,
+        "over8Pct": 1.0007966406070672,
+        "mae": 0.4219445232083463,
+        "psnr": 32.85795895334146
       },
       "CvsC": {
         "comparable": true,
@@ -372,12 +372,12 @@
         "comparable": true,
         "pixels": 740610,
         "maxDelta": 229,
-        "changed": 77074,
-        "over1": 27294,
-        "over8": 16345,
-        "over8Pct": 2.2069645292394107,
-        "mae": 0.6987235747109365,
-        "psnr": 32.57482683097788
+        "changed": 100613,
+        "over1": 19666,
+        "over8": 12561,
+        "over8Pct": 1.6960343500627861,
+        "mae": 0.588397852220917,
+        "psnr": 32.97243705156434
       },
       "CvsC": {
         "comparable": true,
@@ -415,24 +415,24 @@
       "AvsC": {
         "comparable": true,
         "pixels": 740610,
-        "maxDelta": 83,
-        "changed": 44512,
-        "over1": 8269,
-        "over8": 4233,
-        "over8Pct": 0.5715558796127517,
-        "mae": 0.1808666729677788,
-        "psnr": 40.94025882199821
+        "maxDelta": 1,
+        "changed": 71943,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0.03366279148269669,
+        "psnr": 62.85930233920198
       },
       "CvsC": {
         "comparable": true,
         "pixels": 740610,
-        "maxDelta": 4,
-        "changed": 380,
-        "over1": 78,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
         "over8": 0,
         "over8Pct": 0,
-        "mae": 0.00039246927082630084,
-        "psnr": 80.44513595955188
+        "mae": 0,
+        "psnr": null
       },
       "errors": [],
       "webp": "m-race-neon-ultra.webp"
@@ -460,12 +460,12 @@
         "comparable": true,
         "pixels": 740610,
         "maxDelta": 219,
-        "changed": 254264,
-        "over1": 59702,
-        "over8": 29966,
-        "over8Pct": 4.04612414091087,
-        "mae": 0.854022134906811,
-        "psnr": 35.57191529705393
+        "changed": 272230,
+        "over1": 53864,
+        "over8": 26011,
+        "over8Pct": 3.5121048865124695,
+        "mae": 0.738150083489736,
+        "psnr": 36.57238085613062
       },
       "CvsC": {
         "comparable": true,
@@ -503,12 +503,12 @@
         "comparable": true,
         "pixels": 740610,
         "maxDelta": 62,
-        "changed": 33002,
-        "over1": 3733,
-        "over8": 2223,
-        "over8Pct": 0.3001579778830964,
-        "mae": 0.09383481184429052,
-        "psnr": 44.46178101460565
+        "changed": 28383,
+        "over1": 21,
+        "over8": 15,
+        "over8Pct": 0.0020253574755944425,
+        "mae": 0.013257539955802198,
+        "psnr": 64.82476295490227
       },
       "CvsC": {
         "comparable": true,
@@ -546,12 +546,12 @@
         "comparable": true,
         "pixels": 740610,
         "maxDelta": 1,
-        "changed": 46028,
+        "changed": 93365,
         "over1": 0,
         "over8": 0,
         "over8Pct": 0,
-        "mae": 0.02119154030686416,
-        "psnr": 64.86917836320413
+        "mae": 0.04401146802410626,
+        "psnr": 61.69514505957872
       },
       "CvsC": {
         "comparable": true,
@@ -589,23 +589,23 @@
         "comparable": true,
         "pixels": 1296000,
         "maxDelta": 7,
-        "changed": 86577,
+        "changed": 175287,
         "over1": 6,
         "over8": 0,
         "over8Pct": 0,
-        "mae": 0.02279912551440329,
-        "psnr": 64.54750819537296
+        "mae": 0.04728112139917696,
+        "psnr": 61.38194188434801
       },
       "CvsC": {
         "comparable": true,
         "pixels": 1296000,
-        "maxDelta": 7,
-        "changed": 21,
-        "over1": 6,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
         "over8": 0,
         "over8Pct": 0,
-        "mae": 0.0000154320987654321,
-        "psnr": 92.44444125026897
+        "mae": 0,
+        "psnr": null
       },
       "errors": [],
       "webp": "d-home-coast.webp"
@@ -632,12 +632,12 @@
         "comparable": true,
         "pixels": 1296000,
         "maxDelta": 1,
-        "changed": 76137,
+        "changed": 135321,
         "over1": 0,
         "over8": 0,
         "over8Pct": 0,
-        "mae": 0.02006198559670782,
-        "psnr": 65.10706446589384
+        "mae": 0.036299382716049385,
+        "psnr": 62.53181121101576
       },
       "CvsC": {
         "comparable": true,
@@ -676,12 +676,12 @@
         "comparable": true,
         "pixels": 1296000,
         "maxDelta": 1,
-        "changed": 51719,
+        "changed": 95865,
         "over1": 0,
         "over8": 0,
         "over8Pct": 0,
-        "mae": 0.013541409465020577,
-        "psnr": 66.81416490387087
+        "mae": 0.025502057613168726,
+        "psnr": 64.06505138316544
       },
       "CvsC": {
         "comparable": true,
@@ -719,12 +719,12 @@
         "comparable": true,
         "pixels": 1296000,
         "maxDelta": 229,
-        "changed": 131452,
-        "over1": 49579,
-        "over8": 28011,
-        "over8Pct": 2.1613425925925926,
-        "mae": 0.8046674382716049,
-        "psnr": 30.65571020163243
+        "changed": 152407,
+        "over1": 36173,
+        "over8": 22401,
+        "over8Pct": 1.7284722222222222,
+        "mae": 0.6877322530864197,
+        "psnr": 30.931134709185226
       },
       "CvsC": {
         "comparable": true,
@@ -763,12 +763,12 @@
         "comparable": true,
         "pixels": 1296000,
         "maxDelta": 208,
-        "changed": 252934,
-        "over1": 95843,
-        "over8": 43637,
-        "over8Pct": 3.3670524691358024,
-        "mae": 0.7467736625514403,
-        "psnr": 35.30363256956428
+        "changed": 282328,
+        "over1": 87998,
+        "over8": 38027,
+        "over8Pct": 2.934182098765432,
+        "mae": 0.6353119855967079,
+        "psnr": 36.30430839700702
       },
       "CvsC": {
         "comparable": true,
@@ -806,12 +806,12 @@
         "comparable": true,
         "pixels": 1296000,
         "maxDelta": 96,
-        "changed": 56331,
-        "over1": 3781,
-        "over8": 1166,
-        "over8Pct": 0.08996913580246914,
-        "mae": 0.041171296296296296,
-        "psnr": 49.59594965522663
+        "changed": 57631,
+        "over1": 94,
+        "over8": 53,
+        "over8Pct": 0.004089506172839506,
+        "mae": 0.01563991769547325,
+        "psnr": 63.73000926444465
       },
       "CvsC": {
         "comparable": true,
@@ -849,12 +849,12 @@
         "comparable": true,
         "pixels": 1296000,
         "maxDelta": 1,
-        "changed": 77919,
+        "changed": 160349,
         "over1": 0,
         "over8": 0,
         "over8Pct": 0,
-        "mae": 0.020483539094650206,
-        "psnr": 65.01675365766775
+        "mae": 0.043146604938271604,
+        "psnr": 61.78133732649425
       },
       "CvsC": {
         "comparable": true,
