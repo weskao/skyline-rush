@@ -51,8 +51,12 @@ Both are recorded with their tests in git history (`9772164e`, `966a5337`) and r
 
 ## Remaining options, with visual impact
 
-1. Restrict `forceSinglePass` to car materials with no map and no alpha map, then re-run the gate. Could stay pixel
-   identical; untried.
+1. ~~Restrict `forceSinglePass` to car materials with no map and no alpha map.~~ **Tried, rejected.** Gate against
+   integration head `35885c85` (shimmer + this change cherry-picked): same pixels as the unrestricted change (tokyo race
+   max 23, home coast 43, Photo tokyo 18 / 54, desktop home coast 35), 9 of 20 scenes above max 1. The roadster2 parts
+   carry no map or alpha map, so the restriction excluded nothing and taipei still drew every part once. The textured-alpha
+   hypothesis is wrong; the remaining suspect is equal-depth ties resolving in a different order. The 5-round matrix was
+   not run (gate failed). Reverted in `5b4ecb39`.
 2. Waive the gate for a few pixels in the car region (a visual change of at most 4 px in the tested frames). Needs the
    owner's decision.
 3. Twin material that keeps the draw order (needs the copy created before every other material, or a sort key that
