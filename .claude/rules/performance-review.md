@@ -154,6 +154,9 @@ Scene and streaming (`scene-streaming.md`):
 - Bake static same-material landmark meshes with `mergeStaticMeshes` (`src/world-tour-batching.ts`);
   its `canBatch` exclusions and `preserveRenderState` are the contract. Guard:
   `tests/world-tour-landmark-merge.test.js`.
+- A merge built before the cars must create no `Object3D`: pass `reuseSource` (`src/bridge-towers.ts`).
+  Rival flame flicker phase is `car.id * 1.7`, so 6 new merged meshes shifted every rival id and
+  failed 5 race scenes by up to 29. Guard: `tests/bridge-towers.test.js` (*creates no Object3D*).
 - Never pool, merge or re-material meshes (colour-only variants under one base material included) or
   change `renderOrder` to save draw calls unless nothing it draws lies within ~9 m of another draw's
   surface. Three sorts opaque draws by `material.id`; moving a draw flips which surface wins a 24-bit

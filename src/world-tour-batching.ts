@@ -146,7 +146,9 @@ export function poolStaticChunks(
 // world-space vertex set, materials and flags stay identical, so vertex-based
 // framing/inspection and raycasts see the same silhouette. Mirrored meshes are
 // skipped (baking a negative determinant would flip face winding).
-export function mergeStaticMeshes(root: THREE.Object3D, minimumMeshes = 2): number {
+// reuseSource: the first source mesh carries the merged geometry instead of a new Mesh, so no Object3D id
+// is consumed and objects created later (rival flame flicker phase = car.id * 1.7) keep their ids.
+export function mergeStaticMeshes(root: THREE.Object3D, minimumMeshes = 2, reuseSource = false): number {
   root.updateMatrixWorld(true);
   const inverse = root.matrixWorld.clone().invert(), local = new THREE.Matrix4();
   const groups = new Map<string, THREE.Mesh<THREE.BufferGeometry, THREE.Material>[]>();
@@ -165,13 +167,18 @@ export function mergeStaticMeshes(root: THREE.Object3D, minimumMeshes = 2): numb
     const geometry = mergeGeometries(baked);
     for (const part of baked) part.dispose();
     if (!geometry) continue; // Incompatible attribute sets stay as separate draws.
-    const merged = new THREE.Mesh(geometry, meshes[0].material);
+    const merged = reuseSource ? meshes[0] : new THREE.Mesh(geometry, meshes[0].material);
+    if (reuseSource) {
+      merged.removeFromParent();
+      merged.geometry = geometry; // the source's own geometry is left undisposed, like the other sources
+      merged.position.set(0, 0, 0); merged.quaternion.identity(); merged.scale.set(1, 1, 1);
+    }
     merged.name = 'static merged mesh';
     preserveRenderState(merged, meshes[0]);
     merged.userData.ownGeometry = true;
     merged.userData.mergedCount = meshes.length;
     root.add(merged);
-    for (const mesh of meshes) mesh.removeFromParent();
+    for (const mesh of meshes) if (mesh !== merged) mesh.removeFromParent();
     removed += meshes.length - 1;
   }
   return removed;

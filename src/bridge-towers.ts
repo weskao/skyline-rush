@@ -24,7 +24,7 @@ export function createBridgeTowers(scene: THREE.Scene): THREE.Group[] {
     }
     block(tower, steel, 0, 43, 0, 34, 1.7, 2.5);
     block(tower, trim, 0, 42.1, 1.3, 32, 0.08, 0.08);
-    mergeStaticMeshes(tower); // 55 steel + 3 trim parts -> 2 draws; only the whole group moves
+    mergeStaticMeshes(tower, 2, true); // 55 steel + 3 trim parts -> 2 draws; only the whole group moves
     scene.add(tower);
     return tower;
   });

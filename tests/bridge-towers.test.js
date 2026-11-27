@@ -64,3 +64,14 @@ test('the merged tower keeps the same local-space triangles per material', async
   const byType = map => Object.fromEntries([...map].map(([m, list]) => [m.type, list]));
   assert.deepEqual(byType(merged), byType(expected));
 });
+
+test('merging the towers creates no Object3D, so later ids (rival flame flicker phase) do not shift', () => {
+  const scene = new THREE.Scene();
+  const before = new THREE.Object3D().id;
+  const towers = createBridgeTowers(scene);
+  const after = new THREE.Object3D().id;
+  // Unmerged, each tower is its group plus every source part; mergedCount records the parts each draw replaced.
+  const authored = towers.reduce((n, tower) => n + 1 + tower.children
+    .reduce((sum, child) => sum + (child.userData.mergedCount ?? 1), 0), 0);
+  assert.equal(after - before - 1, authored);
+});
