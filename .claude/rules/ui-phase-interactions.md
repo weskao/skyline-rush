@@ -68,6 +68,10 @@ event propagation without proving the cause.
   synced. The Wave 3 receipt stays keyed to the same finished race and renders without
   settling again. Guards: `tests/result-cloud-status.test.js`,
   `tests/result-cloud-browser.spec.js` and `tests/cup-heat-flow-browser.spec.js`.
+- A `<dialog>`'s `close` event is a queued task that input events can overtake: Esc-Esc-Space ran the resume and
+  the Space keydown first, then the settings close handler cleared the held FLY and focused the gear (Space then
+  pressed it). A close handler that clears input or restores focus first checks the race has not resumed
+  (`src/controls-panels-ui.ts`). Guards: `tests/controls-panels-ui.test.js`, `tests/hud-focus-browser.spec.js`.
 - At 360 × 740 the result overlay must show rank, time, record, both demo credits and
   a tappable Next Track before scrolling. Compact the decorative badge and style summary
   before reducing space for controls. The portrait reward layout browser test also opens
