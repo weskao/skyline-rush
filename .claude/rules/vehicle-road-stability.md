@@ -84,7 +84,7 @@ Keep the arcade driving feel; do not replace it with a new physics engine.
   `DRIFT_LATERAL` x the steering rate on every road. Only hazards that push every car (crosswind
   sections) still act during a drift.
 
-## Corner push and AUTO's rail recovery (all tracks)
+## Corner push, straights and rail contact (all tracks)
 
 Owner brief, 2026-11-22: cornering needs real steering, with a forgiving assist. Owner, 2026-11-24:
 corners still passed themselves (the sharpest bend needed ≤ 31% lock), so the push doubled, Mario Kart-like.
@@ -108,26 +108,34 @@ corners still passed themselves (the sharpest bend needed ≤ 31% lock), so the 
   push did. A heading accumulates only from bends; straights keep the arcade lane change (no counter-steer).
   The rail clamp (`meetRail`), a knock's grace, a drift and a road recovery reset it to 0. The drawn car yaws by
   it (`smoothDriftYaw`). Full real-car heading physics on straights is deferred (`TODO.md`).
+- **Released on a straight, the car goes dead straight** (owner, 2026-11-28, case A). Road flatter than
+  `STRAIGHT_TURN` (2e-4 rad/m, a 5 km radius, judged at the car's speed and air share, so a gentle bend still
+  carries a flying car at half strength) pushes nothing while steering is 0, and
+  any heading left from a bend turns back as at full counter-steer, so the slide stops within a fraction of a
+  second. The cause it removes: Tokyo's opening 1 km and long stretches of Stormline and Spiral push .05–.2 m/s;
+  a heading that only ever grows from that slid a released car up to 13 m into the rail on a visual straight.
+  Only crosswind or a contact moves a released car there. Steering keeps the full corner force (counter-steer;
+  a drift is the tight line). Guards: the Tokyo near-straight and every-track straight tests.
 - **Rail hits are judged by impact angle** (`resolveRail`): sideways over forward travel in the contact step,
-  whatever carried the car there. Below `SCRAPE_RATIO` (about 6°) with less than .9 lock it scrapes; steeper is
-  a hard hit (75% speed kept). A released car in a sharp bend arrives nose-first and hits hard.
+  whatever carried the car there. Below `SCRAPE_RATIO` (about 6°) with less than .9 lock it scrapes (92% speed
+  kept, placed 1 m inside the rail); steeper is a hard hit (75% kept, `knock` places it about 1 m inside at
+  88 m/s). Both arm `railContactSide`, so one contact is one penalty until the car pulls 1.2 m clear; the nose
+  lines up with the road and the car holds that lane. A released car in a sharp bend arrives nose-first and hits hard.
 - Half strength in the air (`AIR_SHARE`, owner 2026-11-25: taking off must not skip a corner). Off while
   drifting, in tutorial practice, on a Frostbite span, inside a shortcut corridor,
   and during a knock's 1.5 s grace, so a car is never pressed back into what it hit (clamp -> shove).
-- AUTO (`laneAssist`) never softens a corner (owner, 2026-11-25): a hands-free car runs on into the
-  rail and hits it. Only after a move really reached the rail (`meetRail`, below the 1.3 m rail
-  height) does `assistSteer` steer back toward the centre at .85 lock on the normal steering ramp,
-  and it lets go 1.5 m from the centre, so the corner carries the car out again. .85 beats the 7 m/s
-  force cap (7.65 m/s) yet stays under the .9 lock that makes a rail touch a hard hit. Any player
-  steering cancels it; AUTO off never steers. It writes `autoRecover` only while AUTO is on, so
-  non-AUTO replays keep their state. AUTO keeps auto-throttle.
+- **AUTO (`laneAssist`) is an automatic throttle only** (owner, 2026-11-28). It never holds a lane, softens
+  a corner or steers off a rail: a released car in a bend runs into the outside rail AUTO on or off. The
+  2026-11-25 grounded lane hold (ad03ac13) and the rail recovery that steered back to 1.5 m from the centre
+  were removed: the recovery threw the car out at the next bend (case B). `stepRace` must not read
+  `laneAssist` for steering. Guard: the AUTO-vs-off identical-path test in `tests/corner-force.test.js`.
 - Test bots that steer a lane read `cornerRate(race, car)` and the nose's slide `speed * sin(heading)` to lean
   into the bend (the shared `botInput` in `scripts/pickup-economy.mjs`), like a player. Bots that pin a lane
   also set `heading = 0`, or the nose keeps turning under the pinned car.
 - Forks read the lane the driver chose: `forkLateral(x, cornerDrift)` discounts what the corners
   carried. An inward move (rail clamp, a placed lane, steering back) shrinks it; steering outward
   clears it. Guard: `tests/corner-force.test.js` (all 17 tracks, AUTO on and off, a lane keeper at
-  88 m/s and NITRO, 30/60/120 FPS, forks, AUTO's rail recovery, knock grace).
+  88 m/s and NITRO, 30/60/120 FPS, forks, straights, one-contact rail hits, knock grace).
 - Guard: `tests/drift-all-tracks.test.js` iterates `RACE_TRACKS`, `COURSE_TRACKS`, the circuit and
   Endless, so a newly registered track is checked without edits; a track it cannot cover is a gap
   to fix in the test, not a skip.

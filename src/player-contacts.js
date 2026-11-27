@@ -194,7 +194,9 @@ function resolveRail(race, lateralPosition, intensity, previousX, previousDistan
   // The impact angle: sideways over forward travel this step, whether the steering or the nose's own line carried it there.
   const angle = Math.abs(lateralPosition - previousX) / Math.max(1e-6, car.distance - previousDistance);
   if (Math.abs(car.steering) < 0.9 && angle < SCRAPE_RATIO) {
-    car.x = side * (ROAD_LIMIT - 0.3);
+    // Owner, 2026-11-28: a scrape leaves the car about 1 m inside the rail, armed like a hard hit so it is one contact.
+    car.x = side * (ROAD_LIMIT - 1);
+    car.railContactSide = side;
     if (car.cooldown > 0 || car.scrapeCooldown > 0) return;
     car.speed *= 0.92;
     car.scrapeCooldown = 0.5;

@@ -6858,3 +6858,12 @@ Base `origin/develop` `f9735e4c`. Plan and checklist: `docs/designs/3d-pipeline/
 
 - [x] CI run 45212737190: the sampled object contains `toastClear` but the exact equality omitted it; include the value and retain the separate clearance assertion. JavaScript syntax and module-size checks passed.
 - [ ] Run the desktop, portrait and landscape browser cases and investigate the other CI failures; browser checks were not run at the user's request. Full verification and exact-commit CI remain pending.
+
+## 2026-11-28 — Released car drives straight; AUTO is throttle only (`fix/hands-free-lane-hold`)
+
+- [x] Case A cause measured: visual straights carry .05–.2 m/s corner push at 88 m/s (Tokyo 0–1000 m, Stormline, Spiral) and the nose heading only grew, so a released car slid 9.9–13.5 m into the rail. Fix: `STRAIGHT_TURN` in `src/corner-force.ts`.
+- [x] AUTO lane hold (ad03ac13) and rail recovery removed; a scrape places the car 1 m inside the rail and arms `railContactSide`.
+- [x] RED on 8210e2c2 source: 7 `tests/corner-force.test.js` cases; the air gentle-bend case RED on the first fix. GREEN after: 27/27.
+- [x] Replay digests re-recorded on purpose (cpu-race-replay, legacy-race-replay): scripted steer-0 stretches now run straight; every replay that finished still finishes.
+- [ ] `make verify` and the browser suite (desktop, phone portrait and landscape) for the pushed commit.
+- [ ] Exact-HEAD GitHub `quality-gate`; physical phone not run.

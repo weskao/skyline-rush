@@ -1,5 +1,5 @@
-// Manual curves turn the road away from a car's nose. Grounded neutral AUTO holds its lateral position.
-// AUTO still steers a car back off a rail it touched.
+// Curves turn the road away from a car's nose, AUTO on or off: AUTO is an automatic throttle only (owner, 2026-11-28).
+// Released on a straight, the nose lines up with the road again.
 import { CROSSWIND_SPEED, ROAD_LIMIT } from './game.js'; // read only inside functions, so an import cycle cannot hit the TDZ
 import { legacyClassicRoad } from './classic-road-routes.ts';
 import { onNeonRoof } from './neon-roof.ts';
@@ -16,9 +16,7 @@ const MAX_FORCE = 7; // m/s, corner plus crosswind: full lock always keeps 2 m/s
 const CELL = 4; // m per cached curvature sample
 const REACH = 8; // m either side: reads the bend rather than a frame seam on measured routes
 const TURN_STEPS = 2 ** 30; // per rad/m; one step moves the push by under 1e-5 m/s
-const RAIL_HEIGHT = 1.3; // m, the altitude below which a car meets the rail (`resolveRail`)
-const RECOVER_LOCK = .85; // AUTO's steer off the rail: 7.65 m/s beats the 7 m/s force cap, under the .9 lock of a hard hit
-const RECOVER_UNTIL = 1.5; // m from the centre where AUTO lets go and the corners carry the car again
+const STRAIGHT_TURN = 2e-4; // rad/m, a 5 km radius: flatter road reads straight, so a released car runs dead straight on it
 const KNOCK_GRACE = 1.5; // s, the cooldown `knock` grants
 const NOSE_TURN = .35; // rad/s the nose turns at full lock: released, the sharpest bend at 88 m/s meets the rail in about 1 s
 const AIR_SHARE = .5; // owner, 2026-11-25: taking off must not skip a corner, so it acts at half strength in the air
@@ -26,7 +24,7 @@ const AIR_SHARE = .5; // owner, 2026-11-25: taking off must not skip a corner, s
 interface ForceRace { trackId: string; elapsed: number; course?: CourseRuntime; endless?: { practice?: boolean } }
 interface ForceCar {
   distance: number; x: number; speed: number; altitude: number; steering: number; cooldown: number; impact?: { time: number } | null;
-  span?: boolean; inShortcut?: boolean; section?: string | null; cornerDrift?: number; cornerX?: number; autoRecover?: number; heading?: number;
+  span?: boolean; inShortcut?: boolean; section?: string | null; cornerDrift?: number; cornerX?: number; heading?: number;
 }
 
 const clamp = (value: number, low: number, high: number): number => Math.max(low, Math.min(high, value));
@@ -75,8 +73,10 @@ const knocked = (race: ForceRace, car: ForceCar): boolean => car.cooldown > 0 &&
 /** The car's corner push in m/s right now, without crosswind: test bots read it to lean into a bend. */
 export function cornerRate(race: ForceRace, car: ForceCar): number {
   if (car.speed <= PUSH_FROM || knocked(race, car) || car.span || car.inShortcut || race.endless?.practice) return 0;
-  return groundRate(race, car) * (car.altitude >= .1 && !onNeonRoof(race.trackId, car) ? AIR_SHARE : 1);
+  return groundRate(race, car) * airShare(race, car);
 }
+
+const airShare = (race: ForceRace, car: ForceCar): number => car.altitude >= .1 && !onNeonRoof(race.trackId, car) ? AIR_SHARE : 1;
 
 function groundRate(race: ForceRace, car: ForceCar): number {
   if (race.course) {
@@ -88,24 +88,10 @@ function groundRate(race: ForceRace, car: ForceCar): number {
   return cornerPush(race.trackId, car.distance, car.speed);
 }
 
-/**
- * AUTO's recovery steering target after a rail contact. It returns toward the centre on the normal ramp,
- * then releases steering. The player's own steering always wins.
- */
-export function assistSteer(car: ForceCar, steer: number, laneAssist: boolean): number {
-  if (!laneAssist || steer !== 0) {
-    if (car.autoRecover) car.autoRecover = 0; // written only when set, so a race without AUTO keeps its replay state
-    return steer;
-  }
-  if (car.autoRecover && car.autoRecover * car.x < RECOVER_UNTIL) car.autoRecover = 0;
-  return car.autoRecover ? -car.autoRecover * RECOVER_LOCK : 0;
-}
-
-/** The car's x after this step's move, stopped at the rail. AUTO starts steering back only once a move really reached it. */
-export function meetRail(car: ForceCar, lateralPosition: number, laneAssist: boolean): number {
+/** The car's x after this step's move, stopped at the rail. Nothing steers it back: `resolveRail` places it. */
+export function meetRail(car: ForceCar, lateralPosition: number): number {
   if (Math.abs(lateralPosition) <= ROAD_LIMIT) return lateralPosition;
   car.heading = 0; // the rail lines the nose up with the road
-  if (laneAssist && car.altitude < RAIL_HEIGHT) car.autoRecover = Math.sign(lateralPosition);
   return Math.sign(lateralPosition) * ROAD_LIMIT;
 }
 
@@ -113,23 +99,26 @@ export function meetRail(car: ForceCar, lateralPosition: number, laneAssist: boo
  * Metres of sideways travel this step from corners and crosswind, on top of the steering's own `steering * authority`.
  * A bend turns the road away from the nose (`heading`, rad, positive toward +x) at the lock its push asks for. Steering
  * against that first holds and straightens the nose; only the lock left over moves the car across. Held at the bend's
- * lock the car keeps its lane as a constant push would; released, the nose keeps its line and the slide grows.
+ * lock the car keeps its lane as a constant push would; released in a bend, the nose keeps its line and the slide grows.
+ * Released on a straight, the nose turns back as at full counter-steer and the slide stops; only crosswind moves it.
  */
-export function roadDrift(race: ForceRace, car: ForceCar, section: { dir?: number } | undefined, drifting: boolean, dt: number, holdLane = false): number {
-  const wind = car.section === 'crosswind' ? (section?.dir ?? 1) * CROSSWIND_SPEED : 0;
-  // Neutral ground assist holds the chosen lane, not the centre; hazards and flight remain physical.
-  const hold = holdLane && car.altitude === 0 && !drifting && car.steering === 0;
-  const corner = drifting || hold ? 0 : clamp(cornerRate(race, car) + wind, -MAX_FORCE, MAX_FORCE) - wind;
-  const authority = Math.min(9, car.speed * .22), from = drifting || hold || knocked(race, car) ? 0 : car.heading ?? 0, turn = NOSE_TURN * dt;
+export function roadDrift(race: ForceRace, car: ForceCar, section: { dir?: number } | undefined, drifting: boolean, dt: number): number {
+  const wind = car.section === 'crosswind' ? (section?.dir ?? 1) * CROSSWIND_SPEED : 0, rate = cornerRate(race, car);
+  // Owner, 2026-11-28: on a straight a released car goes dead straight. A steering player keeps the full corner force.
+  // The road is judged, not the push: in the air both are halved, so a gentle bend still carries a flying car.
+  const straight = !drifting && car.steering === 0 && Math.abs(rate) <= Math.abs(pushFor(STRAIGHT_TURN, car.speed)) * airShare(race, car);
+  const corner = drifting || straight ? 0 : clamp(rate + wind, -MAX_FORCE, MAX_FORCE) - wind;
+  const authority = Math.min(9, car.speed * .22), from = drifting || knocked(race, car) ? 0 : car.heading ?? 0, turn = NOSE_TURN * dt;
   let heading = from + (corner && corner / authority * turn), lock = car.steering;
-  if (lock * heading < 0) {
-    const back = Math.min(Math.abs(heading), Math.abs(lock) * turn);
+  const against = straight ? -Math.sign(heading) : lock;
+  if (against * heading < 0) {
+    const back = Math.min(Math.abs(heading), Math.abs(against) * turn);
     heading -= Math.sign(heading) * back;
     lock -= Math.sign(lock) * back / turn;
     // Counter-steer also settles the nose, fully once it matches the bend: a held lock that lagged the bend's entry
     // keeps its lane as the old constant push did, while a released car keeps its line.
     const share = Math.abs(car.steering) * authority >= Math.abs(corner) ? 1 : Math.abs(car.steering) * authority / Math.abs(corner);
-    heading *= Math.exp(-NOSE_TURN * car.speed / authority * share * dt);
+    heading = authority ? heading * Math.exp(-NOSE_TURN * car.speed / authority * share * dt) : 0; // a stopped car has no slide
   }
   car.heading = heading;
   // The midpoint heading keeps the slide the same per second at any frame rate.
