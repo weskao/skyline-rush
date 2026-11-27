@@ -281,7 +281,7 @@ The link-preview image is `public/og-image.jpeg`, the startup screen once it is 
 - `src/effects.js`: a bounded GPU particle pool for vapor, sparks and landing dust.
 - `src/track-paths.ts`, `src/world-tour-scene.js`: one distance-to-road mapping per track and the shared World Tour road, scenery and landmarks.
 - `src/route-map.ts`, `src/i18n.ts`: SVG full-route and live racer maps; locale detection, the saved choice, `t()` and the English/繁體中文 track names; `src/locales/` holds the catalogs.
-- `scripts/capture-og-images.mjs`: captures the English and zh-TW cover images and the zh-TW README screenshots from the real app.
+- `scripts/capture-og-images.mjs`: captures the English link-preview cover and the README screenshots in both languages from the real app.
 - `scripts/pickup-economy.mjs`: a scripted bot drives every track and prints NITRO per minute, BOOST share, fuel run-outs and the first NITRO time; `tests/pickup-economy.test.js` locks the ring/pickup layouts.
 - `scripts/ring-variety.mjs`: over re-rolled race seeds, prints each track's ring lane spread, ground share, trains and rows per race, and the bot's ring take and NITRO rate; `tests/ring-variety.test.js` keeps every lane in use without making rings harder to collect.
 - `scripts/rival-balance.mjs`: an expert bot (BOOSTs, flies for rings) and a beginner bot (neither) race an AI field across tracks and difficulties; prints the fastest rival's margin and the bot's place.
