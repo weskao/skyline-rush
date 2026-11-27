@@ -391,14 +391,19 @@ body[data-fold-axis] #track-chooser .track-select {
 }
 .track-chooser .track-pack-action[data-pack-state="update"]::before,
 .track-chooser .track-pack-action[data-pack-state="error"]::before { background-position: 0% 100%; }
-.track-chooser .track-pack-action:is([data-pack-state="ready"], [data-pack-state="downloading"])::before { display: none; }
-/* Image-only in idle/update states; retain the real progress ring only while downloading.
-   The SVG scales its 38px ring to the same ~40px visual footprint as the WebP.
+.track-chooser .track-pack-action[data-pack-state="ready"]::before { display: none; }
+/* Keep the original 40px WebP visible; overlay only a progress ring outside it.
    The transparent 44px parent remains the keyboard/touch target. */
 .track-chooser .track-pack-action > svg { display: none; }
-.track-chooser .track-pack-action[data-pack-state="downloading"] > svg {
-  display: block; width: 44px; height: 44px;
+.track-chooser .track-select .track-pack-action[data-pack-state="downloading"] {
+  opacity: 1; overflow: visible;
 }
+.track-chooser .track-pack-action[data-pack-state="downloading"] > svg {
+  display: block; position: absolute; inset: -6px; width: 56px; height: 56px;
+  pointer-events: none;
+}
+.track-chooser .track-pack-action[data-pack-state="downloading"] > svg > :not(circle) { display: none; }
+.track-chooser .track-pack-action[data-pack-state="downloading"] > svg > circle { stroke-width: 2; }
 @media (hover: hover) and (pointer: fine) {
   .track-chooser .track-pack-action[data-pack-state="missing"]:hover::before { background-position: 100% 0%; }
   .track-chooser .track-pack-action:is([data-pack-state="update"], [data-pack-state="error"]):hover::before { background-position: 100% 100%; }
