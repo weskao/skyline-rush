@@ -11,7 +11,7 @@ const frames = Number(process.env.THERMAL_FRAMES ?? 180);
 const [width, height] = (process.env.THERMAL_VIEWPORT ?? '390x844').split('x').map(Number);
 const dpr = Number(process.env.THERMAL_DPR ?? 3);
 if (!Number.isInteger(frames) || frames < 2 || ![width,height,dpr].every(n => Number.isFinite(n) && n > 0)) throw Error('Invalid probe settings');
-const server = await createServer({ server: { host: '127.0.0.1', port: 0 } });
+const server = await createServer({ server: { host: '127.0.0.1', port: Number(process.env.PLAYWRIGHT_PORT) || 5311, strictPort: true } });
 let browser;
 const records = [];
 const sha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
