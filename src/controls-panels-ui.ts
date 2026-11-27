@@ -38,10 +38,13 @@ export function setupControlPanels({
     if (dialog.open) return;
     updatePanelsView({ settingsOpen: false });
     clearRebinding();
-    clearControls();
+    // The close event is queued and can land after an Escape already resumed the race, which cleared the controls
+    // itself: keys pressed since are driving input (a held Space is FLY), and focus stays with the race, not the gear.
+    const resumed = !canOpenControlsPanel(getRacePhase());
+    if (!resumed) clearControls();
     if (!document.querySelector('dialog[open]') && !document.body.classList.contains('layout-editing')) {
       restorePerformanceNotice();
-      gear.focus({ preventScroll: true });
+      if (!resumed) gear.focus({ preventScroll: true });
     }
   });
   dialog.addEventListener('keydown', event => event.stopPropagation());
