@@ -40,8 +40,6 @@ exactly. Topics whose work often starts before a scoped file is open:
 | Any confirm, alert, prompt, dropdown, search box or picker; turning an important setting off | `.claude/rules/no-native-ui.md` (in-game `confirmDialog()`, never the browser's native UI) |
 | Pushing, reading CI, merging, releasing | `.claude/rules/ci-gates.md`, `.claude/rules/branch-release.md` |
 
-**Gap difficulty and recovery rule:** Missing road is a physical chasm at every graphics tier. Throttle-only speed must not bypass BOOST-range ground jumps; deliberate FLY may cross. On classic gaps, a fall in the first 50% (including exactly half) returns before the jump; after half, respawn on safe ground beyond it. Three consecutive falls at the **same** gap trigger an anti-stuck forward rescue, without free rewards or checkpoint credit; normal race time and fall penalties continue. Clear the streak when the gap is cleared, do not increment it for R, and never spawn past FINISH. Match simulation/mesh/minimap, preserve safe run-ups, and test both sides of the midpoint and repeated failures. CourseGraph branch/checkpoint recovery retains its own rules; see the course template.
-
 Player copy (What's New, locales, store text, captions) names a track exactly as `TRACK_NAMES` in
 `src/i18n.ts` does, in en and zh-TW; never a paraphrase or a second table. Renaming a track changes that table.
 
@@ -101,22 +99,13 @@ without explicit user approval.
 
 ## Commands
 
-| Command | Purpose |
-| --- | --- |
-| `make setup` | Install frozen-lockfile pnpm dependencies (Crucible included) and enable the git hooks |
-| `make` / `make dev` | Vite dev server, saved progression respected |
-| `make dev-unlocked` / `make test-unlocked` | Local Vite playtest server with all catalog cars, paints and equipment available |
-| `make dev-feature <name>` | Worktree of `origin/feature/<name>`, all-unlocked, HTTPS |
-| `make phone [name] [y=1]` | Phone-reachable locked dev server (`y=1` = no prompts) |
-| `make phone-unlocked [name] [y=1]` | Phone-reachable Vite playtest server with the same unlocked catalog |
-| `make dev-diag` / `make phone-diag [name]` | Same servers with the diagnostic banner (`VITE_DIAG=1`) |
-| `pnpm test` | Node unit tests |
-| `pnpm run build` | Production build + release-bundle lock assertion |
-| `pnpm run test:browser` | Playwright suite (explicit trial build before browser tests) |
-| `pnpm run test:layout` | Home-screen layout browser tests |
-| `make verify` | Full local gate: unit, build, browser, World Tour long-run |
-| `make deploy` | Trigger CI GitHub Pages deploy of remote `main` |
-| `make deploy-netlify` | Build this checkout, deploy to Netlify production, live check, Telegram link |
+`make help` lists every target with its options; the `##` annotation on each Makefile target is
+the single source, so describe a new target there, not here. Not covered by `make help`:
+
+- `pnpm test`: Node unit tests only.
+- `pnpm run build`: production build plus the release-bundle lock assertion.
+- `pnpm run test:browser`: Playwright suite alone (does its own trial build first).
+- `pnpm run test:layout`: home-screen layout browser tests (no make target).
 
 ## Branches
 
