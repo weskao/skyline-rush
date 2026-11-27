@@ -180,6 +180,44 @@ Home, track swipe and World Tour.
     composes. GREEN: 0 hidden composes for 3 frames, and every visible world matrix equals an independent compose
     after the host moved while parked and is shown again.
 
+## Wave 3 item 31: draw calls -40% (not met, -13.1%)
+
+Branch `feature/perf-thermal-31-draw-calls`, candidate `5686168a`, base A `d9c144ba`. Shipped: each classic
+bridge tower's 55 steel and 3 trim parts merge into two draws (`src/bridge-towers.ts`, `mergeStaticMeshes`).
+
+LOCAL-CHROME, `scripts/final-report/run-scene-matrix.mjs`, 3 interleaved rotated rounds per side,
+`build-report.mjs` definitions, median (min–max):
+
+| Scene | A draws | Candidate draws | Change | Goal | Programs A → C | Geometries A → C |
+|-------|---------|-----------------|--------|------|----------------|------------------|
+| racing taipei | 622 (622–623) | 478 (478–478) | -23.2% | ≤374 | 97 → 97 | 476 → 483 |
+| racing tokyo | 471 (471–472) | 457 (457–457) | -3.0% | ≤283 | 97 → 97 | 474 → 479 |
+| home taipei | 471 (471–471) | 345 (345–345) | -26.8% | ≤283 | 97 → 97 | 476 → 483 |
+| racing alpine | 412 (412–412) | 411 (411–411) | -0.2% | ≤247 | 99 → 99 | 502 → 505 |
+| racing coastal | 404 (404–404) | 403 (403–403) | -0.2% | ≤242 | 98 → 98 | 502 → 506 |
+| racing aurora | 399 (399–399) | 286 (286–286) | -28.3% | ≤239 | 97 → 97 | 468 → 468 |
+
+Median change of the six: **-13.06%**. Triangles are within run-to-run spread; shader programs unchanged.
+Visual gate (`visual-fidelity.mjs` vs integration `35885c85`): every non-race scene max 0. The race scenes'
+residual is gone with shared RNG streams and rivals hidden (`visual-rng.mjs … hide=name:rival`: all max 0); the
+rival flame flicker is keyed by object id, which the merged towers shift.
+
+Rejected (pixel equivalence could not be shown):
+
+- **Colour-only tint pool** (props sharing geometry drawn as one `InstancedMesh` with a white base material and
+  `instanceColor`; was -33%). Three sorts opaque draws by `material.id`; the shared base material moves every
+  pooled colour to one place in that order. Where surfaces of two draws reach the same 24-bit depth value the
+  later draw wins (LessEqual), so coplanar and near-coplanar seams flipped (Tokyo train windows, max delta 85).
+- **Tint pool restricted to parts that touch no other draw** (0.25 m reach, decided per source group in the
+  streamed world). Still max 11 on one m-photo-tokyo pixel: the depth step grows with distance squared
+  (`z² / (near · 2^24)`, about 1.2 m at the 1.3 km streaming horizon, 5.4 m at the 3,000 m far plane), so
+  non-touching surfaces far away still tie. A reach covering the far plane (about 9 m with the corner-ray angle)
+  leaves almost nothing to pool (Tokyo pool batches 160 → 157, Taipei 212 → 212).
+- **Pooling a source that would draw alone**: its vertices are then computed through the scenery layer matrix
+  instead of its own model matrix; the ulp-level depth change flips near-coplanar seams.
+- **Player car single pass** (one draw per material across body parts): not pixel-equivalent.
+- **Rival wheel instancing**: lives on the per-frame update path owned by item 32.
+
 ## Device SOP (UNVERIFIED: run manually)
 
 1. `pnpm run build`, then serve `dist/` on the LAN (`scripts/perf.mjs`).
