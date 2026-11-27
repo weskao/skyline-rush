@@ -115,6 +115,16 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   "Showcase camera" combobox (`498d84d0`), so a page-wide `getByRole('combobox', { name })` hit strict mode in
   `browser.spec.js` and `custom-controls-browser.spec.js` (2026-11-16). Scope role locators to the landmark
   that owns the control (`getByRole('complementary', { name: 'Airflow and visual effects' })`).
+- **A drawn ground pickup's origin is not its item position.** The visibility scale (`place()` in
+  `src/pickup-markers.js`, since b9a161f7) grows a ground pickup with distance and lifts its origin by
+  `-bounds.min.y × size × (scale − 1)` so its base stays on the road. `spiral-items` compared the origin to
+  `skyPosition` and read 0.83–1.02 m off the helix (develop CI 45885340403); the feature merged with that spec red.
+  Judge the model's base (`position.y + bounds.min.y × scale.y`). Guard: *base stays at its clearance* in
+  `tests/pickup-markers.test.js`.
+- **A program-count baseline waits for RACING.** The race's shaders compile on its first composed frame and again
+  for every asset that joins before GO (`warmupPending`, `src/world.js`). `#item-status` reads EMPTY earlier, so
+  item-feedback read 4 programs, then 89, and failed "no shader compiled…" on desktop (develop CI 45885340403).
+  Enforced by `tests/browser-timeouts.test.js` (*program-count baseline is read once the race is RACING*).
 - **Rival `i` is `window.gameScene.rivals[i]`, never the i-th scene child.** `createRivalFleet`
   (`src/rival-fleet.js`) keeps one pooled car per chassis in scene order and deals each race a shuffled
   lineup, so `scene.children.filter(o => o.userData.driveCue)[1]` was another rival's car and the NITRO
