@@ -1,5 +1,5 @@
 import type { CourseGraph, CourseNode, CoursePoint3 } from './course-graph.ts';
-import { routeLength } from './course-route-frame.ts';
+import { edgeOf, routeLength } from './course-route-frame.ts';
 
 /** Pure checkpoint state for new graph tracks; existing sprint results are unchanged. */
 export interface RouteProgress {
@@ -33,7 +33,7 @@ export function recoveryNode(graph: CourseGraph, state: RouteProgress): CourseNo
 /** Accept a gate only on the active edge, moving forwards through its 3D endpoint. */
 export function advanceRouteProgress(graph: CourseGraph, state: RouteProgress, event: RouteCrossing): RouteProgress {
   if (state.finished || event.edgeId !== state.currentEdgeId) return state;
-  const edge = graph.edges.find(e => e.id === event.edgeId);
+  const edge = edgeOf(graph, event.edgeId);
   if (!edge || !Number.isFinite(event.fromS) || !Number.isFinite(event.toS)) return state;
   const length = routeLength(graph, edge.id);
   if (event.fromS < 0 || event.fromS >= length || event.toS < length || event.toS <= event.fromS) return state;
@@ -48,7 +48,7 @@ export function advanceRouteProgress(graph: CourseGraph, state: RouteProgress, e
     if (event.nextEdgeId || nextCheckpoint !== graph.checkpoints.length) return state;
     return { ...state, nextCheckpoint, finished: true };
   }
-  const next = graph.edges.find(e => e.id === event.nextEdgeId);
+  const next = edgeOf(graph, event.nextEdgeId);
   if (!next || next.from !== node.id) return state;
   return { currentEdgeId: next.id, nextCheckpoint, finished: false };
 }

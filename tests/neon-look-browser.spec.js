@@ -28,7 +28,7 @@ async function neon(page, quality) {
 const procedural = page => page.evaluate(() => {
   const { scene, composer } = window.gameScene, grade = composer.passes.find(pass => pass.uniforms?.saturation).uniforms;
   const city = scene.children.find(o => o.isGroup && o.children.some(c => c.isInstancedMesh && c.instanceMatrix.count === 160 * 18));
-  const towers = scene.children.filter(o => o.isGroup && o.children.some(c => c.geometry?.type === 'TubeGeometry'));
+  const towers = scene.children.filter(o => o.isGroup && o.name === 'Bridge tower');
   const sea = scene.children.find(o => o.material?.uniforms?.water);
   // The kits hide the towers by material (world.js rewrites `.visible` every frame), so `lit` reads the materials.
   let lit = false;

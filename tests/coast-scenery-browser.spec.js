@@ -15,11 +15,11 @@ const layer = page => page.evaluate(() => {
   return pieces;
 });
 
-/** The skyline group (160 buildings, 18 windows each) and the three bridge towers (the groups with a cable tube). */
+/** The skyline group (160 buildings, 18 windows each) and the three bridge towers (named in src/bridge-towers.ts). */
 const skyline = page => page.evaluate(() => {
   const { scene } = window.gameScene;
   const city = scene.children.find(o => o.isGroup && o.children.some(c => c.isInstancedMesh && c.instanceMatrix.count === 160 * 18));
-  const towers = scene.children.filter(o => o.isGroup && o.children.some(c => c.geometry?.type === 'TubeGeometry'));
+  const towers = scene.children.filter(o => o.isGroup && o.name === 'Bridge tower');
   return { city: city.visible, towers: towers.map(tower => tower.visible && tower.children.every(c => c.material.visible)) };
 });
 

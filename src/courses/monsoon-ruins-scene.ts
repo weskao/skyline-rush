@@ -315,16 +315,22 @@ export function createMonsoonRuinsChunk(options: MonsoonChunkOptions) {
     makeForest(root, from, to, quality, bark, foliage, crown);
   }
   const flow = new THREE.Group(), mist = new THREE.Group(), leaves = new THREE.Group();
+  const fernAt: THREE.Vector3[] = [], sway = new THREE.Object3D();
   root.add(flow, mist, leaves);
   if (edgeId === 'ground') {
     makeLandmarks(root, from, to, stone, shadow, water, flow, mist);
-    if (quality !== 'low') for (let i = 0; i < 12; i++) {
-      const s = from + (to - from) * seed(i * 8 + from);
-      const leaf = new THREE.Mesh(new THREE.ConeGeometry(1.3, 4.5, 5), crown);
-      leaf.name = 'monsoon-wind-swaying-fern';
-      leaf.position.copy(location(s, (i % 2 ? 1 : -1) * 23));
-      leaf.position.y += 2;
-      leaves.add(leaf);
+    // One instanced draw for the chunk's 12 ferns (was 12 meshes + 12 cone geometries).
+    // Cone bounds are centred on its origin, so the z-sway never escapes the culling sphere.
+    if (quality !== 'low') {
+      const ferns = new THREE.InstancedMesh(new THREE.ConeGeometry(1.3, 4.5, 5), crown, 12);
+      ferns.name = 'monsoon-wind-swaying-fern';
+      for (let i = 0; i < 12; i++) {
+        const s = from + (to - from) * seed(i * 8 + from);
+        const at = location(s, (i % 2 ? 1 : -1) * 23);
+        at.y += 2;
+        fernAt.push(at);
+      }
+      leaves.add(ferns);
     }
     for (let s = Math.ceil(from / 125) * 125; s < to; s += 125) {
       const depth = monsoonWetContact('ground', s).depth;
@@ -346,7 +352,14 @@ export function createMonsoonRuinsChunk(options: MonsoonChunkOptions) {
     if (disposed) return;
     const t = Number.isFinite(timeSeconds) ? timeSeconds : 0;
     animateRain(t, reducedMotion);
-    leaves.children.forEach((leaf, i) => { leaf.rotation.z = reducedMotion ? 0 : .12 * Math.sin(t * .7 + i); });
+    const ferns = leaves.children[0] as THREE.InstancedMesh | undefined;
+    if (ferns) {
+      fernAt.forEach((at, i) => {
+        sway.position.copy(at); sway.rotation.z = reducedMotion ? 0 : .12 * Math.sin(t * .7 + i);
+        sway.updateMatrix(); ferns.setMatrixAt(i, sway.matrix);
+      });
+      ferns.instanceMatrix.needsUpdate = true;
+    }
     flow.children.forEach((fall, i) => { fall.position.y = fallY[i] + (reducedMotion ? 0 : Math.sin(t * 1.8 + i) * .5); });
     mist.children.forEach((fog, i) => { fog.position.x = mistX[i] + (reducedMotion ? 0 : Math.sin(t * .25 + i) * 2); });
   }

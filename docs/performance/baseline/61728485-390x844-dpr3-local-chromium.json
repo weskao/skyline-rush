@@ -1,0 +1,4019 @@
+{
+ "sha": "61728485ddefac949da834e876e8dcb45fb10838",
+ "source": "unclassified-browser-webgl",
+ "harness": "fixed-step-scene-probe",
+ "frames": 180,
+ "width": 390,
+ "height": 844,
+ "dpr": 3,
+ "environment": {
+  "class": "local-chromium",
+  "browser": "Google Chrome 158 via Playwright channel chrome",
+  "os": "macOS 27 arm64",
+  "gpuBackend": "unverified (EXT_disjoint_timer_query_webgl2 reported available; renderer string not recorded)",
+  "harness": "scripts/thermal-baseline.mjs fixed-step scene probe",
+  "note": "single idle-machine run; not production frame pacing; no temperature or power data"
+ },
+ "records": [
+  {
+   "scenario": "home",
+   "track": "volcanic-crown",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 0,
+   "endDistance": 0,
+   "endPhase": "ready",
+   "diagnostics": {
+    "current": "home/volcanic-crown",
+    "gpuStatus": "available",
+    "reports": {
+     "home/volcanic-crown": {
+      "phase": "home",
+      "track": "volcanic-crown",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "mean": 0
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.5,
+        "p95": 3.300000000745058,
+        "p99": 3.900000002235174,
+        "mean": 2.575000000020696
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999727,
+        "p99": 16.799999999999955,
+        "mean": 16.665921787709472
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.712124,
+        "p95": 2.183416,
+        "p99": 2.183416,
+        "mean": 1.8922076666666665
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.550291,
+        "p95": 2.940541,
+        "p99": 2.940541,
+        "mean": 2.6809091666666665
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.721791,
+        "p95": 3.355999,
+        "p99": 3.355999,
+        "mean": 2.6155063333333337
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.579208,
+        "p95": 3.383416,
+        "p99": 3.383416,
+        "mean": 2.637930166666667
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 5.5805,
+        "p95": 5.813958,
+        "p99": 5.813958,
+        "mean": 5.134716200000001
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.0026816840977,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 184,
+       "triangles": 50907,
+       "geometries": 1062,
+       "textures": 48,
+       "shaderPrograms": 99
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "racing",
+   "track": "volcanic-crown",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 33.72500000000001,
+   "endDistance": 213.74183333333403,
+   "endPhase": "racing",
+   "diagnostics": {
+    "current": "racing/volcanic-crown",
+    "gpuStatus": "available",
+    "reports": {
+     "racing/volcanic-crown": {
+      "phase": "racing",
+      "track": "volcanic-crown",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0.10000000149011612,
+        "p95": 0.20000000298023224,
+        "p99": 0.4000000022351742,
+        "mean": 0.14166666668736272
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.900000002235174,
+        "p95": 4,
+        "p99": 4.5,
+        "mean": 2.9572222222677533
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000728,
+        "p99": 16.800000000000182,
+        "mean": 16.665921787709486
+       },
+       "scene": {
+        "count": 6,
+        "p50": 2.034375,
+        "p95": 2.19775,
+        "p99": 2.19775,
+        "mean": 2.0335551666666665
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.791208,
+        "p95": 2.9665,
+        "p99": 2.9665,
+        "mean": 2.7829649999999995
+       },
+       "lens": {
+        "count": 6,
+        "p50": 3.038041,
+        "p95": 3.318874,
+        "p99": 3.318874,
+        "mean": 2.7126035
+       },
+       "output": {
+        "count": 6,
+        "p50": 3.115208,
+        "p95": 3.350583,
+        "p99": 3.350583,
+        "mean": 2.766687333333333
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 5.506208,
+        "p95": 6.036124,
+        "p99": 6.036124,
+        "mean": 5.0654576
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.00268168409765,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 335,
+       "triangles": 64129,
+       "geometries": 1062,
+       "textures": 48,
+       "shaderPrograms": 99
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "home",
+   "track": "taipei",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 0,
+   "endDistance": 0,
+   "endPhase": "ready",
+   "diagnostics": {
+    "current": "home/taipei",
+    "gpuStatus": "available",
+    "reports": {
+     "home/taipei": {
+      "phase": "home",
+      "track": "taipei",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "mean": 0.0005555555431379213
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.600000001490116,
+        "p95": 3.899999998509884,
+        "p99": 19.5,
+        "mean": 3.1522222222346397
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999727,
+        "p99": 16.800000000000182,
+        "mean": 16.666480446927356
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.592833,
+        "p95": 2.183166,
+        "p99": 2.183166,
+        "mean": 1.7255064999999998
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.366333,
+        "p95": 2.864499,
+        "p99": 2.864499,
+        "mean": 2.4756385
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.81825,
+        "p95": 3.1275,
+        "p99": 3.1275,
+        "mean": 2.5687771666666666
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.903,
+        "p95": 3.212958,
+        "p99": 3.212958,
+        "mean": 2.6470415
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 4.283125,
+        "p95": 5.881875,
+        "p99": 5.881875,
+        "mean": 4.5809246
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.000670398552,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 471,
+       "triangles": 102685,
+       "geometries": 476,
+       "textures": 50,
+       "shaderPrograms": 97
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "racing",
+   "track": "taipei",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 33.72500000000001,
+   "endDistance": 213.74183333333403,
+   "endPhase": "racing",
+   "diagnostics": {
+    "current": "racing/taipei",
+    "gpuStatus": "available",
+    "reports": {
+     "racing/taipei": {
+      "phase": "racing",
+      "track": "taipei",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0.10000000149011612,
+        "p95": 0.20000000298023224,
+        "p99": 0.5,
+        "mean": 0.1411111109993524
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 3.199999999254942,
+        "p95": 4.399999998509884,
+        "p99": 5.300000000745058,
+        "mean": 3.339999999995861
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999272,
+        "p99": 16.800000000000182,
+        "mean": 16.66592178770949
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.787291,
+        "p95": 2.305249,
+        "p99": 2.305249,
+        "mean": 1.9691311666666664
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.595999,
+        "p95": 2.983499,
+        "p99": 2.983499,
+        "mean": 2.666409
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.710875,
+        "p95": 3.398208,
+        "p99": 3.398208,
+        "mean": 2.7480898333333332
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.747791,
+        "p95": 3.483,
+        "p99": 3.483,
+        "mean": 2.8237495
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 5.545083,
+        "p95": 6.760374,
+        "p99": 6.760374,
+        "mean": 5.406066
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.00268168409764,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 623,
+       "triangles": 112755,
+       "geometries": 476,
+       "textures": 50,
+       "shaderPrograms": 97
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "home",
+   "track": "tokyo",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 0,
+   "endDistance": 0,
+   "endPhase": "ready",
+   "diagnostics": {
+    "current": "home/tokyo",
+    "gpuStatus": "available",
+    "reports": {
+     "home/tokyo": {
+      "phase": "home",
+      "track": "tokyo",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "mean": 0.0005555555638339784
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.5,
+        "p95": 3.600000001490116,
+        "p99": 7.199999999254942,
+        "mean": 2.6944444444651405
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000273,
+        "p99": 16.800000000000182,
+        "mean": 16.665921787709475
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.440541,
+        "p95": 1.992166,
+        "p99": 1.992166,
+        "mean": 1.6516525000000002
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.49725,
+        "p95": 2.677458,
+        "p99": 2.677458,
+        "mean": 2.4783398333333335
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.619958,
+        "p95": 3.047874,
+        "p99": 3.047874,
+        "mean": 2.480874333333333
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.718791,
+        "p95": 3.078958,
+        "p99": 3.078958,
+        "mean": 2.5581245
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 4.14475,
+        "p95": 5.250875,
+        "p99": 5.250875,
+        "mean": 4.4151414
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.002681684097695,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 305,
+       "triangles": 76219,
+       "geometries": 474,
+       "textures": 50,
+       "shaderPrograms": 97
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "racing",
+   "track": "tokyo",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 33.72500000000001,
+   "endDistance": 213.74183333333403,
+   "endPhase": "racing",
+   "diagnostics": {
+    "current": "racing/tokyo",
+    "gpuStatus": "available",
+    "reports": {
+     "racing/tokyo": {
+      "phase": "racing",
+      "track": "tokyo",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0.19999999925494194,
+        "p95": 0.30000000074505806,
+        "p99": 0.4000000022351742,
+        "mean": 0.17777777790195412
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 3,
+        "p95": 3.800000000745058,
+        "p99": 4.199999999254942,
+        "mean": 3.078888888760573
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000728,
+        "p99": 16.800000000000182,
+        "mean": 16.66592178770949
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.81175,
+        "p95": 2.075458,
+        "p99": 2.075458,
+        "mean": 1.9137703333333336
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.609499,
+        "p95": 3.152583,
+        "p99": 3.152583,
+        "mean": 2.7226521666666663
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.730041,
+        "p95": 3.175375,
+        "p99": 3.175375,
+        "mean": 2.614152166666667
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.807041,
+        "p95": 3.254041,
+        "p99": 3.254041,
+        "mean": 2.676569
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 5.135625,
+        "p95": 6.012666,
+        "p99": 6.012666,
+        "mean": 5.190157999999999
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.00268168409764,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 472,
+       "triangles": 89211,
+       "geometries": 474,
+       "textures": 50,
+       "shaderPrograms": 97
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "home",
+   "track": "coast",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 0,
+   "endDistance": 0,
+   "endPhase": "ready",
+   "diagnostics": {
+    "current": "home/coast",
+    "gpuStatus": "available",
+    "reports": {
+     "home/coast": {
+      "phase": "home",
+      "track": "coast",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "mean": 0.0005555555638339784
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 1.8999999985098839,
+        "p95": 4.200000002980232,
+        "p99": 4.800000000745058,
+        "mean": 2.2850000001283157
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999727,
+        "p99": 16.800000000000182,
+        "mean": 16.665921787709475
+       },
+       "scene": {
+        "count": 6,
+        "p50": 2.038791,
+        "p95": 2.32425,
+        "p99": 2.32425,
+        "mean": 2.0834093333333334
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.566083,
+        "p95": 2.852999,
+        "p99": 2.852999,
+        "mean": 2.6414091666666666
+       },
+       "lens": {
+        "count": 6,
+        "p50": 3.135833,
+        "p95": 3.425833,
+        "p99": 3.425833,
+        "mean": 2.988944
+       },
+       "output": {
+        "count": 6,
+        "p50": 3.216583,
+        "p95": 3.502374,
+        "p99": 3.502374,
+        "mean": 3.0640065
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 5.418708,
+        "p95": 5.775583,
+        "p99": 5.775583,
+        "mean": 5.2382995999999995
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.002681684097695,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 195,
+       "triangles": 428999,
+       "geometries": 499,
+       "textures": 69,
+       "shaderPrograms": 106
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "racing",
+   "track": "coast",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 33.72500000000001,
+   "endDistance": 218.16933333333398,
+   "endPhase": "racing",
+   "diagnostics": {
+    "current": "racing/coast",
+    "gpuStatus": "available",
+    "reports": {
+     "racing/coast": {
+      "phase": "racing",
+      "track": "coast",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0.10000000149011612,
+        "p95": 0.29999999701976776,
+        "p99": 0.30000000074505806,
+        "mean": 0.13611111090415054
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.300000000745058,
+        "p95": 3.600000001490116,
+        "p99": 4.800000000745058,
+        "mean": 2.4477777779516248
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000728,
+        "p99": 16.800000000000182,
+        "mean": 16.66592178770949
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.960208,
+        "p95": 2.564624,
+        "p99": 2.564624,
+        "mean": 2.1437356666666667
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.458375,
+        "p95": 2.907583,
+        "p99": 2.907583,
+        "mean": 2.617013666666667
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.921625,
+        "p95": 3.459125,
+        "p99": 3.459125,
+        "mean": 2.6854025
+       },
+       "output": {
+        "count": 6,
+        "p50": 3.005333,
+        "p95": 3.544208,
+        "p99": 3.544208,
+        "mean": 2.771569166666667
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 5.091125,
+        "p95": 7.149958,
+        "p99": 7.149958,
+        "mean": 5.543008
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.00268168409764,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 247,
+       "triangles": 429068,
+       "geometries": 499,
+       "textures": 69,
+       "shaderPrograms": 106
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "home",
+   "track": "neon",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 0,
+   "endDistance": 0,
+   "endPhase": "ready",
+   "diagnostics": {
+    "current": "home/neon",
+    "gpuStatus": "available",
+    "reports": {
+     "home/neon": {
+      "phase": "home",
+      "track": "neon",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0.10000000149011612,
+        "mean": 0.0016666666915019354
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.5,
+        "p95": 3.5,
+        "p99": 4.200000002980232,
+        "mean": 2.59555555553072
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000273,
+        "p99": 16.799999999999955,
+        "mean": 16.665921787709475
+       },
+       "scene": {
+        "count": 6,
+        "p50": 2.137625,
+        "p95": 2.984541,
+        "p99": 2.984541,
+        "mean": 2.364777333333333
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.655374,
+        "p95": 3.217999,
+        "p99": 3.217999,
+        "mean": 2.7415758333333335
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.93575,
+        "p95": 3.681458,
+        "p99": 3.681458,
+        "mean": 2.7899716666666667
+       },
+       "output": {
+        "count": 6,
+        "p50": 3.01,
+        "p95": 3.76075,
+        "p99": 3.76075,
+        "mean": 2.85084
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 5.476749,
+        "p95": 6.333791,
+        "p99": 6.333791,
+        "mean": 5.7348744
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.002681684097695,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 232,
+       "triangles": 265352,
+       "geometries": 533,
+       "textures": 71,
+       "shaderPrograms": 109
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "racing",
+   "track": "neon",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 33.72500000000001,
+   "endDistance": 218.16933333333398,
+   "endPhase": "racing",
+   "diagnostics": {
+    "current": "racing/neon",
+    "gpuStatus": "available",
+    "reports": {
+     "racing/neon": {
+      "phase": "racing",
+      "track": "neon",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0.19999999925494194,
+        "p95": 0.30000000074505806,
+        "p99": 0.5,
+        "mean": 0.1872222221766909
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.800000000745058,
+        "p95": 3.800000000745058,
+        "p99": 4.199999999254942,
+        "mean": 2.864444444494115
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999727,
+        "p99": 16.800000000000182,
+        "mean": 16.66648044692737
+       },
+       "scene": {
+        "count": 6,
+        "p50": 2.497333,
+        "p95": 3.00675,
+        "p99": 3.00675,
+        "mean": 2.530853833333333
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.86675,
+        "p95": 3.207499,
+        "p99": 3.207499,
+        "mean": 2.860763333333333
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.978374,
+        "p95": 3.683249,
+        "p99": 3.683249,
+        "mean": 2.8434508333333333
+       },
+       "output": {
+        "count": 6,
+        "p50": 3.019,
+        "p95": 3.761041,
+        "p99": 3.761041,
+        "mean": 2.9155205
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 5.973125,
+        "p95": 7.297458,
+        "p99": 7.297458,
+        "mean": 6.2439827999999995
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.000670398551954,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 282,
+       "triangles": 260951,
+       "geometries": 533,
+       "textures": 71,
+       "shaderPrograms": 109
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "home",
+   "track": "canyon",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 0,
+   "endDistance": 0,
+   "endPhase": "ready",
+   "diagnostics": {
+    "current": "home/canyon",
+    "gpuStatus": "available",
+    "reports": {
+     "home/canyon": {
+      "phase": "home",
+      "track": "canyon",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "mean": 0
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2,
+        "p95": 2.399999998509884,
+        "p99": 3,
+        "mean": 2.0472222222429184
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999727,
+        "p99": 16.800000000000182,
+        "mean": 16.665921787709465
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.475541,
+        "p95": 1.799625,
+        "p99": 1.799625,
+        "mean": 1.4922563333333334
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.287375,
+        "p95": 2.771458,
+        "p99": 2.771458,
+        "mean": 2.4205065
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.483416,
+        "p95": 3.118375,
+        "p99": 3.118375,
+        "mean": 2.6017843333333333
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.275833,
+        "p95": 3.129416,
+        "p99": 3.129416,
+        "mean": 2.4726106666666667
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 4.865541,
+        "p95": 4.977166,
+        "p99": 4.977166,
+        "mean": 4.7291412
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.00268168409773,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 221,
+       "triangles": 90125,
+       "geometries": 468,
+       "textures": 49,
+       "shaderPrograms": 97
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "racing",
+   "track": "canyon",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 33.72500000000001,
+   "endDistance": 284.3263107079629,
+   "endPhase": "racing",
+   "diagnostics": {
+    "current": "racing/canyon",
+    "gpuStatus": "available",
+    "reports": {
+     "racing/canyon": {
+      "phase": "racing",
+      "track": "canyon",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0.10000000149011612,
+        "p95": 0.20000000298023224,
+        "p99": 0.3999999985098839,
+        "mean": 0.13388888885577518
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.100000001490116,
+        "p95": 2.800000000745058,
+        "p99": 3.2000000029802322,
+        "mean": 2.2083333332919413
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999727,
+        "p99": 16.800000000000182,
+        "mean": 16.665363128491602
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.462625,
+        "p95": 2.163666,
+        "p99": 2.163666,
+        "mean": 1.6607356666666666
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.323041,
+        "p95": 2.821041,
+        "p99": 2.821041,
+        "mean": 2.4770826666666665
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.614958,
+        "p95": 3.377583,
+        "p99": 3.377583,
+        "mean": 2.6773190000000002
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.698291,
+        "p95": 3.458583,
+        "p99": 3.458583,
+        "mean": 2.7470273333333335
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 5.196,
+        "p95": 5.288624,
+        "p99": 5.288624,
+        "mean": 5.0583659999999995
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.00469310448868,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 294,
+       "triangles": 78733,
+       "geometries": 468,
+       "textures": 49,
+       "shaderPrograms": 97
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "home",
+   "track": "aurora",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 0,
+   "endDistance": 0,
+   "endPhase": "ready",
+   "diagnostics": {
+    "current": "home/aurora",
+    "gpuStatus": "available",
+    "reports": {
+     "home/aurora": {
+      "phase": "home",
+      "track": "aurora",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0.10000000149011612,
+        "mean": 0.001666666670805878
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2,
+        "p95": 2.300000000745058,
+        "p99": 3.300000000745058,
+        "mean": 2.001111111127668
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000273,
+        "p99": 16.800000000000068,
+        "mean": 16.665921787709465
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.538124,
+        "p95": 1.747499,
+        "p99": 1.747499,
+        "mean": 1.5839923333333334
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.5105,
+        "p95": 2.698583,
+        "p99": 2.698583,
+        "mean": 2.5068261666666665
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.773,
+        "p95": 3.176083,
+        "p99": 3.176083,
+        "mean": 2.5735481666666664
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.858249,
+        "p95": 3.143333,
+        "p99": 3.143333,
+        "mean": 2.6230133333333336
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 4.558333,
+        "p95": 5.256291,
+        "p99": 5.256291,
+        "mean": 4.517441
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.00268168409773,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 282,
+       "triangles": 86479,
+       "geometries": 468,
+       "textures": 51,
+       "shaderPrograms": 97
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "racing",
+   "track": "aurora",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 33.72500000000001,
+   "endDistance": 213.74183333333403,
+   "endPhase": "racing",
+   "diagnostics": {
+    "current": "racing/aurora",
+    "gpuStatus": "available",
+    "reports": {
+     "racing/aurora": {
+      "phase": "racing",
+      "track": "aurora",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0.19999999925494194,
+        "p95": 0.30000000074505806,
+        "p99": 0.4000000022351742,
+        "mean": 0.16444444436993863
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.600000001490116,
+        "p95": 3.5,
+        "p99": 4.399999998509884,
+        "mean": 2.7205555556962886
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999955,
+        "p99": 16.800000000000182,
+        "mean": 16.665921787709497
+       },
+       "scene": {
+        "count": 6,
+        "p50": 2.223833,
+        "p95": 4.161833,
+        "p99": 4.161833,
+        "mean": 2.895971833333333
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.872208,
+        "p95": 4.993249,
+        "p99": 4.993249,
+        "mean": 3.6977425
+       },
+       "lens": {
+        "count": 6,
+        "p50": 3.424166,
+        "p95": 5.316,
+        "p99": 5.316,
+        "mean": 3.915583
+       },
+       "output": {
+        "count": 6,
+        "p50": 3.252208,
+        "p95": 5.4,
+        "p99": 5.4,
+        "mean": 3.802402166666667
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 6.804625,
+        "p95": 10.373041,
+        "p99": 10.373041,
+        "mean": 7.6125246
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.00268168409762,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 399,
+       "triangles": 90097,
+       "geometries": 468,
+       "textures": 51,
+       "shaderPrograms": 97
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "home",
+   "track": "spiral",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 0,
+   "endDistance": 0,
+   "endPhase": "ready",
+   "diagnostics": {
+    "current": "home/spiral",
+    "gpuStatus": "available",
+    "reports": {
+     "home/spiral": {
+      "phase": "home",
+      "track": "spiral",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "mean": 0
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.900000002235174,
+        "p95": 3.599999997764826,
+        "p99": 5.400000002235174,
+        "mean": 2.9788888887398772
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000273,
+        "p99": 16.800000000000182,
+        "mean": 16.665921787709465
+       },
+       "scene": {
+        "count": 6,
+        "p50": 4.282333,
+        "p95": 4.578791,
+        "p99": 4.578791,
+        "mean": 3.995770333333333
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 5.522333,
+        "p95": 6.1635,
+        "p99": 6.1635,
+        "mean": 5.584930166666667
+       },
+       "lens": {
+        "count": 6,
+        "p50": 5.576499,
+        "p95": 6.580875,
+        "p99": 6.580875,
+        "mean": 5.836541
+       },
+       "output": {
+        "count": 6,
+        "p50": 5.646999,
+        "p95": 6.697666,
+        "p99": 6.697666,
+        "mean": 5.911082666666666
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 11.335,
+        "p95": 12.494041,
+        "p99": 12.494041,
+        "mean": 11.1005328
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.00268168409773,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 221,
+       "triangles": 109021,
+       "geometries": 497,
+       "textures": 59,
+       "shaderPrograms": 103
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "racing",
+   "track": "spiral",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 33.72500000000001,
+   "endDistance": 286.7670131030045,
+   "endPhase": "racing",
+   "diagnostics": {
+    "current": "racing/spiral",
+    "gpuStatus": "available",
+    "reports": {
+     "racing/spiral": {
+      "phase": "racing",
+      "track": "spiral",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0.10000000149011612,
+        "p95": 0.20000000298023224,
+        "p99": 0.30000000074505806,
+        "mean": 0.13499999994205103
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.800000000745058,
+        "p95": 3.399999998509884,
+        "p99": 3.800000000745058,
+        "mean": 2.8011111111069718
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999727,
+        "p99": 16.800000000000182,
+        "mean": 16.66592178770949
+       },
+       "scene": {
+        "count": 6,
+        "p50": 2.561291,
+        "p95": 3.921999,
+        "p99": 3.921999,
+        "mean": 2.678096333333333
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 3.390416,
+        "p95": 5.04075,
+        "p99": 5.04075,
+        "mean": 3.548957833333333
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.82375,
+        "p95": 4.404874,
+        "p99": 4.404874,
+        "mean": 3.0860271666666663
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.905875,
+        "p95": 4.535874,
+        "p99": 4.535874,
+        "mean": 3.1707214999999995
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 6.43775,
+        "p95": 7.442124,
+        "p99": 7.442124,
+        "mean": 6.3818828000000005
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.00268168409764,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 218,
+       "triangles": 88376,
+       "geometries": 497,
+       "textures": 59,
+       "shaderPrograms": 103
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "home",
+   "track": "alpine",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 0,
+   "endDistance": 0,
+   "endPhase": "ready",
+   "diagnostics": {
+    "current": "home/alpine",
+    "gpuStatus": "available",
+    "reports": {
+     "home/alpine": {
+      "phase": "home",
+      "track": "alpine",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0.09999999776482582,
+        "mean": 0.0016666666501098208
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.699999999254942,
+        "p95": 3.2999999970197678,
+        "p99": 4.5,
+        "mean": 2.733333333291941
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000273,
+        "p99": 16.800000000000182,
+        "mean": 16.665921787709472
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.845375,
+        "p95": 2.800083,
+        "p99": 2.800083,
+        "mean": 2.074589833333333
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 3.342541,
+        "p95": 3.703791,
+        "p99": 3.703791,
+        "mean": 3.3417843333333335
+       },
+       "lens": {
+        "count": 6,
+        "p50": 3.277916,
+        "p95": 4.212166,
+        "p99": 4.212166,
+        "mean": 3.2357911666666666
+       },
+       "output": {
+        "count": 6,
+        "p50": 3.352749,
+        "p95": 4.295541,
+        "p99": 4.295541,
+        "mean": 3.3171731666666666
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 7.0615,
+        "p95": 7.608125,
+        "p99": 7.608125,
+        "mean": 6.5840998
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.0026816840977,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 313,
+       "triangles": 80247,
+       "geometries": 508,
+       "textures": 51,
+       "shaderPrograms": 99
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "racing",
+   "track": "alpine",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 33.72500000000001,
+   "endDistance": 213.74183333333403,
+   "endPhase": "racing",
+   "diagnostics": {
+    "current": "racing/alpine",
+    "gpuStatus": "available",
+    "reports": {
+     "racing/alpine": {
+      "phase": "racing",
+      "track": "alpine",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0.10000000149011612,
+        "p95": 0.20000000298023224,
+        "p99": 0.30000000074505806,
+        "mean": 0.12388888895511627
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.800000000745058,
+        "p95": 3.399999998509884,
+        "p99": 4.899999998509884,
+        "mean": 2.8511111110034917
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999727,
+        "p99": 16.800000000000182,
+        "mean": 16.66648044692737
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.976999,
+        "p95": 2.206749,
+        "p99": 2.206749,
+        "mean": 1.9727423333333334
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.797875,
+        "p95": 3.094624,
+        "p99": 3.094624,
+        "mean": 2.8175898333333333
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.936583,
+        "p95": 3.451791,
+        "p99": 3.451791,
+        "mean": 2.956749166666667
+       },
+       "output": {
+        "count": 6,
+        "p50": 3.016875,
+        "p95": 3.549875,
+        "p99": 3.549875,
+        "mean": 3.0415830000000006
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 5.864333,
+        "p95": 6.033583,
+        "p99": 6.033583,
+        "mean": 5.3980328
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.000670398551954,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 412,
+       "triangles": 92973,
+       "geometries": 502,
+       "textures": 51,
+       "shaderPrograms": 99
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "home",
+   "track": "coastal",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 0,
+   "endDistance": 0,
+   "endPhase": "ready",
+   "diagnostics": {
+    "current": "home/coastal",
+    "gpuStatus": "available",
+    "reports": {
+     "home/coastal": {
+      "phase": "home",
+      "track": "coastal",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "mean": 0.0005555555638339784
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.2999999970197678,
+        "p95": 3,
+        "p99": 4.399999998509884,
+        "mean": 2.3794444444485836
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999727,
+        "p99": 16.800000000000182,
+        "mean": 16.665363128491602
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.694708,
+        "p95": 2.34025,
+        "p99": 2.34025,
+        "mean": 1.7478538333333333
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.467124,
+        "p95": 3.247041,
+        "p99": 3.247041,
+        "mean": 2.6095618333333332
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.667125,
+        "p95": 3.262791,
+        "p99": 3.262791,
+        "mean": 2.595194166666667
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.99675,
+        "p95": 4.401375,
+        "p99": 4.401375,
+        "mean": 2.8763814999999995
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 5.525083,
+        "p95": 5.602375,
+        "p99": 5.602375,
+        "mean": 5.463808
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.00469310448868,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 224,
+       "triangles": 71837,
+       "geometries": 507,
+       "textures": 50,
+       "shaderPrograms": 98
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "racing",
+   "track": "coastal",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 33.72500000000001,
+   "endDistance": 213.74183333333403,
+   "endPhase": "racing",
+   "diagnostics": {
+    "current": "racing/coastal",
+    "gpuStatus": "available",
+    "reports": {
+     "racing/coastal": {
+      "phase": "racing",
+      "track": "coastal",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0.10000000149011612,
+        "p95": 0.20000000298023224,
+        "p99": 0.3999999985098839,
+        "mean": 0.1299999999296334
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.599999997764826,
+        "p95": 3.600000001490116,
+        "p99": 4,
+        "mean": 2.7294444444485837
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000273,
+        "p99": 16.800000000000182,
+        "mean": 16.665921787709493
+       },
+       "scene": {
+        "count": 6,
+        "p50": 2.305,
+        "p95": 3.998416,
+        "p99": 3.998416,
+        "mean": 2.744846666666667
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 4.718041,
+        "p95": 6.143875,
+        "p99": 6.143875,
+        "mean": 4.6043330000000005
+       },
+       "lens": {
+        "count": 6,
+        "p50": 5.680125,
+        "p95": 6.6915,
+        "p99": 6.6915,
+        "mean": 5.3831455
+       },
+       "output": {
+        "count": 6,
+        "p50": 5.703333,
+        "p95": 6.78625,
+        "p99": 6.78625,
+        "mean": 5.5710135
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 11.233291,
+        "p95": 12.571499,
+        "p99": 12.571499,
+        "mean": 9.6948578
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.00268168409763,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 404,
+       "triangles": 88813,
+       "geometries": 502,
+       "textures": 50,
+       "shaderPrograms": 98
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "home",
+   "track": "cosmic",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 0,
+   "endDistance": 0,
+   "endPhase": "ready",
+   "diagnostics": {
+    "current": "home/cosmic",
+    "gpuStatus": "available",
+    "reports": {
+     "home/cosmic": {
+      "phase": "home",
+      "track": "cosmic",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "mean": 0
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.199999999254942,
+        "p95": 2.7000000029802322,
+        "p99": 4.800000000745058,
+        "mean": 2.3266666665880216
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999727,
+        "p99": 16.800000000000182,
+        "mean": 16.666480446927345
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.59425,
+        "p95": 1.771374,
+        "p99": 1.771374,
+        "mean": 1.5873540000000002
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.525875,
+        "p95": 2.676999,
+        "p99": 2.676999,
+        "mean": 2.5111313333333336
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.758833,
+        "p95": 2.893249,
+        "p99": 2.893249,
+        "mean": 2.4924645
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.819333,
+        "p95": 3.003833,
+        "p99": 3.003833,
+        "mean": 2.5712428333333333
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 4.735666,
+        "p95": 5.764374,
+        "p99": 5.764374,
+        "mean": 4.8197160000000006
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.000670398552046,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 242,
+       "triangles": 74175,
+       "geometries": 477,
+       "textures": 50,
+       "shaderPrograms": 97
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "racing",
+   "track": "cosmic",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 33.72500000000001,
+   "endDistance": 213.74183333333403,
+   "endPhase": "racing",
+   "diagnostics": {
+    "current": "racing/cosmic",
+    "gpuStatus": "available",
+    "reports": {
+     "racing/cosmic": {
+      "phase": "racing",
+      "track": "cosmic",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0.10000000149011612,
+        "p95": 0.20000000298023224,
+        "p99": 0.30000000074505806,
+        "mean": 0.10999999994205104
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.399999998509884,
+        "p95": 2.699999999254942,
+        "p99": 4.300000000745058,
+        "mean": 2.407222222081489
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000728,
+        "p99": 16.800000000000182,
+        "mean": 16.665921787709483
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.758624,
+        "p95": 1.878749,
+        "p99": 1.878749,
+        "mean": 1.779582666666667
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.691833,
+        "p95": 2.913749,
+        "p99": 2.913749,
+        "mean": 2.751541
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.913374,
+        "p95": 3.299333,
+        "p99": 3.299333,
+        "mean": 2.9340273333333333
+       },
+       "output": {
+        "count": 6,
+        "p50": 3.006375,
+        "p95": 3.379624,
+        "p99": 3.379624,
+        "mean": 2.9955343333333335
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 5.492833,
+        "p95": 6.053791,
+        "p99": 6.053791,
+        "mean": 5.506208
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.00268168409767,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 354,
+       "triangles": 83421,
+       "geometries": 477,
+       "textures": 50,
+       "shaderPrograms": 97
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "home",
+   "track": "frostbite-canyon",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 0,
+   "endDistance": 0,
+   "endPhase": "ready",
+   "diagnostics": {
+    "current": "home/frostbite-canyon",
+    "gpuStatus": "available",
+    "reports": {
+     "home/frostbite-canyon": {
+      "phase": "home",
+      "track": "frostbite-canyon",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "mean": 0
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.600000001490116,
+        "p95": 3.600000001490116,
+        "p99": 4.100000001490116,
+        "mean": 2.668333333171904
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999727,
+        "p99": 16.800000000000182,
+        "mean": 16.665921787709475
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.552,
+        "p95": 1.807124,
+        "p99": 1.807124,
+        "mean": 1.60293
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.290666,
+        "p95": 2.511375,
+        "p99": 2.511375,
+        "mean": 2.3337078333333334
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.365916,
+        "p95": 2.840249,
+        "p99": 2.840249,
+        "mean": 2.3341176666666668
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.428375,
+        "p95": 2.921166,
+        "p99": 2.921166,
+        "mean": 2.411666166666666
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 4.451499,
+        "p95": 5.217375,
+        "p99": 5.217375,
+        "mean": 4.6045164
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.002681684097695,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 229,
+       "triangles": 86087,
+       "geometries": 468,
+       "textures": 50,
+       "shaderPrograms": 97
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "racing",
+   "track": "frostbite-canyon",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 33.72500000000001,
+   "endDistance": 282.544267387179,
+   "endPhase": "racing",
+   "diagnostics": {
+    "current": "racing/frostbite-canyon",
+    "gpuStatus": "available",
+    "reports": {
+     "racing/frostbite-canyon": {
+      "phase": "racing",
+      "track": "frostbite-canyon",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0.10000000149011612,
+        "p95": 0.20000000298023224,
+        "p99": 0.4000000022351742,
+        "mean": 0.12166666661699613
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.600000001490116,
+        "p95": 3.400000002235174,
+        "p99": 3.900000002235174,
+        "mean": 2.6466666667204763
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000273,
+        "p99": 16.800000000000182,
+        "mean": 16.66648044692736
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.714291,
+        "p95": 2.2295,
+        "p99": 2.2295,
+        "mean": 1.8271106666666668
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.471749,
+        "p95": 2.895375,
+        "p99": 2.895375,
+        "mean": 2.538520333333333
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.980124,
+        "p95": 3.416583,
+        "p99": 3.416583,
+        "mean": 2.8829926666666665
+       },
+       "output": {
+        "count": 6,
+        "p50": 3.0515,
+        "p95": 3.505124,
+        "p99": 3.505124,
+        "mean": 2.961451
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 4.912916,
+        "p95": 6.094916,
+        "p99": 6.094916,
+        "mean": 5.043732799999999
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.000670398551996,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 237,
+       "triangles": 79905,
+       "geometries": 468,
+       "textures": 50,
+       "shaderPrograms": 97
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "home",
+   "track": "stormline-megacity",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 0,
+   "endDistance": 0,
+   "endPhase": "ready",
+   "diagnostics": {
+    "current": "home/stormline-megacity",
+    "gpuStatus": "available",
+    "reports": {
+     "home/stormline-megacity": {
+      "phase": "home",
+      "track": "stormline-megacity",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "mean": 0.0005555555431379213
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.5,
+        "p95": 3.300000000745058,
+        "p99": 5.199999999254942,
+        "mean": 2.598333333267106
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000273,
+        "p99": 16.800000000000182,
+        "mean": 16.66648044692734
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.599625,
+        "p95": 1.902666,
+        "p99": 1.902666,
+        "mean": 1.6532008333333332
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.389624,
+        "p95": 2.684999,
+        "p99": 2.684999,
+        "mean": 2.4464504999999996
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.509999,
+        "p95": 2.962291,
+        "p99": 2.962291,
+        "mean": 2.4257286666666666
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.5585,
+        "p95": 3.037916,
+        "p99": 3.037916,
+        "mean": 2.5132288333333332
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 5.036624,
+        "p95": 6.187999,
+        "p99": 6.187999,
+        "mean": 4.9062742
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.00067039855206,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 243,
+       "triangles": 55549,
+       "geometries": 897,
+       "textures": 48,
+       "shaderPrograms": 100
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "racing",
+   "track": "stormline-megacity",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 33.72500000000001,
+   "endDistance": 213.74183333333403,
+   "endPhase": "racing",
+   "diagnostics": {
+    "current": "racing/stormline-megacity",
+    "gpuStatus": "available",
+    "reports": {
+     "racing/stormline-megacity": {
+      "phase": "racing",
+      "track": "stormline-megacity",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0.19999999925494194,
+        "p95": 0.30000000074505806,
+        "p99": 0.4000000022351742,
+        "mean": 0.16388888876471255
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.699999999254942,
+        "p95": 3.2999999970197678,
+        "p99": 3.7000000029802322,
+        "mean": 2.7422222221684125
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999727,
+        "p99": 16.800000000000182,
+        "mean": 16.666480446927366
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.621374,
+        "p95": 2.191708,
+        "p99": 2.191708,
+        "mean": 1.7492701666666666
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.510833,
+        "p95": 2.923,
+        "p99": 2.923,
+        "mean": 2.5579301666666665
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.533999,
+        "p95": 3.403708,
+        "p99": 3.403708,
+        "mean": 2.571193833333333
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.62125,
+        "p95": 3.387916,
+        "p99": 3.387916,
+        "mean": 2.6322355
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 5.060374,
+        "p95": 5.436041,
+        "p99": 5.436041,
+        "mean": 4.8924244
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.00067039855197,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 358,
+       "triangles": 66627,
+       "geometries": 897,
+       "textures": 48,
+       "shaderPrograms": 100
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "home",
+   "track": "monsoon-ruins",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 0,
+   "endDistance": 0,
+   "endPhase": "ready",
+   "diagnostics": {
+    "current": "home/monsoon-ruins",
+    "gpuStatus": "available",
+    "reports": {
+     "home/monsoon-ruins": {
+      "phase": "home",
+      "track": "monsoon-ruins",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "mean": 0
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.899999998509884,
+        "p95": 3.699999999254942,
+        "p99": 4.299999997019768,
+        "mean": 2.962777777802613
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999727,
+        "p99": 16.800000000000182,
+        "mean": 16.66648044692735
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.64225,
+        "p95": 2.217458,
+        "p99": 2.217458,
+        "mean": 1.8802843333333332
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.523541,
+        "p95": 2.773833,
+        "p99": 2.773833,
+        "mean": 2.5542076666666667
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.783791,
+        "p95": 3.283625,
+        "p99": 3.283625,
+        "mean": 2.7988466666666665
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.86975,
+        "p95": 3.36025,
+        "p99": 3.36025,
+        "mean": 2.880353833333333
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 4.948333,
+        "p95": 6.13275,
+        "p99": 6.13275,
+        "mean": 5.2794414000000005
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.00067039855203,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 294,
+       "triangles": 135681,
+       "geometries": 1670,
+       "textures": 48,
+       "shaderPrograms": 100
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "racing",
+   "track": "monsoon-ruins",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 33.72500000000001,
+   "endDistance": 278.8856225360917,
+   "endPhase": "racing",
+   "diagnostics": {
+    "current": "racing/monsoon-ruins",
+    "gpuStatus": "available",
+    "reports": {
+     "racing/monsoon-ruins": {
+      "phase": "racing",
+      "track": "monsoon-ruins",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0.10000000149011612,
+        "p95": 0.30000000074505806,
+        "p99": 0.4000000022351742,
+        "mean": 0.15388888915379842
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.900000002235174,
+        "p95": 4,
+        "p99": 4.300000000745058,
+        "mean": 3.1083333332712453
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000273,
+        "p99": 16.800000000000182,
+        "mean": 16.665921787709483
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.689166,
+        "p95": 2.377249,
+        "p99": 2.377249,
+        "mean": 1.8990968333333331
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.541999,
+        "p95": 2.973833,
+        "p99": 2.973833,
+        "mean": 2.581353833333333
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.4235,
+        "p95": 3.491791,
+        "p99": 3.491791,
+        "mean": 2.714451
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.501416,
+        "p95": 3.570458,
+        "p99": 3.570458,
+        "mean": 2.7840965
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 5.561416,
+        "p95": 6.118916,
+        "p99": 6.118916,
+        "mean": 5.2804576
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.00268168409767,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 353,
+       "triangles": 150963,
+       "geometries": 1670,
+       "textures": 48,
+       "shaderPrograms": 100
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "home",
+   "track": "dune-tempest",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 0,
+   "endDistance": 0,
+   "endPhase": "ready",
+   "diagnostics": {
+    "current": "home/dune-tempest",
+    "gpuStatus": "available",
+    "reports": {
+     "home/dune-tempest": {
+      "phase": "home",
+      "track": "dune-tempest",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "mean": 0.0005555555638339784
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2,
+        "p95": 2.800000000745058,
+        "p99": 4.400000002235174,
+        "mean": 2.0472222222636143
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000273,
+        "p99": 16.800000000000182,
+        "mean": 16.665921787709465
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.567541,
+        "p95": 2.091499,
+        "p99": 2.091499,
+        "mean": 1.6596868333333334
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.3345,
+        "p95": 3.023666,
+        "p99": 3.023666,
+        "mean": 2.533673166666667
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.286374,
+        "p95": 3.106874,
+        "p99": 3.106874,
+        "mean": 2.465402333333333
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.357541,
+        "p95": 3.179708,
+        "p99": 3.179708,
+        "mean": 2.5456591666666664
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 4.469,
+        "p95": 5.742041,
+        "p99": 5.742041,
+        "mean": 4.8863078
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.00268168409773,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 143,
+       "triangles": 34233,
+       "geometries": 678,
+       "textures": 47,
+       "shaderPrograms": 98
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "racing",
+   "track": "dune-tempest",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 33.72500000000001,
+   "endDistance": 213.74183333333403,
+   "endPhase": "racing",
+   "diagnostics": {
+    "current": "racing/dune-tempest",
+    "gpuStatus": "available",
+    "reports": {
+     "racing/dune-tempest": {
+      "phase": "racing",
+      "track": "dune-tempest",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0.5,
+        "p95": 0.7999999970197678,
+        "p99": 0.8999999985098839,
+        "mean": 0.5416666666252745
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.599999997764826,
+        "p95": 3.199999999254942,
+        "p99": 3.600000001490116,
+        "mean": 2.5961111112394266
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999727,
+        "p99": 16.800000000000182,
+        "mean": 16.666480446927366
+       },
+       "scene": {
+        "count": 6,
+        "p50": 2.064749,
+        "p95": 2.426125,
+        "p99": 2.426125,
+        "mean": 2.148270333333333
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.591583,
+        "p95": 2.994041,
+        "p99": 2.994041,
+        "mean": 2.7547494999999995
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.918375,
+        "p95": 3.452416,
+        "p99": 3.452416,
+        "mean": 2.714965
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.942083,
+        "p95": 3.550125,
+        "p99": 3.550125,
+        "mean": 2.7797009999999998
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 5.185125,
+        "p95": 6.086291,
+        "p99": 6.086291,
+        "mean": 5.1006994
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.00067039855197,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 286,
+       "triangles": 88579,
+       "geometries": 680,
+       "textures": 47,
+       "shaderPrograms": 98
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "home",
+   "track": "skyfall-archipelago",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 0,
+   "endDistance": 0,
+   "endPhase": "ready",
+   "diagnostics": {
+    "current": "home/skyfall-archipelago",
+    "gpuStatus": "available",
+    "reports": {
+     "home/skyfall-archipelago": {
+      "phase": "home",
+      "track": "skyfall-archipelago",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "mean": 0
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2,
+        "p95": 3.399999998509884,
+        "p99": 4.299999997019768,
+        "mean": 2.2249999999172156
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999727,
+        "p99": 16.800000000000182,
+        "mean": 16.665921787709472
+       },
+       "scene": {
+        "count": 6,
+        "p50": 2.112124,
+        "p95": 2.194916,
+        "p99": 2.194916,
+        "mean": 2.025999666666667
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.86875,
+        "p95": 3.101833,
+        "p99": 3.101833,
+        "mean": 2.8712843333333335
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.942499,
+        "p95": 3.501874,
+        "p99": 3.501874,
+        "mean": 3.076874333333333
+       },
+       "output": {
+        "count": 6,
+        "p50": 3.039374,
+        "p95": 3.524333,
+        "p99": 3.524333,
+        "mean": 3.1474785
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 5.053875,
+        "p95": 5.943124,
+        "p99": 5.943124,
+        "mean": 5.0850577999999995
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.0026816840977,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 171,
+       "triangles": 35217,
+       "geometries": 494,
+       "textures": 47,
+       "shaderPrograms": 97
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "racing",
+   "track": "skyfall-archipelago",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 33.72500000000001,
+   "endDistance": 213.74183333333403,
+   "endPhase": "racing",
+   "diagnostics": {
+    "current": "racing/skyfall-archipelago",
+    "gpuStatus": "available",
+    "reports": {
+     "racing/skyfall-archipelago": {
+      "phase": "racing",
+      "track": "skyfall-archipelago",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0.3999999985098839,
+        "p95": 0.5,
+        "p99": 0.6999999992549419,
+        "mean": 0.39944444449825417
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2,
+        "p95": 2.599999997764826,
+        "p99": 3.5,
+        "mean": 2.0961111112187307
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000273,
+        "p99": 16.800000000000182,
+        "mean": 16.66648044692736
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.623041,
+        "p95": 2.485874,
+        "p99": 2.485874,
+        "mean": 1.7427496666666666
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.410708,
+        "p95": 3.110375,
+        "p99": 3.110375,
+        "mean": 2.574937166666667
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.655958,
+        "p95": 3.679875,
+        "p99": 3.679875,
+        "mean": 2.7542495000000002
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.754,
+        "p95": 3.778416,
+        "p99": 3.778416,
+        "mean": 2.6999231666666668
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 4.938749,
+        "p95": 5.434124,
+        "p99": 5.434124,
+        "mean": 4.8454158
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.000670398551996,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 265,
+       "triangles": 66523,
+       "geometries": 494,
+       "textures": 47,
+       "shaderPrograms": 97
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "home",
+   "track": "harbor-circuit",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 0,
+   "endDistance": 0,
+   "endPhase": "ready",
+   "diagnostics": {
+    "current": "home/harbor-circuit",
+    "gpuStatus": "available",
+    "reports": {
+     "home/harbor-circuit": {
+      "phase": "home",
+      "track": "harbor-circuit",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "mean": 0
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 1.699999999254942,
+        "p95": 2.399999998509884,
+        "p99": 3.199999999254942,
+        "mean": 1.7899999999337726
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999955,
+        "p99": 16.800000000000182,
+        "mean": 16.665921787709472
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.357125,
+        "p95": 1.735249,
+        "p99": 1.735249,
+        "mean": 1.4766176666666668
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.310416,
+        "p95": 2.712124,
+        "p99": 2.712124,
+        "mean": 2.3798603333333332
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.597375,
+        "p95": 2.919666,
+        "p99": 2.919666,
+        "mean": 2.625416166666666
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.690041,
+        "p95": 2.99425,
+        "p99": 2.99425,
+        "mean": 2.710131666666667
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 5.487791,
+        "p95": 6.058958,
+        "p99": 6.058958,
+        "mean": 5.4369746
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.0026816840977,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 179,
+       "triangles": 78881,
+       "geometries": 468,
+       "textures": 47,
+       "shaderPrograms": 97
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "racing",
+   "track": "harbor-circuit",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 33.72500000000001,
+   "endDistance": 213.74183333333403,
+   "endPhase": "racing",
+   "diagnostics": {
+    "current": "racing/harbor-circuit",
+    "gpuStatus": "available",
+    "reports": {
+     "racing/harbor-circuit": {
+      "phase": "racing",
+      "track": "harbor-circuit",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0.10000000149011612,
+        "p95": 0.19999999925494194,
+        "p99": 0.20000000298023224,
+        "mean": 0.09444444448583655
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 2.100000001490116,
+        "p95": 2.399999998509884,
+        "p99": 3,
+        "mean": 2.115555555725263
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999727,
+        "p99": 16.800000000000182,
+        "mean": 16.66592178770949
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.803874,
+        "p95": 1.921166,
+        "p99": 1.921166,
+        "mean": 1.783673
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.755374,
+        "p95": 3.002124,
+        "p99": 3.002124,
+        "mean": 2.758249166666667
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.9465,
+        "p95": 3.5185,
+        "p99": 3.5185,
+        "mean": 2.7627148333333333
+       },
+       "output": {
+        "count": 6,
+        "p50": 3.055125,
+        "p95": 3.637125,
+        "p99": 3.637125,
+        "mean": 2.8531525
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 5.895499,
+        "p95": 6.092374,
+        "p99": 6.092374,
+        "mean": 5.644341
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.00268168409764,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 250,
+       "triangles": 109129,
+       "geometries": 468,
+       "textures": 47,
+       "shaderPrograms": 97
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "showcase",
+   "track": "volcanic-crown",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 0,
+   "endDistance": 0,
+   "endPhase": "ready",
+   "diagnostics": {
+    "current": "home/volcanic-crown",
+    "gpuStatus": "available",
+    "reports": {
+     "home/volcanic-crown": {
+      "phase": "home",
+      "track": "volcanic-crown",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "mean": 0
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 0.6999999992549419,
+        "p95": 1.1000000014901161,
+        "p99": 1.2000000029802322,
+        "mean": 0.7200000000082785
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999727,
+        "p99": 16.800000000000182,
+        "mean": 16.665921787709475
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.32725,
+        "p95": 1.836458,
+        "p99": 1.836458,
+        "mean": 1.4605690000000002
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.322374,
+        "p95": 2.752583,
+        "p99": 2.752583,
+        "mean": 2.4247216666666667
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.590708,
+        "p95": 2.923583,
+        "p99": 2.923583,
+        "mean": 2.5061940000000003
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.680541,
+        "p95": 3.01125,
+        "p99": 3.01125,
+        "mean": 2.5958538333333334
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 5.103791,
+        "p95": 5.602208,
+        "p99": 5.602208,
+        "mean": 4.8768078
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.002681684097695,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 139,
+       "triangles": 30137,
+       "geometries": 98,
+       "textures": 21,
+       "shaderPrograms": 34
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "showcase",
+   "track": "dune-tempest",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 0,
+   "endDistance": 0,
+   "endPhase": "ready",
+   "diagnostics": {
+    "current": "home/dune-tempest",
+    "gpuStatus": "available",
+    "reports": {
+     "home/dune-tempest": {
+      "phase": "home",
+      "track": "dune-tempest",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "mean": 0.0005555555431379213
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 0.7000000029802322,
+        "p95": 1.6000000014901161,
+        "p99": 3,
+        "mean": 0.8533333333830039
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999955,
+        "p99": 16.800000000000182,
+        "mean": 16.665921787709472
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.332624,
+        "p95": 1.74875,
+        "p99": 1.74875,
+        "mean": 1.4020478333333333
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.326499,
+        "p95": 2.505374,
+        "p99": 2.505374,
+        "mean": 2.3245271666666665
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.480874,
+        "p95": 2.658874,
+        "p99": 2.658874,
+        "mean": 2.3014573333333335
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.525833,
+        "p95": 2.701375,
+        "p99": 2.701375,
+        "mean": 2.3565135000000006
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 4.771416,
+        "p95": 5.297166,
+        "p99": 5.297166,
+        "mean": 4.6834494
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.0026816840977,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 134,
+       "triangles": 33023,
+       "geometries": 100,
+       "textures": 21,
+       "shaderPrograms": 33
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "showcase",
+   "track": "monsoon-ruins",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 0,
+   "endDistance": 0,
+   "endPhase": "ready",
+   "diagnostics": {
+    "current": "home/monsoon-ruins",
+    "gpuStatus": "available",
+    "reports": {
+     "home/monsoon-ruins": {
+      "phase": "home",
+      "track": "monsoon-ruins",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "mean": 0
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 0.8000000007450581,
+        "p95": 1.199999999254942,
+        "p99": 1.4000000022351742,
+        "mean": 0.8188888890047868
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000273,
+        "p99": 16.799999999999955,
+        "mean": 16.66592178770946
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.458291,
+        "p95": 1.720833,
+        "p99": 1.720833,
+        "mean": 1.4874995000000002
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.500875,
+        "p95": 2.927,
+        "p99": 2.927,
+        "mean": 2.551534333333333
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.815374,
+        "p95": 3.496291,
+        "p99": 3.496291,
+        "mean": 2.919492333333334
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.896124,
+        "p95": 3.598541,
+        "p99": 3.598541,
+        "mean": 3.0035201666666667
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 4.920291,
+        "p95": 5.717416,
+        "p99": 5.717416,
+        "mean": 5.0209994
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.002681684097745,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 161,
+       "triangles": 48227,
+       "geometries": 128,
+       "textures": 21,
+       "shaderPrograms": 35
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "showcase",
+   "track": "skyfall-archipelago",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 0,
+   "endDistance": 0,
+   "endPhase": "ready",
+   "diagnostics": {
+    "current": "home/skyfall-archipelago",
+    "gpuStatus": "available",
+    "reports": {
+     "home/skyfall-archipelago": {
+      "phase": "home",
+      "track": "skyfall-archipelago",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0.09999999776482582,
+        "mean": 0.0011111111069718996
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 0.9000000022351742,
+        "p95": 1.4000000022351742,
+        "p99": 1.800000000745058,
+        "mean": 0.9877777776577407
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999955,
+        "p99": 16.800000000000182,
+        "mean": 16.665921787709483
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.746041,
+        "p95": 2.379874,
+        "p99": 2.379874,
+        "mean": 1.8863604999999997
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.433749,
+        "p95": 5.063708,
+        "p99": 5.063708,
+        "mean": 3.4623743333333334
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.558958,
+        "p95": 5.101708,
+        "p99": 5.101708,
+        "mean": 3.2309855000000005
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.649624,
+        "p95": 5.127833,
+        "p99": 5.127833,
+        "mean": 3.3827076666666667
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 7.704458,
+        "p95": 9.889416,
+        "p99": 9.889416,
+        "mean": 7.931391199999998
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.00268168409767,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 143,
+       "triangles": 50467,
+       "geometries": 109,
+       "textures": 21,
+       "shaderPrograms": 35
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "showcase",
+   "track": "stormline-megacity",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 0,
+   "endDistance": 0,
+   "endPhase": "ready",
+   "diagnostics": {
+    "current": "home/stormline-megacity",
+    "gpuStatus": "available",
+    "reports": {
+     "home/stormline-megacity": {
+      "phase": "home",
+      "track": "stormline-megacity",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0.10000000149011612,
+        "mean": 0.001666666670805878
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 0.8999999985098839,
+        "p95": 1.300000000745058,
+        "p99": 2,
+        "mean": 0.9344444445023934
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999727,
+        "p99": 16.800000000000182,
+        "mean": 16.665921787709472
+       },
+       "scene": {
+        "count": 6,
+        "p50": 1.436875,
+        "p95": 3.249791,
+        "p99": 3.249791,
+        "mean": 1.8297913333333333
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 2.487124,
+        "p95": 4.346041,
+        "p99": 4.346041,
+        "mean": 2.851492333333333
+       },
+       "lens": {
+        "count": 6,
+        "p50": 2.557916,
+        "p95": 3.390833,
+        "p99": 3.390833,
+        "mean": 2.723617666666667
+       },
+       "output": {
+        "count": 6,
+        "p50": 2.646375,
+        "p95": 3.313083,
+        "p99": 3.313083,
+        "mean": 2.7858330000000002
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 4.732541,
+        "p95": 11.431166,
+        "p99": 11.431166,
+        "mean": 6.740749599999999
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.0026816840977,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 163,
+       "triangles": 30643,
+       "geometries": 106,
+       "textures": 21,
+       "shaderPrograms": 32
+      }
+     }
+    }
+   }
+  },
+  {
+   "scenario": "showcase",
+   "track": "frostbite-canyon",
+   "seed": 12345,
+   "requestedFrames": 180,
+   "drawnCount": 180,
+   "startDistance": 0,
+   "endDistance": 0,
+   "endPhase": "ready",
+   "diagnostics": {
+    "current": "home/frostbite-canyon",
+    "gpuStatus": "available",
+    "reports": {
+     "home/frostbite-canyon": {
+      "phase": "home",
+      "track": "frostbite-canyon",
+      "metrics": {
+       "cpuSimulationMs": {
+        "count": 180,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0.10000000149011612,
+        "mean": 0.0022222222346398564
+       },
+       "cpuRenderSubmissionMs": {
+        "count": 180,
+        "p50": 1,
+        "p95": 1.5999999977648258,
+        "p99": 2.2999999970197678,
+        "mean": 1.0955555555928085
+       },
+       "frameIntervalMs": {
+        "count": 179,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000273,
+        "p99": 16.800000000000182,
+        "mean": 16.666480446927334
+       },
+       "scene": {
+        "count": 6,
+        "p50": 2.666791,
+        "p95": 3.050041,
+        "p99": 3.050041,
+        "mean": 2.7455133333333333
+       },
+       "bloom": {
+        "count": 6,
+        "p50": 5.238124,
+        "p95": 6.788916,
+        "p99": 6.788916,
+        "mean": 5.1052495
+       },
+       "lens": {
+        "count": 6,
+        "p50": 4.088749,
+        "p95": 7.325375,
+        "p99": 7.325375,
+        "mean": 4.832777166666667
+       },
+       "output": {
+        "count": 6,
+        "p50": 4.119291,
+        "p95": 7.354041,
+        "p99": 7.354041,
+        "mean": 4.8834025
+       },
+       "gpuFrameMs": {
+        "count": 5,
+        "p50": 7.19275,
+        "p95": 10.099874,
+        "p99": 10.099874,
+        "mean": 7.120007800000001
+       }
+      },
+      "stalls": 0,
+      "actualFps": 60.00067039855208,
+      "config": {
+       "quality": "high",
+       "deviceDpr": 3,
+       "renderDpr": 1.5,
+       "width": 585,
+       "height": 1266,
+       "targetWidth": 585,
+       "targetHeight": 1266,
+       "msaa": 4,
+       "targetFps": 60,
+       "renderScale": 1
+      },
+      "mixedConfig": false,
+      "load": {
+       "drawCalls": 143,
+       "triangles": 75159,
+       "geometries": 104,
+       "textures": 21,
+       "shaderPrograms": 41
+      }
+     }
+    }
+   }
+  }
+ ]
+}

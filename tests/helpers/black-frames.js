@@ -20,8 +20,9 @@ export const watch = page => page.evaluate(() => {
   composer.render = dt => {
     render(dt);
     stats.frames++;
-    // After the lens pass swap the write buffer holds scene + bloom; the high pass is what the blur spreads.
-    stats.scene += nonFinite(composer.writeBuffer);
+    // The read buffer is the HDR scene target with the bloom added (the lens pass draws straight to the screen);
+    // the high pass is what the blur spreads.
+    stats.scene += nonFinite(composer.readBuffer);
     stats.bloom += nonFinite(bloom.renderTargetBright);
   };
 });

@@ -14,6 +14,7 @@ import { createSkidMarks } from './skid-marks.js';
 import { createMiniBoostStreaks } from './mini-boost-streaks.js';
 import { LIFT_PORTS, liftPort } from './lift-ports.js';
 import { createNitroSparks } from './nitro-sparks.ts';
+import { createParticlePool } from './effects-particle-pool.js';
 import { blue, bonusStyles, gas, gold, mist, orange, pickupColors, purple, ringColors } from './effects-palette.ts';
 
 const COUNT = 480, flatShadow = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
@@ -22,17 +23,8 @@ export const RING_POOL_CAPACITY = 48; // densest 900 m view of one colour: 18 wi
 // `renderer` + `pickupEnvironment` let the pickups load their authored models and reflections; `camera` faces their halos.
 // `player`: the player's car, which glows and hops as each drift tier pays (drift-charge-vfx.js).
 export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvironment, player, roadShadow } = {}) {
-  const particles = Array.from({ length: COUNT }, () => ({ life: 0 }));
-  const positions = new Float32Array(COUNT * 3);
-  const colors = new Float32Array(COUNT * 3);
-  const sizes = new Float32Array(COUNT);
-  const alphas = new Float32Array(COUNT);
-  const kinds = new Float32Array(COUNT);
-  const velocities = new Float32Array(COUNT * 3);
-  const geometry = new THREE.BufferGeometry();
-  for (const [name, array, size] of [['position', positions, 3], ['color', colors, 3], ['size', sizes, 1], ['alpha', alphas, 1], ['kind', kinds, 1], ['velocity', velocities, 3]]) {
-    geometry.setAttribute(name, new THREE.BufferAttribute(array, size).setUsage(THREE.DynamicDrawUsage));
-  }
+  const pool = createParticlePool(COUNT), { particles, geometry, emit } = pool;
+  const { position: positions, color: colors, size: sizes, alpha: alphas, kind: kinds, velocity: velocities } = pool.arrays;
   const material = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.NormalBlending,
     uniforms: { pixelRatio: { value: Math.min(devicePixelRatio, 1.5) } },
@@ -63,11 +55,11 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
     jet.visible = false; cores.add(jet);
   }
   let flowTime = 0;
-  let cursor = 0, lastImpact = null, lastLanding = null, lastShieldBlock = null;
+  let lastImpact = null, lastLanding = null, lastShieldBlock = null;
   const emissions = new Float64Array(RACE_DRIVER_IDS.length), strengths = new Float64Array(RACE_DRIVER_IDS.length);
   const nozzles = new Uint8Array(RACE_DRIVER_IDS.length);
   const nozzlePosition = new THREE.Vector3(), nozzleVelocity = new THREE.Vector3();
-  const gateBasis = new THREE.Matrix4(), gateRight = new THREE.Vector3(), gateUp = new THREE.Vector3(), gateBack = new THREE.Vector3();
+  const gateBasis = new THREE.Matrix4(), gateRight = new THREE.Vector3(), gateUp = new THREE.Vector3(), gateBack = new THREE.Vector3(), point = [0, 0, 0]; // worldPoint `out`, read before the next call
   const ringGeometry = new THREE.TorusGeometry(1, 0.012, 6, 64);
   const rainbow = new Float32Array(ringGeometry.attributes.position.count * 3), tint = new THREE.Color();
   for (let i = 0; i < ringGeometry.attributes.position.count; i++) {
@@ -95,10 +87,6 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
   const skids = player ? createSkidMarks(scene, player, roadShadow) : null, skidOrigin = new THREE.Vector3();
   const miniBoostStreaks = camera ? createMiniBoostStreaks(scene, driftColors) : null; // the player's mini-boost start cue
   let previousRace = null, seen = new WeakMap(), driftEmission = 0, sprayEmission = 0, spraySide = 1;
-  function emit(x, y, distance, vx, vy, forward, size, life, color, gravity, kind = 0, opacity = 0.85, radialX = Math.sign(vx)) {
-    Object.assign(particles[cursor], { x, y, distance, vx, vy, forward, size, life, maxLife: life, color, gravity, kind, opacity, radialX, grounded: false, phase: cursor * 2.39996 });
-    cursor = (cursor + 1) % COUNT;
-  }
   const wheel = { x: 0, d: 0 };
   // Rear-wheel contact in world x / race distance: drift smoke and rain spray start here.
   function rearWheel(side, car, center, originZ, vehicles) {
@@ -174,7 +162,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
           if (collected || item.downUntil > race.elapsed || item.distance <= distance || item.distance > distance + 900) continue; // gone until it respawns
           const mesh = marker;
           if (options.worldPoint) mesh.position.fromArray(options.worldPoint(item.distance, item.x,
-            item.altitude + (source === 0 ? 0.85 : 0), distance, item));
+            item.altitude + (source === 0 ? 0.85 : 0), distance, item, point));
           else mesh.position.set(roadCenter(item.distance) + item.x - center,
             item.altitude + (source === 0 ? 0.85 : 0), -(item.distance - distance));
           if (source === 1 && options.worldFrame) {
@@ -303,10 +291,11 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
           emissions[source]--;
         }
       }
-      for (let i = 0; i < COUNT; i++) {
+      for (let i = pool.span.first, last = pool.span.last; i <= last; i = pool.span.next(i)) { // slots outside the span are dead and already uploaded as alpha 0
         const p = particles[i];
         p.life = Math.max(0, p.life - dt);
         if (p.life === 0) { alphas[i] = 0; continue; }
+        pool.span.live(i);
         const age = p.maxLife - p.life;
         if (p.kind === 1 && !p.grounded) {
           // Entrain surrounding air: broaden and break up the stream as it ages.
@@ -336,7 +325,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
         }
         const offset = i * 3;
         if (options.worldPoint && !classicRoute) {
-          positions.set(options.worldPoint(p.distance,p.x-roadCenter(p.distance),p.y,distance),offset);
+          positions.set(options.worldPoint(p.distance,p.x-roadCenter(p.distance),p.y,distance,undefined,point),offset);
         } else {
           positions[offset] = p.x - center; positions[offset + 1] = p.y; positions[offset + 2] = originZ - p.distance;
         }
@@ -347,13 +336,13 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
         const fadeIn = p.kind === 0 ? 1 : Math.min(1, age / 0.06);
         alphas[i] = Math.pow(p.life / p.maxLife, 1.4) * fadeIn * p.opacity;
       }
-      for (const attribute of Object.values(geometry.attributes)) attribute.needsUpdate = true;
+      pool.span.commit();
       rings.forEach(ring => {
         const event = ring.userData.event;
         const age = event ? race.elapsed - event.time : 10;
         ring.visible = age >= 0 && age < 0.7 && !preview;
         if (ring.visible) {
-          if (options.worldPoint) ring.position.fromArray(options.worldPoint(event.distance,event.x,.05,distance));
+          if (options.worldPoint) ring.position.fromArray(options.worldPoint(event.distance,event.x,.05,distance,undefined,point));
           else ring.position.set(roadCenter(event.distance) + event.x - center, 0.05, -(event.distance - distance));
           ring.scale.setScalar(1 + age * (reducedMotion ? 3 : 14));
           ring.material.opacity = (1 - age / 0.7) * 0.55;
@@ -363,7 +352,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
       const magnet = car.effects?.magnet ?? 0;
       magnetRing.visible = magnet > 0 && !preview;
       if (magnetRing.visible) {
-        if (options.worldPoint) magnetRing.position.fromArray(options.worldPoint(car.distance, car.x, car.altitude + .05, distance));
+        if (options.worldPoint) magnetRing.position.fromArray(options.worldPoint(car.distance, car.x, car.altitude + .05, distance, undefined, point));
         else magnetRing.position.set(roadCenter(car.distance) + car.x - center, car.altitude + .05, 0);
         // Fades over the final second; a gentle pulse unless motion is reduced.
         magnetRing.material.opacity = Math.min(1, magnet) * (reducedMotion ? .3 : .3 + Math.sin(flowTime * 5) * .08);
@@ -380,15 +369,12 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
       for (const mat of Object.values(ringMaterials)) mat.dispose();
     },
     reset() {
-      for (const p of particles) p.life = 0;
-      alphas.fill(0);
-      geometry.attributes.alpha.needsUpdate = true;
+      pool.reset();
       rings.forEach(ring => { ring.userData.event = null; ring.visible = false; });
       magnetRing.visible = false;
       lastImpact = lastLanding = lastShieldBlock = null;
       seen = new WeakMap(); previousRace = null; driftEmission = sprayEmission = 0;
       collectVfx.reset(); driftCharge?.reset(); skids?.reset(); miniBoostStreaks?.reset(); statusTint.reset();
-      cursor = 0;
       emissions.fill(0); strengths.fill(0); nozzles.fill(0);
       cores.children.forEach(jet => { jet.visible = false; });
     },

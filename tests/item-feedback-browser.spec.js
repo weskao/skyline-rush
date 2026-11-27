@@ -15,8 +15,8 @@ const startWithItems = async (page, { blockedStorage = false } = {}) => {
   await page.locator('#start-button').click();
   if (blockedStorage) await page.locator('#guide-start-race').click();
   await expect(page.locator('#item-status')).toContainText('EMPTY');
-  // The HUD shows EMPTY before the race's first frame compiles its shaders: the program baseline waits for GO.
-  await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15000) });
+  // The grid compiles the loaded car, scenery and pickups before GO: shader-count baselines start once it runs.
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15_000) });
 };
 const programs = page => page.evaluate(() => window.gameScene.renderer.info.programs.length);
 

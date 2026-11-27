@@ -243,17 +243,6 @@ async function gridPose(page, url, storage = {}) {
   const { errors } = await prepare(page, url, { quality: 'medium', storage });
   await expect.poll(() => dressed(page), { timeout: ciTimeout(20000) }).toBe(storage['skyline-rush-car'] ? 'crimson-gt' : 'roadster2');
   const start = page.locator('#start-button');
-  // Hold the live grid in the same click as Start. A host-side poll can arrive after the wall-clock countdown.
-  await start.evaluate(button => button.addEventListener('click', () => {
-    // The installed-pack preflight is async; hold the first real countdown grid.
-    const until = performance.now() + 10_000;
-    const hold = () => {
-      const race = window.gameplay?.race;
-      if (race?.phase === 'countdown') race.countdown = 1e6;
-      else if (race?.phase === 'ready' && performance.now() < until) requestAnimationFrame(hold);
-    };
-    hold();
-  }, { once: true }));
   await start.click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'countdown');
   await expect.poll(() => page.evaluate(() => {
@@ -296,7 +285,8 @@ test('the GT stands on the road and under the chase camera exactly like the Road
   const sample = async (storage, shot = '') => {
     const page = await browser.newPage({ viewport, deviceScaleFactor });
     try {
-      await captureHooks(page);
+      // Arm the countdown at the real START boundary, after the asynchronous pack preflight.
+      await captureHooks(page, [['raceSelect.rememberTrack(race.trackId);', 'raceSelect.rememberTrack(race.trackId); race.countdown = 1e6;']]);
       const pose = await gridPose(page, gameplayURL, storage);
       if (shot) await attach(page, shot);
       return pose;
@@ -376,6 +366,9 @@ for (const category of SKIN_CATEGORIES) test(`every Garage ${category} skin prev
   test.setTimeout(ciTimeout(120000));
   // A drift-trail click opens the live drift preview, a second WebGL renderer; still frames keep both off CI's CPU.
   await page.emulateMedia({ reducedMotion: 'reduce' });
+  // CPU WebGL can starve the real fetch/decode deadlines while the initial scene loads.
+  // Keep asserting the actual GT GLB; timeout/fallback behavior is tested separately.
+  if (process.env.CI) await widenModelDeadline(page, true);
   const { errors } = await prepare(page, gameplayURL, { storage: GT });
   await page.locator('#garage-button').click();
   await modelReady(page);

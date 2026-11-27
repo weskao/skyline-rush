@@ -31,6 +31,7 @@ import { updateRaceHalfwayView } from './race-halfway-view.ts';
 import { equippedCar, loadCarPaint, saveCarPaint } from './car-catalog.ts';
 import { createPerfOverlay } from './perf-overlay.ts';
 import { setupFpsUI } from './fps-ui.ts';
+import { createRenderDemand, setupRenderLifecycle } from './render-lifecycle.ts';
 import { advanceCountdown, drainSteps, skipsCountdown, SIM_STEP } from './frame-pacing.ts';
 import { captureRaceMotion } from './vehicle-render-motion.js';
 import { createStuntRun, stuntHeatContinues, stuntHeatLimit } from './stunt-attack.ts';
@@ -505,7 +506,8 @@ try {
   previewPaint(equippedPaint);
   let previousTime = performance.now(), accumulator = 0, hudElapsed = 0, wasCalm = calmMotion();
   const perfOverlay = createPerfOverlay(location.search, () => world.inspectRenderLoad(), !!import.meta.env.VITE_DIAG);
-  const fps = setupFpsUI(scale => world.setRenderScale(scale));
+  const fps = setupFpsUI(scale => world.setRenderScale(scale), world.deepPerf);
+  const demand = createRenderDemand(), lifecycle = setupRenderLifecycle($('#world'), demand); // on-demand drawing: paused/covered only
   let motionRace = null; const previousMotion = {}, renderMotion = { previous: previousMotion, alpha: 1 };
   function frame(now) {
     // Requested first: a frame that throws still reports its error, but never freezes the game for good.
@@ -513,6 +515,7 @@ try {
     const rawDelta = (now - previousTime) / 1000; previousTime = now;
     const dt = Math.max(0, Math.min(rawDelta, 0.05));
     if (motionRace !== race) { motionRace = race; accumulator = 0; captureRaceMotion(race, previousMotion); }
+    world.deepPerf?.start(now, rawDelta, race.phase, race.phase === 'ready' ? raceSelect.currentTrackId() : race.trackId);
     const countingDown = race.phase === 'countdown';
     const due = drainSteps(accumulator, countingDown ? 0 : dt); accumulator = due.accumulator;
     // Count elapsed seconds after the track scene has attached and warmed on a rendered frame.
@@ -535,6 +538,7 @@ try {
       }
       if (!race.modifier && (['classic', 'time', 'custom', 'circuit'].includes(race.mode))) recordGhost(trace, race);
     }
+    world.deepPerf?.simulationDone();
     const calm = calmMotion();
     // Watched per frame, not via a change listener: Chrome can drop that event when .matches is read every frame.
     if (calm && !wasCalm) vfx.stopMotionIfCalm(); wasCalm = calm;
@@ -542,7 +546,7 @@ try {
     const ghost = touchUI.prefs().ghost && race.session.presentation.ghostEnabled && race.phase !== 'ready' ? ghosts.forRace(race) : null;
     const shouldRender = fps.shouldRender(now, dt, race.phase === 'racing', document.hidden);
     let drawn = false;
-    if (shouldRender) {
+    if (shouldRender && demand.wants({ phase: race.phase, covered: lifecycle.covered && !startup.waitingForFrame, contextLost, pending: world.raceFramePending(race) })) {
       const renderStarted = performance.now();
       renderMotion.alpha = Math.max(0, Math.min(1, accumulator / SIM_STEP));
       try {
@@ -556,7 +560,7 @@ try {
         cancelAnimationFrame(animationId); // The opaque startup screen only needs the first lobby frame.
         startup.ready(() => { controls.clear(); sound.cue('ui'); finishStartupReleaseNotes(); animationId = requestAnimationFrame(frame); });
       }
-      if (drawn) fps.completeRender(performance.now() - renderStarted);
+      if (drawn) world.deepPerf?.submission(performance.now() - renderStarted); // diagnostic only: CPU submission is not load
     }
     sound.update(race, presentationState.halfwayStarted, countingDown && world.raceFramePending(race));
     hudElapsed += dt; if (hudElapsed >= 0.075 || previousPhase !== race.phase) {
@@ -564,6 +568,7 @@ try {
       hudElapsed = 0;
     }
     perfOverlay?.record(now, rawDelta, race.phase === 'racing', drawn);
+    world.deepPerf?.finish(drawn, fps.targetFps, fps.renderScale);
   }
   animationId = requestAnimationFrame(frame);
 } catch (error) {

@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { PICKUP_ACCENTS, PICKUP_SIZES, pickupPulse } from './pickup-art.js';
 import { glowTexture } from './pickup-collect-vfx.js';
+import { markRange } from './effects-particle-upload.js';
 
 export const PICKUP_HALO_SCALE = 2.6;
 const HALO_LEVEL = .6;
@@ -39,8 +40,8 @@ export function createPickupAura(capacity) {
       mesh.visible = used > 0;
       if (!used) return;
       mesh.count = used;
-      mesh.instanceMatrix.needsUpdate = true;
-      mesh.instanceColor.needsUpdate = true;
+      markRange(mesh.instanceMatrix, 0, used); // only the halos drawn this frame, as marker-pool.js uploads
+      markRange(mesh.instanceColor, 0, used);
       mesh.computeBoundingSphere(); // this frame's halos only, as marker-pool.js does
     },
     dispose() { mesh.geometry.dispose(); material.dispose(); texture.dispose(); mesh.dispose(); },

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Scene graph census probe</title>
+<style>html,body{margin:0;background:#081428}canvas{display:block;width:100vw;height:100vh}</style></head>
+<body>
+<canvas id="world" aria-label="Scene graph census probe"></canvas>
+<script type="module">
+  // Same fixed-step setup as thermal-baseline.html; counts what the main scene pass would submit.
+  import * as THREE from 'three';
+  import { createWorld } from '../../src/world.js';
+  import { createRace } from '../../src/race-factory.ts';
+  import { startRace, stepRace, setLayoutSeed } from '../../src/game.js';
+  import { thermalScenarios } from './thermal-scenarios.js';
+  import { CIRCUIT_ID } from '../../src/circuit-track.ts';
+  import { vfxSettings } from '../../src/vfx-settings.ts';
+  import { createPresentation } from '../../src/presentation.ts';
+  import { untilDrawn } from './showcase-probe-draw.js';
+  const STEP = 1/60, SEED = 12345, INPUT = Object.freeze({ throttle: true, boost: true, steer: 0 });
+  const next = () => new Promise(requestAnimationFrame);
+  let captured = null;
+  // WebGLRenderer.render is an instance method; every render() calls scene.onBeforeRender first.
+  THREE.Scene.prototype.onBeforeRender = function (renderer, scene, camera) {
+    if (camera.isPerspectiveCamera && !captured) captured = { scene, camera };
+  };
+  const visibleChain = object => { for (let o = object; o; o = o.parent) if (!o.visible) return false; return true; };
+  function census(scene, camera) {
+    const frustum = new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4()
+      .multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+    const sphere = new THREE.Sphere();
+    let objects = 0, meshes = 0, drawn = 0, autoMatrix = 0, instanced = 0;
+    const materials = new Set(), geometries = new Set(), pairs = new Map(), names = new Map();
+    scene.traverse(o => {
+      objects++; if (o.matrixAutoUpdate) autoMatrix++;
+      if (!(o.isMesh || o.isPoints || o.isLine)) return;
+      meshes++; geometries.add(o.geometry);
+      for (const m of [o.material].flat()) materials.add(m);
+      if (!visibleChain(o) || !o.layers.test(camera.layers)) return;
+      if (o.frustumCulled) {
+        if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
+        if (o.isInstancedMesh) { if (!o.boundingSphere) o.computeBoundingSphere(); sphere.copy(o.boundingSphere); }
+        else sphere.copy(o.geometry.boundingSphere);
+        if (!frustum.intersectsSphere(sphere.applyMatrix4(o.matrixWorld))) return;
+      }
+      const groups = Array.isArray(o.material) ? Math.max(1, o.geometry.groups.length) : 1;
+      drawn += groups; if (o.isInstancedMesh) instanced++;
+      const label = (o.name || o.parent?.name || o.type).replace(/[-:]\d+$/, '');
+      names.set(label, (names.get(label) ?? 0) + groups);
+      if (!o.isInstancedMesh) {
+        const key = o.geometry.uuid + '|' + [o.material].flat().map(m => m.uuid).join();
+        pairs.set(key, (pairs.get(key) ?? 0) + 1);
+      }
+    });
+    const repeated = [...pairs.values()].filter(n => n > 1);
+    return { objects, autoMatrix, meshes, drawnMeshes: drawn, instancedDrawn: instanced,
+      materials: materials.size, geometries: geometries.size,
+      sharedPairDraws: repeated.reduce((a, b) => a + b, 0), sharedPairs: repeated.length,
+      top: [...names].sort((a, b) => b[1] - a[1]).slice(0, 12) };
+  }
+  window.thermalScenarios = thermalScenarios;
+  window.sceneCensus = async ({ id, phase, ticks = 240 }) => {
+    const world = createWorld(document.getElementById('world'), vfxSettings({ quality: 'high', preset: 'cinematic' }));
+    try {
+      setLayoutSeed(() => SEED);
+      const track = phase === 'showcase' ? 'coast' : id;
+      const race = createRace(track, track === CIRCUIT_ID ? { mode: 'circuit', laps: 3 } : null);
+      const presentation = createPresentation();
+      if (phase === 'showcase' && !world.setUpcomingTrack(id)) throw Error('Unavailable 3D showcase: ' + id);
+      world.preloadTrackAssets(track);
+      await untilDrawn(() => world.render(race, STEP, 2, {}));
+      if (phase === 'racing') {
+        startRace(race);
+        await untilDrawn(() => world.render(race, STEP, 0, {}));
+        while (race.phase === 'countdown') stepRace(race, {}, STEP);
+        for (let i = 0; i < ticks; i++) {
+          await next(); stepRace(race, INPUT, STEP);
+          world.render(race, STEP, 0, INPUT, presentation.update(race, STEP));
+        }
+      }
+      captured = null;
+      world.render(race, STEP, phase === 'racing' ? 0 : 3, INPUT, presentation.update(race, STEP));
+      if (!captured) throw Error('No perspective scene pass captured');
+      return { id, phase, distance: race.player.distance, load: world.inspectRenderLoad(), ...census(captured.scene, captured.camera) };
+    } finally { world.dispose(); }
+  };
+</script>
+</body></html>

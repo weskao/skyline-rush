@@ -4,6 +4,7 @@ import { audioSessionInterrupted, createAudioContextHealth } from './audio-conte
 import { FEEDBACK_SOUNDS, FEEDBACK_TEXTURES, STINGERS } from './feedback-sounds.ts';
 import { musicForMode } from './mode-audio.ts'; import { driftTier } from './drive-rules.ts';
 import { createRaceAudioEvents } from './race-audio-events.ts';
+import { createParamMixer, writeEngineParams } from './audio-engine-mix.ts';
 import { TRACKS, LOOP_STEPS, sprintFactor, pitch } from './music-tracks.ts';
 
 /** @param {(race: any) => number | null} gapWarning */
@@ -28,7 +29,8 @@ export function createSound(gapWarning = () => null) {
   const foreground = () => !hidden && !pageHidden() && !audioSessionInterrupted();
   const canResume = candidate => context === candidate && (enabled || musicOn) && foreground();
   const running = () => foreground() && contextHealth.isRunning(context);
-  const raceEvents = createRaceAudioEvents();
+  const raceEvents = createRaceAudioEvents(), mixer = createParamMixer();
+  let engine; // the continuous nodes of the current context, for writeEngineParams
 
   function track(source, nodes, end, cue = true, at = 0) {
     if (cue) voices.add(source); else notes.set(source, at);
@@ -89,6 +91,7 @@ export function createSound(gapWarning = () => null) {
     const name = opening ? 'opening' : 'intro';
     if (song !== name) { song = name; step = 0; cutMusic(); }
     music.gain.setTargetAtTime(musicLevel * (opening ? .32 : .65), context.currentTime, 0.1);
+    mixer.forget(music.gain); // written outside the mixer
     schedule(PRELUDE);
   }
   function playStep(tune, index, time) {
@@ -307,6 +310,7 @@ export function createSound(gapWarning = () => null) {
       warm = filtered('lowpass', 1800);
       hats = filtered('highpass', 7000);
       snares = filtered('bandpass', 1800);
+      engine = { oscillator, filter, gain, thrustGain, windGain, skidGain, music };
     }
     setHidden(pageHidden(), tap);
   }
@@ -341,7 +345,7 @@ export function createSound(gapWarning = () => null) {
     try {
       if (next) open();
       musicOn = next && !!context;
-      if (context && !musicOn) { music.gain.cancelScheduledValues(0); music.gain.setValueAtTime(0, context.currentTime); cutMusic(); }
+      if (context && !musicOn) { music.gain.cancelScheduledValues(0); music.gain.setValueAtTime(0, context.currentTime); mixer.forget(music.gain); cutMusic(); }
       if (musicOn) prelude();
     } catch { fail(); }
     return musicOn;
@@ -378,15 +382,10 @@ export function createSound(gapWarning = () => null) {
       }
       if (context) {
         const now = context.currentTime;
-        oscillator.frequency.setTargetAtTime(35 + car.speed * 1.5 + (boosting ? 45 : 0), now, 0.12);
-        filter.frequency.setTargetAtTime(boosting ? 850 : 180 + car.speed * 3, now, 0.15);
-        gain.gain.setTargetAtTime(active ? 0.014 + car.speed * 0.00016 : 0, now, 0.06);
-        thrustGain.gain.setTargetAtTime(active && (car.thrusting || boosting) ? 0.055 : 0, now, 0.08);
-        windGain.gain.setTargetAtTime(active ? (car.speed / 102) ** 2 * 0.07 : 0, now, 0.1);
-        const skid = car.drift ? 0.035 + driftTier(car.drift.time) * 0.012 : car.braking ? 0.035 : 0;
-        skidGain.gain.setTargetAtTime(active && car.altitude < 0.2 && car.speed > 15 ? skid : 0, now, 0.06);
         const musicMix = opening ? .32 : race.phase === 'paused' ? .25 : active ? .5 : .65;
-        music.gain.setTargetAtTime(musicOn ? musicLevel * musicMix * (now >= duckFrom && now < duckUntil ? duckRatio : 1) : 0, now, 0.1);
+        // Both off: master and music gains are already 0, so the audio thread has nothing to hear and nothing is written.
+        if (enabled || musicOn) writeEngineParams(mixer, engine, car, active, boosting,
+          musicOn ? musicLevel * musicMix * (now >= duckFrom && now < duckUntil ? duckRatio : 1) : 0, car.drift ? driftTier(car.drift.time) : 0, now);
         const name = !musicOn ? null : opening ? 'opening' : musicForMode(race);
         if (name !== song) { song = name; step = 0; cutMusic(); }
         const urgency = race.mode === 'checkpoint' && race.checkpoint?.timeLeft < 10 ? 1.1 :

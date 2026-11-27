@@ -46,8 +46,8 @@ function laneFree(x) {
 }
 // A car alongside, or one ahead this car closes on within ~3 s, blocks its own width.
 function carBlocker(race, other, pace, car, carPace, look) {
-  const gap = carGap(race, other, car) ?? -Infinity; // cars on different graph branches never block
   if (!bodiesShareHeight(other, car)) return;
+  const gap = carGap(race, other, car) ?? -Infinity; // cars on different graph branches never block
   const player = car === race.player;
   const a = player ? vehicleContactSize(race, other) : null, b = player ? vehicleContactSize(race, car) : null;
   const front = a && b ? a.front + b.rear : 4.4, rear = a && b ? a.rear + b.front : 4.4;

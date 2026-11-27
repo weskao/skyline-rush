@@ -102,7 +102,10 @@ export function createEmpDischarges(capacity: number) {
         any = pose(slot, f) || any;
       }
     },
-    end() { mesh.visible = any; mesh.instanceMatrix.needsUpdate = true; mesh.instanceColor!.needsUpdate = true; },
+    end() { // hidden: nothing to upload; every slot is rewritten each frame, so the next shown frame uploads it all
+      mesh.visible = any;
+      if (any) { mesh.instanceMatrix.needsUpdate = true; mesh.instanceColor!.needsUpdate = true; }
+    },
     reset() {
       born.fill(-1e9); next.fill(0);
       for (let i = 0; i < mesh.count; i++) { mesh.setMatrixAt(i, PARKED); mesh.setColorAt(i, black); }

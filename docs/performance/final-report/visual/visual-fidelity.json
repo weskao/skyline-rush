@@ -1,0 +1,874 @@
+{
+  "environment": "LOCAL-CHROME",
+  "harness": "scripts/final-report/visual-fidelity.html",
+  "base": "A",
+  "candidate": "C",
+  "composite": "base | candidate | |difference| x8",
+  "scenes": [
+    {
+      "id": "m-home-coast",
+      "track": "coast",
+      "phase": "home",
+      "viewport": "390x844@3",
+      "canvas": [
+        585,
+        1266
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        0,
+        0
+      ],
+      "simPhase": [
+        "ready",
+        "ready"
+      ],
+      "AvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 1,
+        "changed": 81079,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0.038103725307516774,
+        "psnr": 62.32112923213098
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "m-home-coast.webp"
+    },
+    {
+      "id": "m-home-tokyo",
+      "track": "tokyo",
+      "phase": "home",
+      "viewport": "390x844@3",
+      "canvas": [
+        585,
+        1266
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        0,
+        0
+      ],
+      "simPhase": [
+        "ready",
+        "ready"
+      ],
+      "AvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 143,
+        "changed": 25706,
+        "over1": 224,
+        "over8": 179,
+        "over8Pct": 0.024169265875427014,
+        "mae": 0.02005103900838498,
+        "psnr": 49.52238139995137
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "m-home-tokyo.webp"
+    },
+    {
+      "id": "m-showcase-volcanic-crown",
+      "track": "volcanic-crown",
+      "phase": "showcase",
+      "viewport": "390x844@3",
+      "canvas": [
+        585,
+        1266
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        0,
+        0
+      ],
+      "simPhase": [
+        "ready",
+        "ready"
+      ],
+      "AvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 1,
+        "changed": 46763,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0.021730285395372282,
+        "psnr": 64.7601493068998
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "m-showcase-volcanic-crown.webp"
+    },
+    {
+      "id": "m-showcase-frostbite-canyon",
+      "track": "frostbite-canyon",
+      "phase": "showcase",
+      "viewport": "390x844@3",
+      "canvas": [
+        585,
+        1266
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        0,
+        0
+      ],
+      "simPhase": [
+        "ready",
+        "ready"
+      ],
+      "AvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 1,
+        "changed": 68592,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0.031971392950855826,
+        "psnr": 63.08318802553945
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "m-showcase-frostbite-canyon.webp"
+    },
+    {
+      "id": "m-garage-high",
+      "track": "coast",
+      "phase": "garage",
+      "viewport": "390x844@3",
+      "canvas": [
+        585,
+        1266
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        0,
+        0
+      ],
+      "simPhase": [
+        "ready",
+        "ready"
+      ],
+      "AvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 1,
+        "changed": 43025,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0.019943470022458963,
+        "psnr": 65.13279636155376
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "m-garage-high.webp"
+    },
+    {
+      "id": "m-garage-ultra",
+      "track": "coast",
+      "phase": "garage",
+      "quality": "ultra",
+      "viewport": "390x844@3",
+      "canvas": [
+        585,
+        1266
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        0,
+        0
+      ],
+      "simPhase": [
+        "ready",
+        "ready"
+      ],
+      "AvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 1,
+        "changed": 43028,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0.019945270340215048,
+        "psnr": 65.13240433710747
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "m-garage-ultra.webp"
+    },
+    {
+      "id": "m-race-coast-high",
+      "track": "coast",
+      "phase": "racing",
+      "viewport": "390x844@3",
+      "canvas": [
+        585,
+        1266
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        69.39933333333342,
+        69.39933333333342
+      ],
+      "simPhase": [
+        "racing",
+        "racing"
+      ],
+      "AvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 1,
+        "changed": 95675,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0.04521903115899956,
+        "psnr": 61.57759107741538
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "m-race-coast-high.webp"
+    },
+    {
+      "id": "m-race-tokyo-high",
+      "track": "tokyo",
+      "phase": "racing",
+      "viewport": "390x844@3",
+      "canvas": [
+        585,
+        1266
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        85.76183333333346,
+        85.76183333333346
+      ],
+      "simPhase": [
+        "racing",
+        "racing"
+      ],
+      "AvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 225,
+        "changed": 83315,
+        "over1": 14637,
+        "over8": 7412,
+        "over8Pct": 1.0007966406070672,
+        "mae": 0.4219445232083463,
+        "psnr": 32.85795895334146
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "m-race-tokyo-high.webp"
+    },
+    {
+      "id": "m-race-taipei-high",
+      "track": "taipei",
+      "phase": "racing",
+      "viewport": "390x844@3",
+      "canvas": [
+        585,
+        1266
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        85.76183333333346,
+        85.76183333333346
+      ],
+      "simPhase": [
+        "racing",
+        "racing"
+      ],
+      "AvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 229,
+        "changed": 100613,
+        "over1": 19666,
+        "over8": 12561,
+        "over8Pct": 1.6960343500627861,
+        "mae": 0.588397852220917,
+        "psnr": 32.97243705156434
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "m-race-taipei-high.webp"
+    },
+    {
+      "id": "m-race-neon-ultra",
+      "track": "neon",
+      "phase": "racing",
+      "quality": "ultra",
+      "viewport": "390x844@3",
+      "canvas": [
+        585,
+        1266
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        69.39933333333342,
+        69.39933333333342
+      ],
+      "simPhase": [
+        "racing",
+        "racing"
+      ],
+      "AvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 1,
+        "changed": 71943,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0.03366279148269669,
+        "psnr": 62.85930233920198
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "m-race-neon-ultra.webp"
+    },
+    {
+      "id": "m-race-volcanic-crown-ultra",
+      "track": "volcanic-crown",
+      "phase": "racing",
+      "quality": "ultra",
+      "viewport": "390x844@3",
+      "canvas": [
+        585,
+        1266
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        85.76183333333346,
+        85.76183333333346
+      ],
+      "simPhase": [
+        "racing",
+        "racing"
+      ],
+      "AvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 219,
+        "changed": 272230,
+        "over1": 53864,
+        "over8": 26011,
+        "over8Pct": 3.5121048865124695,
+        "mae": 0.738150083489736,
+        "psnr": 36.57238085613062
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "m-race-volcanic-crown-ultra.webp"
+    },
+    {
+      "id": "m-photo-tokyo",
+      "track": "tokyo",
+      "phase": "photo",
+      "viewport": "390x844@3",
+      "canvas": [
+        585,
+        1266
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        30.712499999999977,
+        30.712499999999977
+      ],
+      "simPhase": [
+        "paused",
+        "paused"
+      ],
+      "AvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 62,
+        "changed": 28383,
+        "over1": 21,
+        "over8": 15,
+        "over8Pct": 0.0020253574755944425,
+        "mae": 0.013257539955802198,
+        "psnr": 64.82476295490227
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "m-photo-tokyo.webp"
+    },
+    {
+      "id": "m-results-coast",
+      "track": "coast",
+      "phase": "results",
+      "viewport": "390x844@3",
+      "canvas": [
+        585,
+        1266
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        49.08183333333335,
+        49.08183333333335
+      ],
+      "simPhase": [
+        "finished",
+        "finished"
+      ],
+      "AvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 1,
+        "changed": 93365,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0.04401146802410626,
+        "psnr": 61.69514505957872
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 740610,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "m-results-coast.webp"
+    },
+    {
+      "id": "d-home-coast",
+      "track": "coast",
+      "phase": "home",
+      "viewport": "1440x900@1",
+      "canvas": [
+        1440,
+        900
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        0,
+        0
+      ],
+      "simPhase": [
+        "ready",
+        "ready"
+      ],
+      "AvsC": {
+        "comparable": true,
+        "pixels": 1296000,
+        "maxDelta": 7,
+        "changed": 175287,
+        "over1": 6,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0.04728112139917696,
+        "psnr": 61.38194188434801
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 1296000,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "d-home-coast.webp"
+    },
+    {
+      "id": "d-showcase-frostbite-canyon",
+      "track": "frostbite-canyon",
+      "phase": "showcase",
+      "viewport": "1440x900@1",
+      "canvas": [
+        1440,
+        900
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        0,
+        0
+      ],
+      "simPhase": [
+        "ready",
+        "ready"
+      ],
+      "AvsC": {
+        "comparable": true,
+        "pixels": 1296000,
+        "maxDelta": 1,
+        "changed": 135321,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0.036299382716049385,
+        "psnr": 62.53181121101576
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 1296000,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "d-showcase-frostbite-canyon.webp"
+    },
+    {
+      "id": "d-garage-ultra",
+      "track": "coast",
+      "phase": "garage",
+      "quality": "ultra",
+      "viewport": "1440x900@1",
+      "canvas": [
+        1440,
+        900
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        0,
+        0
+      ],
+      "simPhase": [
+        "ready",
+        "ready"
+      ],
+      "AvsC": {
+        "comparable": true,
+        "pixels": 1296000,
+        "maxDelta": 1,
+        "changed": 95865,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0.025502057613168726,
+        "psnr": 64.06505138316544
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 1296000,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "d-garage-ultra.webp"
+    },
+    {
+      "id": "d-race-tokyo-high",
+      "track": "tokyo",
+      "phase": "racing",
+      "viewport": "1440x900@1",
+      "canvas": [
+        1440,
+        900
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        85.76183333333346,
+        85.76183333333346
+      ],
+      "simPhase": [
+        "racing",
+        "racing"
+      ],
+      "AvsC": {
+        "comparable": true,
+        "pixels": 1296000,
+        "maxDelta": 229,
+        "changed": 152407,
+        "over1": 36173,
+        "over8": 22401,
+        "over8Pct": 1.7284722222222222,
+        "mae": 0.6877322530864197,
+        "psnr": 30.931134709185226
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 1296000,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "d-race-tokyo-high.webp"
+    },
+    {
+      "id": "d-race-volcanic-crown-ultra",
+      "track": "volcanic-crown",
+      "phase": "racing",
+      "quality": "ultra",
+      "viewport": "1440x900@1",
+      "canvas": [
+        1440,
+        900
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        85.76183333333346,
+        85.76183333333346
+      ],
+      "simPhase": [
+        "racing",
+        "racing"
+      ],
+      "AvsC": {
+        "comparable": true,
+        "pixels": 1296000,
+        "maxDelta": 208,
+        "changed": 282328,
+        "over1": 87998,
+        "over8": 38027,
+        "over8Pct": 2.934182098765432,
+        "mae": 0.6353119855967079,
+        "psnr": 36.30430839700702
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 1296000,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "d-race-volcanic-crown-ultra.webp"
+    },
+    {
+      "id": "d-photo-tokyo",
+      "track": "tokyo",
+      "phase": "photo",
+      "viewport": "1440x900@1",
+      "canvas": [
+        1440,
+        900
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        30.712499999999977,
+        30.712499999999977
+      ],
+      "simPhase": [
+        "paused",
+        "paused"
+      ],
+      "AvsC": {
+        "comparable": true,
+        "pixels": 1296000,
+        "maxDelta": 96,
+        "changed": 57631,
+        "over1": 94,
+        "over8": 53,
+        "over8Pct": 0.004089506172839506,
+        "mae": 0.01563991769547325,
+        "psnr": 63.73000926444465
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 1296000,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "d-photo-tokyo.webp"
+    },
+    {
+      "id": "d-results-coast",
+      "track": "coast",
+      "phase": "results",
+      "viewport": "1440x900@1",
+      "canvas": [
+        1440,
+        900
+      ],
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "distance": [
+        49.08183333333335,
+        49.08183333333335
+      ],
+      "simPhase": [
+        "finished",
+        "finished"
+      ],
+      "AvsC": {
+        "comparable": true,
+        "pixels": 1296000,
+        "maxDelta": 1,
+        "changed": 160349,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0.043146604938271604,
+        "psnr": 61.78133732649425
+      },
+      "CvsC": {
+        "comparable": true,
+        "pixels": 1296000,
+        "maxDelta": 0,
+        "changed": 0,
+        "over1": 0,
+        "over8": 0,
+        "over8Pct": 0,
+        "mae": 0,
+        "psnr": null
+      },
+      "errors": [],
+      "webp": "d-results-coast.webp"
+    }
+  ]
+}

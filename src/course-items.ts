@@ -5,7 +5,7 @@
 // never drawn). Rivals and traffic sweep items on their own edges (course-race-step.ts).
 import type { CourseGraph, CoursePoint3 } from './course-graph.ts';
 import { addCourseCar, placeCourseCar, TRAFFIC_PREFIX, type CourseRuntime } from './course-race.ts';
-import { routeLength, sampleRoute } from './course-route-frame.ts';
+import { edgeOf, routeLength, sampleRoute } from './course-route-frame.ts';
 import { burstRing, burstStations } from './shortcut-rewards.ts';
 
 export interface CourseItem {
@@ -31,7 +31,7 @@ function starts(graph: CourseGraph): Map<string, number> {
 }
 const nodeOffset = (graph: CourseGraph, node: string): number => {
   for (const [id, at] of starts(graph)) {
-    const edge = graph.edges.find(e => e.id === id)!;
+    const edge = edgeOf(graph, id)!;
     if (edge.from === node) return at;
     if (edge.to === node) return at + routeLength(graph, id);
   }
@@ -42,7 +42,7 @@ const nodeOffset = (graph: CourseGraph, node: string): number => {
 export function groundOffset(graph: CourseGraph, edgeId: string, localS: number): number {
   const start = starts(graph).get(edgeId);
   if (start !== undefined) return start + localS;
-  const edge = graph.edges.find(e => e.id === edgeId);
+  const edge = edgeOf(graph, edgeId);
   if (!edge) throw new RangeError(`Unknown CourseGraph edge: ${edgeId}`);
   const from = nodeOffset(graph, edge.from), to = nodeOffset(graph, edge.to);
   return from + (to - from) * localS / routeLength(graph, edgeId);
@@ -92,7 +92,7 @@ export function projectCourseItems(race: ItemRace, previousEdge?: string, previo
   const reach = (edgeId: string, start: number): void => {
     if ((base.get(edgeId) ?? Infinity) <= start) return;
     base.set(edgeId, start);
-    const edge = graph.edges.find(e => e.id === edgeId)!, end = start + routeLength(graph, edgeId);
+    const edge = edgeOf(graph, edgeId)!, end = start + routeLength(graph, edgeId);
     for (const next of graph.edges) if (next.from === edge.to) reach(next.id, end);
   };
   reach(player.travel.currentEdgeId, player.edgeStart);
@@ -118,9 +118,10 @@ function world(rt: CourseRuntime, item: CourseItem, x: number, altitude: number)
   return hit;
 }
 /** effects.js `worldPoint` on a graph course: the item on its own edge, relative to the camera origin. */
-export function courseItemPoint(rt: CourseRuntime, item: CourseItem, x: number, altitude: number, origin: CoursePoint3 | number[]): number[] {
+export function courseItemPoint(rt: CourseRuntime, item: CourseItem, x: number, altitude: number, origin: CoursePoint3 | number[], out: number[] = [0, 0, 0]): number[] {
   const { point } = world(rt, item, x, altitude);
-  return [point[0]! - origin[0]!, point[1]! - origin[1]!, point[2]! - origin[2]!];
+  out[0] = point[0]! - origin[0]!; out[1] = point[1]! - origin[1]!; out[2] = point[2]! - origin[2]!;
+  return out;
 }
 /** effects.js `worldFrame` on a graph course: the item's edge frame (gates face along their own road). */
 export const courseItemFrame = (rt: CourseRuntime, item: CourseItem) => sampleRoute(rt.spec.graph, item.edgeId!, item.localS!);

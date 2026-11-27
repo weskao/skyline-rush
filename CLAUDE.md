@@ -38,6 +38,7 @@ exactly. Topics whose work often starts before a scoped file is open:
 | Tutorial lessons, cues or transitions | `docs/tutorial-driving.md` |
 | Anything the player newly acquires or unlocks (car, track, paint, equipment, clothing, medal, currency, reward, store or mission claim) | `.claude/rules/acquisition-reveal.md` (one shared reveal via `presentAcquisition`) |
 | Any confirm, alert, prompt, dropdown, search box or picker; turning an important setting off | `.claude/rules/no-native-ui.md` (in-game `confirmDialog()`, never the browser's native UI) |
+| Performance, thermal diagnostics, frame pacing, new tracks/models/VFX/Garage, HUD writes, audio params, screens/dialogs, the render loop; cutting draw calls (merging, pooling or instancing meshes/materials, changing `renderOrder`) | `.claude/rules/performance.md`, `.claude/rules/performance-review.md` (checklist; draw-order traps), `docs/performance/README.md`; any render change passes `scripts/final-report/visual-fidelity.mjs` (max delta ≤ 1) |
 | Pushing, reading CI, merging, releasing | `.claude/rules/ci-gates.md`, `.claude/rules/branch-release.md` |
 
 Player copy (What's New, locales, store text, captions) names a track exactly as `TRACK_NAMES` in
@@ -84,6 +85,8 @@ removes it, and a guard test that is RED on the old code.
 Merge-ready only when the latest `develop` is integrated, required checks are green and the
 user-visible symptoms were retested. Never merge into `develop`/`main`, open a PR or deploy
 without explicit user approval.
+
+**Global performance invariant:** Preserve the selected graphics fidelity and fixed 60 Hz simulation; do not hide regressions behind quality reductions, disabled off-screen simulation, or weaker gates. Follow the measured-evidence contract in `.claude/rules/performance.md`.
 
 ## Verification
 
