@@ -97,6 +97,49 @@ export function batchStaticChunk(chunk: THREE.Group, minimumInstances = 3) {
 
 // Pool static drawables from multiple 120m chunks by shared geometry/material.
 // Only rebuild when the streamed set changes; keep the source tree for probes.
+// Placed props overlap their neighbours and their chunk's parts, so contact is decided in the
+// streamed world, per source group (bucket, geometry, colour): a group joins its tinted draw only
+// when no instance touches an instance of another draw. An untinted group then draws exactly the
+// instances, order and bounds it did before pooling by tint.
+function tintedDraws(groups: Map<string, THREE.Mesh[]>, inverse: THREE.Matrix4): Map<string, THREE.Mesh[]> {
+  const list = [...groups].map(([own, meshes]) => {
+    const base = tintBase(meshes[0]);
+    return { own, meshes, tint: base ? own.slice(0, own.indexOf('|') + 1) + appearanceKey(meshes[0], base) : own };
+  });
+  const items: Array<{ group: number; box: THREE.Box3 }> = [];
+  const instance = new THREE.Matrix4(), world = new THREE.Matrix4();
+  list.forEach((group, index) => {
+    for (const mesh of group.meshes) {
+      const geometry = mesh.geometry;
+      if (!geometry.boundingBox) geometry.computeBoundingBox();
+      const count = mesh instanceof THREE.InstancedMesh ? mesh.count : 1;
+      for (let i = 0; i < count; i++) {
+        world.multiplyMatrices(inverse, mesh.matrixWorld);
+        if (mesh instanceof THREE.InstancedMesh) world.multiply(mesh.getMatrixAt(i, instance));
+        items.push({ group: index, box: geometry.boundingBox!.clone().applyMatrix4(world).expandByScalar(TINT_REACH / 2) });
+      }
+    }
+  });
+  items.sort((a, b) => a.box.min.x - b.box.min.x);
+  const touches = list.map(() => new Set<number>());
+  for (let i = 0; i < items.length; i++) {
+    for (let j = i + 1; j < items.length && items[j].box.min.x <= items[i].box.max.x; j++) {
+      const a = items[i], b = items[j];
+      if (a.group !== b.group && a.box.intersectsBox(b.box)) { touches[a.group].add(b.group); touches[b.group].add(a.group); }
+    }
+  }
+  const drawOf = list.map(group => group.tint);
+  for (let changed = true; changed;) {
+    changed = false;
+    list.forEach((group, g) => {
+      if (drawOf[g] !== group.own && [...touches[g]].some(h => drawOf[h] !== drawOf[g])) { drawOf[g] = group.own; changed = true; }
+    });
+  }
+  const draws = new Map<string, THREE.Mesh[]>();
+  list.forEach((group, g) => draws.set(drawOf[g], [...(draws.get(drawOf[g]) ?? []), ...group.meshes]));
+  return draws;
+}
+const TINT_REACH = 0.25;
 export function releaseStaticPool(pool: THREE.Group | null | undefined): void {
   if (!pool) return;
   for (const source of pool.userData.sources as THREE.Mesh[]) source.visible = true;
@@ -128,18 +171,19 @@ export function poolStaticChunks(
           !object.visible || object.userData.ownGeometry) return;
       const mesh = object as THREE.Mesh;
       if (!canBatch(mesh)) return;
-      const key = bucket + '|' + appearanceKey(mesh, tintBase(mesh) ?? mesh.material as THREE.Material);
+      const key = bucket + '|' + appearanceKey(mesh);
       const list = groups.get(key);
       if (list) list.push(mesh);
       else groups.set(key, [mesh]);
     });
   }
+  const draws = tintedDraws(groups, inverse);
   const pool = new THREE.Group();
   pool.name = 'World Tour shared draw batches';
   const sources: THREE.Mesh[] = [];
   let drawsSaved = 0;
   const instance = new THREE.Matrix4(), combined = new THREE.Matrix4(), local = new THREE.Matrix4();
-  for (const [key, meshes] of groups) {
+  for (const [key, meshes] of draws) {
     if (meshes.length < 2) continue; // A lone source gains nothing.
     const total = meshes.reduce((n, mesh) =>
       n + (mesh instanceof THREE.InstancedMesh ? mesh.count : 1), 0);

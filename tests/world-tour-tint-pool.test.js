@@ -121,6 +121,45 @@ test('real World Tour pools draw each geometry once per bucket and material kind
   } finally { renderer.dispose(); }
 });
 
+// Placed props overlap their neighbours and the chunk's own parts (a 38 m Tokyo train on 27 m
+// spacing), so contact is checked in the streamed world: a tinted instance never touches an
+// instance drawn by another opaque draw. Boxes are axis-aligned in the scenery layer, the frame the
+// pool is built in (a conservative bound in any frame, but only one frame gives the same answer).
+test('in the streamed world a tinted instance touches no instance of another draw', () => {
+  const scene = new THREE.Scene(), renderer = createWorldTourScene(scene);
+  const box = new THREE.Box3(), matrix = new THREE.Matrix4(), world = new THREE.Matrix4();
+  try {
+    for (const [id, at] of [['tokyo', 86], ['tokyo', 1550], ['taipei', 86], ['coastal', 86], ['alpine', 1550]]) {
+      renderer.update(id, at, 'high', RACE_TRACKS[id].sections, 0, true);
+      const pool = scene.getObjectByName('World Tour shared draw batches');
+      scene.updateMatrixWorld(true); // as the next render does
+      const inverse = pool.parent.matrixWorld.clone().invert();
+      const draws = [];
+      pool.parent.traverseVisible(o => {
+        if (o.isMesh && !o.material.transparent && !o.userData.ownGeometry && o.renderOrder === 0) draws.push(o);
+      });
+      const items = [];
+      for (const draw of draws) {
+        draw.geometry.boundingBox ?? draw.geometry.computeBoundingBox();
+        for (let i = 0; i < (draw.isInstancedMesh ? draw.count : 1); i++) {
+          world.multiplyMatrices(inverse, draw.matrixWorld);
+          if (draw.isInstancedMesh) world.multiply(draw.getMatrixAt(i, matrix));
+          items.push({ draw, box: box.copy(draw.geometry.boundingBox).applyMatrix4(world).expandByScalar(REACH / 2).clone() });
+        }
+      }
+      items.sort((a, b) => a.box.min.x - b.box.min.x);
+      const touching = new Set();
+      for (let i = 0; i < items.length; i++) for (let j = i + 1; j < items.length && items[j].box.min.x <= items[i].box.max.x; j++) {
+        const a = items[i], b = items[j];
+        if (a.draw !== b.draw && (a.draw.instanceColor || b.draw.instanceColor) && a.box.intersectsBox(b.box))
+          touching.add(id + '@' + at + ': ' + (a.draw.instanceColor ? b : a).draw.parent.name);
+      }
+      assert.deepEqual([...touching], [], 'tinted instances touching another draw');
+      assert.ok(pool.children.some(b => b.instanceColor), id + ': isolated colour variants still share a draw');
+    }
+  } finally { renderer.dispose(); }
+});
+
 // A look's untinted batch must keep every instance: dropping some moves its bounding sphere, so
 // three's z sort can swap it with a touching same-colour batch and flip their seam pixels.
 test('every part of one look (geometry and colour) pools tinted, or none does', () => {
