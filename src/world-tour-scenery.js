@@ -101,6 +101,28 @@ export function propParts(kind) {
   }
   return partCache.get(kind);
 }
+// Which parts of a kind may pool tinted: a look (geometry + colour) only when every part with it,
+// in every kind, is contact-safe (tintableParts). A look's untinted batch then never loses
+// instances, so its bounding sphere and z-sort place stay as before. Static models: computed once,
+// on the measuring kit, so the render kit creates its materials in the same order as before.
+let tintPlan = null;
+function tintFlags(kind) {
+  if (!tintPlan) {
+    measureKit ??= createSceneryKit();
+    const look = part => part.geometry.uuid + part.material.uuid, blocked = new Set();
+    const shapes = measureKit.kinds.map(name => [name, measureKit.shape(name).children]);
+    // A blocked look leaves its contact group, which can block further looks: repeat until stable.
+    for (let changed = true; changed;) {
+      changed = false;
+      tintPlan = new Map(shapes.map(([name, parts]) => {
+        const ok = tintableParts(parts, part => !blocked.has(look(part)));
+        parts.forEach((part, i) => { if (!ok[i] && !blocked.has(look(part))) { blocked.add(look(part)); changed = true; } });
+        return [name, ok];
+      }));
+    }
+  }
+  return tintPlan.get(kind);
+}
 // Wide props (a 38 m Tokyo train) may reach into the road as obstacles, but never
 // nearer the centre line than this, so at least two lanes always stay open.
 export const ROAD_CLEARANCE = 4.5;
@@ -119,7 +141,7 @@ const GEO = {
   torus:new THREE.TorusGeometry(1,.13,5,24),
 };
 export function createSceneryKit() {
-  const materials = new Map(), tintable = new Map(), tempMatrix = new THREE.Matrix4();
+  const materials = new Map(), tempMatrix = new THREE.Matrix4();
   const make = (hex, glow) => glow ? new THREE.MeshBasicMaterial({color:hex,toneMapped:true})
     : new THREE.MeshStandardMaterial({color:hex,roughness:.89,metalness:.035,flatShading:true});
   // White twins: pooled colour variants draw as one InstancedMesh with instanceColor (white x colour = colour).
@@ -290,13 +312,15 @@ export function createSceneryKit() {
     group.quaternion.setFromRotationMatrix(basis);
     return group;
   }
-  function build(trackId,kind,size=1) {
+  function shape(kind) {
     const g=new THREE.Group();g.name=kind;
     if(!props[kind])throw Error('Unknown scenery asset: '+kind);
-    props[kind](g);
-    // Static models, so the per-kind answer never goes stale.
-    if(!tintable.has(kind)){g.updateMatrixWorld(true);tintable.set(kind,tintableParts(g.children));}
-    tintable.get(kind).forEach((ok,i)=>{g.children[i].userData.tintable=ok;});
+    props[kind](g);g.updateMatrixWorld(true);
+    return g;
+  }
+  function build(trackId,kind,size=1) {
+    const g=shape(kind);
+    tintFlags(kind).forEach((ok,i)=>{g.children[i].userData.tintable=ok;});
     g.scale.setScalar(size);
     return g;
   }
@@ -344,5 +368,5 @@ export function createSceneryKit() {
     }
     return root;
   }
-  return { build,place,terrain,material,tintSamples,dispose() {for(const mat of [...materials.values(),...tintBases])mat.dispose();materials.clear();} };
+  return { build,shape,kinds:Object.keys(props),place,terrain,material,tintSamples,dispose() {for(const mat of [...materials.values(),...tintBases])mat.dispose();materials.clear();} };
 }

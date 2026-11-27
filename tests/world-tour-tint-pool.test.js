@@ -121,6 +121,22 @@ test('real World Tour pools draw each geometry once per bucket and material kind
   } finally { renderer.dispose(); }
 });
 
+// A look's untinted batch must keep every instance: dropping some moves its bounding sphere, so
+// three's z sort can swap it with a touching same-colour batch and flip their seam pixels.
+test('every part of one look (geometry and colour) pools tinted, or none does', () => {
+  const kit = createSceneryKit();
+  const kinds = [...new Set([...Object.values(SCENERY_KINDS), ...Object.values(DETAIL_KINDS)].flat())];
+  const looks = new Map();
+  try {
+    for (const kind of kinds) for (const part of kit.build('', kind, 1).children) {
+      const look = part.geometry.uuid + part.material.uuid;
+      looks.set(look, [...(looks.get(look) ?? []), kind + ':' + !!part.userData.tintable]);
+    }
+    const mixed = [...looks.values()].filter(parts => new Set(parts.map(p => p.endsWith('true'))).size > 1);
+    assert.deepEqual(mixed, [], 'looks with tinted and untinted parts');
+  } finally { kit.dispose(); }
+});
+
 // Bounds closer than this can share a depth value at the far end of the 24-bit depth buffer
 // (near 0.1 m: about 0.21 m per step 600 m away), so their draw order decides the pixel.
 const REACH = 0.25;

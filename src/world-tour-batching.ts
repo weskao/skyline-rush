@@ -28,11 +28,11 @@ function tintBase(mesh: THREE.Mesh): THREE.Material | null {
 // colour. A shared tinted draw keeps that order only among its own instances (sorted by material id
 // in poolStaticChunks), so a part is tintable only when every part it touches has its geometry and
 // tint base. `reach` covers far depth-buffer steps (near 0.1 m: about 0.21 m at 600 m).
-export function tintableParts(parts: THREE.Object3D[], reach = 0.25): boolean[] {
+export function tintableParts(parts: THREE.Object3D[], canTint = (_part: THREE.Mesh) => true, reach = 0.25): boolean[] {
   const boxes = parts.map(part => new THREE.Box3().setFromObject(part).expandByScalar(reach / 2));
   const drawOf = (part: THREE.Object3D, i: number) => {
     const mesh = part as THREE.Mesh, base = (mesh.material as THREE.Material | undefined)?.userData.tintBase;
-    return mesh.isMesh && base ? mesh.geometry.uuid + base.uuid : 'own ' + i;
+    return mesh.isMesh && base && canTint(mesh) ? mesh.geometry.uuid + base.uuid : 'own ' + i;
   };
   const root = parts.map((_, i) => i);
   const find = (i: number): number => root[i] === i ? i : (root[i] = find(root[i]));
