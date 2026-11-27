@@ -17,7 +17,7 @@ export function measureAirflowProfile(model: THREE.Object3D, vehicle = model): A
   model.updateWorldMatrix(true, true);
   const toCar = model === vehicle ? vehicle.matrixWorld.clone().invert() : new THREE.Matrix4();
   function collect(object: THREE.Object3D): void {
-    if (object !== model && (!object.visible || object.userData.followsBody || object.userData.drawProxy)) return;
+    if (object !== model && (!object.visible || object.userData.followsBody)) return;
     const mesh = object as THREE.Mesh;
     const vertices = mesh.isMesh && mesh.geometry.getAttribute('position');
     if (vertices) {

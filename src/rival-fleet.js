@@ -4,7 +4,7 @@ import { attachRivalDriveVfx } from './rival-drive-vfx.ts';
 import { RACE_DRIVER_IDS } from './race-grid.ts';
 import { seededRng, randomVisualSeed } from './rng.ts';
 import { vehicleContactSize } from './vehicle-contact-size.js';
-import { disposeRivalLods, instanceRivalWheels, makeMotorsportRival, setRivalQuality } from './rival-car-kit.js';
+import { disposeRivalLods, makeMotorsportRival, setRivalQuality } from './rival-car-kit.js';
 
 const driverIds = RACE_DRIVER_IDS.slice(1);
 
@@ -51,7 +51,6 @@ export function createRivalFleet(scene, environment) {
     scene.add(car);
     return car;
   });
-  for (const car of pool) instanceRivalWheels(car); // after every rival: flicker phases read object ids
   const cars = [...pool];
   let lastRace, lastSeed, lastQuality;
   let lastDrivers = [];

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Box3, Layers, Raycaster, Scene, Texture, Vector3 } from 'three';
+import { Box3, Raycaster, Scene, Texture, Vector3 } from 'three';
 import { createCup } from '../src/championship-cup.ts';
 import { retryCupHeat, loadCupProgress, saveCupProgress } from '../src/cup-progress.ts';
 import { RACE_DRIVER_IDS } from '../src/race-grid.ts';
@@ -14,13 +14,11 @@ const loadFleet = () => import('../src/rival-fleet.js').catch(error => {
   assert.fail('the race still uses fixed, unshuffled rival models');
 });
 
-const camera = new Layers();
-// What a camera submits: wheel pose meshes leave layer 0, their InstancedMesh draws each instance.
 function drawn(car) {
   let triangles = 0, draws = 0;
   car.traverseVisible(part => {
-    if (!part.isMesh || !part.layers.test(camera)) return;
-    triangles += (part.geometry.index?.count ?? part.geometry.attributes.position.count) / 3 * (part.isInstancedMesh ? part.count : 1);
+    if (!part.isMesh) return;
+    triangles += (part.geometry.index?.count ?? part.geometry.attributes.position.count) / 3;
     draws++;
   });
   return { triangles, draws };

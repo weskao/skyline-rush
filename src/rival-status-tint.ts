@@ -91,7 +91,7 @@ export function createRivalStatusTint(capacity: number) {
     box.makeEmpty();
     source.traverseVisible(object => {
       const { geometry, isMesh } = object as THREE.Mesh;
-      if (!isMesh || object.userData.followsBody || object.userData.drawProxy || object === jets || object.parent === jets) return;
+      if (!isMesh || object.userData.followsBody || object === jets || object.parent === jets) return;
       if (!geometry.boundingBox) geometry.computeBoundingBox();
       box.union(part.copy(geometry.boundingBox!).applyMatrix4(toCar.multiplyMatrices(inverse, object.matrixWorld)));
     });
