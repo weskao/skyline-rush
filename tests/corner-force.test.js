@@ -6,14 +6,11 @@ import { CIRCUIT_ID } from '../src/circuit-track.ts';
 import { cornerPush, cornerRate, roadDrift } from '../src/corner-force.ts';
 import { forkLateral } from '../src/course-race.ts';
 
-// Cornering needs steering on every track: a released car keeps its nose on its line while the road bends away, so it
-// runs into the outer rail; AUTO only steers it back off a rail it touched.
+// Manual cornering needs steering; grounded AUTO holds the driver's chosen lateral position at neutral.
 const TRACKS = [...Object.keys(RACE_TRACKS), ...Object.keys(COURSE_TRACKS), CIRCUIT_ID];
 const modeOf = id => id === CIRCUIT_ID ? 'circuit' : 'time';
 const AUTO = { throttle: true, laneAssist: true };
 const HANDS_OFF = { throttle: true };
-// Corner plus crosswind at the 7 m/s cap leaves AUTO's 7.65 m/s steer .65 m/s: 1 m from the rail in 1.54 s, plus the ramp.
-const SLOWEST_CLEAR = 1.8; // s
 
 function racing(id, mode = modeOf(id), hz = 60) {
   const race = createRace(id, { mode }); startRace(race);
@@ -142,18 +139,40 @@ test('steering into the bend first straightens the nose, then moves the car acro
   assert.ok((car.x - x) * out < 0, `then the lock left over moves the car inward: ${x} -> ${car.x}`);
 });
 
-// Every hands-free run now meets the rail; nose-first contacts are hard hits, the run still finishes.
-test('every track, no steering, AUTO on: the car runs into the rail, and AUTO steers it off again', () => {
-  let touched = 0;
-  for (const id of TRACKS) {
-    const auto = drive(id, AUTO), free = drive(id, HANDS_OFF);
-    assert.ok(auto.finished, `${id}: did not finish`);
-    assert.ok(auto.dev >= 2.5, `${id}: stayed in lane, deviation ${auto.dev.toFixed(2)} m`);
-    assert.ok(auto.slowestClear < SLOWEST_CLEAR, `${id}: AUTO took ${auto.slowestClear.toFixed(2)} s to steer 1 m clear of the rail`);
-    assert.ok(auto.pinned < free.pinned, `${id}: AUTO ${auto.pinned.toFixed(1)} s at the rail vs ${free.pinned.toFixed(1)} s without`);
-    if (auto.scrapes + auto.hard) touched++;
+test('grounded AUTO holds the chosen lane through a bend at 30, 60 and 120 FPS', () => {
+  for (const hz of [30, 60, 120]) for (const lane of [-3.6, 0, 3.6]) {
+    const race = racing(CIRCUIT_ID, 'circuit', hz), car = race.player;
+    Object.assign(car, { distance: 500, speed: 88, x: lane, steering: 0 });
+    for (let i = 0; i < 2 * hz; i++) {
+      car.speed = 88;
+      stepRace(race, AUTO, 1 / hz);
+      assert.equal(car.x, lane, `${hz} Hz: AUTO must not change the chosen lane`);
+      assert.equal(car.heading, 0);
+      assert.equal(car.steering, 0);
+    }
   }
-  assert.equal(touched, TRACKS.length, 'every track carries a hands-free car into the rail');
+});
+
+test('grounded AUTO settles residual corner heading without suppressing crosswind', () => {
+  const race = racing(CIRCUIT_ID), car = race.player;
+  Object.assign(car, { distance: 500, speed: 88, x: 2.5, steering: 0, heading: .08 });
+  assert.equal(roadDrift(race, car, undefined, false, 1 / 60, true), 0);
+  assert.equal(car.heading, 0);
+  car.section = 'crosswind';
+  assert.ok(roadDrift(race, car, { dir: -1 }, false, 1 / 60, true) < 0);
+});
+
+test('AUTO does not override deliberate steering, drifting or flight', () => {
+  for (const state of [{ steering: .7 }, { altitude: 3 }]) {
+    const race = racing(CIRCUIT_ID);
+    const car = { ...race.player, distance: 500, speed: 88, altitude: 0, steering: 0, ...state };
+    assert.equal(roadDrift(race, { ...car }, undefined, false, 1 / 60, true),
+      roadDrift(race, { ...car }, undefined, false, 1 / 60, false));
+  }
+  const race = racing(CIRCUIT_ID);
+  const car = { ...race.player, distance: 500, speed: 88, heading: .1 };
+  assert.equal(roadDrift(race, { ...car }, undefined, true, 1 / 60, true),
+    roadDrift(race, { ...car }, undefined, true, 1 / 60, false));
 });
 
 test('every track, no steering, AUTO off: runs into the rail and still finishes', () => {
@@ -226,17 +245,25 @@ test('AUTO no longer centres a released car on a straight', () => {
   assert.equal(race.player.x, 3.6);
 });
 
-test('AUTO does not soften the corner: the push is the same with and without it', () => {
-  assert.ok(circuitStep() < 0, 'the circuit pushes left');
+test('AUTO holds a neutral lane without changing manual corner physics', () => {
+  assert.ok(circuitStep() < 0, 'manual mode still pushes left');
   for (const x of [-9.8, -8.5, 0, 8.5]) {
-    assert.equal(circuitStep(car => { car.x = x; }, AUTO), circuitStep(car => { car.x = x; }), `x ${x}`);
+    assert.equal(circuitStep(car => { car.x = x; }, AUTO), 0, `x ${x}`);
   }
 });
 
-/** Hands-free at 88 m/s on the circuit, starting pinned to the rail its right-hander pushes toward. */
+/** At 88 m/s on the circuit, simulate a real rail contact before releasing AUTO steering. */
 function fromRail(input, seconds, hz = 60) {
   const race = racing(CIRCUIT_ID, 'circuit', hz), car = race.player, path = [];
   Object.assign(car, { distance: 500, speed: 88, x: -(ROAD_LIMIT - .3), steering: 0 });
+  if (input.laneAssist && !input.steer) {
+    // Reach the rail under intentional steering; neutral AUTO alone no longer causes a contact.
+    car.x = -ROAD_LIMIT + .01;
+    car.steering = -1;
+    stepRace(race, { ...input, steer: -1 }, 1 / hz);
+    assert.ok(car.autoRecover, 'a real rail contact armed recovery');
+    assert.ok(car.scrape || car.railContactSide, 'rail contact was resolved');
+  }
   for (let i = 0; i < seconds * hz; i++) {
     car.speed = 88;
     stepRace(race, input, 1 / hz);
@@ -245,18 +272,18 @@ function fromRail(input, seconds, hz = 60) {
   return path;
 }
 
-test('after a rail contact AUTO eases the car back toward the centre, then lets the corner carry it again', () => {
+test('after a real rail contact AUTO recovers once, then holds its lane instead of oscillating', () => {
   const path = fromRail(AUTO, 12), first = path.findIndex(p => p.steering > 0);
-  assert.ok(first > 0 && first < 30, `AUTO started steering at step ${first}`);
-  assert.ok(path[first - 1].scraped, 'only after the car really hit the rail');
+  assert.ok(first >= 0 && first < 30, `AUTO started steering at step ${first}`);
   assert.ok(path[first].steering <= (1 / 60) / STEER_RAMP + 1e-9, `steers on the ramp: ${path[first].steering}`);
   const back = path.findIndex(p => p.x > -2);
   assert.ok(back > 0, `never got back near the centre: ${Math.max(...path.map(p => p.x)).toFixed(2)}`);
   for (let i = first + 1; i <= back; i++) {
     assert.ok(Math.abs(path[i].x - path[i - 1].x) <= (9 + 7) / 60 + 1e-9, `no jump at step ${i}`);
   }
-  assert.ok(path.slice(back).some(p => p.steering === 0), 'AUTO let go near the centre');
-  assert.ok(path.slice(back).some(p => p.x < -9), 'the corner carried the released car out again');
+  const settled = path.findIndex((p, i) => i >= back && p.steering === 0);
+  assert.ok(settled >= back, 'AUTO let go near the centre');
+  assert.ok(path.slice(settled).every(p => p.x === path[settled].x && p.steering === 0), 'no second automatic lateral movement');
 });
 
 test('the player steering wins over AUTO, and AUTO off never steers off the rail', () => {

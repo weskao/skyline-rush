@@ -1,5 +1,5 @@
-// Curves turn the road away from a car's nose on every track, so a released car runs into the outer rail.
-// AUTO steers a car back off a rail it touched.
+// Manual curves turn the road away from a car's nose. Grounded neutral AUTO holds its lateral position.
+// AUTO still steers a car back off a rail it touched.
 import { CROSSWIND_SPEED, ROAD_LIMIT } from './game.js'; // read only inside functions, so an import cycle cannot hit the TDZ
 import { legacyClassicRoad } from './classic-road-routes.ts';
 import type { CourseGraph } from './course-graph.ts';
@@ -88,8 +88,8 @@ function groundRate(race: ForceRace, car: ForceCar): number {
 }
 
 /**
- * AUTO's steering target. It never softens a corner: a hands-free car runs on into the rail. Once it touches, AUTO steers
- * it back toward the centre on the normal steering ramp and lets go there. The player's own steering always wins.
+ * AUTO's recovery steering target after a rail contact. It returns toward the centre on the normal ramp,
+ * then releases steering. The player's own steering always wins.
  */
 export function assistSteer(car: ForceCar, steer: number, laneAssist: boolean): number {
   if (!laneAssist || steer !== 0) {
@@ -114,10 +114,12 @@ export function meetRail(car: ForceCar, lateralPosition: number, laneAssist: boo
  * against that first holds and straightens the nose; only the lock left over moves the car across. Held at the bend's
  * lock the car keeps its lane as a constant push would; released, the nose keeps its line and the slide grows.
  */
-export function roadDrift(race: ForceRace, car: ForceCar, section: { dir?: number } | undefined, drifting: boolean, dt: number): number {
+export function roadDrift(race: ForceRace, car: ForceCar, section: { dir?: number } | undefined, drifting: boolean, dt: number, holdLane = false): number {
   const wind = car.section === 'crosswind' ? (section?.dir ?? 1) * CROSSWIND_SPEED : 0;
-  const corner = drifting ? 0 : clamp(cornerRate(race, car) + wind, -MAX_FORCE, MAX_FORCE) - wind;
-  const authority = Math.min(9, car.speed * .22), from = drifting || knocked(race, car) ? 0 : car.heading ?? 0, turn = NOSE_TURN * dt;
+  // Neutral ground assist holds the chosen lane, not the centre; hazards and flight remain physical.
+  const hold = holdLane && car.altitude === 0 && !drifting && car.steering === 0;
+  const corner = drifting || hold ? 0 : clamp(cornerRate(race, car) + wind, -MAX_FORCE, MAX_FORCE) - wind;
+  const authority = Math.min(9, car.speed * .22), from = drifting || hold || knocked(race, car) ? 0 : car.heading ?? 0, turn = NOSE_TURN * dt;
   let heading = from + (corner && corner / authority * turn), lock = car.steering;
   if (lock * heading < 0) {
     const back = Math.min(Math.abs(heading), Math.abs(lock) * turn);
