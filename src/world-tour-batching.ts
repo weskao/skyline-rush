@@ -13,38 +13,9 @@ function canBatch(mesh: THREE.Mesh): boolean {
     !(mesh instanceof THREE.InstancedMesh && !!mesh.instanceColor) &&
     !(mesh.morphTargetInfluences?.length);
 }
-const appearanceKey = (mesh: THREE.Mesh, material = mesh.material as THREE.Material): string =>
-  [mesh.geometry.uuid, material.uuid, !!mesh.userData.tintable,
+const appearanceKey = (mesh: THREE.Mesh): string =>
+  [mesh.geometry.uuid, (mesh.material as THREE.Material).uuid,
     mesh.castShadow, mesh.receiveShadow, mesh.layers.mask, mesh.frustumCulled].join('|');
-// A colour-only variant (kit material with a white `tintBase` twin) of a `tintable` part pools by
-// its base, so meshes differing only in colour share one draw. Pulsing colours and mutated sides
-// keep their material.
-function tintBase(mesh: THREE.Mesh): THREE.Material | null {
-  const material = mesh.material as THREE.Material;
-  const base = material.userData.tintBase as THREE.Material | undefined;
-  return base && mesh.userData.tintable && !material.userData.pulse && material.side === base.side ? base : null;
-}
-// Three sorts opaque draws by material id, so a depth tie between touching parts went to the later
-// colour. A shared tinted draw keeps that order only among its own instances (sorted by material id
-// in poolStaticChunks), so a part is tintable only when every part it touches has its geometry and
-// tint base. `reach` covers far depth-buffer steps (near 0.1 m: about 0.21 m at 600 m).
-export function tintableParts(parts: THREE.Object3D[], canTint = (_part: THREE.Mesh) => true, reach = 0.25): boolean[] {
-  const boxes = parts.map(part => new THREE.Box3().setFromObject(part).expandByScalar(reach / 2));
-  const drawOf = (part: THREE.Object3D, i: number) => {
-    const mesh = part as THREE.Mesh, base = (mesh.material as THREE.Material | undefined)?.userData.tintBase;
-    return mesh.isMesh && base && canTint(mesh) ? mesh.geometry.uuid + base.uuid : 'own ' + i;
-  };
-  const root = parts.map((_, i) => i);
-  const find = (i: number): number => root[i] === i ? i : (root[i] = find(root[i]));
-  for (let i = 0; i < parts.length; i++) for (let j = i + 1; j < parts.length; j++)
-    if (boxes[i].intersectsBox(boxes[j])) root[find(i)] = find(j);
-  const draw = new Map<number, string | null>();
-  parts.forEach((part, i) => {
-    const r = find(i), key = drawOf(part, i);
-    draw.set(r, draw.has(r) && draw.get(r) !== key ? null : key);
-  });
-  return parts.map((part, i) => !drawOf(part, i).startsWith('own') && draw.get(find(i)) !== null);
-}
 function preserveRenderState(batch: THREE.Mesh, source: THREE.Mesh): void {
   batch.castShadow = source.castShadow;
   batch.receiveShadow = source.receiveShadow;
@@ -78,7 +49,6 @@ export function batchStaticChunk(chunk: THREE.Group, minimumInstances = 3) {
     instances.name='scenery instance batch';
     preserveRenderState(instances,meshes[0]);
     instances.userData.batchCount=meshes.length;
-    instances.userData.tintable=meshes[0].userData.tintable;
     for(let i=0;i<meshes.length;i++){
       reusableMatrix.multiplyMatrices(inverse,meshes[i].matrixWorld);
       instances.setMatrixAt(i,reusableMatrix);
@@ -97,52 +67,6 @@ export function batchStaticChunk(chunk: THREE.Group, minimumInstances = 3) {
 
 // Pool static drawables from multiple 120m chunks by shared geometry/material.
 // Only rebuild when the streamed set changes; keep the source tree for probes.
-// Placed props overlap their neighbours and their chunk's parts, so contact is decided in the
-// streamed world, per source group (bucket, geometry, colour): a group joins its tinted draw only
-// when no instance touches an instance of another draw. An untinted group then draws exactly the
-// instances, order and bounds it did before pooling by tint. A group that would draw alone keeps
-// its own transform path (pooling recomputes its vertices through the layer, an ulp of depth that
-// can flip a near-coplanar seam), so it joins only when it touches nothing, itself included.
-function tintedDraws(groups: Map<string, THREE.Mesh[]>, inverse: THREE.Matrix4): Map<string, THREE.Mesh[]> {
-  const list = [...groups].map(([own, meshes]) => {
-    const base = tintBase(meshes[0]);
-    return { own, meshes, tint: base ? own.slice(0, own.indexOf('|') + 1) + appearanceKey(meshes[0], base) : own };
-  });
-  const items: Array<{ group: number; box: THREE.Box3 }> = [];
-  const instance = new THREE.Matrix4(), world = new THREE.Matrix4();
-  list.forEach((group, index) => {
-    for (const mesh of group.meshes) {
-      const geometry = mesh.geometry;
-      if (!geometry.boundingBox) geometry.computeBoundingBox();
-      const count = mesh instanceof THREE.InstancedMesh ? mesh.count : 1;
-      for (let i = 0; i < count; i++) {
-        world.multiplyMatrices(inverse, mesh.matrixWorld);
-        if (mesh instanceof THREE.InstancedMesh) world.multiply(mesh.getMatrixAt(i, instance));
-        items.push({ group: index, box: geometry.boundingBox!.clone().applyMatrix4(world).expandByScalar(TINT_REACH / 2) });
-      }
-    }
-  });
-  items.sort((a, b) => a.box.min.z - b.box.min.z); // the road runs along z
-  const touches = list.map(() => new Set<number>());
-  for (let i = 0; i < items.length; i++) {
-    for (let j = i + 1; j < items.length && items[j].box.min.z <= items[i].box.max.z; j++) {
-      const a = items[i], b = items[j];
-      if (a.box.intersectsBox(b.box)) { touches[a.group].add(b.group); touches[b.group].add(a.group); }
-    }
-  }
-  const drawOf = list.map(group => group.tint);
-  for (let changed = true; changed;) {
-    changed = false;
-    list.forEach((group, g) => {
-      const lone = group.meshes.length < 2 && touches[g].size > 0;
-      if (drawOf[g] !== group.own && (lone || [...touches[g]].some(h => drawOf[h] !== drawOf[g]))) { drawOf[g] = group.own; changed = true; }
-    });
-  }
-  const draws = new Map<string, THREE.Mesh[]>();
-  list.forEach((group, g) => { const meshes = draws.get(drawOf[g]); if (meshes) meshes.push(...group.meshes); else draws.set(drawOf[g], [...group.meshes]); });
-  return draws;
-}
-const TINT_REACH = 0.25;
 export function releaseStaticPool(pool: THREE.Group | null | undefined): void {
   if (!pool) return;
   for (const source of pool.userData.sources as THREE.Mesh[]) source.visible = true;
@@ -180,28 +104,19 @@ export function poolStaticChunks(
       else groups.set(key, [mesh]);
     });
   }
-  const draws = tintedDraws(groups, inverse);
   const pool = new THREE.Group();
   pool.name = 'World Tour shared draw batches';
   const sources: THREE.Mesh[] = [];
   let drawsSaved = 0;
   const instance = new THREE.Matrix4(), combined = new THREE.Matrix4(), local = new THREE.Matrix4();
-  for (const [key, meshes] of draws) {
+  for (const meshes of groups.values()) {
     if (meshes.length < 2) continue; // A lone source gains nothing.
     const total = meshes.reduce((n, mesh) =>
       n + (mesh instanceof THREE.InstancedMesh ? mesh.count : 1), 0);
     if (!total) continue;
-    const first = meshes[0], firstMaterial = first.material as THREE.Material;
-    // One colour keeps its own material (no extra program); several share the white base.
-    const tinted = meshes.some(mesh => mesh.material !== firstMaterial);
-    const batch = new THREE.InstancedMesh(first.geometry,
-      tinted ? tintBase(first)! : firstMaterial, total);
-    // Stable: equal colours keep their source order, colours draw in their old material order.
-    // (three's typings omit Material.id, the key its opaque sort uses.)
-    const id = (mesh: THREE.Mesh) => (mesh.material as THREE.Material & { id: number }).id;
-    if (tinted) meshes.sort((a, b) => id(a) - id(b));
+    const first = meshes[0];
+    const batch = new THREE.InstancedMesh(first.geometry, first.material, total);
     batch.name = 'scenery shared GPU batch';
-    batch.userData.bucket = Number(key.slice(0, key.indexOf('|')));
     preserveRenderState(batch,first);
     let at = 0;
     for (const mesh of meshes) {
@@ -210,7 +125,6 @@ export function poolStaticChunks(
       for (let i = 0; i < count; i++) {
         if (mesh instanceof THREE.InstancedMesh) mesh.getMatrixAt(i, instance);
         else instance.identity();
-        if (tinted) batch.setColorAt(at, (mesh.material as THREE.MeshBasicMaterial).color);
         batch.setMatrixAt(at++, combined.multiplyMatrices(local, instance));
       }
       mesh.visible = false;
