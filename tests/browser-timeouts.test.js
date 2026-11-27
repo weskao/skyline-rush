@@ -239,6 +239,22 @@ test('a spec that samples the countdown in the page does not also poll the live 
   assert.deepEqual(offenders, [], 'Read window.__countdownFrames after the race starts instead (.claude/rules/browser-test-stability.md)');
 });
 
+// The starting grid holds on its loading step until the car, scenery and pickups arrive, and their programs compile
+// before GO: a shader-count baseline read before RACING counts that warmup as a mid-race compile (item-feedback shield
+// flash read 4 programs, then 89; CI 45871870230).
+const PROGRAM_BASELINE = /const\s+\w+\s*=\s*await\s+(?:programs\(page\)|page\.evaluate\(\(\)\s*=>\s*window\.gameScene\.renderer\.info\.programs\.length\))/;
+test('a shader-count baseline taken after START waits for the race to run', () => {
+  const offenders = FILES.flatMap(file => {
+    const lines = readFileSync(new URL(file, import.meta.url), 'utf8').split('\n');
+    return lines.flatMap((line, i) => {
+      if (!PROGRAM_BASELINE.test(line)) return [];
+      const start = lines.slice(0, i).findLastIndex(previous => /#start-button['"]\)\.click\(\)/.test(previous));
+      return start >= 0 && !lines.slice(start, i).some(between => /racing|RACING/.test(between)) ? [`tests/${file}:${i + 1}: ${line.trim()}`] : [];
+    });
+  });
+  assert.deepEqual(offenders, [], 'Wait for data-phase racing (or #race-status RACING) before the baseline (.claude/rules/browser-test-stability.md)');
+});
+
 // One test per map: a sweep of every track inside one test grows with each new course and hit the 180 s CI timeout
 // (Garage camera sweep: 2.3 m, 2.8 m, 3.1 m on software WebGL; develop runs 44925139371, 44946255115).
 test('a showcase camera spec loops over the tracks outside its tests', () => {

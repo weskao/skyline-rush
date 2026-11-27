@@ -335,48 +335,127 @@ full-resolution RGBA readback, not on the WebP. "C repeat" renders C twice and i
 | m-showcase-frostbite-canyon | 585x1266 | 1 | 0 (0.000%) | 64.4 | not run | 0 | PASS (max delta <= 1) | [webp](final-report/visual/m-showcase-frostbite-canyon.webp) |
 | m-garage-high | 585x1266 | 1 | 0 (0.000%) | 67.0 | not run | 0 | PASS (max delta <= 1) | [webp](final-report/visual/m-garage-high.webp) |
 | m-garage-ultra | 585x1266 | 1 | 0 (0.000%) | 67.0 | not run | 0 | PASS (max delta <= 1) | [webp](final-report/visual/m-garage-ultra.webp) |
-| m-race-coast-high | 585x1266 | 65 | 3408 (0.460%) | 43.5 | 3408 (0.460%) | 0 | particle positions + exhaust sparks (program, RNG stream) | [webp](final-report/visual/m-race-coast-high.webp) |
-| m-race-tokyo-high | 585x1266 | 225 | 11300 (1.526%) | 32.5 | 9634 (1.301%) | 0 | particle positions + exhaust sparks (program, RNG stream) | [webp](final-report/visual/m-race-tokyo-high.webp) |
-| m-race-taipei-high | 585x1266 | 229 | 16345 (2.207%) | 32.6 | 16152 (2.181%) | 0 | particle positions + exhaust sparks (program, RNG stream) | [webp](final-report/visual/m-race-taipei-high.webp) |
-| m-race-neon-ultra | 585x1266 | 83 | 4233 (0.572%) | 40.9 | 4233 (0.572%) | 4 | particle positions + exhaust sparks (program, RNG stream) | [webp](final-report/visual/m-race-neon-ultra.webp) |
-| m-race-volcanic-crown-ultra | 585x1266 | 219 | 29966 (4.046%) | 35.6 | 4095 (0.553%) | 0 | mostly develop (A to B); rest particles | [webp](final-report/visual/m-race-volcanic-crown-ultra.webp) |
-| m-photo-tokyo | 585x1266 | 62 | 2223 (0.300%) | 44.5 | not run | 0 | particle sprites at shifted positions (B vs C not run) | [webp](final-report/visual/m-photo-tokyo.webp) |
+| m-race-coast-high | 585x1266 | 65 | 3408 (0.460%) | 43.5 | 3408 (0.460%) | 0 | first pass; see RNG-isolated re-test | [webp](final-report/visual/m-race-coast-high.webp) |
+| m-race-tokyo-high | 585x1266 | 225 | 11300 (1.526%) | 32.5 | 9634 (1.301%) | 0 | first pass; see RNG-isolated re-test | [webp](final-report/visual/m-race-tokyo-high.webp) |
+| m-race-taipei-high | 585x1266 | 229 | 16345 (2.207%) | 32.6 | 16152 (2.181%) | 0 | first pass; see RNG-isolated re-test | [webp](final-report/visual/m-race-taipei-high.webp) |
+| m-race-neon-ultra | 585x1266 | 83 | 4233 (0.572%) | 40.9 | 4233 (0.572%) | 4 | first pass; see RNG-isolated re-test | [webp](final-report/visual/m-race-neon-ultra.webp) |
+| m-race-volcanic-crown-ultra | 585x1266 | 219 | 29966 (4.046%) | 35.6 | 4095 (0.553%) | 0 | first pass; see RNG-isolated re-test | [webp](final-report/visual/m-race-volcanic-crown-ultra.webp) |
+| m-photo-tokyo | 585x1266 | 62 | 2223 (0.300%) | 44.5 | not run | 0 | first pass; see RNG-isolated re-test | [webp](final-report/visual/m-photo-tokyo.webp) |
 | m-results-coast | 585x1266 | 1 | 0 (0.000%) | 64.9 | not run | 0 | PASS (max delta <= 1) | [webp](final-report/visual/m-results-coast.webp) |
 | d-home-coast | 1440x900 | 7 | 0 (0.000%) | 64.5 | not run | 7 | PASS (max delta <= 7) | [webp](final-report/visual/d-home-coast.webp) |
 | d-showcase-frostbite-canyon | 1440x900 | 1 | 0 (0.000%) | 65.1 | not run | 0 | PASS (max delta <= 1) | [webp](final-report/visual/d-showcase-frostbite-canyon.webp) |
 | d-garage-ultra | 1440x900 | 1 | 0 (0.000%) | 66.8 | not run | 0 | PASS (max delta <= 1) | [webp](final-report/visual/d-garage-ultra.webp) |
-| d-race-tokyo-high | 1440x900 | 229 | 28011 (2.161%) | 30.7 | 25276 (1.950%) | 0 | particle positions + exhaust sparks (program, RNG stream) | [webp](final-report/visual/d-race-tokyo-high.webp) |
-| d-race-volcanic-crown-ultra | 1440x900 | 208 | 43637 (3.367%) | 35.3 | 5923 (0.457%) | 0 | mostly develop (A to B); rest particles | [webp](final-report/visual/d-race-volcanic-crown-ultra.webp) |
-| d-photo-tokyo | 1440x900 | 96 | 1166 (0.090%) | 49.6 | not run | 0 | particle sprites at shifted positions (B vs C not run) | [webp](final-report/visual/d-photo-tokyo.webp) |
+| d-race-tokyo-high | 1440x900 | 229 | 28011 (2.161%) | 30.7 | 25276 (1.950%) | 0 | first pass; see RNG-isolated re-test | [webp](final-report/visual/d-race-tokyo-high.webp) |
+| d-race-volcanic-crown-ultra | 1440x900 | 208 | 43637 (3.367%) | 35.3 | 5923 (0.457%) | 0 | first pass; see RNG-isolated re-test | [webp](final-report/visual/d-race-volcanic-crown-ultra.webp) |
+| d-photo-tokyo | 1440x900 | 96 | 1166 (0.090%) | 49.6 | not run | 0 | first pass; see RNG-isolated re-test | [webp](final-report/visual/d-photo-tokyo.webp) |
 | d-results-coast | 1440x900 | 1 | 0 (0.000%) | 65.0 | not run | 0 | PASS (max delta <= 1) | [webp](final-report/visual/d-results-coast.webp) |
 
-Verdict: **PASS for Home, showcase, Garage (High and Ultra), Results and desktop Home**: max channel delta 1 or less
-(desktop Home 7, equal to its own C repeat, from the animated sky), PSNR about 65 dB. **Non-trivial differences in every
-racing scene and in Photo mode, investigated and not fixed (no `src/` change in this stage):**
+The table above is the first pass: one shared `Math.random` stream and C as merged (1fcfa98a), before the fix below.
+Home, showcase, Garage (High and Ultra), Results and desktop Home **PASS** there (max channel delta 1 or less; desktop
+Home 7, equal to its own C repeat, from the animated sky; PSNR about 65 dB). Tokyo Home (179 px, 0.024%) is faint edge
+anti-aliasing on the Tokyo Tower that workstream 11 merged into one mesh; it was not re-run and stays **UNVERIFIED**
+as equivalent. The racing and Photo rows were re-tested as follows.
 
-1. **Particle sprites at different positions (racing, Photo).** The amber dots in the diff are ember and spark sprites.
-   Counting ember-coloured pixels in the base and candidate panels gives equal totals within 4% in both directions
-   (for example Tokyo racing 3428 vs 3269, Taipei 2337 vs 2411), so particles are moved, not removed or dimmed. B vs C
-   gives the same picture, so it comes from the program. The cause is the one documented in
-   [gpu-pipeline.md](gpu-pipeline.md#visual-equivalence): three's `MathUtils.generateUUID` consumes `Math.random`,
-   and C creates fewer objects (merged static meshes, one fewer pass), so the shared random stream that also drives
-   particle spawns is shifted. Under one fixed random stream the particle output is identical: the
-   `vfx-buffer-bench` digests match on A, B and C in all nine scenarios. Not proven pixel by pixel in the browser:
-   the fixture cannot isolate the particle stream without a `src/` change.
-2. **Glow at the player car's rear diffuser (every racing scene, including Coast where it is the only difference).**
-   A small localised blob, max delta 65 on Coast. It sits where nitro sparks are emitted (`src/nitro-sparks.ts`
-   draws from `Math.random`) and the fixture holds boost, so it is consistent with the same shifted random stream.
-   The lens/output fold cannot cause it: it is a spatially uniform full-screen pass, and its in-page reference
-   comparison is max delta 1 (`tests/gpu-pipeline-browser.spec.js`). Root cause **UNVERIFIED** beyond that.
-3. **Volcanic Crown wireframe overlay (racing).** The large diff lines (29966 px on mobile) disappear in B vs C
-   (4095 px, particles only), so they come from develop work between A and B, not from this program.
-4. **Tokyo Tower edges on Home (179 px, 0.024%).** Faint edge differences on the landmark that workstream 11 merged
-   into one mesh (Tokyo Home draws 305 to 248). Consistent with baked world-space vertices rasterising one
-   anti-aliased edge sample differently; not visible at 1x in the composite.
+### RNG-isolated re-test (racing and Photo)
 
-No scene shows a missing object, a material or colour change, or a resolution, MSAA, bloom or tone-mapping change.
-Under the zero-downgrade rule the racing results still count as **open**: the particle and exhaust differences are
-explained, but are not shown to be equivalent by a same-stream pixel comparison.
+Probe: `scripts/final-report/visual-rng.mjs` with `scripts/final-report/visual-rng.html`, same fake clocks, seed,
+input, viewports and readback as above, with three changes:
+
+1. **One random stream per call site.** `Math.random` is replaced by a separate mulberry32 stream for each calling
+   function (name and module path, no line numbers), and every stream restarts at GO. A draw made somewhere else, such
+   as three's `generateUUID` for an object only one build creates, can no longer move a particle system's numbers.
+2. **Census.** It counts the draws per call site while racing. Equal counts mean both builds asked for the same numbers
+   in the same places. They are equal in all nine scenes (for example Tokyo racing 8321 / 8321). The only differing
+   keys are three's `generateUUID`, whose key includes the Vite dependency chunk hash, which differs between
+   checkouts. Its counts are also equal (Tokyo 7020 / 7020).
+3. **Attribution.** `hide=` re-renders the captured frame without chosen parts (particles, sprites, additive,
+   transparent, by name, opaque, lens effects, full attribute upload). `watch:` records the world matrix and material
+   of matching objects, and the page records the transparent draw order.
+
+Each scene renders base, candidate, and candidate again (the determinism floor; it is 0 in every row below). B
+(develop, 32b82da7) is the attribution baseline: C minus B is the program, B minus A is develop.
+
+| Scene | A vs C, pixels > 8 (max) | B vs C, pixels > 8 (max) | Verdict |
+| --- | --- | --- | --- |
+| m-race-coast-high | 0 (1) | 0 (1) | **DOWNGRADE, fixed**: now EQUIVALENT (see 1) |
+| m-race-neon-ultra | 0 (1) | 0 (4) | EQUIVALENT |
+| m-race-tokyo-high | 1799 (120) | 92 (32) | **RNG-ONLY (proven)** for the program part (see 2); the rest is DEVELOP-ORIGIN (see 3) |
+| m-race-taipei-high | 313 (67) | 108 (32) | **RNG-ONLY (proven)** for the program part; the rest is DEVELOP-ORIGIN |
+| m-race-volcanic-crown-ultra | 26210 (219) | 116 (35) | **RNG-ONLY (proven)** for the program part; the rest is DEVELOP-ORIGIN |
+| d-race-tokyo-high | 2849 (101) | 86 (31) | **RNG-ONLY**: same strip and same cause; the cue values were checked on mobile only |
+| d-race-volcanic-crown-ultra | 37684 (208) | 90 (34) | **RNG-ONLY**: same strip and same cause; the cue values were checked on mobile only |
+| m-photo-tokyo | 15 (62) | 0 (1) | EQUIVALENT to develop; A to B is DEVELOP-ORIGIN |
+| d-photo-tokyo | 53 (96) | 0 (1) | EQUIVALENT to develop; A to B is DEVELOP-ORIGIN |
+
+All columns use the fixed C. Evidence:
+
+- A vs C: [`visual/rng/visual-rng.json`](final-report/visual/rng/visual-rng.json) and `all.log`.
+- B vs C: [`visual/rng/BvsC/visual-rng.json`](final-report/visual/rng/BvsC/visual-rng.json) and `all.log`.
+- Bisect runs: `visual-rng-hide-*.json` and `bisect.log` in both folders.
+
+Findings:
+
+1. **Rear-diffuser glow (every racing scene; the only difference on Coast): a real downgrade in C, now fixed.**
+   - **What was wrong.** The earlier "nitro sparks, shifted random stream" explanation was wrong. The blob was still
+     there with per-site streams: Coast A vs C max 65, 3408 px. In the differing pixels C was darker (mean 124.4 to
+     103.5), so the glow was lost, not moved.
+   - **Bisect.** Hiding the additive parts leaves max 1. Hiding the dash ribbon alone leaves max 1. Hiding particles
+     changes nothing.
+   - **Cause.** The recorded draw order shows C drew the additive `Continuous dash ribbon` *before* the car's
+     normal-blended transparent parts, so the car's paint covered the part of the trail in front of it. A drew the
+     ribbon after them.
+     - three sorts transparent items by `renderOrder`, then by the depth of the geometry's bounding sphere, and
+       computes that sphere only once, at the first draw.
+     - In A, `src/aero-wake-meshes.js` rewrote every ribbon slot each frame, so that frozen sphere sat at the floating
+       origin offset.
+     - In C, the live-span upload leaves dead slots at zero. The sphere freezes at the render-space origin, next to the
+       car, and the ribbon now sorts in front of the car.
+   - **Fix** (TDD). The ribbon now has `renderOrder = 1`, so it draws after the car's normal-blended transparent parts
+     whatever its stale sphere says.
+     - The only other objects with `renderOrder = 1` (sprint road glow, grace-fade shell) are additive too, so their
+       order relative to the ribbon does not change the image.
+     - RED: the new test in `tests/aero-vfx.test.js` sorts a real `WebGLRenderList` and got
+       `['Continuous dash ribbon', 'car paint']`. GREEN: 28 / 28 pass.
+   - **After the fix.** Coast A vs C is max 1, 0 px. The transparent draw order matches A in all nine scenes.
+   - **Proof the fix restores A.** `hide=ribbon-order-0` puts back the unfixed sort in the fixed build, and the 3408 px
+     difference returns: `visual-rng-hide-ribbon-order-0-m-race-coast.json`.
+2. **Rival BOOST flame size (B vs C strip of 86 to 116 px in Tokyo, Taipei and Volcanic Crown): RNG-ONLY, proven.**
+   - **Bisect.** Hiding `name:rival` leaves max 1 (`BvsC/visual-rng-hide-name:rival-m-race-taipei.json`).
+   - **What differs.** `watch:rival nitro` shows the three `Rival NITRO flame` sprites with identical position,
+     opacity, colour and material in both builds. Only the scale differs.
+   - **Cause.** The scale comes from `rivalDriveCue`. Its flicker phase is `car.id * 1.7`, and three's `Object3D.id` is
+     a creation counter. C creates one Object3D fewer before the rivals, so every rival id is one lower (504/574/680
+     in B, 503/573/679 in C).
+   - **Check.** `scripts/final-report/rival-flicker-phase.mjs` recomputes `rivalDriveCue` from each recorded parent id
+     and the race time (t = 2.000 s in both builds).
+     - It reproduces all 18 recorded flames within 4 dp rounding (worst error 0.00011).
+     - Swapping in the other build's id reproduces the other build's value exactly.
+     - Log: [`BvsC/rival-flicker-phase.log`](final-report/visual/rng/BvsC/rival-flicker-phase.log).
+   - **Why this is not a downgrade.** The flicker amplitude, range and distribution are unchanged; only which point of
+     the same flicker the frame catches differs. The flames are dimmer than B at this instant because of the phase,
+     not lost.
+3. **Volcanic Crown wireframe, the larger Tokyo and Taipei differences, and Photo m/d: DEVELOP-ORIGIN.**
+   - Against B, C differs only by item 2. So everything else in A vs C is the A to B change on develop: Volcanic 26210
+     to 116 px (mobile) and 37684 to 90 px (desktop), Tokyo 1799 to 92 px, Taipei 313 to 108 px, Photo 15 and 53 to 0
+     px.
+   - Develop's rival flame change (`BOOST_FLAME` 0.65 to 0.55 between A and B) is part of this.
+   - Develop-origin differences are outside this program's zero-downgrade scope and were not reviewed as intended or
+     not.
+4. **Particles and embers.** With per-site streams and equal census counts, they are not a visible difference in any
+   scene: hiding particles never changes a residual. The earlier "particle positions moved" finding was the shared
+   stream, as claimed. It is now shown in the browser, not only by the `vfx-buffer-bench` digests.
+
+Verdict: **PASS (zero visual downgrade from the program) after the dash ribbon fix**, LOCAL-CHROME, Apple M4 ANGLE
+Metal only.
+
+UNVERIFIED:
+
+- Tokyo Home edge anti-aliasing (not re-run).
+- Desktop rival flame values (pixels bisected on mobile; same strip geometry and the same ids are expected).
+- Other GPUs, browsers and devices.
+- Tiers other than High/Ultra.
+- Scenes outside the nine listed.
+- The composites in the table above still show the unfixed C. They were not regenerated.
 <!-- visual:end -->
 
 ## p08 metric coverage

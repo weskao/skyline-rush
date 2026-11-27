@@ -149,6 +149,8 @@ test('a frame reuses its batch: no allocation while NITRO burns', () => {
 });
 
 function raceScene(t, { moved = [0, 0, 0] } = {}) {
+  // effects.js feeds the sparks Math.random; one seeded stream per scene keeps tier counts comparable (CI saw 4, 4, 12).
+  t.mock.method(Math, 'random', seeded());
   globalThis.devicePixelRatio = 1;
   t.after(() => { delete globalThis.devicePixelRatio; });
   const scene = new Scene(), car = makeCar(CAR_STYLES.roadster), race = createRace();

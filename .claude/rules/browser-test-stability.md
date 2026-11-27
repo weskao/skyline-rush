@@ -67,6 +67,9 @@ and the duplicate import failed all 16 browser shards. Enforced by `tests/browse
 - Hidden elements keep stale text. Check `toBeVisible()` before you judge text, or the
   assertion passes or fails on copy no player sees. Example: hidden `#bonus-status` still held
   "NEXT · AIR +25 · 6 M" in English after a switch to zh-TW.
+- Match a live value's format to its writer, not to the usual sample. `#nitro-meter` `aria-valuenow` is the charge
+  to two decimals (`src/race-hud.ts`); `/^\d+$/` held only while no partial pickup landed in the window, so
+  `hud-compositing-browser` failed on CI with "1.5" and "0.75" (runs 45872013667, 45901796976).
 - Compare against the text actually shown, not a literal guessed in advance. Read it once the
   element is visible and the state is frozen, then assert that it changes.
 - **Reach a lobby mode button the way a player does.** At 1000px wide or less, or 500px tall or less,
@@ -195,6 +198,11 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   44925164077): `countdown-slow-render` gave RACING `ciTimeout(4000)` straight after COUNTDOWN and failed both attempts;
   its screenshot shows the race starting just after the budget. Enforced by `tests/browser-timeouts.test.js`
   (*a short RACING wait starts after the grid has left its loading step*).
+- **A shader-count baseline starts at RACING.** The loaded car, scenery and pickups compile on the grid, before GO, so
+  `renderer.info.programs` grows through the whole loading hold. Trap (2026-11-27, CI 45871870230): `item-feedback`
+  read its baseline when the HUD showed `EMPTY`, still on the grid on a slow runner, and the shield flash then "compiled"
+  85 programs (4 → 89) on both attempts. Wait for `data-phase` `racing` (or `#race-status` RACING) first. Enforced by
+  `tests/browser-timeouts.test.js` (*a shader-count baseline taken after START waits for the race to run*).
 - **A route handler can outlive its test.** A spec that ends on a navigation leaves `route.fetch()` in flight;
   closing the context disposes the response and fails a passed test with "Response has been disposed"
   (hazard-captures, track-themes, 44674764907). The shared context fixture runs `unrouteAll` with

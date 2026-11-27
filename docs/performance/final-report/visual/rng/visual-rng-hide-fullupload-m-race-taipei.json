@@ -1,0 +1,326 @@
+{
+  "environment": "LOCAL-CHROME",
+  "harness": "scripts/final-report/visual-rng.html",
+  "base": "A",
+  "candidate": "C",
+  "rng": "per-call-site mulberry32 streams, restarted at GO",
+  "hide": [
+    "fullupload"
+  ],
+  "scenes": [
+    {
+      "id": "m-race-taipei-high",
+      "track": "taipei",
+      "phase": "racing",
+      "hide": [
+        "fullupload"
+      ],
+      "canvas": [
+        585,
+        1266
+      ],
+      "distance": [
+        85.76183333333346,
+        85.76183333333346
+      ],
+      "AvsC": {
+        "comparable": true,
+        "maxDelta": 67,
+        "over1": 414,
+        "over8": 313,
+        "psnr": 52.94465678313206,
+        "box": [
+          164,
+          714,
+          351,
+          754
+        ],
+        "meanRgb": [
+          139.98722044728433,
+          117.32055378061767
+        ]
+      },
+      "CvsC": {
+        "comparable": true,
+        "maxDelta": 0,
+        "over1": 0,
+        "over8": 0,
+        "psnr": null,
+        "box": null,
+        "meanRgb": null
+      },
+      "censusDraws": [
+        4739,
+        4739
+      ],
+      "censusDiff": {
+        "generateUUID@/node_modules/.vite/deps/chunk-MW7GKKDG.js": [
+          3400,
+          0
+        ],
+        "generateUUID@/node_modules/.vite/deps/chunk-NVXLSEBZ.js": [
+          0,
+          3400
+        ]
+      },
+      "census": {
+        "generateUUID@/node_modules/.vite/deps/chunk-NVXLSEBZ.js": 3400,
+        "Object.update@/src/effects.js": 1339
+      },
+      "lens": [
+        {
+          "pressure": 0.11982968640464514,
+          "boost": 0.030324489795918508,
+          "impact": 0.12444820137127999,
+          "nozzle": [
+            0.3695825931021907,
+            0.4465857524572846
+          ],
+          "time": 1.9999999999999978
+        },
+        {
+          "pressure": 0.11982968640464514,
+          "boost": 0.030324489795918508,
+          "impact": 0.12444820137127999,
+          "nozzle": [
+            0.3695825931021907,
+            0.4465857524572846
+          ],
+          "time": 1.9999999999999978,
+          "lensFx": 1
+        }
+      ],
+      "ribbon": [
+        {
+          "drawRange": [
+            0,
+            null
+          ],
+          "sphere": [
+            0,
+            0,
+            1090,
+            0
+          ],
+          "live": 46,
+          "alphaSum": 13.122000066563487,
+          "posSum": 5136.260105263442,
+          "pendingRanges": [
+            [],
+            []
+          ]
+        },
+        {
+          "drawRange": [
+            0,
+            384
+          ],
+          "sphere": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "live": 46,
+          "alphaSum": 13.122000066563487,
+          "posSum": 5136.260105263442,
+          "pendingRanges": [
+            [
+              [
+                0,
+                612
+              ],
+              [
+                864,
+                288
+              ]
+            ],
+            [
+              [
+                0,
+                204
+              ],
+              [
+                288,
+                96
+              ]
+            ]
+          ]
+        }
+      ],
+      "order": [
+        [
+          "Skid marks",
+          "nitro+",
+          "Pickup aura+",
+          "mystery+",
+          "charge+",
+          "Rival NITRO flame+",
+          "Mesh",
+          "Mesh",
+          "Mesh",
+          "Mesh",
+          "Rival NITRO flame+",
+          "Rival NITRO flame+",
+          "Mesh",
+          "Mesh",
+          "Mesh",
+          "Mesh",
+          "Mesh",
+          "splitter",
+          "headlamp",
+          "wheel_fl_blades",
+          "wheel_fr_blades",
+          "wheel_fl_barrel",
+          "wheel_fl_tire",
+          "wheel_fl_inset",
+          "wheel_fl_hub",
+          "wheel_fr_barrel",
+          "wheel_fr_tire",
+          "wheel_fr_inset",
+          "wheel_fr_hub",
+          "thruster_01_nozzle",
+          "thruster_03_nozzle",
+          "Points",
+          "World space gas wake",
+          "Mesh",
+          "body",
+          "lamp_pockets",
+          "rocker_l",
+          "rocker_r",
+          "glass_canopy",
+          "glass_surround",
+          "LineSegments",
+          "wheel_rl_blades",
+          "wheel_rr_blades",
+          "wheel_rl_barrel",
+          "wheel_rl_tire",
+          "wheel_rl_inset",
+          "wheel_rl_hub",
+          "wheel_rr_barrel",
+          "wheel_rr_tire",
+          "wheel_rr_inset",
+          "wheel_rr_hub",
+          "thruster_02_nozzle",
+          "thruster_04_nozzle",
+          "wing_swan_necks",
+          "diffuser",
+          "wing_bay",
+          "wing_aerofoil",
+          "wing_rams_mesh",
+          "wing_tip_l_mesh",
+          "wing_tip_r_mesh",
+          "Sprint nozzle flare+",
+          "tail_light",
+          "nozzle_rear_01_tube",
+          "nozzle_rear_02_tube",
+          "nozzle_rear_03_tube",
+          "nozzle_rear_04_tube",
+          "Thruster glow 1+",
+          "Thruster glow 2+",
+          "Thruster glow 3+",
+          "Thruster glow 4+",
+          "Cold gas nozzle 1+",
+          "Cold gas nozzle 2+",
+          "Cold gas nozzle 3+",
+          "Cold gas nozzle 4+",
+          "LineSegments",
+          "LineSegments",
+          "LineSegments",
+          "Mesh+",
+          "Continuous dash ribbon+",
+          "Sprint road glow+",
+          "Mesh+"
+        ],
+        [
+          "Skid marks",
+          "nitro+",
+          "Pickup aura+",
+          "mystery+",
+          "charge+",
+          "Rival NITRO flame+",
+          "Mesh",
+          "Mesh",
+          "Mesh",
+          "Mesh",
+          "Rival NITRO flame+",
+          "Rival NITRO flame+",
+          "Mesh",
+          "Mesh",
+          "Mesh",
+          "Mesh",
+          "Mesh",
+          "splitter",
+          "headlamp",
+          "wheel_fl_blades",
+          "wheel_fr_blades",
+          "wheel_fl_barrel",
+          "wheel_fl_tire",
+          "wheel_fl_inset",
+          "wheel_fl_hub",
+          "wheel_fr_barrel",
+          "wheel_fr_tire",
+          "wheel_fr_inset",
+          "wheel_fr_hub",
+          "thruster_01_nozzle",
+          "thruster_03_nozzle",
+          "Points",
+          "World space gas wake",
+          "Mesh",
+          "body",
+          "lamp_pockets",
+          "rocker_l",
+          "rocker_r",
+          "glass_canopy",
+          "glass_surround",
+          "LineSegments",
+          "wheel_rl_blades",
+          "wheel_rr_blades",
+          "wheel_rl_barrel",
+          "wheel_rl_tire",
+          "wheel_rl_inset",
+          "wheel_rl_hub",
+          "wheel_rr_barrel",
+          "wheel_rr_tire",
+          "wheel_rr_inset",
+          "wheel_rr_hub",
+          "thruster_02_nozzle",
+          "thruster_04_nozzle",
+          "wing_swan_necks",
+          "diffuser",
+          "wing_bay",
+          "wing_aerofoil",
+          "wing_rams_mesh",
+          "wing_tip_l_mesh",
+          "wing_tip_r_mesh",
+          "Sprint nozzle flare+",
+          "tail_light",
+          "nozzle_rear_01_tube",
+          "nozzle_rear_02_tube",
+          "nozzle_rear_03_tube",
+          "nozzle_rear_04_tube",
+          "Thruster glow 1+",
+          "Thruster glow 2+",
+          "Thruster glow 3+",
+          "Thruster glow 4+",
+          "Cold gas nozzle 1+",
+          "Cold gas nozzle 2+",
+          "Cold gas nozzle 3+",
+          "Cold gas nozzle 4+",
+          "LineSegments",
+          "LineSegments",
+          "LineSegments",
+          "Mesh+",
+          "Continuous dash ribbon+",
+          "Sprint road glow+",
+          "Mesh+"
+        ]
+      ],
+      "hidden": [
+        [],
+        []
+      ],
+      "errors": []
+    }
+  ]
+}
