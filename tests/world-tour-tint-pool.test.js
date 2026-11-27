@@ -121,6 +121,31 @@ test('real World Tour pools draw each geometry once per bucket and material kind
   } finally { renderer.dispose(); }
 });
 
+// A source that would draw alone keeps its own transform path (model × position, or its chunk's
+// instance matrix); pooling it recomputes the vertex position through the layer, which can move
+// its depth by an ulp and flip a near-coplanar seam. So it joins a tinted draw only if it touches
+// nothing; groups already pooled keep the identical matrices.
+test('a source that would draw alone joins a tinted draw only when it touches nothing', () => {
+  const kit = createSceneryKit(), geometry = new THREE.BoxGeometry(1, 1, 1);
+  const layer = new THREE.Group(), chunk = new THREE.Group();
+  chunk.userData.chunkIndex = 0; layer.add(chunk);
+  const put = (hex, x) => {
+    const mesh = new THREE.Mesh(geometry, kit.material(hex)); mesh.userData.tintable = true;
+    mesh.position.set(x, 0, 0); chunk.add(mesh); return mesh;
+  };
+  const [alone, other] = [put('#507786', 0), put('#c84b31', 10)]; // isolated lone colours
+  const pair = [put('#f2d16b', 20), put('#f2d16b', 30)];             // pooled anyway
+  const touching = put('#22313f', 30.9);                              // lone, touches the pair
+  layer.updateMatrixWorld(true);
+  const pool = poolStaticChunks(layer, [chunk], null);
+  try {
+    assert.ok(!alone.visible && !other.visible, 'isolated lone colours share the tinted draw');
+    assert.ok(touching.visible, 'a lone part touching another part keeps its own draw');
+    assert.ok(pair.every(m => !m.visible), 'the pooled pair still pools');
+    assert.equal(pool.children.find(b => b.instanceColor)?.count, 2);
+  } finally { releaseStaticPool(pool); geometry.dispose(); kit.dispose(); }
+});
+
 // Placed props overlap their neighbours and the chunk's own parts (a 38 m Tokyo train on 27 m
 // spacing), so contact is checked in the streamed world: a tinted instance never touches an
 // instance drawn by another opaque draw. Boxes are axis-aligned in the scenery layer, the frame the

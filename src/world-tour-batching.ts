@@ -100,7 +100,9 @@ export function batchStaticChunk(chunk: THREE.Group, minimumInstances = 3) {
 // Placed props overlap their neighbours and their chunk's parts, so contact is decided in the
 // streamed world, per source group (bucket, geometry, colour): a group joins its tinted draw only
 // when no instance touches an instance of another draw. An untinted group then draws exactly the
-// instances, order and bounds it did before pooling by tint.
+// instances, order and bounds it did before pooling by tint. A group that would draw alone keeps
+// its own transform path (pooling recomputes its vertices through the layer, an ulp of depth that
+// can flip a near-coplanar seam), so it joins only when it touches nothing, itself included.
 function tintedDraws(groups: Map<string, THREE.Mesh[]>, inverse: THREE.Matrix4): Map<string, THREE.Mesh[]> {
   const list = [...groups].map(([own, meshes]) => {
     const base = tintBase(meshes[0]);
@@ -120,23 +122,24 @@ function tintedDraws(groups: Map<string, THREE.Mesh[]>, inverse: THREE.Matrix4):
       }
     }
   });
-  items.sort((a, b) => a.box.min.x - b.box.min.x);
+  items.sort((a, b) => a.box.min.z - b.box.min.z); // the road runs along z
   const touches = list.map(() => new Set<number>());
   for (let i = 0; i < items.length; i++) {
-    for (let j = i + 1; j < items.length && items[j].box.min.x <= items[i].box.max.x; j++) {
+    for (let j = i + 1; j < items.length && items[j].box.min.z <= items[i].box.max.z; j++) {
       const a = items[i], b = items[j];
-      if (a.group !== b.group && a.box.intersectsBox(b.box)) { touches[a.group].add(b.group); touches[b.group].add(a.group); }
+      if (a.box.intersectsBox(b.box)) { touches[a.group].add(b.group); touches[b.group].add(a.group); }
     }
   }
   const drawOf = list.map(group => group.tint);
   for (let changed = true; changed;) {
     changed = false;
     list.forEach((group, g) => {
-      if (drawOf[g] !== group.own && [...touches[g]].some(h => drawOf[h] !== drawOf[g])) { drawOf[g] = group.own; changed = true; }
+      const lone = group.meshes.length < 2 && touches[g].size > 0;
+      if (drawOf[g] !== group.own && (lone || [...touches[g]].some(h => drawOf[h] !== drawOf[g]))) { drawOf[g] = group.own; changed = true; }
     });
   }
   const draws = new Map<string, THREE.Mesh[]>();
-  list.forEach((group, g) => draws.set(drawOf[g], [...(draws.get(drawOf[g]) ?? []), ...group.meshes]));
+  list.forEach((group, g) => { const meshes = draws.get(drawOf[g]); if (meshes) meshes.push(...group.meshes); else draws.set(drawOf[g], [...group.meshes]); });
   return draws;
 }
 const TINT_REACH = 0.25;
