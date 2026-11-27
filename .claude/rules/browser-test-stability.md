@@ -67,6 +67,9 @@ and the duplicate import failed all 16 browser shards. Enforced by `tests/browse
 - Hidden elements keep stale text. Check `toBeVisible()` before you judge text, or the
   assertion passes or fails on copy no player sees. Example: hidden `#bonus-status` still held
   "NEXT · AIR +25 · 6 M" in English after a switch to zh-TW.
+- Match a live value's format to its writer, not to the usual sample. `#nitro-meter` `aria-valuenow` is the charge
+  to two decimals (`src/race-hud.ts`); `/^\d+$/` held only while no partial pickup landed in the window, so
+  `hud-compositing-browser` failed on CI with "1.5" and "0.75" (runs 45872013667, 45901796976).
 - Compare against the text actually shown, not a literal guessed in advance. Read it once the
   element is visible and the state is frozen, then assert that it changes.
 - **Reach a lobby mode button the way a player does.** At 1000px wide or less, or 500px tall or less,

@@ -143,8 +143,10 @@ Render pipeline (`gpu-pipeline.md`):
   branch in a full-screen shader (slower with effects on). Build every variant up front and again on
   `webglcontextrestored`; drive values through `lens.uniforms`, which both variants share.
 - Merge or fold passes only when the in-page old-vs-new comparison in
-  `tests/gpu-pipeline-browser.spec.js` stays within its delta; folding the bloom composite into the
-  lens was rejected as inexact at the chromatic taps.
+  `tests/gpu-pipeline-browser.spec.js` stays within its delta. The lens adds the bloom's half-resolution
+  composite at each tap (`tBloom`), so the bloom never blends back into the 4x MSAA scene target and that
+  target resolves once, colour only (`resolveDepthBuffer: false`; nothing samples scene depth). Folding
+  the 5-mip composite itself into the lens stays rejected: 25 taps in the effects variant.
 - Keep `powerPreference: 'high-performance'` (`src/webgl-renderer.ts`) unless a dual-GPU device
   shows a measured win with no visual change.
 

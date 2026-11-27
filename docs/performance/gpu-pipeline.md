@@ -115,7 +115,7 @@ Per-frame GL work, identical across all six scenarios: full-screen draws -1, MSA
 | 4 | Skip zero-effect lens work | DONE | `LENS_FX 0` variant, `src/lens-pass.ts:8`, `:40`, `:44` |
 | 5 | Uniform branch vs variants | DONE (variants); uniform branch REJECTED | Lens-only microbench, 585x1266, per draw median of 15: base 0.0479 ms idle / 0.0472 ms on; uniform branch 0.0353 idle / 0.0540 on (+14% with effects on); define variants 0.0218 idle (-55%) / 0.0474 on (same as base). All four outputs bit-identical to base |
 | 6 | Merge Lens and Output | DONE | Tone-map and colorspace includes, `src/lens-pass.ts:22`; OutputPass removed from `src/world.js:103` |
-| 7 | Bloom framebuffer waste | REJECTED | The bloom's 5-mip chain is single-sample and sized by mip, with no waste found. Moving its additive composite into the lens would save one MSAA draw but needs 5 extra blurred taps at the chromatic offsets, so it is not exact at the offset taps. Not equivalent, so not adopted |
+| 7 | Bloom framebuffer waste | Composite fold REJECTED; blend fold DONE in Wave 3 item 30 | The bloom's 5-mip chain is single-sample and sized by mip, with no waste found. Folding the 5-mip composite into the lens needs 5 extra blurred taps per lens tap (25 in the effects variant). Wave 3 instead folds only the final blend: the lens samples the finished half-resolution composite at each tap, measured within 1 step of the old chain ("Wave 3 item 30" below) |
 | 8 | Recompile / resize / sync / churn | DONE | 0 programs linked in measured frames; both lens variants prebuilt (`src/lens-pass.ts:44-50`); program count stable while toggling boost (browser spec); warmup targets `composer.readBuffer` (`src/world.js:472`, `:829`) |
 | 9 | Duplicate lights / materials | REJECTED (no duplicate) | Room and car environments are each created once per scene; nothing to share |
 | 10 | Home showcase raycast, bounds and projection duplication | REJECTED | Tokyo Home, 8 orbit decisions: p50 35.6 ms before vs 33.3 ms with a hoisted matrix/bounds pass (max 44.2 vs 45.3). `updateMatrixWorld` 73,574 -> 5,422 and `traverseVisible` 46,848 -> 976, but the 240 raycasts dominate and the time change is within noise. Reverted; RED was observed and not committed |
@@ -141,6 +141,83 @@ Per-frame GL work, identical across all six scenarios: full-screen draws -1, MSA
 - `lens.material` swaps between two programs per frame; drive the effect through `lens.uniforms` (shared by both).
 - Shader warmup renders into `composer.readBuffer` (the scene target), not `renderTarget1`.
 - Benches that compare page loads must reseed `Math.random` after `createWorld` (see Visual equivalence).
+
+## Wave 3 item 30: the lens adds the bloom (GPU frame time -30%)
+
+Before, the last step of `UnrealBloomPass` drew its half-resolution composite additively into the 4x MSAA HalfFloat
+scene target. That reloaded the full-size multisampled target on a tile GPU, blended every sample and resolved the
+target a second time. Each resolve also blitted the depth buffer, which nothing samples.
+
+After (`src/lens-pass.ts`, `src/world.js`):
+
+1. `createLensPass(bloom)` gives the lens a `tBloom` sampler. Every lens tap reads `src(p)`, which is the scene
+   texel plus the composite texel. That is the sum the blend wrote, now read at each tap. The idle variant still
+   does one tap. The effects variant does five taps on two textures.
+2. The bloom's blend draw is skipped: its quad's `render` is wrapped to do nothing for `bloom.blendMaterial`. The
+   bloom stops at `renderTargetsHorizontal[0]`, its composite. If three renames `_fsQuad` or `blendMaterial`,
+   `createLensPass` throws `UnrealBloomPass changed`, so an upgrade cannot silently double the bloom.
+3. With bloom off (Low), `tBloom` is a 1x1 black texture, so the lens adds 0.
+4. The scene target has `resolveDepthBuffer: false`, so its single resolve is colour only.
+
+Per frame: one full-screen MSAA draw fewer and one resolve fewer, and the remaining resolve copies no depth.
+MSAA, bloom strength, radius, threshold and mips, DPR and resolution are unchanged.
+
+Equivalence: `tests/gpu-pipeline-browser.spec.js` (*the lens adds the bloom*) renders the old blend chain and the
+new one from the same frozen frame. Bloom is raised to strength 1.5, threshold 0 for that comparison, and both the
+idle and the effects lens settings are checked. Result: max channel delta 1. The spec also records the frame's
+`blitFramebuffer` masks: `[COLOR_BUFFER_BIT]`, so there is one colour-only resolve. The two outputs differ only in
+where the sum is rounded. The old chain stored it in half float. The lens sampling the half-resolution composite
+bilinearly at the chromatic offset taps gives the same value the blend wrote at those texels.
+
+### A vs candidate (LOCAL-CHROME)
+
+Apple M4 Mac, local Chrome, ANGLE Metal. Settings: 390x844 at DPR 3, render DPR 1.5 (canvas 585x1266), High, 4x
+MSAA, seed 12345, 900 frames per scene. Rounds: 3 interleaved, rotated, fresh page per run. Harness:
+`scripts/final-report/run-scene-matrix.mjs`. Builds: A = `d9c144ba`, candidate = this branch. Values are per-round
+`gpuFrameMs.p50` in ms, shown as median (min-max).
+
+| Scene | A | Candidate | Change | Goal |
+|---|---|---|---|---|
+| racing coast | 6.72 (6.35-6.81) | 4.20 (4.17-4.54) | -37.5% | <= 4.48 |
+| racing neon | 6.87 (6.43-7.03) | 4.00 (3.97-4.30) | -41.7% | <= 4.61 |
+| racing taipei | 6.25 (5.86-6.28) | 4.15 (4.05-4.21) | -33.7% | <= 4.31 |
+| racing tokyo | 6.17 (6.03-6.48) | 4.12 (3.95-4.14) | -33.2% | <= 4.18 |
+| racing volcanic-crown | 6.25 (6.16-6.70) | 2.49 (2.48-4.05) | -60.1% | <= 4.33 |
+| home coast / neon / taipei / tokyo / volcanic-crown | 6.48 / 6.87 / 5.48 / 5.26 / 5.92 | 4.05 / 4.03 / 3.34 / 3.13 / 2.34 | -37.5 / -41.3 / -38.9 / -40.5 / -60.5% | |
+| showcase volcanic-crown | 4.84 (4.73-4.91) | 2.71 (2.65-2.71) | -44.1% | |
+
+The median of the five racing scenes is -37.5%, and every racing scene meets its goal.
+
+The A column measured higher in this session than the brief's A row (6.40 / 6.59 / 6.16 / 5.97 / 6.18). Every
+candidate median also meets the brief's goals.
+
+Attribution: integration head (`bfc56997`, whose `src/` equals this branch's base) vs candidate, 3 interleaved
+rounds, same harness. The workload is the same, Volcanic racing 259 vs 258 draw calls, the difference being the
+dropped blend draw.
+
+| Scene | Integration head | Candidate | Change |
+|---|---|---|---|
+| racing coast | 6.14 (5.11-6.47) | 4.54 (4.51-5.70) | -26.1% |
+| racing volcanic-crown | 5.21 (5.15-5.23) | 2.49 (2.48-4.80) | -52.2% |
+
+Volcanic gains most because the blend and the second resolve cost most there. Deep-perf pass timers overlap, so only
+whole-frame `gpuFrameMs` is compared.
+
+Visual gate: `scripts/final-report/visual-fidelity.mjs`, integration head vs candidate, 20 scenes. Max channel delta
+is at most 1 in every scene, and 0 pixels differ by more than 8. PSNR is 64-75 dB, or the frames are identical. The
+determinism floor (same build twice) is 0, except m-race-neon-ultra at 4.
+
+### Rejected or not explored in item 30
+
+| Item | Status | Reason |
+|---|---|---|
+| Fold the 5-mip composite into the lens | REJECTED | 5 mip taps per lens tap: 25 bloom fetches in the effects variant, more than the composite pass it removes |
+| Fuse the high pass into the first blur | REJECTED | The high pass (threshold, smoothstep) is nonlinear, so blurring before it changes the result |
+| Bilinear tap reduction in the blur | Already done | three r186 already pairs taps (`KERNEL_PAIRS`) |
+| Drop bloom target clears | Not adopted (not measured) | On a tile GPU a clear becomes a cheap load action instead of a reload, so dropping it is not expected to save time |
+| `invalidateFramebuffer` after the resolve | Not adopted | three gates it to OculusBrowser, and `storeMultisampledDepthBuffer` has no effect elsewhere. The gain on ANGLE Metal is unproven |
+| R11G11B10 / RGBA8 scene target | REJECTED | Lower precision before the bloom threshold and tone mapping, so a likely visual change |
+| Scene overdraw, sky drawn last | Not explored | Scene geometry is outside item 30's scope (sessions 31 and 32) |
 
 ## Manual SOP for physical devices (UNVERIFIED)
 

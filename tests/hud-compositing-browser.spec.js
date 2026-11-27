@@ -115,7 +115,8 @@ for (const profile of profiles) {
       const fuel = page.locator('#fuel-meter');
       expect(Number(await fuel.getAttribute('aria-valuenow'))).toBeGreaterThanOrEqual(0);
       await expect(fuel).toHaveAttribute('aria-valuetext', /\S/);
-      await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuenow', /^\d+$/);
+      // race-hud.ts writes the charge to two decimals (0..3): a partial pickup reads "0.75", not an integer.
+      await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuenow', /^[0-3](\.\d{1,2})?$/);
       // High-frequency custom properties live on the element that reads them, never on <body>.
       expect(audit.byTarget['body[style]'], 'body inline style writes').toBeUndefined();
       // No boost in this scenario: the faded-out speed streaks must not keep 18 infinite animations running.
