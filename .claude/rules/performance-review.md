@@ -154,6 +154,12 @@ Scene and streaming (`scene-streaming.md`):
 - Bake static same-material landmark meshes with `mergeStaticMeshes` (`src/world-tour-batching.ts`);
   its `canBatch` exclusions and `preserveRenderState` are the contract. Guard:
   `tests/world-tour-landmark-merge.test.js`.
+- Never pool, merge or re-material meshes (colour-only variants under one base material included) or
+  change `renderOrder` to save draw calls unless nothing it draws lies within ~9 m of another draw's
+  surface. Three sorts opaque draws by `material.id`; moving a draw flips which surface wins a 24-bit
+  depth tie, and the depth step grows with distance² (~1.2 m at 1.3 km, ~5.4 m at the 3,000 m far
+  plane). A 0.25 m contact check still changed m-photo-tokyo by 11 (Wave 3 item 31 tint pool, reverted).
+  Draw-call work must pass `scripts/final-report/visual-fidelity.mjs` (all 20 scenes, max delta ≤ 1).
 - Repeated small props in a streamed chunk are one `InstancedMesh` whose bounding sphere covers the
   animated extent (Monsoon ferns, `tests/monsoon-ruins-scene.test.js`).
 - Wrap every parked or streamed scene host in `skipHiddenMatrixWork` (`src/scene-matrix-culling.ts`)
@@ -174,6 +180,11 @@ VFX buffers (`vfx-buffers.md`):
   `createLiveSpan` (`span.next`, `span.live`, `span.commit`) and `markRange`
   (`src/effects-particle-upload.js`); never call `addUpdateRange` directly, since three keeps
   appending ranges until the next upload. Guard: `tests/effects-particle-upload.test.js`.
+- Three computes a transparent mesh's sort sphere once, at its first draw. A live-span buffer leaves
+  dead slots at zero, so that sphere freezes near the origin and the mesh mis-sorts against the
+  car's transparent parts. Give such a pooled mesh an explicit `renderOrder` (dash ribbon,
+  `src/aero-wake-meshes.js`, fabd77dd) or a bounding sphere covering its full extent. Guard:
+  `tests/aero-vfx.test.js`.
 - Emit in place into fixed slots (`src/effects-particle-pool.js`), no spread or `Object.assign` per
   spark; reset clears spans and uploads zero alpha.
 - Transparent pooled VFX shaders cull alpha ≤ 0 in the vertex stage (`src/effects-particle-shaders.js`,
