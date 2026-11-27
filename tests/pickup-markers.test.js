@@ -127,12 +127,17 @@ test('all four race pickups and halos grow at distance without moving the item o
         aura.getMatrixAt(0, halo);
         assert.equal(marker.position.x, 1.5);
         assert.equal(marker.position.z, -depth);
-        return { scale: marker.scale.x, y: marker.position.y, halo: halo.getMaxScaleOnAxis() };
+        const shape = markers.pool.group.getObjectByName(tier).geometry;
+        if (!shape.boundingBox) shape.computeBoundingBox();
+        // The model's lowest point: the visibility scale lifts a ground pickup so this stays on the road.
+        const base = marker.position.y + shape.boundingBox.min.y * marker.scale.y;
+        return { scale: marker.scale.x, y: marker.position.y, base, halo: halo.getMaxScaleOnAxis() };
       };
       const near = draw(10), far = draw(150);
       assert.equal(near.scale, PICKUP_SIZES[tier]);
       assert.ok(far.scale > near.scale && far.scale <= near.scale * pickupVisibilityCaps(390).model);
       assert.ok(far.y >= near.y && far.halo > near.halo);
+      assert.ok(Math.abs(far.base - near.base) < 1e-6, `${tier} base stays at its clearance: ${far.base} vs ${near.base}`);
       assert.ok(Math.abs(draw(149.99).scale - draw(150.01).scale) < .001);
       assert.equal(markers.key(tier, 150), tier);
       assert.equal(markers.key(tier, 151), tier + '-distant');

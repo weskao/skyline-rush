@@ -507,6 +507,31 @@ test('a short RACING wait starts after the grid has left its loading step', () =
   assert.deepEqual(offenders, [], 'Wait for #countdown to leave data-step="loading" first (.claude/rules/browser-test-stability.md)');
 });
 
+// Shaders for the race compile on its first composed frame and again for each asset that joins before GO (warmupPending,
+// src/world.js), so a program count read while the grid is still READY/COUNTDOWN is not the race's baseline: item-feedback
+// read 4 programs (the world still data-frame-loading) and then 89, "no shader compiled…" (develop CI 45885340403).
+test('a mid-race program-count baseline is read once the race is RACING', () => {
+  const RACING = /'racing'|'RACING'|\bracing\(page\)|\bstartRace\(/;
+  const BASELINE = /const \w+ = await (?:programs\(page\)|page\.evaluate\(\(\) => window\.gameScene\.renderer\.info\.programs\.length\))/;
+  const offenders = FILES.filter(file => file.endsWith('browser.spec.js')).flatMap(file => {
+    const lines = readFileSync(new URL(file, import.meta.url), 'utf8').split('\n');
+    // Local helpers (`const startX = async page => { … };`) that wait for RACING count as a racing wait at their call.
+    const helpers = lines.flatMap((line, i) => {
+      const name = /^const (\w+) = async\b/.exec(line)?.[1];
+      const end = lines.findIndex((next, j) => j >= i && /^};?$/.test(next));
+      return name && lines.slice(i, end + 1).some(body => RACING.test(body)) ? [name] : [];
+    });
+    const waits = line => RACING.test(line) || helpers.some(name => line.includes(`${name}(`));
+    return lines.flatMap((line, i) => {
+      if (!BASELINE.test(line)) return [];
+      let start = i;
+      while (start > 0 && !/^\s*test\(/.test(lines[start])) start--;
+      return lines.slice(start, i).some(waits) ? [] : [`tests/${file}:${i + 1}: ${line.trim()}`];
+    });
+  });
+  assert.deepEqual(offenders, [], 'Wait for data-phase="racing" before the program baseline (.claude/rules/browser-test-stability.md)');
+});
+
 // A held model response on the gameplay (Vite dev) server must not race the loader's 15 s deadline on a slow runner.
 test('a gameplay-server spec that holds a model GLB widens the loader deadline (widenModelDeadline)', () => {
   const offenders = FILES.filter(file => file.endsWith('browser.spec.js')).flatMap(file => {
