@@ -146,7 +146,7 @@ corners still passed themselves (the sharpest bend needed ≤ 31% lock), so the 
    Inspect real WebGL frames as well; coordinate-only tests cannot prove no clipping.
 4. **Frame rates:** Exercise 30/60/120 FPS or equivalent variable timesteps with explicit
    tolerances. Test repeated edge contact beyond the 1.5 s impact cooldown.
-5. **Browser and build:** Run `npm test`, `npm run build` and the relevant full
+5. **Browser and build:** Run `pnpm test`, `pnpm run build` and the relevant full
    Playwright suites on desktop and mobile, plus any separate World Tour browser config.
    Capture affected corners before/after and report actual results, CI commit SHA,
    untested devices and outstanding gaps. No claim of a completed fix or green CI

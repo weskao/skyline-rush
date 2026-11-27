@@ -49,7 +49,7 @@ The finished screen, paused screen and ready screen are not exempt from input te
   unlocked, retry, and verify the next race starts. Repeat on desktop and phone
   portrait/landscape. Check actual clicks (not `.click()` dispatched from JS),
   `document.elementFromPoint` and `pageerror`.
-- Verify via Playwright along with `npm test` and `npm run build`. For visible
+- Verify via Playwright along with `pnpm test` and `pnpm run build`. For visible
   buttons, ensure user activation changes state, not merely that the element is present.
   Collect real screenshots of the finished UI and identify any browser/device not tested.
 

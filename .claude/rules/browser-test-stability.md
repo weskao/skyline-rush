@@ -17,7 +17,7 @@ Keep Playwright helper imports outside the source string served by a module mock
 
 A spec that fails to load reddens every shard, because CI plans shards from `playwright test --list`. Trap
 (2026-11-20, develop `a7a6afd1`): two merges both added `clickLobbyOption` to `result-cloud-browser.spec.js`
-and the duplicate import failed all 16 browser shards. Enforced by `tests/browser-specs-load.test.js` (`npm test`, pre-push).
+and the duplicate import failed all 16 browser shards. Enforced by `tests/browser-specs-load.test.js` (`pnpm test`, pre-push).
 
 ## Freeze, then assert
 
@@ -299,8 +299,8 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   `retries`, add `test.describe.configure({ retries })`, or wrap an assertion in a loop to get
   CI green.
 - To check a flake fix locally, stress the spec under CI timing:
-  `CI=1 npx playwright test <spec> --repeat-each=8 --workers=4 --retries=0` after
-  `npm run build`. `--retries=0` keeps the CI retry from hiding a flake. Report the pass count.
+  `CI=1 pnpm exec playwright test <spec> --repeat-each=8 --workers=4 --retries=0` after
+  `pnpm run build`. `--retries=0` keeps the CI retry from hiding a flake. Report the pass count.
   A single local pass does not prove a fix.
 
 ## A long local run needs a checkout nobody else moves

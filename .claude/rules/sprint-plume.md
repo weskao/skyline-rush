@@ -136,10 +136,10 @@ its `SprintTierId`. Colour stays in `src/garage-skin-palette.ts` and the `:root`
 ```bash
 # Frames, plume box, contrast, area, veil; LABEL=after* asserts the acceptance numbers.
 PLAYWRIGHT_PORT=5231 SPRINT_CAMERA_CAPTURE=1 LABEL=<x> VIEWPORT=desktop|portrait|landscape [CORES=2|4] \
-  [HERO_CAR=crimson-gt] npx playwright test tests/sprint-camera-capture-browser.spec.js
+  [HERO_CAR=crimson-gt] pnpm exec playwright test tests/sprint-camera-capture-browser.spec.js
 # GPU-synced frame cost per tier.
 PLAYWRIGHT_PORT=5231 PLUME_BENCH=1 LABEL=<x> VIEWPORT=844x390|1440x900 \
-  npx playwright test tests/sprint-plume-cost-browser.spec.js
+  pnpm exec playwright test tests/sprint-plume-cost-browser.spec.js
 ```
 
 Both serve live source through Vite: a `src/` edit during a run voids it. CORES=2|4 seeds the settings a phone

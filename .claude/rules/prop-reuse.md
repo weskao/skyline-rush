@@ -52,5 +52,5 @@ Not covered: scans (cliffs, rocks, shrub thickets: vary them per instance only, 
    identical: the manifest pins the master's sha256. A change meant to alter the model goes through the full pipeline
    (`export-glb`, `optimize-glb`, `check-glb --promote`) instead.
 
-Guard: `tests/prop-reuse.test.js` (part of `npm test`, so pre-push and CI): every shared builder is catalogued, and
+Guard: `tests/prop-reuse.test.js` (part of `pnpm test`, so pre-push and CI): every shared builder is catalogued, and
 no kit defines its own copy of a shared builder.

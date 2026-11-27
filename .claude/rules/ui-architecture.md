@@ -56,7 +56,7 @@ controls. Move the event-driven UI to Vue gradually; keep the hot paths plain JS
 
 - **Strict `tsconfig.json` is authoritative** for TypeScript sources and Vue scripts.
   `jsconfig.json` is a *temporary, narrow legacy-JS check* for explicitly listed JS islands, not
-  proof of TypeScript migration (neither is JSDoc `checkJs`). `make verify` runs `npm run typecheck`.
+  proof of TypeScript migration (neither is JSDoc `checkJs`). `make verify` runs `pnpm run typecheck`.
 - Define shared interfaces in `src/game-types.ts`; use `import type`, typed Vue props/emits,
   typed state, and typed engine snapshots/adapters. New/changed TypeScript APIs cannot use
   unexamined `any` or `// @ts-ignore` to bypass type checking.
@@ -65,9 +65,9 @@ controls. Move the event-driven UI to Vue gradually; keep the hot paths plain JS
 
 ## Verification
 
-- TypeScript UI changes → `npm run typecheck` and a failing-before-fix regression test.
-- Panel moved to Vue → `npm run test:browser` desktop and mobile, plus the overlay clickability
-  checks in `ui-phase-interactions.md`; home-screen files → `npm run test:layout`.
+- TypeScript UI changes → `pnpm run typecheck` and a failing-before-fix regression test.
+- Panel moved to Vue → `pnpm run test:browser` desktop and mobile, plus the overlay clickability
+  checks in `ui-phase-interactions.md`; home-screen files → `pnpm run test:layout`.
 - Panels that show sound/music controls keep their `src/audio.js` behavior unchanged.
 
 → Read `docs/ui-change-checklist.md` before adding, redesigning or modifying any UI element,

@@ -29,4 +29,4 @@ paths:
 
 Guards: `tests/garage-home-framing.test.js` (source), `tests/coming-soon-views-browser.spec.js` (real WebGL, all six
 tracks, six views, 1440 and 390). Stress it with
-`CI=1 npx playwright test tests/coming-soon-views-browser.spec.js --retries=0 --workers=12 --repeat-each=2`.
+`CI=1 pnpm exec playwright test tests/coming-soon-views-browser.spec.js --retries=0 --workers=12 --repeat-each=2`.
