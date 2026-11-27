@@ -2,7 +2,6 @@
 // (wheels, active wing, lift fans, paint, rear LED). GLB pivots sit at the procedural pivots, so each bound node
 // copies its partner's local TRS. Per frame: copies only, no allocation.
 import type { Color, Material, Mesh, Object3D, ShaderMaterial, Vector4 } from 'three';
-import { drawOnceWhenSolid } from './grace-fade.ts';
 
 interface Tinted extends Material { color?: Color; emissive?: Color; emissiveIntensity?: number; metalness?: number; roughness?: number }
 interface CarParts {
@@ -71,7 +70,7 @@ export function bindGarageRig(car: Object3D, instance: Object3D, ownFinish = fal
   const paints = [...owned.values()].filter(m => m.name.endsWith('_paint'));
   const lights = [...owned.values()].filter(m => m.name.endsWith('_light'));
   // Blending from bind time, which is before compile: turning it on at item activation would compile programs mid-race.
-  const faded: [Material, number][] = fades ? [...owned.values()].map(m => { m.transparent = true; drawOnceWhenSolid(m); return [m, m.opacity]; }) : [];
+  const faded: [Material, number][] = fades ? [...owned.values()].map(m => { m.transparent = true; return [m, m.opacity]; }) : [];
   const solid = finish?.opacity || 1; // the procedural body's opacity outside Ghost Phase (dressing happens before GO)
   let fade = 1;
   // Task 4c: a Garage-only paint shader hook (the Studio sweep, garage-paint-shader.ts) carries over to the GLB paint.
@@ -112,7 +111,7 @@ export function bindGarageRig(car: Object3D, instance: Object3D, ownFinish = fal
       if (led?.emissive) for (const light of lights) { light.emissive?.copy(led.emissive); light.emissiveIntensity = led.emissiveIntensity; }
       if (faded.length && finish!.opacity / solid !== fade) {
         fade = finish!.opacity / solid;
-        for (const [material, base] of faded) { material.opacity = material.name.endsWith('_light') ? base : base * fade; drawOnceWhenSolid(material); }
+        for (const [material, base] of faded) material.opacity = material.name.endsWith('_light') ? base : base * fade;
       }
     },
     dispose() {
