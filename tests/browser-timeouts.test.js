@@ -543,6 +543,15 @@ test('item-feedback turns AUTO off before GO, so its parked car stays parked', (
     'Turn AUTO off (F2, aria-pressed=false) before #start-button (.claude/rules/browser-test-stability.md)');
 });
 
+// Blocked storage cannot read the startup-skip flag, so the player clicks ENTER; data-phase is already "ready" then and
+// main.js drops every game key until the startup screen has left: F2 in item-feedback's blocked-storage test was lost.
+test('reloadWithBlockedStorage returns only after the startup screen has left', () => {
+  const source = readFileSync(new URL('helpers/test.js', import.meta.url), 'utf8');
+  const helper = /export const reloadWithBlockedStorage = async[\s\S]*?\n};/.exec(source)?.[0] ?? '';
+  const enter = helper.indexOf("'#startup-enter'"), gone = helper.indexOf("locator('#startup')).toBeHidden()");
+  assert.ok(enter > 0 && gone > enter, 'Wait for #startup to be hidden after clicking #startup-enter');
+});
+
 // A held model response on the gameplay (Vite dev) server must not race the loader's 15 s deadline on a slow runner.
 test('a gameplay-server spec that holds a model GLB widens the loader deadline (widenModelDeadline)', () => {
   const offenders = FILES.filter(file => file.endsWith('browser.spec.js')).flatMap(file => {

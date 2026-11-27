@@ -82,6 +82,8 @@ export const reloadWithBlockedStorage = async page => {
   });
   await page.reload();
   await page.locator('#startup-enter').click();
+  // data-phase is already ready: game keys (F2, Enter) count only once the startup screen has finished leaving.
+  await expect(page.locator('#startup')).toBeHidden();
   await waitForHome(page);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
 };
