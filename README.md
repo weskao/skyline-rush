@@ -17,19 +17,25 @@ In Classic Race, Skyline Rush is a replayable arcade sprint: one player races mu
 
 Race length depends on the course and mode. Sound is synthesized in the browser, and progress is saved locally. Optional Google sign-in enables cloud-save synchronization; an account is not required to play.
 
-https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101
+<p align="center"><img src="artifacts/readme-startup.jpeg?v=1" width="70%" alt="Startup screen with the Skyline Rush title and Enter game button"></p>
 
-<p align="center"><img src="artifacts/readme-tracks.jpeg?v=2" width="70%" alt="A selection of tracks in flight: Neon Downtown, Aurora Pass, Sky Spiral and Tokyo Afterdark"></p>
+### Play on desktop
 
-<p align="center"><img src="artifacts/readme-start.jpeg?v=2" width="49%" alt="Start screen with game modes, tracks and Start race"> <img src="artifacts/race-results.jpeg?v=2" width="49%" alt="Race results with a new personal best"></p>
+Keyboard controls in any desktop browser. Recorded with music and sound effects on.
+
+https://github.com/user-attachments/assets/ec0ffa92-5269-494c-bcbc-831759207046
+
+<p align="center"><img src="artifacts/readme-tracks.jpeg?v=3" width="70%" alt="A selection of tracks in flight: Neon Downtown, Aurora Pass, Sky Spiral and Tokyo Afterdark"></p>
+
+<p align="center"><img src="artifacts/readme-start.jpeg?v=3" width="49%" alt="Start screen with game modes, tracks and Start race"> <img src="artifacts/race-results.jpeg?v=3" width="49%" alt="Race results with a new personal best"></p>
 
 ### Play on your phone
 
-Portrait or landscape with touch controls; AUTO keeps the accelerator held. [Watch the MP4](artifacts/mobile-demo.mp4)
+Portrait or landscape with touch controls; AUTO keeps the accelerator held. Recorded with music and sound effects on.
 
-<p align="center"><img src="artifacts/mobile-home.jpeg?v=2" height="300" alt="Mobile portrait start screen with track selection"> <img src="artifacts/mobile-landscape-flight.jpeg?v=2" height="300" alt="Mobile landscape flight with FLY held and the touch controls visible"></p>
+https://github.com/user-attachments/assets/1138325a-f4e8-4b7f-a426-0c39d70bebaf
 
-Captured in Chrome mobile emulation (390×844 and 844×390) on a fresh profile; not a physical-phone performance measure.
+Captured in Chrome mobile emulation (390×844) on a fresh profile; not a physical-phone performance measure.
 
 ## Game modes and replayability
 
@@ -140,7 +146,7 @@ The same panel controls touch steering mode, handedness, slide sensitivity, size
 
 All audio is synthesized with Web Audio; no audio downloads are needed. Music follows the current screen, course and game mode, with cues for events such as checkpoints, hazards, tricks and the final sprint. Sound effects cover menus, countdowns, driving, flight, boost, contact, landing and rewards. Pausing fades driving sounds; muting effects stops pending cues.
 
-The speaker icon opens audio settings with a Music row and a Sound effects row, each a mute switch plus a volume slider (shown open in the start-screen screenshot above). **Mute all** (or M) silences both at once. Muting keeps each channel's level, so unmuting returns to it; dragging a slider to zero mutes that channel the same way. Both default to on at 100%, and each on/off choice and volume is remembered in `localStorage` (`skyline-rush-music`, `skyline-rush-sound` holding `on`/`off`, plus `-volume` variants holding the percentage); with nothing stored both channels are on and get stored as `on`. On short screens the panel scrolls. The intro music starts as soon as the page loads where the browser allows autoplay. Where it doesn't (Chrome and most other browsers on a first visit), the first tap, click or key press starts it. On iPhone and iPad the game asks for media playback, so the silent switch doesn't mute it; this also pauses other apps' audio while the game plays.
+The speaker icon opens audio settings with a Music row and a Sound effects row, each a mute switch plus a volume slider. **Mute all** (or M) silences both at once. Muting keeps each channel's level, so unmuting returns to it; dragging a slider to zero mutes that channel the same way. Both default to on at 100%, and each on/off choice and volume is remembered in `localStorage` (`skyline-rush-music`, `skyline-rush-sound` holding `on`/`off`, plus `-volume` variants holding the percentage); with nothing stored both channels are on and get stored as `on`. On short screens the panel scrolls. The intro music starts as soon as the page loads where the browser allows autoplay. Where it doesn't (Chrome and most other browsers on a first visit), the first tap, click or key press starts it. On iPhone and iPad the game asks for media playback, so the silent switch doesn't mute it; this also pauses other apps' audio while the game plays.
 
 The flight panel shows ascent, cruise, descent and touchdown, remaining thrust seconds and the next control to use. Cyan rings mark the aerial corridor and are gameplay: see Rings below. Mobile also has a hold-to-boost button. Orange contact reports show the impact type and speed lost; guardrails now rebound and slow a grounded car. Flying above them clears the rails.
 
@@ -217,7 +223,7 @@ The whole interface is available in English and Traditional Chinese (繁體中�
 
 Brand and game terms stay in English in both languages: Skyline Rush, NITRO, FLY, BOOST and rival names. Strings live in `src/locales/`; `src/i18n.ts` owns detection, `t()` and the active locale.
 
-Localized images: `node scripts/capture-og-images.mjs` drives the real app in Chrome and saves `public/og-image.jpeg` (the 1440×900 English startup screen) plus `artifacts/{readme-start,readme-hero,mobile-flight,race-results}.zh-TW.jpeg` for the Traditional Chinese README (`node scripts/capture-og-images.mjs og` or `readme` runs one half). The English `artifacts/` screenshots are never touched by it. `public/manifest.webmanifest` and the app icons stay as they are: the icons contain no text, and a web app manifest has a single name and description with no per-locale variant, so a second manifest would break installability.
+Localized images: `node scripts/capture-og-images.mjs` drives the real app in Chrome and saves `public/og-image.jpeg` (the 1440×900 English startup screen) plus `artifacts/{readme-startup,readme-start,readme-hero,mobile-flight,race-results}{,.zh-TW}.jpeg` for the English and Traditional Chinese READMEs, shot on the player (`coming-soon`) Garage build (`node scripts/capture-og-images.mjs og` or `readme` runs one half). The README track montage and the two gameplay videos are captured separately; the videos are screen recordings with music and sound effects on (`node scripts/record-whats-new-clip.mjs <slug> --master`), uploaded as GitHub attachments. `public/manifest.webmanifest` and the app icons stay as they are: the icons contain no text, and a web app manifest has a single name and description with no per-locale variant, so a second manifest would break installability.
 
 ## Verify
 
