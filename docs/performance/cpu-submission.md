@@ -6,6 +6,10 @@ five racing scenes, with zero visual change (visual gate: max channel delta <= 1
 **Result: target NOT met without a visual change. Item 32 stays unticked.** The one change that is pixel-identical
 (volcanic shimmer) is within timing noise. The two changes that reach the target move pixels and were rejected.
 
+**Decision (2026-11-27): owner 接受方案 1 (the owner accepted option 1).** The branch keeps only the pixel-identical set:
+the probe plus the volcanic heat-shimmer `forceSinglePass`. The -25% target is not met and no gain is claimed: the
+measured -0% to -9% submission p50 is within noise (table below). Option 2, waiving the visual gate, is not taken.
+
 ## Tool
 
 `scripts/cpu-submit-probe.mjs <track> [--counters] [--profile]` (page `tests/fixtures/cpu-submit-probe.html`) prints the
@@ -69,5 +73,9 @@ Both are recorded with their tests in git history (`9772164e`, `966a5337`) and r
 
 ## Visual gate, final head
 
-`scripts/final-report/visual-fidelity.mjs` against `f371b3d9` with the volcanic shimmer commit cherry-picked: 20 of 20
-scenes, max channel delta <= 1, 0 pixels over 8 (race, home, garage, showcase, Photo, results; mobile and desktop).
+`scripts/final-report/visual-fidelity.mjs` with base = integration head `e8e8d48b` and candidate = this branch after
+merging it (`--no-ff`): 20 of 20 scenes at max channel delta 0, 0 pixels over 8 (race, home, garage, showcase, Photo,
+results; mobile and desktop). m-race-neon-ultra showed max 4 (0 px over 8) on the full run with its repeat (candidate
+twice) also at 4; three neon-only reruns gave base-vs-candidate / repeat 4/0, 0/4 and 0/0, so the 4 is that scene's
+known determinism floor (see `gpu-pipeline.md`), not this change, which does not touch neon. An earlier gate against
+`f371b3d9` with the shimmer commit cherry-picked also passed 20 of 20 at max <= 1.
