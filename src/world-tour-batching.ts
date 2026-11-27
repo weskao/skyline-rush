@@ -16,23 +16,6 @@ function canBatch(mesh: THREE.Mesh): boolean {
 const appearanceKey = (mesh: THREE.Mesh): string =>
   [mesh.geometry.uuid, (mesh.material as THREE.Material).uuid,
     mesh.castShadow, mesh.receiveShadow, mesh.layers.mask, mesh.frustumCulled].join('|');
-// three keeps ONE instancing flag per material: a plain mesh and an instanced batch sharing a material make each other
-// re-look-up the program every frame. A batch draws with its own copy of the material (same program, same values).
-// A material another system writes every frame (the pulsing beacon/spray glows) stays shared so the copies keep following.
-// The copy lives and dies with its source: disposing the source disposes the copy and forgets it.
-const twins = new WeakMap<THREE.Material, THREE.Material>();
-export function instancedTwin(material: THREE.Material): THREE.Material {
-  if (material.userData.pulse) return material;
-  let twin = twins.get(material);
-  if (!twin) {
-    const copy = twin = material.clone();
-    copy.onBeforeCompile = material.onBeforeCompile;
-    copy.customProgramCacheKey = material.customProgramCacheKey;
-    twins.set(material, copy);
-    material.addEventListener('dispose', () => { twins.delete(material); copy.dispose(); });
-  }
-  return twin;
-}
 function preserveRenderState(batch: THREE.Mesh, source: THREE.Mesh): void {
   batch.castShadow = source.castShadow;
   batch.receiveShadow = source.receiveShadow;
@@ -62,7 +45,7 @@ export function batchStaticChunk(chunk: THREE.Group, minimumInstances = 3) {
   const reusableMatrix=new THREE.Matrix4();
   for(const meshes of groups.values()){
     if(meshes.length<minimumInstances)continue;
-    const instances=new THREE.InstancedMesh(meshes[0].geometry,instancedTwin(meshes[0].material),meshes.length);
+    const instances=new THREE.InstancedMesh(meshes[0].geometry,meshes[0].material,meshes.length);
     instances.name='scenery instance batch';
     preserveRenderState(instances,meshes[0]);
     instances.userData.batchCount=meshes.length;
@@ -132,10 +115,7 @@ export function poolStaticChunks(
       n + (mesh instanceof THREE.InstancedMesh ? mesh.count : 1), 0);
     if (!total) continue;
     const first = meshes[0];
-    const material = first.material as THREE.Material; // canBatch admits single materials only
-    // A source that is already a batch carries its twin; copying that again would add a third material for nothing.
-    const batch = new THREE.InstancedMesh(first.geometry,
-      first instanceof THREE.InstancedMesh ? material : instancedTwin(material), total);
+    const batch = new THREE.InstancedMesh(first.geometry, first.material, total);
     batch.name = 'scenery shared GPU batch';
     preserveRenderState(batch,first);
     let at = 0;

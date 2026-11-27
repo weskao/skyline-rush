@@ -23,8 +23,7 @@ test('World Tour static mesh batching has one strict TS implementation without c
   const batch = chunk.children.find(obj => obj.isInstancedMesh);
   assert.ok(batch);
   assert.equal(batch.geometry, geometry);
-  assert.notEqual(batch.material, material);
-  assert.deepEqual(batch.material.toJSON().color, material.toJSON().color);
+  assert.equal(batch.material, material);
   const scratch = new Matrix4();
   for (let i = 0; i < 5; i++) {
     batch.getMatrixAt(i, scratch);
