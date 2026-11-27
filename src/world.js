@@ -90,7 +90,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
   const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 3000);
   const motionPreference = matchMedia('(prefers-reduced-motion: reduce)'), touchPreference = matchMedia('(pointer: coarse)');
   const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(1, 1, {
-    type: THREE.HalfFloatType, samples: renderSamples(visual.quality),
+    type: THREE.HalfFloatType, samples: renderSamples(visual.quality), resolveDepthBuffer: false, // nothing samples the scene depth
   }));
   const renderPass = new RenderPass(scene, camera); composer.addPass(renderPass);
   const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.42, 0.55, 1.1);
@@ -100,7 +100,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
   if (!highPass.fragmentShader.includes(texel)) throw new Error('UnrealBloomPass high pass changed: move the NaN guard');
   highPass.fragmentShader = highPass.fragmentShader.replace(texel, `${texel} if ( any( isnan( texel ) ) || any( isinf( texel ) ) ) texel = vec4( 0.0 );`);
   composer.addPass(bloom);
-  const lens = createLensPass();
+  const lens = createLensPass(bloom);
   composer.addPass(lens); // also tone-maps and encodes: see lens-pass.ts
   const deepPerf = createDeepPerf(location.search, renderer, composer, () => visual.quality);
   const environment = createRoomEnvironment(renderer);
