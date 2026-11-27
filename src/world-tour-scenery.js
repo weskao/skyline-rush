@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { RACE_TRACKS } from './game.js';
 import { trackPoint, trackFrame } from './track-paths.ts';
 import { detailModels } from './world-tour-details.js';
+import { tintableParts } from './world-tour-batching.ts';
 export { DETAIL_KINDS, detailSetPlan } from './world-tour-details.js';
 
 // Absolute distance anchors: reusing a chunk never restarts an animation or
@@ -118,7 +119,7 @@ const GEO = {
   torus:new THREE.TorusGeometry(1,.13,5,24),
 };
 export function createSceneryKit() {
-  const materials = new Map(), tempMatrix = new THREE.Matrix4();
+  const materials = new Map(), tintable = new Map(), tempMatrix = new THREE.Matrix4();
   const make = (hex, glow) => glow ? new THREE.MeshBasicMaterial({color:hex,toneMapped:true})
     : new THREE.MeshStandardMaterial({color:hex,roughness:.89,metalness:.035,flatShading:true});
   // White twins: pooled colour variants draw as one InstancedMesh with instanceColor (white x colour = colour).
@@ -292,7 +293,11 @@ export function createSceneryKit() {
   function build(trackId,kind,size=1) {
     const g=new THREE.Group();g.name=kind;
     if(!props[kind])throw Error('Unknown scenery asset: '+kind);
-    props[kind](g);g.scale.setScalar(size);
+    props[kind](g);
+    // Static models, so the per-kind answer never goes stale.
+    if(!tintable.has(kind)){g.updateMatrixWorld(true);tintable.set(kind,tintableParts(g.children));}
+    tintable.get(kind).forEach((ok,i)=>{g.children[i].userData.tintable=ok;});
+    g.scale.setScalar(size);
     return g;
   }
   // Continuous sculpted rock / coast ribbons with *absolute* distance-based

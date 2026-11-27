@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { poolStaticChunks, releaseStaticPool } from '../src/world-tour-batching.ts';
-import { createSceneryKit } from '../src/world-tour-scenery.js';
+import { createSceneryKit, SCENERY_KINDS, DETAIL_KINDS } from '../src/world-tour-scenery.js';
 import { createWorldTourScene } from '../src/world-tour-scene.js';
 import { RACE_TRACKS } from '../src/game.js';
 
@@ -18,6 +18,7 @@ function chunksOf(kit, colours, glow = false, geometry = new THREE.BoxGeometry(1
   });
   colours.forEach((hex, i) => {
     const mesh = new THREE.Mesh(geometry, kit.material(hex, glow));
+    mesh.userData.tintable = true; // an isolated part, as the kit marks it
     mesh.position.set(i * 3, 1, -i * 7); mesh.scale.set(1 + i, 2, 1);
     chunks[i % 2].add(mesh);
   });
@@ -43,7 +44,10 @@ test('colour-only variants of one geometry pool into one draw with exact per-ins
   const kit = createSceneryKit();
   const colours = ['#507786', '#c84b31', '#f2d16b', '#507786', '#22313f'];
   const { layer, chunks, geometry } = chunksOf(kit, colours);
-  const expected = chunks.flatMap(c => c.children).map(m => [m.matrixWorld.clone(), m.material.color.clone()]);
+  // Depth ties went to the later-drawn colour (three sorts opaque draws by material id), so the
+  // pooled instances follow material id; equal colours keep their source order (stable sort).
+  const expected = chunks.flatMap(c => c.children).sort((a, b) => a.material.id - b.material.id)
+    .map(m => [m.matrixWorld.clone(), m.material.color.clone()]);
   const pool = poolStaticChunks(layer, chunks, null, 2);
   try {
     assert.equal(pool.children.length, 1, 'five meshes in four colours are one draw');
@@ -101,12 +105,13 @@ test('real World Tour pools draw each geometry once per bucket and material kind
       const pool = scene.getObjectByName('World Tour shared draw batches');
       const seen = new Map();
       for (const batch of pool.children) {
-        const base = batch.material.userData.tintBase ?? batch.material;
-        const key = batch.geometry.uuid + base.uuid + batch.userData.bucket;
+        // Parts touching another draw keep their own colour material (see the contact test below).
+        const key = batch.geometry.uuid + batch.material.uuid + batch.userData.bucket;
         seen.set(key, (seen.get(key) ?? 0) + 1);
       }
       const split = [...seen.values()].filter(n => n > 1).length;
-      assert.equal(split, 0, id + ': colour variants of one geometry must share a draw');
+      assert.equal(split, 0, id + ': each geometry draws once per bucket and material');
+      assert.ok(pool.children.some(b => b.instanceColor), id + ': isolated colour variants still share a draw');
       const rack = scene.getObjectByName('shader rack ' + id);
       const tinted = [];
       rack.traverse(o => { if (o.isInstancedMesh && o.instanceColor) tinted.push(o.material.type); });
@@ -114,4 +119,42 @@ test('real World Tour pools draw each geometry once per bucket and material kind
         id + ': the hidden shader rack warms both tinted programs');
     }
   } finally { renderer.dispose(); }
+});
+
+// Bounds closer than this can share a depth value at the far end of the 24-bit depth buffer
+// (near 0.1 m: about 0.21 m per step 600 m away), so their draw order decides the pixel.
+const REACH = 0.25;
+test('a prop part draws tinted only when every part it touches lands in the same draw', () => {
+  const kit = createSceneryKit();
+  const kinds = [...new Set([...Object.values(SCENERY_KINDS), ...Object.values(DETAIL_KINDS)].flat())];
+  let tinted = 0;
+  try {
+    for (const kind of kinds) {
+      const layer = new THREE.Group(), chunk = new THREE.Group();
+      chunk.userData.chunkIndex = 0; layer.add(chunk);
+      const [prop] = [0, 600].map(x => { const g = kit.build('', kind, 1); g.position.x = x; chunk.add(g); return g; });
+      layer.updateMatrixWorld(true);
+      const pool = poolStaticChunks(layer, [chunk], null);
+      const parts = prop.children.filter(o => o.isMesh);
+      // The batch drawing a part is the one holding an instance at the part's transform.
+      const owner = new Map(), matrix = new THREE.Matrix4();
+      const at = m => m.elements.map(n => n.toFixed(4)).join();
+      for (const b of pool.children) for (let i = 0; i < b.count; i++) owner.set(at(b.getMatrixAt(i, matrix)) + b.geometry.uuid, b);
+      const drawOf = part => {
+        const batch = !part.visible && owner.get(at(part.matrixWorld) + part.geometry.uuid);
+        return batch?.instanceColor ? 'tint ' + batch.uuid : 'own ' + part.uuid;
+      };
+      const boxes = parts.map(p => new THREE.Box3().setFromObject(p).expandByScalar(REACH / 2));
+      parts.forEach((part, i) => {
+        if (!drawOf(part).startsWith('tint')) return;
+        tinted++;
+        parts.forEach((other, j) => {
+          if (i !== j && boxes[i].intersectsBox(boxes[j])) assert.equal(drawOf(other), drawOf(part),
+            kind + ': part ' + i + ' is tinted but touches part ' + j + ' in another draw');
+        });
+      });
+      releaseStaticPool(pool);
+    }
+    assert.ok(tinted > 0, 'isolated parts still pool their colours');
+  } finally { kit.dispose(); }
 });

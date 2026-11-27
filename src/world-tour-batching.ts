@@ -14,13 +14,36 @@ function canBatch(mesh: THREE.Mesh): boolean {
     !(mesh.morphTargetInfluences?.length);
 }
 const appearanceKey = (mesh: THREE.Mesh, material = mesh.material as THREE.Material): string =>
-  [mesh.geometry.uuid, material.uuid,
+  [mesh.geometry.uuid, material.uuid, !!mesh.userData.tintable,
     mesh.castShadow, mesh.receiveShadow, mesh.layers.mask, mesh.frustumCulled].join('|');
-// A colour-only variant (kit material with a white `tintBase` twin) pools by its base, so meshes
-// differing only in colour share one draw. Pulsing colours and mutated sides keep their material.
-function tintBase(material: THREE.Material): THREE.Material | null {
+// A colour-only variant (kit material with a white `tintBase` twin) of a `tintable` part pools by
+// its base, so meshes differing only in colour share one draw. Pulsing colours and mutated sides
+// keep their material.
+function tintBase(mesh: THREE.Mesh): THREE.Material | null {
+  const material = mesh.material as THREE.Material;
   const base = material.userData.tintBase as THREE.Material | undefined;
-  return base && !material.userData.pulse && material.side === base.side ? base : null;
+  return base && mesh.userData.tintable && !material.userData.pulse && material.side === base.side ? base : null;
+}
+// Three sorts opaque draws by material id, so a depth tie between touching parts went to the later
+// colour. A shared tinted draw keeps that order only among its own instances (sorted by material id
+// in poolStaticChunks), so a part is tintable only when every part it touches has its geometry and
+// tint base. `reach` covers far depth-buffer steps (near 0.1 m: about 0.21 m at 600 m).
+export function tintableParts(parts: THREE.Object3D[], reach = 0.25): boolean[] {
+  const boxes = parts.map(part => new THREE.Box3().setFromObject(part).expandByScalar(reach / 2));
+  const drawOf = (part: THREE.Object3D, i: number) => {
+    const mesh = part as THREE.Mesh, base = (mesh.material as THREE.Material | undefined)?.userData.tintBase;
+    return mesh.isMesh && base ? mesh.geometry.uuid + base.uuid : 'own ' + i;
+  };
+  const root = parts.map((_, i) => i);
+  const find = (i: number): number => root[i] === i ? i : (root[i] = find(root[i]));
+  for (let i = 0; i < parts.length; i++) for (let j = i + 1; j < parts.length; j++)
+    if (boxes[i].intersectsBox(boxes[j])) root[find(i)] = find(j);
+  const draw = new Map<number, string | null>();
+  parts.forEach((part, i) => {
+    const r = find(i), key = drawOf(part, i);
+    draw.set(r, draw.has(r) && draw.get(r) !== key ? null : key);
+  });
+  return parts.map((part, i) => !drawOf(part, i).startsWith('own') && draw.get(find(i)) !== null);
 }
 function preserveRenderState(batch: THREE.Mesh, source: THREE.Mesh): void {
   batch.castShadow = source.castShadow;
@@ -55,6 +78,7 @@ export function batchStaticChunk(chunk: THREE.Group, minimumInstances = 3) {
     instances.name='scenery instance batch';
     preserveRenderState(instances,meshes[0]);
     instances.userData.batchCount=meshes.length;
+    instances.userData.tintable=meshes[0].userData.tintable;
     for(let i=0;i<meshes.length;i++){
       reusableMatrix.multiplyMatrices(inverse,meshes[i].matrixWorld);
       instances.setMatrixAt(i,reusableMatrix);
@@ -104,8 +128,7 @@ export function poolStaticChunks(
           !object.visible || object.userData.ownGeometry) return;
       const mesh = object as THREE.Mesh;
       if (!canBatch(mesh)) return;
-      const material = mesh.material as THREE.Material;
-      const key = bucket + '|' + appearanceKey(mesh, tintBase(material) ?? material);
+      const key = bucket + '|' + appearanceKey(mesh, tintBase(mesh) ?? mesh.material as THREE.Material);
       const list = groups.get(key);
       if (list) list.push(mesh);
       else groups.set(key, [mesh]);
@@ -125,7 +148,11 @@ export function poolStaticChunks(
     // One colour keeps its own material (no extra program); several share the white base.
     const tinted = meshes.some(mesh => mesh.material !== firstMaterial);
     const batch = new THREE.InstancedMesh(first.geometry,
-      tinted ? tintBase(firstMaterial)! : firstMaterial, total);
+      tinted ? tintBase(first)! : firstMaterial, total);
+    // Stable: equal colours keep their source order, colours draw in their old material order.
+    // (three's typings omit Material.id, the key its opaque sort uses.)
+    const id = (mesh: THREE.Mesh) => (mesh.material as THREE.Material & { id: number }).id;
+    if (tinted) meshes.sort((a, b) => id(a) - id(b));
     batch.name = 'scenery shared GPU batch';
     batch.userData.bucket = Number(key.slice(0, key.indexOf('|')));
     preserveRenderState(batch,first);
