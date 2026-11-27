@@ -188,7 +188,7 @@ groupedBars({ title: 'Particle buffer upload per frame (bytes, lower is better)'
     body += `<text class="v" x="${Math.max(x(0), x0 + w) + 6}" y="${y + 12}">${pct(v)} ${t.met ? '(met)' : `(target ${t.target}%)`}</text>`;
   });
   writeFileSync(join(outDir, 'targets.svg'), `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Target progress">${STYLE}
-<rect class="bg" width="${W}" height="${H}"/><text class="t" x="16" y="24">Integration 1fcfa98a vs base d9c144ba: median change against target</text>
+<rect class="bg" width="${W}" height="${H}"/><text class="t" x="16" y="24">Integration ${BUILDS.C.sha} vs ${BUILDS.A.name}: median change against target</text>
 <text class="s" x="16" y="42">LOCAL-CHROME; bar = median per-scene change, dashed line = program target; left of the line meets it</text>${body}</svg>\n`);
 }
 console.log('wrote', join(outDir, 'comparison.json'), 'and SVG charts');
