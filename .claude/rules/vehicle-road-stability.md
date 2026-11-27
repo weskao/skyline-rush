@@ -108,14 +108,16 @@ corners still passed themselves (the sharpest bend needed ≤ 31% lock), so the 
   push did. A heading accumulates only from bends; straights keep the arcade lane change (no counter-steer).
   The rail clamp (`meetRail`), a knock's grace, a drift and a road recovery reset it to 0. The drawn car yaws by
   it (`smoothDriftYaw`). Full real-car heading physics on straights is deferred (`TODO.md`).
-- **Released on a straight, the car goes dead straight** (owner, 2026-11-28, case A). Road flatter than
-  `STRAIGHT_TURN` (2e-4 rad/m, a 5 km radius, judged at the car's speed and air share, so a gentle bend still
-  carries a flying car at half strength) pushes nothing while steering is 0, and
-  any heading left from a bend turns back as at full counter-steer, so the slide stops within a fraction of a
-  second. The cause it removes: Tokyo's opening 1 km and long stretches of Stormline and Spiral push .05–.2 m/s;
-  a heading that only ever grows from that slid a released car up to 13 m into the rail on a visual straight.
-  Only crosswind or a contact moves a released car there. Steering keeps the full corner force (counter-steer;
-  a drift is the tight line). Guards: the Tokyo near-straight and every-track straight tests.
+- **Released on road that reads straight, the car keeps its lane** (owner, 2026-11-28, case A and the second
+  report). A bend gentler than `STRAIGHT_TURN` (1/700 rad/m, a 700 m radius, 2 m/s of push at 88 m/s) pushes
+  nothing while steering is 0, and any heading left from a bend turns back as at full counter-steer, so the slide
+  stops within a fraction of a second. Judge the road's turn (`cornerTurn`), never the push: the push is halved in
+  the air and capped at NITRO speed. The causes it removes: a heading that only ever grows slid a released car up
+  to 13 m into the rail on Tokyo's opening 1 km (.05–.2 m/s of push); and at the first threshold (a 5 km radius)
+  only 5–50% of each track counted as straight, so gentle curves still reached the rail in 2–3 s. Only crosswind
+  or a contact moves a released car there. A clearer bend still carries it into the outside rail, and steering
+  keeps the full corner force on every bend (counter-steer; a drift is the tight line). Guards: the Tokyo
+  near-straight, every-track reads-straight and clear-bends-driver tests.
 - **Rail hits are judged by impact angle** (`resolveRail`): sideways over forward travel in the contact step,
   whatever carried the car there. Below `SCRAPE_RATIO` (about 6°) with less than .9 lock it scrapes (92% speed
   kept, placed 1 m inside the rail); steeper is a hard hit (75% kept, `knock` places it about 1 m inside at

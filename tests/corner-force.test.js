@@ -28,7 +28,7 @@ function drive(id, input, { lane = 2.5, hz = 60 } = {}) {
   const run = { dev: 0, hard: 0, scrapes: 0, offRoute: 0, maxX: 0, pinned: 0 };
   for (let steps = 0, pin = 0; race.phase === 'racing' && steps < hz * 900; steps++) {
     const rail = car.railContactSide, scrape = car.scrape;
-    stepRace(race, typeof input === 'function' ? input(car) : input, dt);
+    stepRace(race, typeof input === 'function' ? input(car, race) : input, dt);
     if (!rail && car.railContactSide) run.hard++;
     if (car.scrape !== scrape) run.scrapes++;
     if (!car.recovery && car.cooldown === 0) run.dev = Math.max(run.dev, Math.abs(car.x - lane));
@@ -205,21 +205,36 @@ test('released on a near-straight the car goes dead straight, at 88 m/s and NITR
   }
 });
 
-test('every track, released on a straight with the nose on the road, the car does not move sideways', () => {
-  let checked = 0; // Alpine, Coastal, Cosmic and the circuit have no straight at all
+/** What reads as straight: a bend gentler than a 700 m radius, as m/s of push at the car's own speed (2 m/s at 88 m/s). */
+const gentle = car => 1.95 * (Math.max(0, car.speed - 35) / 53) ** 2;
+
+// Owner, 2026-11-28 (second report): only 5-50% of each track was flatter than the old 5 km radius, so on gentle
+// curves that look straight a released car still slid to the rail in 2-3 s.
+test('every track, released on road that reads straight with the nose on the road, the car does not move sideways', () => {
+  let checked = 0; // the circuit is one constant clear bend
   for (const id of TRACKS) {
     const race = racing(id), car = race.player;
     for (let steps = 0; race.phase === 'racing' && steps < 60 * 900; steps++) {
-      // A straight reads under .2 m/s of push at 88 m/s (a 7 km radius), scaled to the car's own speed.
-      const flat = .2 * (Math.max(0, car.speed - 35) / 53) ** 2;
-      const x = car.x, before = { heading: car.heading, rate: cornerRate(race, car), quiet: !car.section && !car.recovery && car.cooldown === 0 };
+      const x = car.x, before = { heading: car.heading, rate: cornerRate(race, car), flat: gentle(car), quiet: !car.section && !car.recovery && car.cooldown === 0 && car.altitude === 0 };
       stepRace(race, HANDS_OFF, 1 / 60);
-      if (before.heading !== 0 || Math.abs(before.rate) >= flat || !before.quiet || car.section || car.recovery || car.cooldown > 0 || Math.abs(car.x) >= ROAD_LIMIT) continue;
+      if (before.heading !== 0 || Math.abs(before.rate) >= before.flat || !before.quiet || car.section || car.recovery || car.cooldown > 0 || Math.abs(car.x) >= ROAD_LIMIT) continue;
       checked++;
-      assert.equal(car.x, x, `${id} at ${car.distance.toFixed(0)} m: slid ${car.x - x} m on a straight`);
+      assert.equal(car.x, x, `${id} at ${car.distance.toFixed(0)} m: slid ${car.x - x} m on a ${before.rate.toFixed(2)} m/s curve`);
     }
   }
-  assert.ok(checked > 60 * 60, `only ${checked} straight steps`);
+  assert.ok(checked > 60 * 60, `only ${checked} straight-reading steps`);
+});
+
+test('a driver who steers only through clear bends is not moved between them, on every track', () => {
+  for (const id of TRACKS) {
+    const run = drive(id, (car, race) => {
+      const clear = Math.abs(cornerRate(race, car)) > gentle(car) * (car.altitude >= .1 ? .5 : 1);
+      return clear || car.section === 'crosswind' ? keeper(0)(car) : HANDS_OFF;
+    }, { lane: 0 }); // the centre, where a gap recovery also places the car
+    assert.ok(run.finished, `${id}: did not finish`);
+    assert.equal(run.hard, 0, `${id}: ${run.hard} hard rail hits`);
+    assert.ok(run.dev < 1.5, `${id}: left its lane by ${run.dev.toFixed(2)} m`);
+  }
 });
 
 test('every track, no steering, AUTO off: runs into the rail and still finishes', () => {
@@ -365,7 +380,7 @@ test('the corner acts at half strength in the air and stays off through tutorial
 
 // The straight rule judges the road, not the halved air push: a gentle bend a grounded car feels still carries a flying one.
 test('released in the air over a gentle bend the car is still carried at half strength', () => {
-  const flat = 2e-4 * .5 * (88 - 35) ** 2; // pushFor(STRAIGHT_TURN = 2e-4 rad/m, 88 m/s)
+  const flat = 1 / 700 * .5 * (88 - 35) ** 2; // pushFor(STRAIGHT_TURN = 1/700 rad/m, 88 m/s)
   let checked = 0;
   for (const id of Object.keys(RACE_TRACKS)) {
     const race = racing(id);

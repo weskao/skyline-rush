@@ -16,7 +16,9 @@ const MAX_FORCE = 7; // m/s, corner plus crosswind: full lock always keeps 2 m/s
 const CELL = 4; // m per cached curvature sample
 const REACH = 8; // m either side: reads the bend rather than a frame seam on measured routes
 const TURN_STEPS = 2 ** 30; // per rad/m; one step moves the push by under 1e-5 m/s
-const STRAIGHT_TURN = 2e-4; // rad/m, a 5 km radius: flatter road reads straight, so a released car runs dead straight on it
+// rad/m, a 700 m radius (2 m/s of push at 88 m/s): a gentler bend reads straight, so a released car follows the road on it.
+// Owner, 2026-11-28: at a 5 km radius only 5-50% of each track counted, and a released car slid to the rail on the rest.
+const STRAIGHT_TURN = 1 / 700;
 const KNOCK_GRACE = 1.5; // s, the cooldown `knock` grants
 const NOSE_TURN = .35; // rad/s the nose turns at full lock: released, the sharpest bend at 88 m/s meets the rail in about 1 s
 const AIR_SHARE = .5; // owner, 2026-11-25: taking off must not skip a corner, so it acts at half strength in the air
@@ -71,21 +73,21 @@ export const cornerPush = (id: string, distance: number, speed: number): number 
 const knocked = (race: ForceRace, car: ForceCar): boolean => car.cooldown > 0 && race.elapsed - (car.impact?.time ?? -Infinity) < KNOCK_GRACE;
 
 /** The car's corner push in m/s right now, without crosswind: test bots read it to lean into a bend. */
-export function cornerRate(race: ForceRace, car: ForceCar): number {
+export const cornerRate = (race: ForceRace, car: ForceCar): number => rateFor(race, car, cornerTurn(race, car));
+
+const rateFor = (race: ForceRace, car: ForceCar, turn: number): number =>
+  turn ? pushFor(turn, car.speed) * (car.altitude >= .1 && !onNeonRoof(race.trackId, car) ? AIR_SHARE : 1) : 0;
+
+/** The road's turn under the car in rad/m, 0 wherever the corner force is off. */
+function cornerTurn(race: ForceRace, car: ForceCar): number {
   if (car.speed <= PUSH_FROM || knocked(race, car) || car.span || car.inShortcut || race.endless?.practice) return 0;
-  return groundRate(race, car) * airShare(race, car);
-}
-
-const airShare = (race: ForceRace, car: ForceCar): number => car.altitude >= .1 && !onNeonRoof(race.trackId, car) ? AIR_SHARE : 1;
-
-function groundRate(race: ForceRace, car: ForceCar): number {
   if (race.course) {
     const { travel } = race.course.cars.get('YOU')!;
-    return pushFor(edgeTurn(race.course.spec.graph, travel.currentEdgeId, travel.localS), car.speed);
+    return edgeTurn(race.course.spec.graph, travel.currentEdgeId, travel.localS);
   }
   // Endless replaces a long-form course's route with the shared highway.
-  if (race.endless && Object.hasOwn(COURSE_TRACKS, race.trackId)) return pushFor(turnOver(legacyClassicRoad.heading, car.distance, Infinity), car.speed);
-  return cornerPush(race.trackId, car.distance, car.speed);
+  if (race.endless && Object.hasOwn(COURSE_TRACKS, race.trackId)) return turnOver(legacyClassicRoad.heading, car.distance, Infinity);
+  return roadTurn(race.trackId, car.distance);
 }
 
 /** The car's x after this step's move, stopped at the rail. Nothing steers it back: `resolveRail` places it. */
@@ -103,10 +105,11 @@ export function meetRail(car: ForceCar, lateralPosition: number): number {
  * Released on a straight, the nose turns back as at full counter-steer and the slide stops; only crosswind moves it.
  */
 export function roadDrift(race: ForceRace, car: ForceCar, section: { dir?: number } | undefined, drifting: boolean, dt: number): number {
-  const wind = car.section === 'crosswind' ? (section?.dir ?? 1) * CROSSWIND_SPEED : 0, rate = cornerRate(race, car);
-  // Owner, 2026-11-28: on a straight a released car goes dead straight. A steering player keeps the full corner force.
-  // The road is judged, not the push: in the air both are halved, so a gentle bend still carries a flying car.
-  const straight = !drifting && car.steering === 0 && Math.abs(rate) <= Math.abs(pushFor(STRAIGHT_TURN, car.speed)) * airShare(race, car);
+  const wind = car.section === 'crosswind' ? (section?.dir ?? 1) * CROSSWIND_SPEED : 0;
+  const bend = cornerTurn(race, car), rate = rateFor(race, car, bend);
+  // Owner, 2026-11-28: on road that reads straight a released car keeps its lane. A steering player keeps the full corner force.
+  // The road is judged, not the push: that one is halved in the air and capped at NITRO speed.
+  const straight = !drifting && car.steering === 0 && Math.abs(bend) <= STRAIGHT_TURN;
   const corner = drifting || straight ? 0 : clamp(rate + wind, -MAX_FORCE, MAX_FORCE) - wind;
   const authority = Math.min(9, car.speed * .22), from = drifting || knocked(race, car) ? 0 : car.heading ?? 0, turn = NOSE_TURN * dt;
   let heading = from + (corner && corner / authority * turn), lock = car.steering;

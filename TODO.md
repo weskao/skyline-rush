@@ -6865,5 +6865,7 @@ Base `origin/develop` `f9735e4c`. Plan and checklist: `docs/designs/3d-pipeline/
 - [x] AUTO lane hold (ad03ac13) and rail recovery removed; a scrape places the car 1 m inside the rail and arms `railContactSide`.
 - [x] RED on 8210e2c2 source: 7 `tests/corner-force.test.js` cases; the air gentle-bend case RED on the first fix. GREEN after: 27/27.
 - [x] Replay digests re-recorded on purpose (cpu-race-replay, legacy-race-replay): scripted steer-0 stretches now run straight; every replay that finished still finishes.
+- [x] Exact-HEAD GitHub `quality-gate` for e81ab211: success (run 46056027678; `browser-tests` skipped by CI).
+- [x] Second report (owner, 2026-11-28): gentle curves still moved a released car. Measured: only 5–50% of each track was flatter than the 5 km radius; a 1 m/s curve reached the rail in about 2.3 s. Fix: `STRAIGHT_TURN` is a 700 m radius, judged on the road's turn (`cornerTurn`). RED on e81ab211: the reads-straight and clear-bends-driver cases; GREEN after: 28/28. Replay digests re-recorded on purpose.
 - [ ] `make verify` and the browser suite (desktop, phone portrait and landscape) for the pushed commit.
-- [ ] Exact-HEAD GitHub `quality-gate`; physical phone not run.
+- [ ] Exact-HEAD GitHub `quality-gate` for the second fix; physical phone not run.
