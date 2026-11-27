@@ -1,3 +1,8 @@
+# Desktop results Next spacing (2026-11-28)
+
+- [x] Isolated Chromium DOM/CSS geometry RED/GREEN: visible reward to Next gap changed from 0px to 17px at 1085x728, 1366x768, 1440x900, 768x1024 and 1024x768; 390x844, 360x740 and 600x900 retained 17px. This is a reconstructed layout, not real-game evidence.
+- [ ] Run the real-game layout regression (`tests/wave3-demo-results-layout-browser.spec.js`), module-size, unit, typecheck, build, make verify and exact-HEAD quality-gate; confirm phone orientations and actual game visuals. Local clone blocked by DNS and pnpm unavailable.
+
 # Startup Enter dock viewport regression (2026-11-27)
 
 - [x] Isolated Chromium mobile geometry RED/GREEN: the landscape footer's percentage-based bottom inset was reused as padding, where it resolved against width and collapsed the flexible grid row. At 844x390 the dock's top moved from 140px to 290px with the fix; the footer gap became 8px. Portrait 390x844 and desktop 1440x900 positions were unchanged. All eight isolated viewport checks passed after the fix.

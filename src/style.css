@@ -2232,6 +2232,8 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
   }
   body[data-phase="finished"]:not([data-tutorial]) .overlay-actions { min-width: 0; }
   body[data-phase="finished"]:not([data-tutorial]) #next-button { min-width: 0; width: 100%; }
+  /* Match portrait dock spacing: 8px margin + 8px padding + 1px border. */
+  body[data-phase="finished"]:not([data-tutorial]) .result-rewards:has(> .wave3-demo-results:not([hidden])) + .overlay-buttons > #next-button { margin-top: 17px; }
 }
 /* Compact the non-interactive podium summary only on very short landscape screens.
    Keep the header/tool clearance and every 44px action target unchanged.

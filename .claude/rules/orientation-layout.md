@@ -68,6 +68,8 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
   reach it (2026-11-14). `#race-overlay` scrolls there; a new summary row is checked at those
   sizes. Guard: the scrolled-to-end assertion in `tests/wave3-demo-results-layout-browser.spec.js`.
 
+- **Desktop Next keeps the portrait receipt clearance.** The desktop `display: contents` action wrapper has no dock padding; reserve 17px between the visible Wave 3 receipt and `#next-button` (portrait 8px margin + 8px padding + 1px border). Only apply this when the receipt is visible; preserve the compact phone layouts and the existing Next beacon. Guard: `tests/wave3-demo-results-layout-browser.spec.js`.
+
 - **A split viewport has two coordinate spaces.** Use the normalized Viewport Segments source
   in `foldable-layout.ts` and its published variables for fixed rails and native dialogs.
   The Home and race scene spans the whole viewport. Keep feedback and controls within visible

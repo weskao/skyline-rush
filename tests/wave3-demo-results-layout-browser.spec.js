@@ -66,6 +66,7 @@ for (const viewport of [
   { width: 667, height: 375 }, // iPhone SE landscape
   { width: 768, height: 1024 }, // tablet portrait
   { width: 1024, height: 768 }, // tablet landscape
+  { width: 1085, height: 728 }, // reported desktop size
   { width: 1366, height: 768 }, // laptop
   { width: 1440, height: 900 }, // desktop
 ]) {
@@ -115,6 +116,15 @@ for (const viewport of [
       const after = await relative();
       expect(Math.abs(after.x - before.x)).toBeLessThan(3);
       expect(Math.abs(after.y - before.y)).toBeLessThan(3);
+      if (viewport.width >= 761 && viewport.height >= 501) {
+        // Match the portrait dock's 8px margin + 8px padding + 1px border.
+        await expect.poll(() => reward.evaluate(card => {
+          const next = document.querySelector('#next-button');
+          const gap = next.getBoundingClientRect().top - card.getBoundingClientRect().bottom;
+          return Math.abs(gap - 17);
+        })).toBeLessThanOrEqual(1);
+        await page.locator('#next-button').click({ trial: true });
+      }
       const toggle = page.locator('.wave3-demo-results__toggle');
       const panel = reward.locator('.wave3-demo-results__details');
       if (viewport.width === 360) {
