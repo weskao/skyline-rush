@@ -238,7 +238,7 @@ test('up-to-date pack hides the corner icon while a new release restores the upd
   await expect(action).toHaveAttribute('data-pack-progress', '0');
 });
 
-test('each track pack shows only WebP artwork except a same-size progress ring while downloading', async ({ page }) => {
+test('each track pack keeps WebP artwork and overlays only the outer progress ring while downloading', async ({ page }) => {
   await page.goto('/');
   await page.locator('#startup-enter').click();
   await waitForHome(page);
@@ -251,8 +251,10 @@ test('each track pack shows only WebP artwork except a same-size progress ring w
     const icons = await page.locator('#lobby-track-options .track-pack-action:not([hidden])').evaluateAll(nodes =>
       nodes.flatMap(node => {
         const original = node.dataset.packState;
-        const samples = ['missing', 'update', 'downloading'].map(state => {
+        const originalDisabled = node.disabled;
+        const samples = ['missing', 'update', 'error', 'downloading'].map(state => {
           node.dataset.packState = state;
+          node.disabled = originalDisabled || state === 'downloading';
           const art = getComputedStyle(node, '::before');
           const button = getComputedStyle(node);
           const legacySvg = getComputedStyle(node.querySelector('svg'));
@@ -270,7 +272,16 @@ test('each track pack shows only WebP artwork except a same-size progress ring w
               const stroke = parseFloat(getComputedStyle(circle).strokeWidth);
               return (2 * circle.r.baseVal.value + stroke) * parseFloat(legacySvg.width) / 40;
             })(),
-            ringOffset: node.querySelector('.track-pack-ring-fill').style.strokeDashoffset,
+            ringInnerDiameter: (() => {
+              const circle = node.querySelector('.track-pack-ring-fill');
+              const stroke = parseFloat(getComputedStyle(circle).strokeWidth);
+              return (2 * circle.r.baseVal.value - stroke) * parseFloat(legacySvg.width) / 40;
+            })(),
+            visibleGlyphs: [...node.querySelector('svg').children]
+              .filter(child => child.localName !== 'circle' && getComputedStyle(child).display !== 'none').length,
+            opacity: button.opacity,
+            overflow: button.overflow,
+            ringPointerEvents: legacySvg.pointerEvents,
             borderWidth: parseFloat(button.borderTopWidth),
             padding: parseFloat(button.paddingTop),
             surface: button.backgroundColor,
@@ -280,6 +291,7 @@ test('each track pack shows only WebP artwork except a same-size progress ring w
           };
         });
         node.dataset.packState = original;
+        node.disabled = originalDisabled;
         return samples;
       }));
     expect(icons.length, `at least one visible track icon at ${width}x${height}`).toBeGreaterThan(0);
@@ -287,17 +299,20 @@ test('each track pack shows only WebP artwork except a same-size progress ring w
       expect(await usesTrackPackAtlas(page, image), 'every state references the original WebP atlas').toBe(true);
     }
     for (const icon of icons) {
+      expect(icon.artVisible, `${icon.state} original artwork visible`).toBe(true);
+      expect(icon.artWidth).toBe(40);
+      expect(icon.artHeight).toBe(40);
       if (icon.state === 'downloading') {
-        expect(icon.artVisible, 'the download spinner replaces WebP artwork').toBe(false);
-        expect(icon.svgDisplay, 'keep the original progress ring visible during download').not.toBe('none');
-        expect(icon.ringDiameter, 'the ring fits the 40px visible icon').toBeGreaterThanOrEqual(38);
-        expect(icon.ringDiameter).toBeLessThanOrEqual(40);
-        expect(icon.svgWidth).toBe(44);
-        expect(icon.svgHeight).toBe(44);
+        expect(icon.svgDisplay, 'show the progress ring during download').not.toBe('none');
+        expect(icon.visibleGlyphs, 'no duplicate SVG download glyph').toBe(0);
+        expect(icon.ringInnerDiameter, 'ring must clear the original artwork').toBeGreaterThanOrEqual(40);
+        expect(icon.ringDiameter, 'ring must fit inside the card corner').toBeLessThanOrEqual(48);
+        expect(icon.svgWidth).toBe(56);
+        expect(icon.svgHeight).toBe(56);
+        expect(icon.opacity).toBe('1');
+        expect(icon.overflow).toBe('visible');
+        expect(icon.ringPointerEvents).toBe('none');
       } else {
-        expect(icon.artVisible, `${icon.state} artwork visible`).toBe(true);
-        expect(icon.artWidth, `${icon.state} has no extra visual gutter`).toBeGreaterThanOrEqual(38);
-        expect(icon.artHeight).toBeGreaterThanOrEqual(38);
         expect(icon.svgDisplay, `${icon.state} must not render another SVG ring`).toBe('none');
       }
       expect(icon.borderWidth).toBe(0);

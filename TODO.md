@@ -1,3 +1,8 @@
+# Track download icon progress overlay (2026-11-28)
+
+- [x] Isolated Chromium RED/GREEN at 320×568, 390×844, 844×390 and 1280×720: keep the original 40px WebP during downloading, suppress the duplicate SVG glyph, draw only the outer ring, keep the 44px touch target and footer icon unchanged. Checked missing/update/error/downloading styles and manually supplied 0/25/50/75/100% ring offsets using a reconstructed DOM/CSS fixture, not the running game.
+- [ ] Run real-game Playwright `tests/track-pack-browser.spec.js` (including all 16 tracks), module-size, unit, typecheck/build, make verify and exact-HEAD quality-gate. Verify actual asset progress and captures on desktop/mobile portrait/landscape, including real-device Safari; local checkout blocked by GitHub DNS and pnpm unavailable.
+
 # Desktop results Next spacing (2026-11-28)
 
 - [x] Isolated Chromium DOM/CSS geometry RED/GREEN: visible reward to Next gap changed from 0px to 17px at 1085x728, 1366x768, 1440x900, 768x1024 and 1024x768; 390x844, 360x740 and 600x900 retained 17px. This is a reconstructed layout, not real-game evidence.

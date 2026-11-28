@@ -27,6 +27,7 @@ exactly. Topics whose work often starts before a scoped file is open:
 | Shortcut or hidden-path rewards on a course | `.claude/rules/ring-layout.md` |
 | A finish area, or any road that does not close into a loop | `.claude/rules/road-runout.md` (the drawn road runs on past the finish; it never ends in the air) |
 | Course music, or music while a map is only selected on the home screen | `.claude/rules/playable-course-shared-template.md` |
+| Audio unlock, gesture or iOS recovery, result/failure sounds, or adding any new music, sample or media source | `.claude/rules/audio-playback.md` (includes the traps from Eclipse Survivors' 2026-11-28 audio fixes) |
 | Animated Garage/HUD/Store/VFX art (GIF, sprite sheet) | `.claude/rules/animated-image-production.md`, `.claude/rules/raster-artwork.md` |
 | Garage/Store access in `make *unlocked` | `.claude/rules/unlock-separation.md` |
 | Track teaser JPEGs under `public/track-teasers/` | `.claude/rules/track-teaser-artwork.md` |

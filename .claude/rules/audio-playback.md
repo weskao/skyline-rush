@@ -7,6 +7,9 @@ paths:
   - "src/audio-settings.ts"
   - "src/startup-audio.ts"
   - "src/user-activation.ts"
+  - "src/result-audio.ts"
+  - "src/feedback-sounds.ts"
+  - "src/mode-audio.ts"
   - "tests/audio*.test.js"
   - "tests/music-*-browser.spec.js"
   - "tests/helpers/music-probe.js"
@@ -62,3 +65,26 @@ separate causes, each now removed in `src/audio.js` / `src/audio-ui.ts`:
   musicOn, currentTime); keep it inside `if (import.meta.env.VITE_DIAG)`.
 - Preserve: per-course race songs, the shared intro on home selection, suspend on page hidden, iOS
   silent-switch playback (`navigator.audioSession.type = 'playback'`), the 1 s iOS rebuild guard.
+
+## Traps another game hit (Eclipse Survivors, 2026-11-28)
+
+Audited against this engine on 2026-11-28. None reproduces here today; each says why, and what
+change would bring it back.
+
+- **Pending resume blocking recovery.** Touch/pen activation is granted on `pointerup`/`touchend`, not
+  `pointerdown`. `onUserActivation` also fires on touch `pointerdown`, but that is harmless here: the
+  engine never waits on a pending `resume()`, and the gesture-only rebuild happens on the `pointerup`
+  that follows (guard: *a tap rebuilds a context iOS left suspended*). If a "resume pending" gate is
+  ever added, do not start it on touch/pen `pointerdown`.
+- **Restarting healthy media on a suspended context.** All music is Web Audio synthesis today. If an
+  `HTMLMediaElement` or decoded sample is added for music, a suspended or newly created `AudioContext`
+  alone must never pause, seek or restart it. Keep a live source through a suspend, because its clock
+  freezes with the context. Stop it only on close, mute or a real song change.
+- **An unlock prompt swallowing its own click.** `#startup-music` has no click action and the app is
+  `inert` behind the startup screen, so hiding it on unlock retargets nothing. A future unlock button
+  that triggers navigation and removes itself must recover from its completed `click` only.
+- **Failure/result sound that phone speakers cannot play.** Eclipse's defeat music was a 27–196 Hz pure
+  sine and sounded silent while victory was audible. Here both outcomes return to the shared `intro`
+  song. `mode-failed` sits at 205–400 Hz, and `victory` at 392 Hz and up. Keep most energy of every
+  result or failure cue and song above 200 Hz. Never move a failure cue into the bass to make it sound
+  sadder.

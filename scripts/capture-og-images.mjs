@@ -2,7 +2,7 @@
 //   node scripts/capture-og-images.mjs [og] [readme]   (default: both)
 //   og     -> public/og-image.jpeg (1440x900 English startup screen), the single static og:image (crawlers cannot switch
 //             language). public/og-image.{en,zh-TW}.jpeg are the 0.21.0 release-notes images, kept as archived.
-//   readme -> artifacts/{readme-start,readme-hero,mobile-flight,race-results}{,.zh-TW}.jpeg (English, then zh-TW)
+//   readme -> artifacts/{readme-startup,readme-start,readme-hero,mobile-flight,race-results}{,.zh-TW}.jpeg (English, then zh-TW)
 // The zh-TW run uses Playwright locale zh-TW, so the app's own system-language detection picks the language.
 import { mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -16,6 +16,8 @@ const LOCALES = [['en', 'en-US'], ['zh-TW', 'zh-TW']];
 const DESKTOP = { width: 1440, height: 900 };
 const PHONE = { width: 390, height: 844 };
 
+// The dev server defaults to the Garage `trial` build; players get `coming-soon`, so shoot that one.
+process.env.GARAGE_VFX_RELEASE_MODE = 'coming-soon';
 const server = await createServer({ root, server: { host: '127.0.0.1', port: 0 }, logLevel: 'error' });
 await server.listen();
 const url = server.resolvedUrls.local[0];
@@ -65,10 +67,15 @@ try {
   for (const [locale, system] of LOCALES) {
     if (!targets.includes('readme')) break;
     const readme = name => `${root}artifacts/${name}${locale === 'en' ? '' : `.${locale}`}.jpeg`;
+    // The startup screen as a first-time visitor sees it once ready, buttons included.
+    const startup = await (await browser.newContext({ locale: system, viewport: DESKTOP })).newPage();
+    await startup.goto(url);
+    await startup.locator('#startup[data-stage="3"]').waitFor({ timeout: 120000 });
+    await shoot(startup, readme('readme-startup'));
+    await startup.context().close();
     const page = await open(system, DESKTOP);
     // The scrollable intro panel is a few px too short at 1440x900, so the footnote tip is cut mid-sentence; keep it out of the shot.
     await page.addStyleTag({ content: '.flight-tip { display: none }' });
-    await page.locator('#settings-button').click();
     await shoot(page, readme('readme-start'));
     await page.context().close();
     // In flight: hold W to speed, then hold Space once above the lift-off speed.
@@ -96,6 +103,13 @@ try {
     await startRace(results);
     await results.keyboard.down('w');
     await results.locator('#result-stats').waitFor({ state: 'visible', timeout: 180000 });
+    // A fresh profile's first win reveals its unlocks over the results; Continue through each one.
+    const reveal = results.locator('#acquisition-reveal[open]');
+    await reveal.waitFor({ timeout: 5000 }).catch(() => {});
+    for (let i = 0; i < 10 && await reveal.isVisible().catch(() => false); i++) {
+      await results.locator('.acquisition-continue').click();
+      await results.waitForTimeout(800);
+    }
     await results.waitForTimeout(1500); // let the result cards finish animating in
     await shoot(results, readme('race-results'));
     await results.context().close();
