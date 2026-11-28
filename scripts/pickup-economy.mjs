@@ -3,7 +3,7 @@
 import { pathToFileURL } from 'node:url';
 import { writeFileSync } from 'node:fs';
 import { createRace, startRace, stepRace, RACE_TRACKS } from '../src/game.js';
-import { cornerRate, turnAuthority } from '../src/corner-force.ts';
+import { cornerRate, turnAuthority, NOSE_SETTLE } from '../src/corner-force.ts';
 
 export const WORLD_TOUR = ['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic'];
 export const CLASSIC_FIRST_THREE = ['coast', 'neon', 'canyon'];
@@ -27,12 +27,12 @@ function clearLane(race, aim) {
 }
 
 /**
- * The lock that turns the nose to `aim` (rad off the road), as a kart driver does: counter-steer the heading and turn
- * in against the bend just ahead (the lock takes STEER_RAMP to build, four times longer on ice). Shared by test bots.
+ * The lock that holds the nose at `aim` (rad off the road), as a kart driver does: the nose settles where the turn is
+ * `aim / NOSE_SETTLE`, so hold that and turn in against the bend just ahead (the lock takes STEER_RAMP to build, four
+ * times longer on ice). Shared by test bots.
  */
 export function steerToward(race, car, aim) {
-  const ice = car.section === 'ice';
-  const yaw = (aim - (car.heading ?? 0)) * (ice ? 4 : 8) - cornerRate(race, car, car.speed * (ice ? .3 : .08));
+  const yaw = aim / NOSE_SETTLE - cornerRate(race, car, car.speed * (car.section === 'ice' ? .3 : .08));
   return Math.max(-1, Math.min(1, yaw / Math.max(.01, turnAuthority(car.speed))));
 }
 

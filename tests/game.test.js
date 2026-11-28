@@ -5,7 +5,7 @@ import { hazardX } from '../src/hazards.ts';
 import { rivalBaseCap, RIVAL_SKILL } from '../src/rival-driver.ts';
 import { BOOST_CAP_BONUS, NITRO_CAP_BONUS } from '../src/drive-rules.ts';
 import { SKY_JUMPS } from '../src/sky-track.ts';
-import { turnAuthority } from '../src/corner-force.ts';
+import { turnAuthority, NOSE_SETTLE } from '../src/corner-force.ts';
 
 function advance(race, seconds, input = {}) {
   for (let frame = 0; frame < Math.ceil(seconds * 60); frame++) stepRace(race, input, 1 / 60);
@@ -353,7 +353,7 @@ test('FLY + BOOST + NITRO keeps the 18/s AIR DASH drain and the MAX_SPEED + 30 c
 });
 
 // Kart handling (owner, 2026-11-28): full lock turns the nose at turnAuthority rather than sliding at 9 m/s.
-test('steering input ramps to full over 0.15 s, and full lock turns the nose at turnAuthority on a straight', () => {
+test('steering input ramps to full over 0.15 s, and full lock settles the nose at turnAuthority x NOSE_SETTLE on a straight', () => {
   const race = racing(); race.rivals = [];
   Object.assign(race.player, { speed: MAX_SPEED, x: -7.5 });
   advance(race, 0.05, { throttle: true, steer: 1 });
@@ -362,7 +362,11 @@ test('steering input ramps to full over 0.15 s, and full lock turns the nose at 
   assert.equal(race.player.steering, 1);
   const heading = race.player.heading;
   stepRace(race, { throttle: true, steer: 1 }, 1 / 60); // Coast's opening straight: no bend turns the road
-  assert.ok(Math.abs(race.player.heading - heading - turnAuthority(race.player.speed) / 60) < 1e-6);
+  // The nose self-aligns over NOSE_SETTLE (trapezoid step), so full lock settles at turnAuthority x NOSE_SETTLE.
+  const settle = 1 / 60 / NOSE_SETTLE / 2;
+  assert.ok(Math.abs(race.player.heading - (heading * (1 - settle) + turnAuthority(race.player.speed) / 60) / (1 + settle)) < 1e-6);
+  advance(race, 0.3, { throttle: true, steer: 1 });
+  assert.ok(Math.abs(race.player.heading - turnAuthority(race.player.speed) * NOSE_SETTLE) < .005, `heading ${race.player.heading}`);
 });
 
 test('AUTO never moves a released car toward a lane centre, and steering still works under it', () => {

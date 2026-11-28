@@ -1,6 +1,6 @@
-// Kart handling (owner, 2026-11-28): steering turns the nose and the car runs along it. Released, the nose keeps its
-// direction, so a bend turns the road away and the car meets the rail; on a straight it holds its line. AUTO is an
-// automatic throttle only, never a lane keeper.
+// Kart handling (owner, 2026-11-28): steering turns the nose and the car runs along it. Released, the nose lines back
+// up with the road within NOSE_SETTLE, so a tap is a small lane shift; a bend still turns the road away and carries a
+// released car outward. AUTO is an automatic throttle only, never a lane keeper.
 import { CROSSWIND_SPEED, ROAD_LIMIT } from './game.js'; // read only inside functions, so an import cycle cannot hit the TDZ
 import { legacyClassicRoad } from './classic-road-routes.ts';
 import type { CourseGraph } from './course-graph.ts';
@@ -20,6 +20,11 @@ const FULL_TURN_SPEED = 20; // m/s; slower, the nose turns in proportion, and a 
 // 1/60 rad/m (a 60 m radius) and the rest stays road-relative. Upgrade if a course gets real hairpins tighter than that.
 const MAX_BEND = 1 / 60;
 const MAX_HEADING = .5; // rad, about 29 degrees off the road
+// Owner, 2026-11-28 (third report): a road gentler than a 700 m radius reads straight and never turns away from the nose.
+// Only 0-51% of each track is exactly straight; unthresholded, Tokyo's 9.5 km opening curve put a released car in the rail.
+const STRAIGHT_TURN = 1 / 700;
+/** s the nose takes to line up with the road: a 0.1 s tap at 88 m/s moves the car 1.2 m and stops (it kept sliding 11.7 m/s). */
+export const NOSE_SETTLE = .1;
 
 interface ForceRace { trackId: string; elapsed: number; course?: CourseRuntime; endless?: { practice?: boolean } }
 interface ForceCar {
@@ -75,11 +80,13 @@ export const turnAuthority = (speed: number): number => TURN_RATE * Math.min(1, 
 const knocked = (race: ForceRace, car: ForceCar): boolean => car.cooldown > 0 && race.elapsed - (car.impact?.time ?? -Infinity) < KNOCK_GRACE;
 
 /**
- * rad/s the road turns away from the nose, now or `ahead` metres on (a graph course stops at its edge's end): test
- * bots steer against it and turn in early, as a player does.
+ * rad/s the road turns away from the nose, now or `ahead` metres on (a graph course stops at its edge's end), 0 on
+ * road gentler than `STRAIGHT_TURN`: test bots steer against it and turn in early, as a player does.
  */
-export const cornerRate = (race: ForceRace, car: ForceCar, ahead = 0): number =>
-  -car.speed * clamp(cornerTurn(race, car, ahead), -MAX_BEND, MAX_BEND);
+export function cornerRate(race: ForceRace, car: ForceCar, ahead = 0): number {
+  const turn = cornerTurn(race, car, ahead);
+  return Math.abs(turn) < STRAIGHT_TURN ? 0 : -car.speed * clamp(turn, -MAX_BEND, MAX_BEND);
+}
 
 /** The road's turn under the car in rad/m, 0 where the car keeps the road's line (knock, span, shortcut, practice). */
 function cornerTurn(race: ForceRace, car: ForceCar, ahead = 0): number {
@@ -105,15 +112,16 @@ export const roadAdvance = (car: { speed: number; heading?: number }, dt: number
 
 /**
  * Metres of sideways travel this step. Steering turns the nose (`heading`, rad, positive toward +x) at up to
- * `turnAuthority`, and a bend turns the road away from it at `cornerRate`; the car runs along the nose. Released, the
- * heading changes only with the road, so the car holds its line on a straight and meets the outside rail in a bend.
+ * `turnAuthority`, and a bend turns the road away from it at `cornerRate`; the car runs along the nose, which lines
+ * back up with the road over `NOSE_SETTLE`. Released, the car stops sliding on a straight and slides outward in a bend.
  * A drift keeps the road's line and slides sideways by the lock; crosswind moves every car.
  */
 export function roadDrift(race: ForceRace, car: ForceCar, section: { dir?: number } | undefined, drifting: boolean, dt: number): number {
   const wind = car.section === 'crosswind' ? (section?.dir ?? 1) * CROSSWIND_SPEED : 0;
   if (drifting) { car.heading = 0; return (car.steering * Math.min(9, car.speed * 0.22) * DRIFT_LATERAL + wind) * dt; }
-  const from = car.heading ?? 0;
-  const heading = clamp(from + (car.steering * turnAuthority(car.speed) + cornerRate(race, car)) * dt, -MAX_HEADING, MAX_HEADING);
+  // Trapezoid step of heading' = turn - heading / NOSE_SETTLE: the slide after a tap totals the same at any frame rate.
+  const from = car.heading ?? 0, settle = dt / NOSE_SETTLE / 2, turn = car.steering * turnAuthority(car.speed) + cornerRate(race, car);
+  const heading = clamp((from * (1 - settle) + turn * dt) / (1 + settle), -MAX_HEADING, MAX_HEADING);
   car.heading = heading;
   // The midpoint heading keeps the slide the same per second at any frame rate.
   return (car.speed * sine((from + heading) / 2) + wind) * dt;

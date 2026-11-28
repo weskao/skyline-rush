@@ -87,16 +87,25 @@ physics engine.
 
 ## Kart handling, straights and rail contact (all tracks)
 
-Owner, 2026-11-28 (KartRider handling, replacing the 2026-11-22..28 corner push, nose-turn and straight-threshold
-models): with no left/right input the nose keeps its direction. The car never corners, keeps a lane or slides on its
-own and may run into the wall; steering turns the nose and a lane change needs counter-steer.
+Owner, 2026-11-28 (KartRider handling, replacing the 2026-11-22..28 corner push and lane-shift models): steering
+turns the nose and the car runs along it; released, the nose lines back up with the road. The car never corners or
+keeps a lane on its own. Third report the same day: a nose that kept its direction made a 0.1 s tap slide 11.7 m/s
+into the rail within a second, and a released car left "straights" that were really 1-10 km curves.
 - **Steering turns the nose; nothing pushes the car.** `roadDrift` (`src/corner-force.ts`) keeps `car.heading` (rad,
-  positive toward +x, clamped to ±.5): `heading += (steering * turnAuthority(speed) + cornerRate) * dt`. The car
-  slides `speed * sine(mid-step heading)` and advances `speed * cosine(heading)` (`roadAdvance`). `turnAuthority` is
-  2 rad/s at full lock from 20 m/s, in proportion below, 0 when stopped. `cornerRate = -speed * roadBend`, so a bend
-  turns the road away from a released nose and the car meets the outside rail; on a straight it holds its line.
-  There is no straight threshold, no speed gate and no air share (a flying car meets the whole corner).
-  The drawn car yaws by `heading` (`smoothDriftYaw`).
+  positive toward +x, clamped to ±.5) as a trapezoid step of
+  `heading' = steering * turnAuthority(speed) + cornerRate - heading / NOSE_SETTLE`. The car slides
+  `speed * sine(mid-step heading)` and advances `speed * cosine(heading)` (`roadAdvance`). `turnAuthority` is
+  2 rad/s at full lock from 20 m/s, in proportion below, 0 when stopped. There is no speed gate and no air share (a
+  flying car meets the whole corner). The drawn car yaws by `heading` (`smoothDriftYaw`).
+- **The nose self-aligns in `NOSE_SETTLE` (0.1 s).** A released nose decays to the road's line, so a tap is a lane
+  shift of `speed * heading * NOSE_SETTLE` that then stops (0.1 s tap at 88 m/s: 1.17 m; 0.05 s: 0.29 m), the same
+  at 30/60/120 FPS. Held full lock settles at `turnAuthority * NOSE_SETTLE` (.2 rad, 17.5 m/s sideways at 88 m/s).
+  Never return to a nose that keeps its direction, and never replace the trapezoid step with an explicit one.
+- **A road gentler than a 700 m radius is straight** (`STRAIGHT_TURN`, 1/700 rad/m; 40-79% of each track):
+  `cornerRate` is 0 there, so a released car does not move sideways at all. Only 0-51% of a track is exactly straight;
+  unthresholded, Tokyo's 9.5 km opening curve put a released car in the rail after 594 m. Tighter,
+  `cornerRate = -speed * roadBend` turns the road away and a released car slides outward at
+  `speed² * roadBend * NOSE_SETTLE` m/s (2.6 m/s on a 300 m radius): slow enough to correct, never a lane keeper.
 - One road turn for every track: `roadBend` caps the turn at `MAX_BEND` (1/60 rad/m; shortcut, so authored kinks
   such as Stormline's 115° in 4 m cannot spin the nose). Road ids read `trackFrame`, graph courses read the car's own
   edge (`currentEdgeId`, `localS`), and Endless on a long-form id reads the shared highway. Curvature is cached lazily
@@ -115,19 +124,22 @@ own and may run into the wall; steering turns the nose and a lane change needs c
   kept, placed 1 m inside the rail); steeper is a hard hit (75% kept, `knock` places it about 1 m inside at
   88 m/s). Both arm `railContactSide`, so one contact is one penalty until the car pulls 1.2 m clear; the nose
   lines up with the road. A held lock turns it straight back into the rail (still the same contact), so a car
-  leaves the rail by releasing or counter-steering. A released car in a sharp bend arrives nose-first and hits hard.
+  leaves the rail by releasing or counter-steering. A released car in a bend arrives at a shallow angle and scrapes
+  (Sky Spiral 3.45 s, Cosmic 1.45 s after its sharpest bend; the other eight sprint tracks' sharpest bends leave it
+  on the road); a held lock into the rail still hits hard.
 - **AUTO (`laneAssist`) is an automatic throttle only** (owner, 2026-11-28). It never holds a lane, softens
-  a corner or steers off a rail: a released car in a bend runs into the outside rail AUTO on or off. The
+  a corner or steers off a rail: a released car in a bend slides to the outside AUTO on or off. The
   2026-11-25 grounded lane hold (ad03ac13) and the rail recovery that steered back to 1.5 m from the centre
   were removed: the recovery threw the car out at the next bend (case B). `stepRace` must not read
   `laneAssist` for steering. Guard: the AUTO-vs-off identical-path test in `tests/corner-force.test.js`.
 - Test bots steer like a kart driver through the shared `steerToward(race, car, aim)` in
-  `scripts/pickup-economy.mjs`: counter-steer the heading toward a small aim angle and turn in against
-  `cornerRate` just ahead. A bot that pins a lane also sets `heading = 0`, or the nose keeps turning under it;
-  a test that teleports a car mid-race resets `heading` too.
+  `scripts/pickup-economy.mjs`: hold the lock whose settled nose is the aim angle (`aim / NOSE_SETTLE`) and turn
+  in against `cornerRate` just ahead. A bot that pins a lane also sets `heading = 0`, and a test that teleports a
+  car mid-race resets `heading` too.
 - Forks read the car's own lane `x`: nothing discounts a corner's carry, because nothing pushes the car.
   Guard: `tests/corner-force.test.js` (all 17 tracks, AUTO on and off, a lane keeper at 88 m/s and NITRO,
-  30/60/120 FPS, forks, straights, one-contact rail hits, knock grace).
+  30/60/120 FPS, forks, one-contact rail hits, knock grace; *a short tap moves the car about a metre and it stops
+  there* and *a released car never moves sideways on road gentler than a 700 m radius* are RED on 5c181e95).
 - Guard: `tests/drift-all-tracks.test.js` iterates `RACE_TRACKS`, `COURSE_TRACKS`, the circuit and
   Endless, so a newly registered track is checked without edits; a track it cannot cover is a gap
   to fix in the test, not a skip.
