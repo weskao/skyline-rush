@@ -763,7 +763,7 @@ export function createWorld(canvas, visual = vfxSettings()) {
         } else if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
           const frame = race.course ? race.course.cars.get('YOU').pose : trackId === 'spiral' ? skyFrame(distance) : trackFrame(trackId,distance,car.span);
           desiredCamera.fromArray(frame.forward).multiplyScalar(-back).applyAxisAngle(camera.up, cameraSwing).add(player.position).y += height;
-          const f=race.course?graphLookAhead(race.course,visualCar.x,view.ahead,car.cornerDrift):trackFrame(trackId,distance+lookAheadDistance(trackId,distance,view.ahead,endlessActive),car.span),p=f.point,o=race.course?courseOriginPoint:trackPoint(trackId,distance);
+          const f=race.course?graphLookAhead(race.course,visualCar.x,view.ahead):trackFrame(trackId,distance+lookAheadDistance(trackId,distance,view.ahead,endlessActive),car.span),p=f.point,o=race.course?courseOriginPoint:trackPoint(trackId,distance);
           lookTarget.set((race.course?p[0]-o[0]:p.x-o.x)+f.right[0]*visualCar.x,(race.course?p[1]-o[1]:p.y-o.y)+visualCar.altitude+look,(race.course?p[2]-o[2]:p.z-o.z)+f.right[2]*visualCar.x);
           if (trackId === 'volcanic-crown' && portrait && !first) frameChaseSightline(desiredCamera, lookTarget, player.position, camera.aspect, view.fov);
         } else if (first) {

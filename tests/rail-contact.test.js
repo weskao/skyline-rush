@@ -16,7 +16,8 @@ test('all tracks treat a sustained rail press as one contact until the car leave
       assert.ok(Math.abs(race.player.x) <= ROAD_LIMIT, `${id} bounded lateral position`);
     }
     assert.equal(race.player.collisions, 1, `${id} sustained input should not hammer the same rail`);
-    for (let frame = 0; frame < 60; frame++) stepRace(race, { throttle: true, steer: -1 }, 1 / 60);
+    // Kart handling: held lock keeps turning the nose and would carry the car to the far rail, so steer only until clear.
+    for (let frame = 0; frame < 60 && race.player.x >= ROAD_LIMIT - 1.2; frame++) stepRace(race, { throttle: true, steer: -1 }, 1 / 60);
     assert.ok(race.player.x < ROAD_LIMIT - 1.2, `${id} backs away from the rail`);
     assert.equal(race.player.railContactSide, 0, `${id} can hit again after separating`);
   }

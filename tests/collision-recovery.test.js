@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createRace, stepRace, useHeldItem } from '../src/game.js';
 import { isFollowingVehicle } from '../src/player-contacts.js';
 import { placeCourseCar } from '../src/course-race.ts';
+import { steerToward } from '../scripts/pickup-economy.mjs';
 import { Box3 } from 'three';
 import { CAR_STYLES, TRAFFIC_CAR_STYLES, makeCar } from '../src/car-model.js';
 
@@ -146,11 +147,14 @@ test('CourseGraph hazards clear the body along the safe side during grace', () =
   assert.equal(race.player.collisions, 0);
 });
 
+// On Coast's opening straight (0-280 m): a released kart drifts outward in a bend (300 m is one), which is a new
+// contact with the side car, not the queue these tests hold.
 function packedRoad(reverse = false) {
   const race = raceAt(0);
   const { player } = race;
-  const leader = traffic(0, 305.05, 22);
-  const left = traffic(-2.45, 301, 22), right = traffic(2.45, 301, 22);
+  player.distance = 100;
+  const leader = traffic(0, 105.05, 22);
+  const left = traffic(-2.45, 101, 22), right = traffic(2.45, 101, 22);
   for (const other of [leader, left, right]) other.laneShift = 0;
   const cars = [leader, left, right];
   race.traffic = reverse ? cars.reverse() : cars;
@@ -178,7 +182,8 @@ test('the player can steer into a lane that becomes free and accelerate past the
   const { race, player, leader, left } = packedRoad();
   for (let i = 0; i < 30; i++) tick(race);
   race.traffic = race.traffic.filter(other => other !== left);
-  for (let i = 0; i < 180; i++) stepRace(race, { throttle: true, steer: -0.4 }, 1 / 60);
+  // A kart changes lane by turning the nose out and counter-steering it straight in the freed lane.
+  for (let i = 0; i < 180; i++) stepRace(race, { throttle: true, steer: steerToward(race, player, Math.max(-.1, Math.min(.1, (left.x - player.x) * .1))) }, 1 / 60);
   assert.equal(player.collisions, 1);
   assert.ok(player.x < -2 && player.distance > leader.distance + 4.4);
 });
@@ -278,8 +283,8 @@ test('at a wall, steering into a boxed-in neighbour leaves the player on the roa
 test('a fast step cannot cross a full queue when the player starts outside the leader hitbox', () => {
   const { race, player, leader, left, right } = packedRoad();
   player.speed = 125;
-  leader.distance = 305;
-  left.distance = right.distance = 311;
+  leader.distance = player.distance + 5;
+  left.distance = right.distance = player.distance + 11;
   stepRace(race, { throttle: true, nitro: true }, 0.1);
   assert.ok(leader.distance - player.distance >= playerBody.front + trafficBodies[0].rear);
   assert.equal(player.collisions, 1);
@@ -381,7 +386,7 @@ test('an already compressed pack clears both flanks while the front car still bl
 
 test('a trailing car cannot drive into the player while a packed leader is braking', () => {
   const { race, player, leader, left, right } = packedRoad();
-  const rear = traffic(0, 293.5, 35);
+  const rear = traffic(0, player.distance - 6.5, 35);
   rear.laneShift = 0;
   race.traffic.push(rear);
   for (let frame = 0; frame < 120; frame++) {

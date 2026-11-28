@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createRace, startRace, stepRace, DRIFT_MIN_SPEED, DRIFT_REWARDS } from '../src/game.js';
+import { createRace, startRace, stepRace, DRIFT_MIN_SPEED, DRIFT_REWARDS, STEER_RAMP } from '../src/game.js';
 import { driftTier, DRIFT_LATERAL, DRIFT_FLIP_GRACE } from '../src/drive-rules.ts';
 
 // Design: docs/superpowers/specs/2026-11-13-drift-balance-design.md — every drift pays, spamming does not.
@@ -28,9 +28,13 @@ function drive(speed, seconds, pressNitro = false) {
 
 // User, 2026-11-14: a full-lock drift crossed the 20 m road at 9 m/s and hit the far rail before the 2 s tier.
 test('a drift slides sideways at DRIFT_LATERAL of the steering rate, so a full-lock drift from the kerb reaches the top tier', () => {
-  // On a straight (Coast 1256 m): a drift skips the corner push, so a bend would skew the plain-steering slide.
-  const slide = input => { const race = cruising(70); race.player.x = 8; race.player.distance = 1256; for (let t = 0; t < 0.5; t += DT) stepRace(race, input, DT); return 8 - race.player.x; };
-  assert.ok(Math.abs(slide({ brake: true, steer: -1 }) / slide({ steer: -1 }) - DRIFT_LATERAL) < 0.02);
+  // Kart handling (2026-11-28): plain steering turns the nose rather than sliding, so the drift is held against the
+  // 9 m/s steering rate it was tuned on, integrated over the STEER_RAMP build-up.
+  const sliding = cruising(70); sliding.player.x = 8;
+  let t = 0;
+  for (; t < 0.5; t += DT) stepRace(sliding, { brake: true, steer: -1 }, DT);
+  const slid = 8 - sliding.player.x, expected = 9 * DRIFT_LATERAL * (t - STEER_RAMP / 2);
+  assert.ok(Math.abs(slid - expected) < 0.1, `drift slid ${slid.toFixed(3)} m, expected ${expected.toFixed(3)}`);
   const race = cruising(70); race.player.x = 8;
   for (let t = 0; t < TIER_TIMES.at(-1) + 0.05; t += DT) stepRace(race, { brake: true, steer: -1 }, DT);
   assert.equal(driftTier(race.player.drift?.time ?? 0), 3, `still drifting at x=${race.player.x.toFixed(1)}`);

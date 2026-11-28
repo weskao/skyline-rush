@@ -77,12 +77,15 @@ Baseline A = `d9c144ba`, candidate measured from `feature/perf-thermal-90-integr
 - [ ] Full regression verification for the new commit: module-size, unit, typecheck, build, real-game browser suites, device screenshots and exact-HEAD quality-gate. Connector environment cannot clone the repository or install dependencies (GitHub DNS unavailable); isolated browser evidence is not full-suite GREEN.
 - [ ] Remaining failures from run 45480093600: tutorial steady-state telemetry/coach and paused layout, main UI contract, first-visit navigation, keyboard mode setup, Neon fallback, Home pinned-row and label geometry, GO telemetry, Taipei/coastal camera occlusion, Stormline outlet pose, flaky rival BOOST flame ratio. Re-evaluate tutorial overlap guards after the animation fix. Do not weaken checks or mark these complete without evidence.
 
-# Full car-heading physics (deferred, large; 2026-11-25)
+# Kart handling (owner, 2026-11-28; was "Full car-heading physics", deferred 2026-11-25)
 
-- [ ] Real-car / kart-style handling: steering turns the car's nose (yaw), so after a lane change on a straight the player must counter-steer to straighten up. Today the simulation is road-relative: the car always faces along the road centreline, steering moves it sideways and corners push it outward.
-- [ ] Scope if taken: steering feel (`src/game.js` `stepRace`); keyboard and touch input; AUTO / lane assist; tutorial driving lessons (`docs/tutorial-driving.md`); rival AI and traffic; drift; fork lane choice (`forkLateral`); test bots (`scripts/pickup-economy.mjs`); corner-force and drift tests; the legacy race replay fixture (`tests/fixtures/legacy-race-replay.json`); saved Ghost data.
-- [ ] Blocked on an owner decision: it conflicts with `.claude/rules/vehicle-road-stability.md` ("Keep the arcade driving feel; do not replace it with a new physics engine."). Change that rule first.
-- [ ] Smaller step chosen instead (2026-11-25): build heading offset only in corners. When the player does not steer in a bend, the nose keeps its line and runs into the outer rail.
+- [x] Owner decision taken (2026-11-28, "完整跑跑卡丁車手感"): steering turns the nose everywhere, a released car keeps its direction, AUTO is throttle only. `.claude/rules/vehicle-road-stability.md` "Kart handling, straights and rail contact" rewritten.
+- [x] Simulation: `roadDrift`/`roadAdvance` in `src/corner-force.ts` (heading from `turnAuthority` + `cornerRate`, polynomial trig); drift slide moved into `roadDrift`; `forkLateral` removed (forks read `x`); `knock` lines the player's nose up, steering live through the grace. Evidence: `pnpm test` (corner-force, classic-corner-handling, collision-recovery, drift-balance, rail-contact, game, neon-highlights green), typecheck, module-size.
+- [x] Test bots: shared `steerToward` in `scripts/pickup-economy.mjs`; replay fixtures re-recorded (`RECORD_REPLAY=1`, intended change), `tests/cpu-route-curvature.test.js` unchanged.
+- [x] Ghost data: `GhostSample` stays `[distance, x, altitude]`; saved ghosts play back unchanged (they show the old handling's path).
+- [x] Control browser specs (13 files: browser, classic-corners, interactive-tutorial, tutorial-auto, touch-actions, custom-controls, controls-preview, race-recovery, tokyo-finish-controls, touch-gas-auto-layout, endless-highway, race-modes, circuit; desktop, phone portrait and landscape): 166 passed, 1 skipped (LOCAL-CHROME).
+- [ ] Full `pnpm run test:browser`, exact-HEAD `quality-gate`, and a real-device feel check of counter-steering on straights and after an air-trick flick.
+- [ ] Rival AI and traffic still move road-relative (`avoidObstacles` lane shift); revisit only if the owner wants them on kart handling too.
 
 # CI 45403054733 regression follow-up (2026-11-25)
 

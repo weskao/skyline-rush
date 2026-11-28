@@ -26,7 +26,8 @@ paths:
 
 These rules cover the player, rivals, traffic, ghost, home previews and future tracks. A
 fix for Sky Spiral must also be checked on the four classic and five World Tour tracks.
-Keep the arcade driving feel; do not replace it with a new physics engine.
+Keep the arcade driving feel (road-relative kart handling, owner 2026-11-28); do not replace it with a new
+physics engine.
 
 ## One road coordinate system
 
@@ -80,64 +81,53 @@ Keep the arcade driving feel; do not replace it with a new physics engine.
 
 - Drift tuning lives only in `src/drive-rules.ts` (`DRIFT_*`, `driftTier`) and the shared
   `stepRace` drift block; a track or course never adds its own drift constants or rules.
-- Any lateral road force skips the car while `drifting`, so a drift slides at exactly
-  `DRIFT_LATERAL` x the steering rate on every road. Only hazards that push every car (crosswind
+- A drift keeps the road's line (`heading` 0, no bend) and slides `steering * min(9, speed * .22) *
+  DRIFT_LATERAL` m/s on every road, in `roadDrift`. Only hazards that push every car (crosswind
   sections) still act during a drift.
 
-## Corner push, straights and rail contact (all tracks)
+## Kart handling, straights and rail contact (all tracks)
 
-Owner brief, 2026-11-22: cornering needs real steering, with a forgiving assist. Owner, 2026-11-24:
-corners still passed themselves (the sharpest bend needed ≤ 31% lock), so the push doubled, Mario Kart-like.
-- One corner force for every track, in `src/corner-force.ts` (`roadDrift`). It pushes a grounded car
-  outward, `clamp(-turn*.5*max(0, speed-35)^2, ±6)` m/s: the sharpest bend at 88 m/s needs two thirds
-  of the 9 m/s steering authority, NITRO saturates it and a drift (no push) is the tight line. Corner plus
-  crosswind is clamped to ±7 m/s (`MAX_FORCE`), so full lock always keeps 2 m/s to steer out. Road ids read `trackFrame`, graph courses
-  read the car's own edge (`currentEdgeId`, `localS`), and Endless on a long-form id reads the shared
-  highway. Curvature is cached lazily per 4 m cell; track geometry is immutable, so a cell is never
-  invalidated. Never add a per-track push or a second curvature table.
-- A force derived from `Math.sin/cos/atan2` is snapped before it enters the simulation (`TURN_STEPS`,
-  2^-30 rad/m). Engines differ in the last bit of trig results: unsnapped, the push passed on a Mac
-  (Node 24, arm64) and broke 9 legacy replay hashes on CI (Node 22, x64). A local run on any Node
-  cannot prove portability; only CI can. Guard: the last-bit trig test in `tests/corner-force.test.js`.
-- **The bend turns the road away from the nose, it does not push the car** (owner, 2026-11-25: a released
-  car must hit the wall nose-first, not appear to steer itself). `roadDrift` keeps `car.heading` (rad, positive
-  toward +x): a bend grows it at `NOSE_TURN` (.35 rad/s) × the lock the push above asks for, and the car slides
-  `speed * sin(heading)`, so a released car's slide accelerates until the rail. Steering against the heading first
-  turns the nose back at the same rate, and also settles it (exponentially, fully once the lock matches the bend);
-  only the lock left over moves the car across. Held at the bend's lock the car keeps its lane as the old constant
-  push did. A heading accumulates only from bends; straights keep the arcade lane change (no counter-steer).
-  The rail clamp (`meetRail`), a knock's grace, a drift and a road recovery reset it to 0. The drawn car yaws by
-  it (`smoothDriftYaw`). Full real-car heading physics on straights is deferred (`TODO.md`).
-- **Released on road that reads straight, the car keeps its lane** (owner, 2026-11-28, case A and the second
-  report). A bend gentler than `STRAIGHT_TURN` (1/700 rad/m, a 700 m radius, 2 m/s of push at 88 m/s) pushes
-  nothing while steering is 0, and any heading left from a bend turns back as at full counter-steer, so the slide
-  stops within a fraction of a second. Judge the road's turn (`cornerTurn`), never the push: the push is halved in
-  the air and capped at NITRO speed. The causes it removes: a heading that only ever grows slid a released car up
-  to 13 m into the rail on Tokyo's opening 1 km (.05–.2 m/s of push); and at the first threshold (a 5 km radius)
-  only 5–50% of each track counted as straight, so gentle curves still reached the rail in 2–3 s. Only crosswind
-  or a contact moves a released car there. A clearer bend still carries it into the outside rail, and steering
-  keeps the full corner force on every bend (counter-steer; a drift is the tight line). Guards: the Tokyo
-  near-straight, every-track reads-straight and clear-bends-driver tests.
+Owner, 2026-11-28 (KartRider handling, replacing the 2026-11-22..28 corner push, nose-turn and straight-threshold
+models): with no left/right input the nose keeps its direction. The car never corners, keeps a lane or slides on its
+own and may run into the wall; steering turns the nose and a lane change needs counter-steer.
+- **Steering turns the nose; nothing pushes the car.** `roadDrift` (`src/corner-force.ts`) keeps `car.heading` (rad,
+  positive toward +x, clamped to ±.5): `heading += (steering * turnAuthority(speed) + cornerRate) * dt`. The car
+  slides `speed * sine(mid-step heading)` and advances `speed * cosine(heading)` (`roadAdvance`). `turnAuthority` is
+  2 rad/s at full lock from 20 m/s, in proportion below, 0 when stopped. `cornerRate = -speed * roadBend`, so a bend
+  turns the road away from a released nose and the car meets the outside rail; on a straight it holds its line.
+  There is no straight threshold, no speed gate and no air share (a flying car meets the whole corner).
+  The drawn car yaws by `heading` (`smoothDriftYaw`).
+- One road turn for every track: `roadBend` caps the turn at `MAX_BEND` (1/60 rad/m; shortcut, so authored kinks
+  such as Stormline's 115° in 4 m cannot spin the nose). Road ids read `trackFrame`, graph courses read the car's own
+  edge (`currentEdgeId`, `localS`), and Endless on a long-form id reads the shared highway. Curvature is cached lazily
+  per 4 m cell; track geometry is immutable, so a cell is never invalidated. Never add a per-track turn or a second
+  curvature table.
+- Determinism: a turn from `Math.sin/cos/atan2` is snapped before it enters the simulation (`TURN_STEPS`, 2^-30
+  rad/m), and the heading uses the polynomial `sine`/`cosine`, never `Math.sin/cos`. Engines differ in the last bit:
+  unsnapped, a push passed on a Mac (Node 24, arm64) and broke 9 legacy replay hashes on CI (Node 22, x64). Only CI
+  proves portability. Guard: the last-bit trig test in `tests/corner-force.test.js`.
+- The road's turn is off (heading road-relative) in tutorial practice, on a Frostbite span, inside a shortcut
+  corridor and during a knock's 1.5 s grace. `meetRail`, a hit on the player (`knock`), a drift and a road recovery
+  (`road-falls.ts`) set `heading` to 0. Steering stays live through the grace, so a boxed-in car can steer away
+  instead of hitting the same car again. Guard: the knock-grace test in `tests/corner-force.test.js`.
 - **Rail hits are judged by impact angle** (`resolveRail`): sideways over forward travel in the contact step,
   whatever carried the car there. Below `SCRAPE_RATIO` (about 6°) with less than .9 lock it scrapes (92% speed
   kept, placed 1 m inside the rail); steeper is a hard hit (75% kept, `knock` places it about 1 m inside at
   88 m/s). Both arm `railContactSide`, so one contact is one penalty until the car pulls 1.2 m clear; the nose
-  lines up with the road and the car holds that lane. A released car in a sharp bend arrives nose-first and hits hard.
-- Half strength in the air (`AIR_SHARE`, owner 2026-11-25: taking off must not skip a corner). Off while
-  drifting, in tutorial practice, on a Frostbite span, inside a shortcut corridor,
-  and during a knock's 1.5 s grace, so a car is never pressed back into what it hit (clamp -> shove).
+  lines up with the road. A held lock turns it straight back into the rail (still the same contact), so a car
+  leaves the rail by releasing or counter-steering. A released car in a sharp bend arrives nose-first and hits hard.
 - **AUTO (`laneAssist`) is an automatic throttle only** (owner, 2026-11-28). It never holds a lane, softens
   a corner or steers off a rail: a released car in a bend runs into the outside rail AUTO on or off. The
   2026-11-25 grounded lane hold (ad03ac13) and the rail recovery that steered back to 1.5 m from the centre
   were removed: the recovery threw the car out at the next bend (case B). `stepRace` must not read
   `laneAssist` for steering. Guard: the AUTO-vs-off identical-path test in `tests/corner-force.test.js`.
-- Test bots that steer a lane read `cornerRate(race, car)` and the nose's slide `speed * sin(heading)` to lean
-  into the bend (the shared `botInput` in `scripts/pickup-economy.mjs`), like a player. Bots that pin a lane
-  also set `heading = 0`, or the nose keeps turning under the pinned car.
-- Forks read the lane the driver chose: `forkLateral(x, cornerDrift)` discounts what the corners
-  carried. An inward move (rail clamp, a placed lane, steering back) shrinks it; steering outward
-  clears it. Guard: `tests/corner-force.test.js` (all 17 tracks, AUTO on and off, a lane keeper at
-  88 m/s and NITRO, 30/60/120 FPS, forks, straights, one-contact rail hits, knock grace).
+- Test bots steer like a kart driver through the shared `steerToward(race, car, aim)` in
+  `scripts/pickup-economy.mjs`: counter-steer the heading toward a small aim angle and turn in against
+  `cornerRate` just ahead. A bot that pins a lane also sets `heading = 0`, or the nose keeps turning under it;
+  a test that teleports a car mid-race resets `heading` too.
+- Forks read the car's own lane `x`: nothing discounts a corner's carry, because nothing pushes the car.
+  Guard: `tests/corner-force.test.js` (all 17 tracks, AUTO on and off, a lane keeper at 88 m/s and NITRO,
+  30/60/120 FPS, forks, straights, one-contact rail hits, knock grace).
 - Guard: `tests/drift-all-tracks.test.js` iterates `RACE_TRACKS`, `COURSE_TRACKS`, the circuit and
   Endless, so a newly registered track is checked without edits; a track it cannot cover is a gap
   to fix in the test, not a skip.

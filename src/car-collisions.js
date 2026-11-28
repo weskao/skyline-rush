@@ -95,6 +95,7 @@ export function knock(race, car, side, intensity, retention) {
   car.speed *= retainedSpeed;
   car.x = knockX(car.x, side, intensity);
   car.cooldown = 1.5;
+  if (car === race.player) car.heading = 0; // the hit lines the nose up with the road; steering works through the grace
   return speedLost;
 }
 

@@ -3,14 +3,17 @@ import assert from 'node:assert/strict';
 import { createRace, startRace, stepRace, requestRaceReset, RACE_TRACKS, ROAD_LIMIT, STEER_RAMP } from '../src/game.js';
 import { COURSE_TRACKS, isModeTrack } from '../src/race-tracks.ts';
 import { CIRCUIT_ID } from '../src/circuit-track.ts';
-import { cornerPush, cornerRate, roadDrift } from '../src/corner-force.ts';
-import { forkLateral } from '../src/course-race.ts';
+import { cornerRate, roadBend, roadDrift, turnAuthority } from '../src/corner-force.ts';
+import { steerToward } from '../scripts/pickup-economy.mjs';
 
-// Cornering needs steering, AUTO on or off: AUTO is an automatic throttle only (owner, 2026-11-28).
+// Kart handling (owner, 2026-11-28): steering turns the nose and the car runs along it. Released, the nose keeps its
+// direction, so a bend turns the road away and the car meets the rail. AUTO is an automatic throttle only.
 const TRACKS = [...Object.keys(RACE_TRACKS), ...Object.keys(COURSE_TRACKS), CIRCUIT_ID];
 const modeOf = id => id === CIRCUIT_ID ? 'circuit' : 'time';
 const AUTO = { throttle: true, laneAssist: true };
 const HANDS_OFF = { throttle: true };
+/** Metres into Neon's 1 km straight from 5996 m: no bend and no section (crosswind, tunnel) acts. */
+const NEON_STRAIGHT = 6300;
 
 function racing(id, mode = modeOf(id), hz = 60) {
   const race = createRace(id, { mode }); startRace(race);
@@ -24,115 +27,125 @@ function racing(id, mode = modeOf(id), hz = 60) {
 function drive(id, input, { lane = 2.5, hz = 60 } = {}) {
   const race = racing(id, modeOf(id), hz), car = race.player, dt = 1 / hz;
   car.x = lane;
-  const ground = race.course && new Set(race.course.spec.graph.groundRoute);
-  const run = { dev: 0, hard: 0, scrapes: 0, offRoute: 0, maxX: 0, pinned: 0 };
-  for (let steps = 0, pin = 0; race.phase === 'racing' && steps < hz * 900; steps++) {
+  const run = { dev: 0, hard: 0, scrapes: 0 };
+  for (let steps = 0; race.phase === 'racing' && steps < hz * 900; steps++) {
     const rail = car.railContactSide, scrape = car.scrape;
     stepRace(race, typeof input === 'function' ? input(car, race) : input, dt);
     if (!rail && car.railContactSide) run.hard++;
     if (car.scrape !== scrape) run.scrapes++;
     if (!car.recovery && car.cooldown === 0) run.dev = Math.max(run.dev, Math.abs(car.x - lane));
-    run.maxX = Math.max(run.maxX, Math.abs(car.x));
-    pin = Math.abs(car.x) >= ROAD_LIMIT - .35 && car.altitude === 0 ? pin + dt : 0;
-    run.pinned += pin && dt;
-    if (ground && !ground.has(race.course.cars.get('YOU').travel.currentEdgeId)) run.offRoute++;
   }
   run.finished = race.phase !== 'racing';
   return run;
 }
 
-const keeper = (lane, nitro) => car => {
+/** A driver holding `lane`: it cancels the bend's turn, then aims the nose at its lane, as a player leans and counter-steers. */
+const keeper = (lane, nitro) => (car, race) => {
   if (nitro) car.nitroTime = 2;
-  const authority = Math.max(1, Math.min(9, car.speed * .22));
-  // Like a player, it also steers against the nose's slide (`heading`), not only against the lane error.
-  const slide = car.speed * Math.sin(car.heading ?? 0);
-  return { throttle: true, steer: Math.max(-1, Math.min(1, ((lane - car.x) * 6 - slide) / authority)) };
+  return { throttle: true, steer: steerToward(race, car, Math.max(-.1, Math.min(.1, (lane - car.x) * .04))) };
 };
 
-/** One grounded step at full speed on the circuit, whose constant right-hander pushes left everywhere. */
-function circuitStep(setup = () => {}, input = HANDS_OFF, hz = 60) {
-  const race = racing(CIRCUIT_ID);
-  Object.assign(race.player, { distance: 500, speed: 88, x: 0, steering: 0, cooldown: 0 });
-  setup(race.player, race);
-  const before = race.player.x;
-  stepRace(race, input, 1 / hz);
-  return race.player.x - before;
+/** The distance of the sharpest bend on a road, by its turn per metre. */
+function sharpestAt(id, to = RACE_TRACKS[id]?.length ?? 3000) {
+  let at = 0;
+  for (let d = 0; d < to; d += 4) if (Math.abs(roadBend(id, d)) > Math.abs(roadBend(id, at))) at = d;
+  return at;
 }
 
-// Owner brief, 2026-11-24: corners passed themselves. The sharpest bend at 88 m/s now needs two thirds of full lock.
-test('the sharpest bend at 88 m/s demands at least 60% steering, and no push ever exceeds 6 m/s', () => {
-  for (const id of ['coast', 'neon', 'alpine']) {
-    let sharpest = 0;
-    for (let d = 0; d < RACE_TRACKS[id].length; d += 4) sharpest = Math.max(sharpest, Math.abs(cornerPush(id, d, 88)));
-    assert.ok(sharpest >= .6 * 9, `${id}: sharpest bend pushes only ${sharpest.toFixed(2)} m/s`);
-    assert.ok(sharpest <= 6, `${id}: push ${sharpest} beyond the cap`);
+test('full lock out-turns every bend at NITRO speed, and an authored kink turns the nose no faster than that cap', () => {
+  for (const id of [...Object.keys(RACE_TRACKS), ...Object.keys(COURSE_TRACKS).filter(i => !createRace(i).course), CIRCUIT_ID]) {
+    const length = RACE_TRACKS[id]?.length ?? createRace(id, { mode: modeOf(id) }).length;
+    for (let d = 0; d < length; d += 4) {
+      assert.ok(Math.abs(roadBend(id, d)) * 118 <= turnAuthority(118) + 1e-9, `${id} ${d} m: ${roadBend(id, d)} rad/m`);
+    }
+  }
+  // Stormline's street corner turns the road 115 degrees within 4 m: the nose meets a capped bend, not the kink.
+  const race = racing('stormline-megacity'), car = race.player;
+  Object.assign(car, { distance: 11370, speed: 88, x: 0, steering: 0, heading: 0 });
+  while (car.distance < 11400 && !car.railContactSide && !car.scrape) {
+    const from = car.heading;
+    car.speed = 88; stepRace(race, HANDS_OFF, 1 / 60);
+    assert.ok(Math.abs(car.heading - from) <= 88 / 60 / 60 + 1e-12, `${car.distance.toFixed(1)} m: the nose turned ${car.heading - from} rad in a step`);
   }
 });
 
-test('corner plus crosswind never outruns full lock: full lock against both still steers out at 2 m/s', () => {
-  let sharpest = 0;
-  for (let d = 0; d < RACE_TRACKS.coast.length; d += 4) if (Math.abs(cornerPush('coast', d, 88)) > Math.abs(cornerPush('coast', sharpest, 88))) sharpest = d;
-  const dir = Math.sign(cornerPush('coast', sharpest, 88)), dt = 1 / 60;
-  const car = { distance: sharpest, x: 0, speed: 118, altitude: 0, steering: -dir, cooldown: 0, section: 'crosswind' };
-  const lateral = car.steering * 9 * dt + roadDrift({ trackId: 'coast', elapsed: 0 }, car, { dir }, false, dt);
-  assert.ok(Math.abs(lateral + 2 * dir * dt) < 1e-9, `full lock against aligned corner and wind moves ${lateral / dt} m/s`);
+test('released on a straight the nose keeps its direction and the car runs along it, AUTO on or off', () => {
+  assert.ok(!racing('neon').sections.some(s => s.to > NEON_STRAIGHT - 50 && s.from < NEON_STRAIGHT + 400), 'no section acts there');
+  for (const hz of [30, 60, 120]) for (const input of [AUTO, HANDS_OFF]) {
+    const race = racing('neon', 'time', hz), car = race.player;
+    Object.assign(car, { distance: NEON_STRAIGHT, speed: 88, x: -6, steering: 0, heading: .08 });
+    for (let i = 0; i < hz / 2; i++) { car.speed = 88; stepRace(race, input, 1 / hz); }
+    assert.equal(car.heading, .08, `${hz} Hz: the nose kept its direction`);
+    assert.ok(Math.abs(car.x - (-6 + 88 * Math.sin(.08) / 2)) < .01, `${hz} Hz: ran along the nose to ${car.x}`);
+  }
+  const race = racing('neon'), car = race.player;
+  Object.assign(car, { distance: NEON_STRAIGHT, speed: 88, x: 2, steering: 0, heading: 0 });
+  for (let i = 0; i < 120; i++) { car.speed = 88; stepRace(race, AUTO, 1 / 60); }
+  assert.equal(car.x, 2, 'straight on, it never moves sideways');
 });
 
-/** Hands-free from the centre into the sharpest Coast bend at 88 m/s, until the first rail contact. */
-function intoSharpest(input = HANDS_OFF) {
-  const race = racing('coast'), car = race.player;
-  let sharpest = 0;
-  for (let d = 0; d < 3000; d += 4) if (Math.abs(cornerPush('coast', d, 88)) > Math.abs(cornerPush('coast', sharpest, 88))) sharpest = d;
-  Object.assign(car, { distance: sharpest - 40, speed: 88, x: 0, steering: 0 });
-  const path = [];
-  for (let i = 0; i < 240 && !car.scrape && !car.railContactSide; i++) {
-    car.speed = 88;
-    const x = car.x;
-    stepRace(race, input, 1 / 60);
-    path.push({ heading: car.heading, slide: (car.x - x) * 60 });
-  }
-  return { car, path, out: Math.sign(cornerPush('coast', sharpest, 88)) };
-}
+test('released in a bend the road turns away from the nose at speed x curvature, even on a 5 km curve', () => {
+  const race = racing(CIRCUIT_ID), car = race.player;
+  Object.assign(car, { distance: 500, speed: 88, x: 0, steering: 0, heading: 0 });
+  let expected = 0;
+  for (let i = 0; i < 30; i++) { car.speed = 88; expected += cornerRate(race, car) / 60; stepRace(race, HANDS_OFF, 1 / 60); }
+  assert.ok(Math.abs(expected) > .1, `the circuit bend turned the road: ${expected}`);
+  assert.ok(Math.abs(car.heading - expected) < 1e-9, `the nose kept its world direction: ${car.heading} vs ${expected}`);
+  // Tokyo's opening kilometre reads straight but curves gently: a released car still drifts off line there.
+  const tokyo = racing('tokyo'), released = tokyo.player;
+  Object.assign(released, { distance: 0, speed: 88, x: 0, steering: 0, heading: 0 });
+  while (released.distance < 800 && !released.railContactSide && !released.scrape) { released.speed = 88; stepRace(tokyo, HANDS_OFF, 1 / 60); }
+  assert.ok(released.heading !== 0 || released.railContactSide || released.scrape, 'a gentle curve is still a curve');
+});
 
-// Owner, 2026-11-25: a released car goes straight on and its nose hits the wall; the corner does not steer it.
-test('a released car keeps its nose on its line: the heading grows outward and the slide speeds up until the rail', () => {
-  const { car, path, out } = intoSharpest();
-  const inBend = path.filter(p => p.heading * out > 0);
-  assert.ok(inBend.length > 10, 'the bend turned the road away from the nose');
-  for (let i = 1; i < inBend.length; i++) {
-    assert.ok(inBend[i].heading * out >= inBend[i - 1].heading * out, `heading never eases back by itself (step ${i})`);
+test('steering turns the nose, not the car: no sideways shift, and released the car keeps going where it points', () => {
+  const race = racing('neon'), car = race.player;
+  Object.assign(car, { distance: NEON_STRAIGHT, speed: 88, x: -8, steering: 0, heading: 0 });
+  stepRace(race, { throttle: true, steer: 1 }, 1 / 60);
+  const turned = car.heading;
+  assert.ok(turned > 0, 'the nose turned right');
+  assert.ok(Math.abs(car.x + 8 - 88 * Math.sin(turned / 2) / 60) < 1e-12, `moved only along the nose: ${car.x}`);
+  for (let i = 0; i < 5; i++) stepRace(race, { throttle: true, steer: 1 }, 1 / 60);
+  while (car.steering > 0) stepRace(race, HANDS_OFF, 1 / 60);
+  const held = car.heading, x = car.x;
+  for (let i = 0; i < 10; i++) stepRace(race, HANDS_OFF, 1 / 60);
+  assert.equal(car.heading, held, 'released, the nose holds its angle');
+  assert.ok(car.x > x + .5, `and the car keeps running right: ${x} -> ${car.x}`);
+});
+
+test('counter-steer straightens the nose; a lane change ends only when the driver steers back', () => {
+  const race = racing('neon'), car = race.player;
+  Object.assign(car, { distance: NEON_STRAIGHT, speed: 88, x: -5, steering: 0, heading: 0 });
+  for (let i = 0; i < 10; i++) stepRace(race, { throttle: true, steer: 1 }, 1 / 60);
+  for (let i = 0; i < 120 && (car.heading > 0 || car.steering > 0); i++) {
+    stepRace(race, car.heading > .002 ? { throttle: true, steer: -1 } : HANDS_OFF, 1 / 60);
   }
-  assert.ok(inBend.at(-1).slide * out > 2 * inBend[5].slide * out, 'the slide accelerates, unlike a constant push');
-  assert.ok(path.length < 90, `reached the rail in ${(path.length / 60).toFixed(2)} s`);
-  assert.ok(car.railContactSide, 'nose-first at speed is a hard hit, not a scrape');
-  assert.equal(car.heading, 0, 'the rail lines the nose up with the road');
+  assert.ok(Math.abs(car.heading) < .03, `the nose came back: ${car.heading}`);
+  assert.ok(car.x > -5, `the car changed lane: ${car.x}`);
 });
 
 test('holding the lock the bend needs keeps the nose on the road and the car in its lane', () => {
   const race = racing(CIRCUIT_ID), car = race.player;
-  Object.assign(car, { distance: 500, speed: 88, x: 0, steering: 0 });
+  Object.assign(car, { distance: 500, speed: 88, x: 0, steering: 0, heading: 0 });
   for (let i = 0; i < 120; i++) {
     car.speed = 88;
-    stepRace(race, { throttle: true, steer: -cornerRate(race, car) / 9 }, 1 / 60);
+    stepRace(race, { throttle: true, steer: -cornerRate(race, car) / turnAuthority(88) }, 1 / 60);
   }
   assert.ok(Math.abs(car.x) < .5, `held its lane: ${car.x}`);
-  assert.ok(Math.abs(car.heading) < .01, `nose stayed on the road: ${car.heading}`);
+  assert.ok(Math.abs(car.heading) < .03, `nose stayed on the road: ${car.heading}`);
 });
 
-test('steering into the bend first straightens the nose, then moves the car across', () => {
-  const race = racing(CIRCUIT_ID), car = race.player, out = Math.sign(cornerRate({ ...race, elapsed: 0 }, { ...car, distance: 500, speed: 88 }));
-  Object.assign(car, { distance: 500, speed: 88, x: 0, steering: 0 });
-  for (let i = 0; i < 40; i++) stepRace(race, HANDS_OFF, 1 / 60);
-  const built = car.heading;
-  assert.ok(built * out > .05, `heading built: ${built}`);
-  // Once the steering ramp (STEER_RAMP s) reaches full lock, the nose turns back before the car moves across.
-  for (let i = 0; i < Math.ceil(STEER_RAMP * 60); i++) stepRace(race, { throttle: true, steer: -out }, 1 / 60);
-  assert.ok(Math.abs(car.heading) < Math.abs(built), `counter-steer turns the nose back: ${built} -> ${car.heading}`);
-  for (let i = 0; i < 60 && car.heading * out > 1e-6; i++) stepRace(race, { throttle: true, steer: -out }, 1 / 60);
-  assert.ok(Math.abs(car.heading) < 1e-6, `the nose straightened: ${car.heading}`);
-  const x = car.x;
-  stepRace(race, { throttle: true, steer: -out }, 1 / 60);
-  assert.ok((car.x - x) * out < 0, `then the lock left over moves the car inward: ${x} -> ${car.x}`);
+test('a released car runs nose-first into the outside rail of the sharpest Coast bend, AUTO on or off', () => {
+  const sharpest = sharpestAt('coast', 3000), out = -Math.sign(roadBend('coast', sharpest));
+  for (const input of [AUTO, HANDS_OFF]) {
+    const race = racing('coast'), car = race.player;
+    Object.assign(car, { distance: sharpest - 40, speed: 88, x: 0, steering: 0, heading: 0 });
+    let steps = 0;
+    for (; steps < 240 && !car.scrape && !car.railContactSide; steps++) { car.speed = 88; stepRace(race, input, 1 / 60); }
+    assert.ok(steps < 90, `reached the rail in ${(steps / 60).toFixed(2)} s`);
+    assert.ok(car.railContactSide === Math.sign(car.x) && Math.sign(car.x) === out, 'the outside rail, hit hard');
+    assert.equal(car.heading, 0, 'the rail lines the nose up with the road');
+  }
 });
 
 // Owner, 2026-11-28: AUTO is an automatic throttle only. It never holds a lane, corners or steers off a rail.
@@ -153,91 +166,20 @@ test('AUTO changes only the throttle: the same lateral path as AUTO off through 
   }
 });
 
-test('AUTO on or off, a released car in a bend runs into the outside rail, at the same moment at 30, 60 and 120 FPS', () => {
-  for (const input of [AUTO, HANDS_OFF]) {
-    const { car, path } = intoSharpest(input);
-    assert.ok(path.length < 90, `reached the rail in ${(path.length / 60).toFixed(2)} s`);
-    assert.ok(car.railContactSide || car.scrape, 'hit the rail');
-  }
+test('a released car meets the circuit rail at the same moment at 30, 60 and 120 FPS', () => {
   const contactAt = hz => {
     const race = racing(CIRCUIT_ID, 'circuit', hz), car = race.player;
-    Object.assign(car, { distance: 500, speed: 88, x: 0, steering: 0 });
+    Object.assign(car, { distance: 500, speed: 88, x: 0, steering: 0, heading: 0 });
     let i = 0;
     for (; i < 6 * hz && !car.railContactSide && !car.scrape; i++) { car.speed = 88; stepRace(race, AUTO, 1 / hz); }
     return i / hz;
   };
   const reference = contactAt(60);
-  assert.ok(reference < 6, 'AUTO hit the rail in the circuit bend');
+  assert.ok(reference < 2, `AUTO hit the rail in the circuit bend after ${reference} s`);
   for (const hz of [30, 120]) assert.ok(Math.abs(contactAt(hz) - reference) <= 1 / 30, `${hz} FPS: ${contactAt(hz)} s vs ${reference} s`);
 });
 
-/** Metres into Neon's 1 km straight from 5996 m: no bend pushes at any speed and no section (crosswind, tunnel) acts. */
-const NEON_STRAIGHT = 6300;
-
-// Owner, 2026-11-28: after a bend, released on a straight, the nose straightens by itself and the slide stops.
-test('back on a straight a released car straightens its nose and stops sliding, AUTO on or off, at 30, 60 and 120 FPS', () => {
-  for (let d = NEON_STRAIGHT; d < NEON_STRAIGHT + 400; d += 4) assert.ok(cornerPush('neon', d, 88) === 0, `a straight at ${d} m`);
-  assert.ok(!racing('neon').sections.some(s => s.to > NEON_STRAIGHT - 50 && s.from < NEON_STRAIGHT + 400), 'no section acts there');
-  const travel = {};
-  for (const hz of [30, 60, 120]) for (const input of [AUTO, HANDS_OFF]) {
-    const race = racing('neon', 'time', hz), car = race.player;
-    Object.assign(car, { distance: NEON_STRAIGHT, speed: 88, x: 0, steering: 0, heading: .08 });
-    for (let i = 0; i < hz; i++) { car.speed = 88; stepRace(race, input, 1 / hz); }
-    assert.ok(Math.abs(car.heading) < 1e-3, `${hz} Hz: the nose straightened within 1 s: ${car.heading}`);
-    const x = car.x;
-    for (let i = 0; i < hz / 2; i++) { car.speed = 88; stepRace(race, input, 1 / hz); }
-    assert.ok(Math.abs(car.x - x) < .02, `${hz} Hz: the slide stopped: ${x} -> ${car.x}`);
-    assert.ok(car.x > 0 && car.x < 3, `${hz} Hz: the leftover heading carried it ${car.x} m, not across the road`);
-    travel[hz] = car.x;
-  }
-  for (const hz of [30, 120]) assert.ok(Math.abs(travel[hz] - travel[60]) < .05, `${hz} FPS: ${travel[hz]} vs ${travel[60]}`);
-});
-
-// Case A (owner, 2026-11-28): Tokyo's opening 1 km pushes up to .15 m/s at 88 m/s. Released, its heading grew
-// from that and the car slid 9.9 m into the rail on what reads as a straight.
-test('released on a near-straight the car goes dead straight, at 88 m/s and NITRO speed, at 30, 60 and 120 FPS', () => {
-  assert.ok(Math.abs(cornerPush('tokyo', 500, 88)) > 0, 'the opening straight is not exactly flat');
-  for (const hz of [30, 60, 120]) for (const speed of [88, 118]) for (const input of [AUTO, HANDS_OFF]) {
-    const race = racing('tokyo', 'time', hz), car = race.player;
-    Object.assign(car, { distance: 0, speed, x: 2, steering: 0, heading: 0 });
-    while (car.distance < 800) { car.speed = speed; stepRace(race, input, 1 / hz); }
-    assert.equal(car.x, 2, `${hz} Hz at ${speed} m/s, AUTO ${!!input.laneAssist}: slid off its lane`);
-  }
-});
-
-/** What reads as straight: a bend gentler than a 700 m radius, as m/s of push at the car's own speed (2 m/s at 88 m/s). */
-const gentle = car => 1.95 * (Math.max(0, car.speed - 35) / 53) ** 2;
-
-// Owner, 2026-11-28 (second report): only 5-50% of each track was flatter than the old 5 km radius, so on gentle
-// curves that look straight a released car still slid to the rail in 2-3 s.
-test('every track, released on road that reads straight with the nose on the road, the car does not move sideways', () => {
-  let checked = 0; // the circuit is one constant clear bend
-  for (const id of TRACKS) {
-    const race = racing(id), car = race.player;
-    for (let steps = 0; race.phase === 'racing' && steps < 60 * 900; steps++) {
-      const x = car.x, before = { heading: car.heading, rate: cornerRate(race, car), flat: gentle(car), quiet: !car.section && !car.recovery && car.cooldown === 0 && car.altitude === 0 };
-      stepRace(race, HANDS_OFF, 1 / 60);
-      if (before.heading !== 0 || Math.abs(before.rate) >= before.flat || !before.quiet || car.section || car.recovery || car.cooldown > 0 || Math.abs(car.x) >= ROAD_LIMIT) continue;
-      checked++;
-      assert.equal(car.x, x, `${id} at ${car.distance.toFixed(0)} m: slid ${car.x - x} m on a ${before.rate.toFixed(2)} m/s curve`);
-    }
-  }
-  assert.ok(checked > 60 * 60, `only ${checked} straight-reading steps`);
-});
-
-test('a driver who steers only through clear bends is not moved between them, on every track', () => {
-  for (const id of TRACKS) {
-    const run = drive(id, (car, race) => {
-      const clear = Math.abs(cornerRate(race, car)) > gentle(car) * (car.altitude >= .1 ? .5 : 1);
-      return clear || car.section === 'crosswind' ? keeper(0)(car) : HANDS_OFF;
-    }, { lane: 0 }); // the centre, where a gap recovery also places the car
-    assert.ok(run.finished, `${id}: did not finish`);
-    assert.equal(run.hard, 0, `${id}: ${run.hard} hard rail hits`);
-    assert.ok(run.dev < 1.5, `${id}: left its lane by ${run.dev.toFixed(2)} m`);
-  }
-});
-
-test('every track, no steering, AUTO off: runs into the rail and still finishes', () => {
+test('every track, no steering: runs into the rail and still finishes', () => {
   for (const id of TRACKS) {
     const run = drive(id, HANDS_OFF);
     assert.ok(run.finished, `${id}: did not finish`);
@@ -245,66 +187,15 @@ test('every track, no steering, AUTO off: runs into the rail and still finishes'
   }
 });
 
-test('a released car at a fork keeps the ground route although the corner carried it past the deadband', () => {
-  for (const id of TRACKS) for (const input of [AUTO, HANDS_OFF]) {
-    assert.equal(drive(id, input).offRoute, 0, `${id}: left the ground route hands-free`);
-  }
-});
-
-/** 5 s held on the sharpest spot of a Dune edge, rail clamped as resolveRail does; returns the lane the fork reads. */
-function pinnedForkLane(startX, placeEachStep, steer = () => 0) {
-  const race = createRace('dune-tempest'), travel = race.course.cars.get('YOU').travel;
-  const car = { x: 0, speed: 88, altitude: 0, steering: 0, distance: 0, cornerDrift: 0, cornerX: 0 };
-  const push = s => { travel.localS = s; return roadDrift(race, { ...car }, undefined, false, 1); };
-  travel.currentEdgeId = 'dune-s-bends';
-  let sharpest = 0;
-  for (let s = 0; s < 500; s += 4) if (Math.abs(push(s)) > Math.abs(push(sharpest))) sharpest = s;
-  const side = Math.sign(push(sharpest));
-  travel.localS = sharpest;
-  Object.assign(car, { x: startX * side, cornerX: startX * side });
-  for (let i = 0; i < 300; i++) {
-    if (placeEachStep) car.x = startX * side;
-    car.steering = steer(car.x * side) * side; // steer in the corner's frame: positive is outward
-    const x = car.x + car.steering * 9 / 60 + roadDrift(race, car, undefined, false, 1 / 60);
-    if (Math.abs(x) > ROAD_LIMIT) car.heading = 0; // as meetRail: the rail lines the nose up with the road
-    car.x = Math.abs(x) > ROAD_LIMIT ? side * 9.9 : x;
-  }
-  return { lane: forkLateral(car.x, car.cornerDrift) * side, pinned: Math.abs(car.x) };
-}
-
-test('a lane the driver chose or placed still picks its fork after the corner pins the car to the rail', () => {
-  const chosen = pinnedForkLane(5, false);
-  assert.ok(chosen.pinned > 9, `reached the rail: ${chosen.pinned}`);
-  assert.ok(Math.abs(chosen.lane - 5) < .1, `steered to 5 m, fork reads ${chosen.lane}`);
-  assert.ok(Math.abs(pinnedForkLane(5, true).lane - 5) < .1, 'a lane placed every step, as the course bots do');
-  assert.ok(Math.abs(pinnedForkLane(0, false).lane) < .5, 'a car never steered stays in the deadband');
-});
-
-test('a driver steering against the corner keeps its lane at the fork; steering outward is intent', () => {
-  // A proportional driver holding 2 m settles wide of it: the push outruns its small corrections.
-  const holding = pinnedForkLane(2, false, x => Math.max(-1, Math.min(1, (2 - x) * .5)));
-  assert.ok(holding.pinned > 2.5, `settled wide of the deadband: ${holding.pinned}`);
-  // .11: one 60 Hz frame of the 6 m/s cap, the steering this frame moved before the fork discounts it.
-  assert.ok(Math.abs(holding.lane - 2) < .11, `held 2 m, fork reads ${holding.lane}`);
-  assert.ok(pinnedForkLane(2, false, () => 1).lane > 9, 'steering outward at the rail picks the outer branch');
-});
-
+// Full lock out-turns the sharpest bend, but a chicane that flips it within a STEER_RAMP (Frostbite's iced S at 3.7 km,
+// Dune's at 9.5 km) still swings a turning-in driver up to 2.8 m: within its lane, never the rail.
 test('a steering driver holds its lane through every corner at 88 m/s and at NITRO speed', () => {
-  for (const id of TRACKS) for (const lane of [-2.5, -2, 2, 2.5]) for (const nitro of [false, true]) {
+  for (const id of TRACKS) for (const lane of [-2.5, 2.5]) for (const nitro of [false, true]) {
     const run = drive(id, keeper(lane, nitro), { lane });
     assert.ok(run.finished, `${id}: did not finish`);
-    assert.ok(run.dev < 1.25, `${id} lane ${lane} nitro ${nitro}: deviation ${run.dev.toFixed(2)} m`);
-    assert.equal(run.hard, 0, `${id}: hard rail hits`);
-    // ±2.5 m sits on the fork deadband's edge, where the driver's own millimetre overshoot already picks a branch.
-    if (Math.abs(lane) < 2.5) assert.equal(run.offRoute, 0, `${id} lane ${lane}: the corner, not the driver, took the branch`);
+    assert.ok(run.dev < 3, `${id} lane ${lane} nitro ${nitro}: deviation ${run.dev.toFixed(2)} m`);
+    assert.equal(run.hard, 0, `${id} lane ${lane} nitro ${nitro}: hard rail hits`);
   }
-});
-
-test('AUTO no longer centres a released car on a straight', () => {
-  const race = racing('coast');
-  Object.assign(race.player, { distance: 20, speed: 40, x: 3.6 });
-  for (let i = 0; i < 60; i++) stepRace(race, AUTO, 1 / 60);
-  assert.equal(race.player.x, 3.6);
 });
 
 /** Released into the rail, carried there by the nose's `heading`: steep hits hard, shallow scrapes. Then `seconds` hands-off. */
@@ -360,43 +251,24 @@ test('in a bend a rail contact is one hit: the car is never shoved back in or st
   }
 });
 
-test('AUTO leaves player steering untouched at the rail', () => {
-  const steer = { throttle: true, steer: -1 };
-  const withAuto = circuitStep(car => { car.x = -8.5; car.steering = -1; }, { ...steer, laneAssist: true });
-  const withoutForce = 9 * -1 / 60;
-  assert.ok(withAuto <= withoutForce, `steering outward keeps its full rate: ${withAuto}`);
+test('AUTO no longer centres a released car on a straight', () => {
+  const race = racing('neon');
+  Object.assign(race.player, { distance: NEON_STRAIGHT, speed: 40, x: 3.6 });
+  for (let i = 0; i < 60; i++) stepRace(race, AUTO, 1 / 60);
+  assert.equal(race.player.x, 3.6);
 });
 
-// Owner, 2026-11-25: taking off must not skip the corner. In the air it acts at half its ground strength.
-test('the corner acts at half strength in the air and stays off through tutorial practice', () => {
-  assert.ok(circuitStep() < 0, 'grounded car is pushed');
+// A flying car keeps its direction too, so taking off never skips a corner (owner, 2026-11-25).
+test('the road turns away from a flying nose at the full rate, and not at all through tutorial practice', () => {
   const race = racing(CIRCUIT_ID), car = { ...race.player, distance: 500, speed: 88, altitude: 0, cooldown: 0 };
   const ground = cornerRate(race, car);
-  assert.ok(ground < 0);
-  assert.equal(cornerRate(race, { ...car, altitude: 3 }), ground / 2);
-  assert.ok(circuitStep(car => { car.altitude = 3; }) < 0, 'a flying car is carried too');
-  assert.equal(circuitStep((car, race) => { race.endless = { chunk: 0, milestones: 0, practice: true }; }), 0);
+  assert.ok(ground !== 0);
+  assert.equal(cornerRate(race, { ...car, altitude: 3 }), ground);
+  race.endless = { chunk: 0, milestones: 0, practice: true };
+  assert.ok(cornerRate(race, car) === 0);
 });
 
-// The straight rule judges the road, not the halved air push: a gentle bend a grounded car feels still carries a flying one.
-test('released in the air over a gentle bend the car is still carried at half strength', () => {
-  const flat = 1 / 700 * .5 * (88 - 35) ** 2; // pushFor(STRAIGHT_TURN = 1/700 rad/m, 88 m/s)
-  let checked = 0;
-  for (const id of Object.keys(RACE_TRACKS)) {
-    const race = racing(id);
-    for (let d = 200; d < RACE_TRACKS[id].length - 200 && checked < 40; d += 4) {
-      const push = Math.abs(cornerPush(id, d, 88));
-      if (push <= flat * 1.05 || push > flat * 1.95) continue; // straight at half strength, a bend on the ground
-      const car = { ...race.player, distance: d, x: 0, speed: 88, altitude: 3, steering: 0, heading: 0, cooldown: 0, section: null };
-      roadDrift(race, car, undefined, false, 1 / 60);
-      assert.notEqual(car.heading, 0, `${id} ${d} m: a ${push.toFixed(3)} m/s bend skipped in the air`);
-      checked++;
-    }
-  }
-  assert.ok(checked >= 10, `only ${checked} gentle bends found`);
-});
-
-test('the corner heading clears when the car is reset', () => {
+test('the heading clears when the car is reset', () => {
   const race = racing(CIRCUIT_ID), car = race.player;
   Object.assign(car, { distance: 500, speed: 88, x: 0 });
   for (let i = 0; i < 30; i++) stepRace(race, HANDS_OFF, 1 / 60);
@@ -405,13 +277,33 @@ test('the corner heading clears when the car is reset', () => {
   assert.equal(car.heading, 0, 'a reset car faces down the road');
 });
 
-test('a car recovering from a hit is not pressed back into what it hit', () => {
-  assert.equal(circuitStep((car, race) => { car.cooldown = 1.5; car.impact = { kind: 'barrier', time: race.elapsed }; }), 0,
-    'no corner push during a knock');
-  assert.ok(circuitStep(car => { car.cooldown = 1; }) < 0, 'a cooldown with no fresh impact (shield block) keeps the push');
+test('a car recovering from a hit is not turned back into what it hit', () => {
+  const step = setup => {
+    const race = racing(CIRCUIT_ID), car = race.player;
+    Object.assign(car, { distance: 500, speed: 88, x: 0, steering: 0, heading: 0, cooldown: 0 });
+    setup(car, race);
+    stepRace(race, HANDS_OFF, 1 / 60);
+    return car.heading;
+  };
+  assert.equal(step((car, race) => { car.cooldown = 1.5; car.impact = { kind: 'barrier', time: race.elapsed }; }), 0, 'no road turn during a knock');
+  assert.notEqual(step(car => { car.cooldown = 1; }), 0, 'a cooldown with no fresh impact (shield block) keeps it');
 });
 
-test('the corner force leaves shortcut corridors and spans on their authored line', () => {
+// Pinning the heading through the 1.5 s grace took the steering away after every hit: a car pressed against a side car
+// could not steer, then met it again as a second impact once the grace ended.
+test('a hit lines the nose up with the road, and steering turns it through the grace', () => {
+  const race = racing('coast'), car = race.player; // Coast's opening straight
+  Object.assign(car, { distance: 120, speed: 60, x: 0, heading: .2, cooldown: 0 });
+  race.traffic = [{ x: .5, homeX: .5, distance: 122, speed: 20, cruise: 20, altitude: 0, cooldown: 0, laneShift: 0 }];
+  stepRace(race, { throttle: true }, 1 / 60);
+  assert.equal(car.collisions, 1);
+  assert.equal(car.heading, 0, 'the hit lines the nose up');
+  race.traffic = [];
+  for (let i = 0; i < 30; i++) stepRace(race, { throttle: true, steer: 1 }, 1 / 60);
+  assert.ok(car.cooldown > 0 && car.heading > .3, `still in the grace (${car.cooldown}), the nose turned to ${car.heading}`);
+});
+
+test('shortcut corridors and spans keep their authored line', () => {
   let checked = 0;
   for (const id of TRACKS) {
     for (const section of racing(id).sections.filter(s => s.type === 'shortcut')) {
@@ -426,16 +318,28 @@ test('the corner force leaves shortcut corridors and spans on their authored lin
   assert.ok(checked > 0, 'no corridor was exercised');
 });
 
-test('the push is the same per second at 30, 60 and 120 FPS', () => {
+test('a released car slides the same per second at 30, 60 and 120 FPS', () => {
   const travel = hz => {
     const race = racing(CIRCUIT_ID, 'circuit', hz);
-    Object.assign(race.player, { distance: 500, speed: 88, x: 0 });
-    for (let i = 0; i < hz; i++) stepRace(race, HANDS_OFF, 1 / hz);
+    Object.assign(race.player, { distance: 500, speed: 88, x: 0, heading: 0 });
+    for (let i = 0; i < hz / 2; i++) stepRace(race, HANDS_OFF, 1 / hz);
     return race.player.x;
   };
   const reference = travel(60);
-  assert.ok(reference < -1, `pushed ${reference}`);
-  for (const hz of [30, 120]) assert.ok(Math.abs(travel(hz) - reference) < .05, `${hz} FPS: ${travel(hz)} vs ${reference}`);
+  assert.ok(Math.abs(reference) > 1, `slid ${reference}`);
+  for (const hz of [30, 120]) assert.ok(Math.abs(travel(hz) - reference) < .1, `${hz} FPS: ${travel(hz)} vs ${reference}`);
+});
+
+test('the heading never exceeds its cap, and a diagonal car covers less road than its speed', () => {
+  const race = racing('neon'), car = race.player;
+  Object.assign(car, { distance: NEON_STRAIGHT, speed: 88, x: -ROAD_LIMIT, steering: 0, heading: 0 });
+  let max = 0;
+  for (let i = 0; i < 60 && !car.railContactSide; i++) { car.speed = 88; stepRace(race, { throttle: true, steer: 1 }, 1 / 60); max = Math.max(max, car.heading); }
+  assert.ok(max > .3 && max <= .5, `heading peaked at ${max}`);
+  Object.assign(car, { distance: NEON_STRAIGHT, x: -ROAD_LIMIT, steering: 0, heading: .4, railContactSide: 0, cooldown: 0 });
+  const from = car.distance;
+  car.speed = 88; stepRace(race, HANDS_OFF, 1 / 60);
+  assert.ok(car.distance - from < 88 / 60 * .93, `weaving gains no ground: ${(car.distance - from) * 60} m/s along the road`);
 });
 
 test('Endless on every track stays finite on the road, across mirrored runs', () => {
@@ -449,12 +353,22 @@ test('Endless on every track stays finite on the road, across mirrored runs', ()
   }
 });
 
+test('roadDrift reads a graph course edge and stays finite', () => {
+  const race = createRace('dune-tempest'), travel = race.course.cars.get('YOU').travel;
+  travel.currentEdgeId = 'dune-s-bends';
+  for (let s = 0; s < 400; s += 4) {
+    travel.localS = s;
+    const car = { x: 0, speed: 88, altitude: 0, steering: 0, distance: 0, cooldown: 0, heading: 0 };
+    assert.ok(Number.isFinite(roadDrift(race, car, undefined, false, 1 / 60)) && Math.abs(car.heading) <= .5);
+  }
+});
+
 // CI (Node 22, x64) and a Mac (arm64) can disagree in the last bit of Math.sin/cos/atan2; the legacy replay hashes must not.
-test('the corner push ignores last-bit trig differences between engines', async () => {
+test('the road bend ignores last-bit trig differences between engines', async () => {
   const samples = async tag => {
-    const { cornerPush } = await import(`../src/corner-force.ts?${tag}`); // fresh curvature cache per engine
+    const { roadBend } = await import(`../src/corner-force.ts?${tag}`); // fresh curvature cache per engine
     return Object.keys(RACE_TRACKS).flatMap(id =>
-      Array.from({ length: Math.ceil(RACE_TRACKS[id].length / 4) }, (_, i) => cornerPush(id, i * 4 + 2, 88)));
+      Array.from({ length: Math.ceil(RACE_TRACKS[id].length / 4) }, (_, i) => roadBend(id, i * 4 + 2)));
   };
   const reference = await samples('reference');
   const real = { sin: Math.sin, cos: Math.cos, atan: Math.atan, atan2: Math.atan2 };
@@ -463,6 +377,13 @@ test('the corner push ignores last-bit trig differences between engines', async 
     atan2: (y, x) => nudge(real.atan2(y, x)) });
   let other;
   try { other = await samples('other-engine'); } finally { Object.assign(Math, real); }
-  const differ = reference.filter((push, i) => push !== other[i]).length;
+  const differ = reference.filter((bend, i) => bend !== other[i]).length;
   assert.equal(differ, 0, `${differ} of ${reference.length} samples changed`);
+});
+
+test('STEER_RAMP still shapes the first frames of a press', () => {
+  const race = racing('neon'), car = race.player;
+  Object.assign(car, { distance: NEON_STRAIGHT, speed: 88, x: 0, steering: 0, heading: 0 });
+  stepRace(race, { throttle: true, steer: 1 }, 1 / 60);
+  assert.ok(Math.abs(car.steering - 1 / 60 / STEER_RAMP) < 1e-12);
 });

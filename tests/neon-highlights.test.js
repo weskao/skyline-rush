@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { createRace, startRace, stepRace, setLayoutSeed, RACE_TRACKS, MAX_SPEED } from '../src/game.js';
-import { botInput } from '../scripts/pickup-economy.mjs';
+import { botInput, steerToward } from '../scripts/pickup-economy.mjs';
 import { classicRoadRoute } from '../src/classic-road-routes.ts';
 import { CLASSIC_THEMED_PLACEMENTS } from '../src/track-themes-classic.ts';
 import { NEON_CHUNK_METRES, NEON_SQUARE, neonChunkPlan } from '../src/neon-scenery-plan.ts';
@@ -115,7 +115,9 @@ test('harbour: steering into the wind holds the lane and takes the whole line; a
     const run = createRace('neon'), car = run.player;
     startRace(run); run.phase = 'racing'; run.traffic = []; run.rivals = []; run.hazards = []; run.pickups = [];
     Object.assign(car, { distance: from - 60, x: lane, speed: MAX_SPEED, nitro: 1 });
-    while (car.distance < to) stepRace(run, { throttle: true, laneAssist: false, steer: hold ? Math.max(-1, Math.min(1, (lane - car.x) * 0.6)) : 0, nitro: car.nitro >= 1 && car.nitroTime === 0 }, 1 / 60);
+    // Kart handling: the holder turns its nose into the wind (`steerToward`), as a player counter-steers.
+    const steer = () => hold ? steerToward(run, car, Math.max(-.1, Math.min(.1, (lane - car.x) * .04))) : 0;
+    while (car.distance < to) stepRace(run, { throttle: true, laneAssist: false, steer: steer(), nitro: car.nitro >= 1 && car.nitroTime === 0 }, 1 / 60);
     return car.perfectLines;
   };
   assert.equal(drive(true), 1, `${label}: holding the lane takes the whole line`);

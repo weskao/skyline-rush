@@ -3,7 +3,7 @@
 import { pathToFileURL } from 'node:url';
 import { writeFileSync } from 'node:fs';
 import { createRace, startRace, stepRace, RACE_TRACKS } from '../src/game.js';
-import { cornerRate } from '../src/corner-force.ts';
+import { cornerRate, turnAuthority } from '../src/corner-force.ts';
 
 export const WORLD_TOUR = ['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic'];
 export const CLASSIC_FIRST_THREE = ['coast', 'neon', 'canyon'];
@@ -26,6 +26,16 @@ function clearLane(race, aim) {
   return free.length ? free.reduce((a, b) => Math.abs(b - aim) < Math.abs(a - aim) ? b : a) : aim;
 }
 
+/**
+ * The lock that turns the nose to `aim` (rad off the road), as a kart driver does: counter-steer the heading and turn
+ * in against the bend just ahead (the lock takes STEER_RAMP to build, four times longer on ice). Shared by test bots.
+ */
+export function steerToward(race, car, aim) {
+  const ice = car.section === 'ice';
+  const yaw = (aim - (car.heading ?? 0)) * (ice ? 4 : 8) - cornerRate(race, car, car.speed * (ice ? .3 : .08));
+  return Math.max(-1, Math.min(1, yaw / Math.max(.01, turnAuthority(car.speed))));
+}
+
 // The bot chases the next ring (else the next pickup), climbs to it, BOOSTs with fuel to spare and
 // fires NITRO as soon as a full charge is banked. No brake, so no drift or trick rewards.
 export function botInput(race, bot) {
@@ -41,12 +51,9 @@ export function botInput(race, bot) {
   // On a span (Frostbite Rift) leaving the corridor is a fall: hold its line and height like a gap.
   const span = car.span && race.sections.find(s => s.span && at >= s.from && at < s.to);
   const dx = (span ? span.x : clearLane(race, target ? target.x : car.x)) - car.x;
-  // Like a player, lean into a bend and against the nose's slide before they carry the car off line; straights
-  // steer exactly as before.
-  const lean = -(cornerRate(race, car) + car.speed * Math.sin(car.heading ?? 0)) / Math.max(1, Math.min(9, car.speed * 0.22));
   return {
     throttle: true, laneAssist: true,
-    steer: Math.max(-1, Math.min(1, lean + (Math.abs(dx) < 0.2 ? 0 : dx * 0.6))),
+    steer: steerToward(race, car, Math.abs(dx) < 0.2 ? 0 : Math.max(-.15, Math.min(.15, dx * .05))),
     fly: (gapNear && car.altitude < GAP_HEIGHT) || (span && car.altitude < span.altitude) || (bot.climb && car.altitude < target.altitude - 0.5),
     boost: bot.boost,
     nitro: car.nitro >= 1 && car.nitroTime === 0,

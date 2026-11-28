@@ -1,5 +1,5 @@
 import type { CourseRuntime } from './course-race.ts';
-import { chooseBranchByLateral, forkLateral } from './course-race.ts';
+import { chooseBranchByLateral } from './course-race.ts';
 import { edgeOf, routeLength, sampleRoute } from './course-route-frame.ts';
 import type { CoursePoint3 } from './course-graph.ts';
 
@@ -22,7 +22,7 @@ export function graphCarVisual(rt: CourseRuntime, id: string, origin: CoursePoin
 }
 
 /** Follow the same lateral branch decision as the host physics; never look along a flattened route. */
-export function graphLookAhead(rt: CourseRuntime, lateral: number, ahead: number, carried = 0) {
+export function graphLookAhead(rt: CourseRuntime, lateral: number, ahead: number) {
   const graph = rt.spec.graph, travel = rt.cars.get('YOU')?.travel;
   if (!travel) throw new Error('CourseGraph runtime has no player');
   let edgeId = travel.currentEdgeId, s = travel.localS, remaining = Math.max(0, ahead);
@@ -30,7 +30,7 @@ export function graphLookAhead(rt: CourseRuntime, lateral: number, ahead: number
     const length = routeLength(graph, edgeId);
     if (s + remaining <= length) return sampleRoute(graph, edgeId, s + remaining);
     const edge = edgeOf(graph, edgeId);
-    const next = edge && chooseBranchByLateral(graph, edgeId, forkLateral(lateral, carried), 2.5);
+    const next = edge && chooseBranchByLateral(graph, edgeId, lateral, 2.5);
     if (!next) return sampleRoute(graph, edgeId, length);
     remaining -= Math.max(0, length - s);
     edgeId = next; s = 0;

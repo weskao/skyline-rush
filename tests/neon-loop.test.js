@@ -4,7 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { classicRoadRoute, legacyClassicRoad } from '../src/classic-road-routes.ts';
-import { cornerPush } from '../src/corner-force.ts';
+import { roadBend } from '../src/corner-force.ts';
 import { RACE_TRACKS } from '../src/race-tracks.ts';
 import { trackOverview } from '../src/track-paths.ts';
 import { updateSkyline } from '../src/skyline-scenery.ts';
@@ -76,7 +76,7 @@ test('a second lap repeats the first, so Endless keeps streaming and the corner 
     near(road.heading(d + LAP), road.heading(d) + TURN, 1e-9, `heading at ${d}`);
   }
   assert.deepEqual([...road.point(-30, 2.5)], [2.5, 30], 'the grid extends straight back');
-  for (let d = LAP - 20; d <= LAP + 20; d += 1) assert.ok(Math.abs(cornerPush('neon', d, 90)) < .1, `straight over the line at ${d}`);
+  for (let d = LAP - 20; d <= LAP + 20; d += 1) assert.ok(Math.abs(roadBend('neon', d)) < 1e-4, `straight over the line at ${d}`);
 });
 
 test('offset measures metres from the centre line on every part of the lap', () => {

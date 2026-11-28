@@ -28,19 +28,23 @@ test('Neon corners pull a fast grounded car outward in each direction and steeri
   assert.ok(correcting.player.x < 0, 'full steering retains authority');
 });
 
-test('corner load preserves the grid, slow handling, flight and tutorial steering', () => {
+// Kart handling (owner, 2026-11-28): no speed gate, so a slow car meets the bend too, in proportion to its speed.
+test('corner load preserves the grid and tutorial steering, and turns a slow nose in proportion', () => {
   const race = () => createRace('neon', { mode: 'time' });
   assert.equal(tick(race(), 40, 88), 0);
-  assert.equal(tick(race(), 800, 24), 0);
   assert.equal(tick(createInteractiveTutorial().race, 330, 88), 0);
+  const slow = nose(race(), 800, 24), fast = nose(race(), 800, 88);
+  // Throttle adds more speed to the slow car within the step, so the ratio is a little over 24/88.
+  assert.ok(slow < -1e-3 && slow > fast && slow / fast < .3, `at 24 m/s ${slow}, at 88 m/s ${fast}`);
 });
 
-// Owner, 2026-11-25: taking off must not skip a corner's difficulty, so flight carries half of it.
-test('a flying car meets half the corner a grounded car does', () => {
+// Owner, 2026-11-25: taking off must not skip a corner's difficulty. Kart handling (2026-11-28): the nose keeps its
+// direction in the air too, so the road turns away from it at the full rate.
+test('a flying car meets the whole corner a grounded car does', () => {
   const race = () => createRace('neon', { mode: 'time' });
   const ground = nose(race(), 800, 88), air = nose(race(), 800, 88, 5);
   assert.ok(ground < -1e-3, `the underpass corner turns the nose: ${ground}`);
-  assert.ok(Math.abs(air - ground / 2) < 1e-12, `in the air ${air}, on the ground ${ground}`);
+  assert.equal(air, ground, `in the air ${air}, on the ground ${ground}`);
 });
 
 test('both streaming modes carry corner load beyond the original finish', () => {

@@ -1,7 +1,7 @@
 import { advanceCountdown } from './frame-pacing.ts';
 import { stepPlayerDrift } from './player-drift.ts'; import { blockNeonPortal, onNeonRoof, overNeonRoof, supportNeonRoof } from './neon-roof.ts';
 export { startRace } from './frame-pacing.ts';
-import { meetRail, roadDrift } from './corner-force.ts';
+import { meetRail, roadAdvance, roadDrift } from './corner-force.ts';
 import { prepareEndless, streamEndless } from './endless-highway.ts';
 import { earnsAirChain } from './air-chain.ts';
 import { createRings, pickupRun, spreadDistances, ITEMS_PER_CAR, RING_RADIUS, RING_FUEL, RING_NITRO, SLIPSTREAM_BOOST, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX } from './ring-layout.ts';
@@ -34,7 +34,7 @@ import { planGapRecovery, clearGapFallStreak } from './gap-recovery-seat.ts';
 import { RACE_TRACKS, raceTrack, assertTrackMode, itemScale } from './race-tracks.ts';
 export { RACE_TRACKS } from './race-tracks.ts';
 export const RACE_LENGTH = RACE_TRACKS.coast.length;
-import { MAX_SPEED, NITRO_TIME, pressNitro, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, boostFuel, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_LATERAL, grantMiniBoost } from './drive-rules.ts';
+import { MAX_SPEED, NITRO_TIME, pressNitro, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, boostFuel, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, grantMiniBoost } from './drive-rules.ts';
 export { MAX_SPEED, NITRO_TIME, NITRO_EXTEND, FLY_DRAIN, GLIDE_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_REWARDS, driftTier } from './drive-rules.ts';
 export const ROAD_LIMIT = 10.2;
 export const LANES = [-7.5, -2.5, 2.5, 7.5];
@@ -171,7 +171,7 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
       impact: null, landing: null, steering: 0, railContactSide: 0, boosting: false, braking: false,
       nearMiss: null, nearMisses: 0, combo: 0, scrape: null, scrapeCooldown: 0, flyBuffer: 0,
       poweredFlightTime: 0, flightBoosted: false,
-      section: null, inShortcut: false, falls: 0, fall: null, span: false, cornerDrift: 0, cornerX: 0, heading: 0,
+      section: null, inShortcut: false, falls: 0, fall: null, span: false, heading: 0,
       gapFallStreak: /** @type {import('./gap-recovery-seat.ts').GapFallStreak | null} */ (null),
       nitro: 0, nitroTime: 0, nitroHeld: false, nitroUses: 0, nitroBurst: 0, nitroChain: 0, longestCombo: 0,
       slipstream: { time: 0, active: false, paid: false },
@@ -324,8 +324,7 @@ export function stepRace(race, input, dt) {
   // Linear ramp: full deflection takes STEER_RAMP seconds (longer on ice), like an analog stick.
   const ramp = STEER_RAMP * (car.section === 'ice' ? ICE_RAMP_FACTOR : 1);
   car.steering += clamp(steer - car.steering, -dt / ramp, dt / ramp);
-  let lateralPosition = car.x + car.steering * Math.min(9, car.speed * 0.22) * (drifting ? DRIFT_LATERAL : 1) * dt;
-  lateralPosition += roadDrift(race, car, section, drifting, dt);
+  const lateralPosition = car.x + roadDrift(race, car, section, drifting, dt);
   const previousX = car.x;
   car.x = meetRail(car, lateralPosition);
   // Re-arm sustained rail contact only after the car pulls clear.
@@ -371,7 +370,7 @@ export function stepRace(race, input, dt) {
   }
   if (car.altitude > 0 && !onNeonRoof(race.trackId, car)) car.drift = null; // taking off loses the drift build-up
   const previousDistance = car.distance, previousContacts = car.collisions + car.falls;
-  car.distance += car.speed * dt; const portalHit = blockNeonPortal(race.trackId, car, previousDistance), roofLanded = supportNeonRoof(race.trackId, car, previousAltitude);
+  car.distance += roadAdvance(car, dt); const portalHit = blockNeonPortal(race.trackId, car, previousDistance), roofLanded = supportNeonRoof(race.trackId, car, previousAltitude);
   const skyGap = race.trackId === 'spiral' && skyJumpGap(car.distance, !!race.endless);
   const gapNow = race.course ? stepCoursePlayer(race, dt, contact) :
     skyGap || (race.trackId !== 'spiral' && race.sections.find(s => s.type === 'gap' && car.distance >= s.from && car.distance < s.to));

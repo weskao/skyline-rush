@@ -5,6 +5,7 @@ import { hazardX } from '../src/hazards.ts';
 import { rivalBaseCap, RIVAL_SKILL } from '../src/rival-driver.ts';
 import { BOOST_CAP_BONUS, NITRO_CAP_BONUS } from '../src/drive-rules.ts';
 import { SKY_JUMPS } from '../src/sky-track.ts';
+import { turnAuthority } from '../src/corner-force.ts';
 
 function advance(race, seconds, input = {}) {
   for (let frame = 0; frame < Math.ceil(seconds * 60); frame++) stepRace(race, input, 1 / 60);
@@ -351,16 +352,17 @@ test('FLY + BOOST + NITRO keeps the 18/s AIR DASH drain and the MAX_SPEED + 30 c
   assert.ok(car.speed > MAX_SPEED + 14 && car.speed <= MAX_SPEED + 30);
 });
 
-test('steering input ramps to full over 0.15 s and high-speed lateral speed caps at 9 m/s', () => {
+// Kart handling (owner, 2026-11-28): full lock turns the nose at turnAuthority rather than sliding at 9 m/s.
+test('steering input ramps to full over 0.15 s, and full lock turns the nose at turnAuthority on a straight', () => {
   const race = racing(); race.rivals = [];
   Object.assign(race.player, { speed: MAX_SPEED, x: -7.5 });
   advance(race, 0.05, { throttle: true, steer: 1 });
   assert.ok(Math.abs(race.player.steering - 1 / 3) < 0.01);
   advance(race, 0.2, { throttle: true, steer: 1 });
   assert.equal(race.player.steering, 1);
-  const x = race.player.x;
-  advance(race, 0.5, { throttle: true, steer: 1 });
-  assert.ok(Math.abs(race.player.x - x - 4.5) < 0.05);
+  const heading = race.player.heading;
+  stepRace(race, { throttle: true, steer: 1 }, 1 / 60); // Coast's opening straight: no bend turns the road
+  assert.ok(Math.abs(race.player.heading - heading - turnAuthority(race.player.speed) / 60) < 1e-6);
 });
 
 test('AUTO never moves a released car toward a lane centre, and steering still works under it', () => {
@@ -379,7 +381,8 @@ test('AUTO never moves a released car toward a lane centre, and steering still w
 test('a shallow barrier touch scrapes: 0.92 speed, back on the road, no collision, combo kept, once per scrape', () => {
   const race = racing();
   Object.assign(race.player, { speed: 60, x: ROAD_LIMIT, steering: 0.3, combo: 3 });
-  advance(race, 0.3, { steer: 0.3 });
+  stepRace(race, { steer: 0.3 }, 1 / 60);
+  advance(race, 0.3 - 1 / 60); // released: a held lock would turn the nose straight back into the rail (kart handling)
   const car = race.player;
   assert.equal(car.impact, null);
   assert.equal(car.collisions, 0);
@@ -595,7 +598,9 @@ test('crosswind pushes the car sideways only inside its zone', () => {
   const inside = racingOn('canyon');
   Object.assign(inside.player, { distance: wind.from + 10, speed: 30, x: 0 });
   const outside = racingOn('canyon');
-  Object.assign(outside.player, { distance: wind.from - 200, speed: 30, x: 0 });
+  // Outside on a straight (3588-3904 m): a released car in a bend would drift to the outside rail on its own.
+  Object.assign(outside.player, { distance: 3600, speed: 30, x: 0, heading: 0 }); // drop the start's heading
+  assert.ok(RACE_TRACKS.canyon.sections.every(s => s.type !== 'crosswind' || s.from > 3700 || s.to < 3600));
   advance(inside, 0.5);
   advance(outside, 0.5);
   assert.ok(inside.player.x * (wind.dir ?? 1) > 1);
@@ -1398,6 +1403,8 @@ test('air trick: a hard landing (from the 12 m ceiling, no FLY) loses the reward
   const race = airborne(12);
   race.player.nitro = 1;
   flick(race);
+  // The flick leaves the nose turned left; a 1.5 s fall would carry it into the rail, so counter-steer straight.
+  for (let frame = 0; frame < 30 && race.player.heading < 0; frame++) stepRace(race, { steer: 1 }, 1 / 60);
   land(race);
   assert.ok(race.player.landing.speed >= TRICK_HARD_LANDING);
   assert.equal(race.player.nitro, 1);
